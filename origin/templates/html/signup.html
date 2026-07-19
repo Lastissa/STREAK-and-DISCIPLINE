@@ -1,0 +1,294 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up — STREAK & DISCIPLINE</title>
+
+    <!-- Font Awesome 6 -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" 
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- Inline critical loader -->
+    <style>{% include "reusables/spinner.css" %}</style>
+
+    <!-- Lightweight CSS (critical path) -->
+    <link rel="stylesheet" href="{% static 'css/signup.css' %}">
+    
+    <!-- Heavy CSS (deferred, non-blocking) -->
+    <link rel="preload" href="{% static 'cdn/signup.css' %}" as="style" 
+          onload="this.onload=null;this.rel='stylesheet'" id="heavy-css">
+    <noscript>
+        <link rel="stylesheet" href="{% static 'cdn/signup.css' %}">
+    </noscript>
+</head>
+<body>
+    <!-- Loader -->
+    {% include "reusables/spinner.html" %}
+
+    <!-- Header -->
+    <header class="site-header" id="siteHeader">
+        <div class="container header-inner">
+            <a href="/" class="logo-link">
+                <img src="{% static 'img/logo.png' %}" 
+                     alt="Logo" class="logo-img" width="36" height="36"
+                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2236%22 height=%2236%22%3E%3Crect width=%2236%22 height=%2236%22 rx=%228%22 fill=%22%233b82f6%22/%3E%3Ctext x=%2250%25%22 y=%2255%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2218%22 font-family=%22system-ui%22%3ES%26D%3C/text%3E%3C/svg%3E'">
+                <span class="logo-text">STREAK & DISCIPLINE</span>
+            </a>
+            <div class="nav-actions">
+                <span class="nav-hint">Already have an account?</span>
+                <a href="{% url 'origin_login' %}" class="btn btn-outline btn-sm">Sign In</a>
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="signup-main">
+        <div class="signup-split">
+            <!-- Left: Image Panel (desktop only) -->
+            <div class="signup-visual" id="signupVisual">
+                <div class="visual-overlay"></div>
+                <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&h=1000&fit=crop"
+                    alt="In unity, we grow" 
+                    class="lazy-img visual-img"
+                    width="800" height="1000"
+                    loading = 'lazy'
+                >
+                <div class="visual-quote">
+                    <p>"The first step to keeping promises to others is keeping them to yourself."</p>
+                </div>
+            </div>
+
+            <!-- Right: Form Panel -->
+            <div class="signup-form-panel">
+                <div class="form-container">
+                    <div class="form-header">
+                        <h1>Start Your Journey</h1>
+                        <p>One honest sentence a day. No fluff. Just discipline.</p>
+                    </div>
+
+                    <!-- Django Messages -->
+                    {% if messages %}
+                    <div class="messages-container">
+                        {% for message in messages %}
+                        <div class="message message-{{ message.tags }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Social Signup Buttons -->
+                    <div class="social-signup">
+                        <form action="{% url 'social:begin' 'google-oauth2' %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-social btn-google">
+                                <i class="fab fa-google"></i> Continue with Google
+                            </button>
+                        </form>
+                        <form action="{% url 'social:begin' 'facebook' %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-social btn-facebook" style="width: 75%%;">
+                                <i class="fab fa-facebook-f"></i> Continue with Facebook
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="divider">
+                        <span>or sign up with email</span>
+                    </div>
+
+                    <!-- Email Signup Form -->
+                    <form method="POST" action="{% url 'origin_signup' %}" class="signup-form" id="signupForm" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-envelope input-icon"></i>
+                                <input 
+                                    type="email" 
+                                    name="email" 
+                                    id="email" 
+                                    placeholder="you@example.com" 
+                                    required 
+                                    autocomplete="email"
+                                    class="form-input"
+                                >
+                            </div>
+                            {% if form.email.errors %}
+                            <span class="form-error">{{ form.email.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="username">Username <span class="optional">(optional)</span></label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-user input-icon"></i>
+                                <input 
+                                    type="text" 
+                                    name="username" 
+                                    id="username" 
+                                    placeholder="Choose a username" 
+                                    autocomplete="username"
+                                    class="form-input"
+                                >
+                            </div>
+                            {% if form.username.errors %}
+                            <span class="form-error">{{ form.username.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password1">Password</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-lock input-icon"></i>
+                                <input 
+                                    type="password" 
+                                    name="password1" 
+                                    id="password1" 
+                                    placeholder="Create a strong password" 
+                                    required 
+                                    autocomplete="new-password"
+                                    class="form-input"
+                                >
+                                <button type="button" class="toggle-password" data-target="password1" aria-label="Show password">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            {% if form.password1.errors %}
+                            <span class="form-error">{{ form.password1.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password2">Confirm Password</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-lock input-icon"></i>
+                                <input 
+                                    type="password" 
+                                    name="password2" 
+                                    id="password2" 
+                                    placeholder="Repeat your password" 
+                                    required 
+                                    autocomplete="new-password"
+                                    class="form-input"
+                                >
+                                <button type="button" class="toggle-password" data-target="password2" aria-label="Show password">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            {% if form.password2.errors %}
+                            <span class="form-error">{{ form.password2.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="agree_terms" required>
+                                <span class="checkmark"></span>
+                                I agree to the <a href="{% url 'origin_extra' %}#terms" target="_self">Terms of Service</a> and <a href="{% url 'origin_extra' %}#privacy" target="_self">Privacy Policy</a>
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBtn">
+                            <i class="fas fa-rocket"></i> Create My Account
+                        </button>
+                    </form>
+
+                    <p class="form-footer">
+                        Already have an account? <a href="{% url 'origin_login' %}">Sign In</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script>
+        {% include "reusables/spinner.js" %}
+
+        // Load heavy CSS
+        const heavyCss = document.getElementById('heavy-css');
+        if (heavyCss && heavyCss.rel !== 'stylesheet') {
+            heavyCss.rel = 'stylesheet';
+        }
+
+        // Theme toggle
+        (function() {
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return null;
+            }
+            function setCookie(name, value, days) {
+                const d = new Date();
+                d.setTime(d.getTime() + (days * 86400000));
+                document.cookie = name + '=' + value + ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax';
+            }
+            const body = document.body;
+            const btn = document.getElementById('themeToggle');
+            const saved = getCookie('sd-theme');
+            if (saved === 'light') {
+                body.classList.add('light-mode');
+                if (btn) btn.innerHTML = '<i class="fas fa-sun"></i>';
+            }
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    if (body.classList.contains('light-mode')) {
+                        body.classList.remove('light-mode');
+                        setCookie('sd-theme', 'dark', 365);
+                        btn.innerHTML = '<i class="fas fa-moon"></i>';
+                    } else {
+                        body.classList.add('light-mode');
+                        setCookie('sd-theme', 'light', 365);
+                        btn.innerHTML = '<i class="fas fa-sun"></i>';
+                    }
+                });
+            }
+        })();
+
+        // Password visibility toggle
+        document.querySelectorAll('.toggle-password').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                const icon = this.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.replace('fa-eye', 'fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.replace('fa-eye-slash', 'fa-eye');
+                }
+            });
+        });
+        
+        // Toggle submit button based on terms checkbox
+        (function() {
+            var checkbox = document.querySelector('input[name="agree_terms"]');
+            var submitBtn = document.getElementById('submitBtn');
+            
+            if (!checkbox || !submitBtn) return;
+            
+            // Force hide on page load
+            submitBtn.style.display = 'none';
+            
+            // Listen for changes
+            checkbox.addEventListener('change', function() {
+                submitBtn.style.display = this.checked ? 'block' : 'none';
+            });
+            
+            // Also check initial state (if browser remembers checked state)
+            if (checkbox.checked) {
+                submitBtn.style.display = 'block';
+            }
+        })();
+    </script>
+</body>
+</html>

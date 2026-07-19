@@ -1,0 +1,685 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STREAK&DISCIPLINE — Private Discipline Journal</title>
+    
+    <!-- Font Awesome 6 for icons (loads fast from CDN) -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" 
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    
+    <style>
+        /*Inline critical loader*/
+        {% include "reusables/spinner.css" %}
+        /*styling custom_message.html */
+        {% include "reusables/custom_message.css" %}
+
+    </style>
+
+    <!-- Lightweight CSS (critical path, blocks rendering minimally) -->
+    <link rel="stylesheet" href="{% static 'css/landing_page.css' %}">
+    
+    <!-- Heavy CSS (deferred, non-blocking) -->
+    <link rel="preload" href="https://res.cloudinary.com/brop3jeq/raw/upload/v1784439069/landing_page_t43fd3.css" as="style" 
+          onload="this.onload=null;this.rel='stylesheet'" id="heavy-css">
+    <noscript>
+        <link rel="stylesheet" href="https://res.cloudinary.com/brop3jeq/raw/upload/v1784439069/landing_page_t43fd3.css">
+    </noscript>
+</head>
+<body>
+    <!-- ========== LOADER ========== -->
+    {% include "reusables/spinner.html" %}
+
+
+    <!-- ========== MOBILE MENU OVERLAY ========== -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <!-- ========== HEADER / NAVBAR ========== -->
+    <header class="site-header" id="siteHeader">
+        <div class="container header-inner">
+            <a href="/" class="logo-link">
+                <img src="{% static 'img/logo.png' %}" 
+                     alt="Logo" class="logo-img" width="40" height="40"
+                <span class="logo-text">STREAK & DISCIPLINE</span>
+            </a>
+            
+            <nav class="nav-links" id="navLinks">
+                <a href="#features"><i class="fas fa-star"></i> Features</a>
+                <a href="#how-it-works"><i class="fas fa-route"></i> How It Works</a>
+                <a href="#reminders"><i class="fas fa-bell"></i> Reminders</a>
+                <a href="#analysis"><i class="fas fa-chart-line"></i> Analysis</a>
+                <a href="#pricing"><i class="fas fa-tag"></i> Pricing</a>
+                <div class="nav-auth-mobile">
+                    <a href="{% url "origin_login" %}" class="btn btn-outline btn-sm">Sign In</a>
+                    <a href="{% url "origin_signup" %}" class="btn btn-primary btn-sm">Start Free</a>
+                </div>
+            </nav>
+
+            <div class="nav-actions">
+                <a href="{% url "origin_login" %}" class="btn btn-outline btn-sm desktop-only">Sign In</a>
+                <a href="{% url "origin_signup" %}" class="btn btn-primary btn-sm desktop-only">Start Free</a>
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" style="display:none">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========== HERO ========== -->
+        <section class="hero" id="hero">
+            <div class="hero-bg-shapes">
+                <div class="shape shape-1"></div>
+                <div class="shape shape-2"></div>
+                <div class="shape shape-3"></div>
+            </div>
+            <div class="container grid grid-2col">
+                <div class="hero-content">
+                    <div class="hero-badge">
+                        <i class="fas fa-fire"></i> Trusted by 10+ disciplined individuals
+                    </div>
+                    <h1>Keep the promises <br>you make to <span class="highlight">yourself</span>.</h1>
+                    <p class="lead">A private, no‑nonsense journal that holds you accountable — one honest sentence a day.</p>
+                    <div class="cta-group">
+                        <a href="#" class="btn btn-primary btn-lg">
+                            <i class="fas fa-rocket"></i> Start Your Streak — Free
+                        </a>
+                        <a href="#how-it-works" class="btn btn-ghost">
+                            <i class="fas fa-arrow-down"></i> See How It Works
+                        </a>
+                    </div>
+                    <div class="hero-stats">
+                        <div class="stat"><span class="stat-num">{{consistency}}%</span><span class="stat-label">Consistency Rate</span></div>
+                        <div class="stat"><span class="stat-num">{{journal_created}}</span><span class="stat-label">Journals Created</span></div>
+                        <div class="stat"><span class="stat-num">4/5</span><span class="stat-label"><i class="fas fa-star"></i> Rating</span></div>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="hero-card">
+                        <div class="hero-card-header">
+                            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                        </div>
+                        <img 
+                            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400' viewBox='0 0 600 400'%3E%3Crect width='600' height='400' fill='%23111827'/%3E%3Ctext x='50%25' y='45%25' dominant-baseline='middle' text-anchor='middle' fill='%233b82f6' font-size='22' font-family='system-ui' font-weight='bold'%3EYour Daily Journal%3C/text%3E%3Ctext x='50%25' y='60%25' dominant-baseline='middle' text-anchor='middle' fill='%2360a5fa' font-size='14' font-family='system-ui'%3EDid you keep your word today?%3C/text%3E%3C/svg%3E"
+                            data-src="{% static 'img/hero-preview.jpg' %}" 
+                            alt="Journal interface preview" 
+                            class="lazy-img hero-img"
+                            width="600" height="400"
+                        >
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== TRUSTED BY ========== -->
+        <section class="trusted-by">
+            <div class="container">
+                <p>Trusted By</p>
+                <div class="trusted-logos">
+                    <span>ProductHunt</span>
+                    <span>HackerNews</span>
+                    <span>IndieHackers</span>
+                    <span>Opeyemi</span>
+                    <span>Dev.to</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== FEATURES ========== -->
+        <section class="features" id="features">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-tag"><i class="fas fa-cube"></i> Platform Features</span>
+                    <h2 class="section-title">Why STREAK & DISCIPLINE?</h2>
+                    <p class="section-subtitle">Everything you need to build unshakable consistency</p>
+                </div>
+                <div class="grid grid-3col">
+                    <div class="feature-card" data-scatter>
+                        <div class="feature-icon-box"><i class="fas fa-shield-halved"></i></div>
+                        <h3>100% Private</h3>
+                        <p>Your entries are yours alone. End-to-end encrypted. No social features, no public profiles.</p>
+                    </div>
+                    <div class="feature-card" data-scatter>
+                        <div class="feature-icon-box"><i class="fas fa-mirror"></i></div>
+                        <h3>Honest Mirror</h3>
+                        <p>One question each day. Answer truthfully. Watch your integrity grow over time.</p>
+                    </div>
+                    <div class="feature-card" data-scatter>
+                        <div class="feature-icon-box"><i class="fas fa-bolt"></i></div>
+                        <h3>Lightning Fast</h3>
+                        <p>No bloated dashboards. Optimized to load in under 1 second on any device.</p>
+                    </div>
+                    <div class="feature-card" data-scatter>
+                        <div class="feature-icon-box"><i class="fas fa-chart-pie"></i></div>
+                        <h3>Deep Analytics</h3>
+                        <p>Weekly reports, consistency scores, and personalized insights into your patterns.</p>
+                    </div>
+                    <div class="feature-card" data-scatter>
+                        <div class="feature-icon-box"><i class="fas fa-bell"></i></div>
+                        <h3>Smart Reminders</h3>
+                        <p>Customizable nudges via email, push, or WhatsApp. Never miss a check-in.</p>
+                    </div>
+                    <div class="feature-card" data-scatter>
+                        <div class="feature-icon-box"><i class="fas fa-brain"></i></div>
+                        <h3>AI Insights</h3>
+                        <p>Optional AI analysis of your entries to spot patterns you might miss.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== HOW IT WORKS ========== -->
+        <section class="how-it-works" id="how-it-works">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-tag"><i class="fas fa-route"></i> Simple Process</span>
+                    <h2 class="section-title">How It Works</h2>
+                    <p class="section-subtitle">Five steps from intention to unbreakable habit</p>
+                </div>
+                <div class="steps">
+                    <div class="step" data-scatter>
+                        <div class="step-icon"><i class="fas fa-pen-fancy"></i></div>
+                        <span class="step-number">01</span>
+                        <h4>Make a Vow</h4>
+                        <p>Define the routine you want to commit to. Be specific.</p>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" data-scatter>
+                        <div class="step-icon"><i class="fas fa-clipboard-check"></i></div>
+                        <span class="step-number">02</span>
+                        <h4>Daily Check‑in</h4>
+                        <p>Answer one question honestly. Write one sentence.</p>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" data-scatter>
+                        <div class="step-icon"><i class="fas fa-fire"></i></div>
+                        <span class="step-number">03</span>
+                        <h4>Build Streaks</h4>
+                        <p>Watch your consistency grow. Protect your streak.</p>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" data-scatter>
+                        <div class="step-icon"><i class="fas fa-chart-simple"></i></div>
+                        <span class="step-number">04</span>
+                        <h4>See Your Truth</h4>
+                        <p>Weekly analysis without sugar‑coating.</p>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" data-scatter>
+                        <div class="step-icon"><i class="fas fa-trophy"></i></div>
+                        <span class="step-number">05</span>
+                        <h4>Habit Locked</h4>
+                        <p>From motivation to identity. You are what you do daily.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+     <!-- ========== SOCIAL PROOF — SMILING PEOPLE ========== -->
+<section class="social-proof lazy-section" id="social-proof">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-tag"><i class="fas fa-users"></i> Community</span>
+            <h2 class="section-title">Join people who've found their rhythm</h2>
+            <p class="section-subtitle">Real people. Real consistency. Real results.</p>
+        </div>
+        <!-- Horizontal scroll gallery on mobile, grid on desktop -->
+        <div class="testimonial-gallery" id="testimonialGallery">
+            <!-- Card 1 - Male -->
+            <div class="testimonial-card" data-scatter>
+                <div class="testimonial-img-wrapper">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%231e293b'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='%233b82f6' font-size='30'%3E🙂%3C/text%3E%3C/svg%3E"
+                         data-src="https://images.pexels.com/photos/3769146/pexels-photo-3769146.jpeg?w=150&h=150&fit=crop&crop=face"
+                         alt="Happy user" class="lazy-img testimonial-avatar" width="80" height="80">
+                </div>
+                <p class="testimonial-text">"For the first time in years, I've written every single day for 3 months straight. This tool rebuilt my confidence."</p>
+                <div class="testimonial-name">— Chidi O.</div>
+                <div class="testimonial-streak"><i class="fas fa-fire"></i> 94 day streak</div>
+            </div>
+            <!-- Card 2 - Female (Cloudinary) -->
+            <div class="testimonial-card" data-scatter>
+                <div class="testimonial-img-wrapper">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%231e293b'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='%233b82f6' font-size='30'%3E😊%3C/text%3E%3C/svg%3E"
+                         data-src="https://res.cloudinary.com/brop3jeq/image/upload/v1783760185/me_kjrska.jpg"
+                         alt="Happy user" class="lazy-img testimonial-avatar" width="80" height="80">
+                </div>
+                <p class="testimonial-text">"The weekly analysis made me realize I was 4x more productive on mornings. Changed my whole schedule."</p>
+                <div class="testimonial-name">— Opeyemi I.</div>
+                <div class="testimonial-streak"><i class="fas fa-fire"></i> 217 day streak</div>
+            </div>
+            <!-- Card 3 - Female -->
+            <div class="testimonial-card" data-scatter>
+                <div class="testimonial-img-wrapper">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%231e293b'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='%233b82f6' font-size='30'%3E😄%3C/text%3E%3C/svg%3E"
+                         data-src="https://images.pexels.com/photos/1181263/pexels-photo-1181263.jpeg?w=150&h=150&fit=crop&crop=face"
+                         alt="Happy user" class="lazy-img testimonial-avatar" width="80" height="80">
+                </div>
+                <p class="testimonial-text">"No social pressure. Just me and my own standards. Finally a tool built for adults, not kids chasing badges."</p>
+                <div class="testimonial-name">— David N.</div>
+                <div class="testimonial-streak"><i class="fas fa-fire"></i> 56 day streak</div>
+            </div>
+            <!-- Card 4 - Female (Pexels) -->
+            <div class="testimonial-card" data-scatter>
+                <div class="testimonial-img-wrapper">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%231e293b'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='%233b82f6' font-size='30'%3E😃%3C/text%3E%3C/svg%3E"
+                         data-src="https://images.pexels.com/photos/1181519/pexels-photo-1181519.jpeg?w=150&h=150&fit=crop&crop=face"
+                         alt="Happy user" class="lazy-img testimonial-avatar" width="80" height="80">
+                </div>
+                <p class="testimonial-text">"I stopped breaking promises to myself. 30 days in, my friends noticed the difference before I said a word."</p>
+                <div class="testimonial-name">— Sarah K.</div>
+                <div class="testimonial-streak"><i class="fas fa-fire"></i> 30 day streak</div>
+            </div>
+            <!-- Card 5 - Male -->
+            <div class="testimonial-card" data-scatter>
+                <div class="testimonial-img-wrapper">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%231e293b'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='%233b82f6' font-size='30'%3E🙂%3C/text%3E%3C/svg%3E"
+                         data-src="https://images.pexels.com/photos/2887715/pexels-photo-2887715.jpeg?w=150&h=150&fit=crop&crop=face"
+                         alt="Happy user" class="lazy-img testimonial-avatar" width="80" height="80">
+                </div>
+                <p class="testimonial-text">"The honesty this demands is uncomfortable — and that's exactly why it works. No more lying to myself."</p>
+                <div class="testimonial-name">— Priya M. </div>
+                <div class="testimonial-streak"><i class="fas fa-fire"></i> 183 day streak</div>
+            </div>
+            <!-- Card 6 - Female (Pexels new) -->
+            <div class="testimonial-card" data-scatter>
+                <div class="testimonial-img-wrapper">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%231e293b'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='%233b82f6' font-size='30'%3E😊%3C/text%3E%3C/svg%3E"
+                         data-src="https://images.pexels.com/photos/3768914/pexels-photo-3768914.jpeg?w=150&h=150&fit=crop&crop=face"
+                         alt="Happy user" class="lazy-img testimonial-avatar" width="80" height="80">
+                </div>
+                <p class="testimonial-text">"From skipping workouts to 5am runs. The streak isn't the goal — becoming the person who shows up is."</p>
+                <div class="testimonial-name">— Success A.</div>
+                <div class="testimonial-streak"><i class="fas fa-fire"></i> 142 day streak</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+    <!-- ========== LEADERBOARD & GROUPS VISUAL ========== -->
+    <section class="social-features lazy-section" id="social-features">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag"><i class="fas fa-trophy"></i> Friendly Competition</span>
+                <h2 class="section-title">Accountability that works</h2>
+                <p class="section-subtitle">Optional leaderboards and groups for those who thrive with others</p>
+            </div>
+            <div class="grid grid-2col social-grid">
+                <!-- Leaderboard card -->
+                <div class="social-card leaderboard-card" data-scatter>
+                    <div class="social-card-header">
+                        <i class="fas fa-trophy"></i>
+                        <h3>Leaderboard</h3>
+                    </div>
+                    <div class="leaderboard-list">
+                        <div class="leaderboard-item rank-1">
+                            <span class="rank">🥇</span>
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Ccircle cx='18' cy='18' r='18' fill='%233b82f6'/%3E%3C/svg%3E"
+                                data-src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=72&h=72&fit=crop&crop=face"
+                                class="lazy-img leaderboard-avatar" width="36" height="36" alt="User">
+                            <span class="name">Alex J.</span>
+                            <span class="streak"><i class="fas fa-fire"></i> 312</span>
+                        </div>
+                        <div class="leaderboard-item rank-2">
+                            <span class="rank">🥈</span>
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Ccircle cx='18' cy='18' r='18' fill='%2360a5fa'/%3E%3C/svg%3E"
+                                data-src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=72&h=72&fit=crop&crop=face"
+                                class="lazy-img leaderboard-avatar" width="36" height="36" alt="User">
+                            <span class="name">You</span>
+                            <span class="streak highlight"><i class="fas fa-fire"></i> 298</span>
+                        </div>
+                        <div class="leaderboard-item rank-3">
+                            <span class="rank">🥉</span>
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Ccircle cx='18' cy='18' r='18' fill='%2322c55e'/%3E%3C/svg%3E"
+                                data-src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=72&h=72&fit=crop&crop=face"
+                                class="lazy-img leaderboard-avatar" width="36" height="36" alt="User">
+                            <span class="name">Maria K.</span>
+                            <span class="streak"><i class="fas fa-fire"></i> 275</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Groups card -->
+                <div class="social-card groups-card" data-scatter>
+                    <div class="social-card-header">
+                        <i class="fas fa-user-group"></i>
+                        <h3>Accountability Groups</h3>
+                    </div>
+                    <div class="groups-visual">
+                        <div class="group-avatars">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%233b82f6'/%3E%3C/svg%3E"
+                                data-src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=96&h=96&fit=crop&crop=face"
+                                class="lazy-img group-avatar" width="48" height="48" alt="Group member">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%2360a5fa'/%3E%3C/svg%3E"
+                                data-src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=96&h=96&fit=crop&crop=face"
+                                class="lazy-img group-avatar" width="48" height="48" alt="Group member" style="margin-left:-16px">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%2322c55e'/%3E%3C/svg%3E"
+                                data-src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=96&h=96&fit=crop&crop=face"
+                                class="lazy-img group-avatar" width="48" height="48" alt="Group member" style="margin-left:-16px">
+                            <span class="group-more">+12</span>
+                        </div>
+                        <p class="groups-text">Small private groups (max 5 people). See each other's consistency — not the details. Just enough to keep you going.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== HOW IT WORKS — ANIMATED TIMELINE ========== -->
+    <section class="timeline-visual lazy-section" id="timeline">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag"><i class="fas fa-clock"></i> Your Journey</span>
+                <h2 class="section-title">A day in the life</h2>
+                <p class="section-subtitle">See how STREAK & DISCIPLINE fits into your daily routine</p>
+            </div>
+            <!-- CSS-drawn timeline with hand-drawn style -->
+            <div class="timeline">
+                <div class="timeline-track">
+                    <div class="timeline-node" data-step="1">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-card">
+                            <div class="timeline-time">7:00 AM</div>
+                            <i class="fas fa-sun"></i>
+                            <h4>Morning Reminder</h4>
+                            <p>A gentle nudge arrives. "Ready to keep your word today?"</p>
+                        </div>
+                    </div>
+                    <div class="timeline-node" data-step="2">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-card">
+                            <div class="timeline-time">9:00 PM</div>
+                            <i class="fas fa-pen"></i>
+                            <h4>Daily Check‑in</h4>
+                            <p>Open the app. One question. One honest sentence. Done.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-node" data-step="3">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-card">
+                            <div class="timeline-time">Instant</div>
+                            <i class="fas fa-chart-simple"></i>
+                            <h4>Streak Updates</h4>
+                            <p>Your consistency graph updates immediately. Watch the fire grow.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-node" data-step="4">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-card">
+                            <div class="timeline-time">Sunday 8 AM</div>
+                            <i class="fas fa-envelope"></i>
+                            <h4>Weekly Analysis Email</h4>
+                            <p>A detailed breakdown lands in your inbox. No fluff. Just your truth.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+        <!-- ========== CUSTOMER SUPPORT ========== -->
+        <section class="support-section lazy-section" id="support">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-tag"><i class="fas fa-headset"></i> We're Here</span>
+                    <h2 class="section-title">Real humans, real support</h2>
+                    <p class="section-subtitle">You're not alone on this journey. Our team genuinely cares about your consistency.</p>
+                </div>
+                <div class="support-grid">
+                    <div class="support-card" data-scatter>
+                        <div class="support-icon"><i class="fas fa-comments"></i></div>
+                        <h4>Live Chat</h4>
+                        <p>Talk to a real person in under 2 minutes. No bots, no scripts. We've walked this path too.</p>
+                        <a href="#" class="btn btn-outline btn-sm">Start Chat <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    <div class="support-card featured-support" data-scatter>
+                        <div class="support-icon"><i class="fab fa-whatsapp"></i></div>
+                        <h4>WhatsApp Support</h4>
+                        <p>Prefer messaging? Reach us on WhatsApp. Send a voice note, a screenshot, or just say hi.</p>
+                        <a href="https://wa.me/1234567890" target="_blank" rel="noopener" class="btn btn-primary btn-sm">
+                            <i class="fab fa-whatsapp"></i> Message Us
+                        </a>
+                        <p class="support-availability"><i class="fas fa-circle online-dot"></i> Available Always</p>
+                    </div>
+                    <div class="support-card" data-scatter>
+                        <div class="support-icon"><i class="fas fa-video"></i></div>
+                        <h4>Onboarding Call</h4>
+                        <p>Book a free 15‑minute call. We'll help you set up your first commitment and answer any questions.</p>
+                        <a href="#" class="btn btn-outline btn-sm">Book a Call <i class="fas fa-calendar"></i></a>
+                    </div>
+                </div>
+                <!-- Support team images row -->
+                <div class="support-team">
+                    <p class="support-team-label">Our support team</p>
+                    <div class="support-avatars">
+                        <div class="support-person">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%233b82f6'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='white' font-size='24'%3E👩‍💻%3C/text%3E%3C/svg%3E"
+                                data-src="https://res.cloudinary.com/brop3jeq/image/upload/v1784433967/20260206122047_va8rae.jpg"
+                                class="lazy-img support-avatar" width="64" height="64" alt="Support team">
+                            <span class="support-name">Aminat</span>
+                            <span class="support-role">Success Lead</span>
+                        </div>
+                        <div class="support-person">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%2360a5fa'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='white' font-size='24'%3E🧑‍💻%3C/text%3E%3C/svg%3E"
+                                data-src="https://res.cloudinary.com/brop3jeq/image/upload/v1784433945/2cbeb182b0bee21ad566dbb1fe6b36f4_lxpmln.jpg"
+                                class="lazy-img support-avatar" width="64" height="64" alt="Support team">
+                            <span class="support-name">Ope</span>
+                            <span class="support-role">Tech Support</span>
+                        </div>
+                        <div class="support-person">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%2322c55e'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='white' font-size='24'%3E👩‍💼%3C/text%3E%3C/svg%3E"
+                                data-src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=128&h=128&fit=crop&crop=face"
+                                class="lazy-img support-avatar" width="64" height="64" alt="Support team">
+                            <span class="support-name">Zainab</span>
+                            <span class="support-role">Community Manager</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== REMINDERS ========== -->
+        <section class="reminders lazy-section" id="reminders">
+            <div class="container grid grid-2col">
+                <div class="reminders-text">
+                    <span class="section-tag"><i class="fas fa-bell"></i> Stay on Track</span>
+                    <h2>Never Miss a Day</h2>
+                    <p>Customizable reminders that actually work. Morning motivation, evening reflection, or streak freeze alerts — you decide.</p>
+                    <ul class="checklist">
+                        <li><i class="fas fa-check-circle"></i> Daily check‑in nudge at your preferred time</li>
+                        <li><i class="fas fa-check-circle"></i> Weekly analysis delivered to your inbox</li>
+                        <li><i class="fas fa-check-circle"></i> Streak freeze alerts before you lose progress</li>
+                        <li><i class="fas fa-check-circle"></i> WhatsApp & push notification support</li>
+                    </ul>
+                    <a href="#" class="btn btn-primary"><i class="fas fa-bell"></i> Set My Reminders</a>
+                </div>
+                <div class="reminders-visual">
+                    <div class="floating-card">
+                        <div class="floating-card-inner">
+                            <i class="fas fa-bell ringing"></i>
+                            <span>Time to check in!</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== WEEKLY ANALYSIS ========== -->
+        <section class="weekly-analysis lazy-section" id="analysis">
+            <div class="container grid grid-2col reverse">
+                <div class="analysis-visual">
+                    <div class="mini-chart">
+                        <div class="chart-bar" style="height:60%"></div>
+                        <div class="chart-bar active" style="height:80%"></div>
+                        <div class="chart-bar active" style="height:90%"></div>
+                        <div class="chart-bar active" style="height:75%"></div>
+                        <div class="chart-bar" style="height:50%"></div>
+                        <div class="chart-bar active" style="height:95%"></div>
+                        <div class="chart-bar active" style="height:85%"></div>
+                    </div>
+                </div>
+                <div class="analysis-text">
+                    <span class="section-tag"><i class="fas fa-chart-line"></i> Weekly Insights</span>
+                    <h2>Your Weekly Truth</h2>
+                    <p>Every Sunday, get an honest breakdown: days completed, average mood, words written, and the one sentence that defined your week.</p>
+                    <div class="analysis-features">
+                        <div><i class="fas fa-check-circle"></i> Consistency score</div>
+                        <div><i class="fas fa-check-circle"></i> Best & worst day highlight</div>
+                        <div><i class="fas fa-check-circle"></i> Trend analysis over time</div>
+                    </div>
+                    <a href="{% url "origin_weekly_analysis" %}" class="btn btn-primary"><i class="fas fa-chart-pie"></i> See Sample Report</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== PRICING ========== -->
+        <section class="pricing lazy-section" id="pricing">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-tag"><i class="fas fa-tag"></i> Simple Pricing</span>
+                    <h2 class="section-title">Start Free, Stay Free</h2>
+                    <p class="section-subtitle">No credit card required. Upgrade when you need more.</p>
+                </div>
+                <div class="pricing-cards">
+                    <div class="pricing-card" data-scatter>
+                        <div class="pricing-badge">Free Forever</div>
+                        <h3>Starter</h3>
+                        <div class="price"> ₦0<span>/month</span></div>
+                        <ul>
+                            <li><i class="fas fa-check"></i> 3 active commitment</li>
+                            <li><i class="fas fa-check"></i> Daily check-in</li>
+                            <li><i class="fas fa-check"></i> Weekly summary</li>
+                            <li><i class="fas fa-check"></i> Basic reminders</li>
+                        </ul>
+                        <a href="#" class="btn btn-outline btn-block">Get Started</a>
+                    </div>
+                    <div class="pricing-card featured" data-scatter>
+                        <div class="pricing-badge">Most Popular</div>
+                        <h3>Pro</h3>
+                        <div class="price"> ₦1,000<span>/month</span></div>
+                        <ul>
+                            <li><i class="fas fa-check"></i> Unlimited commitments</li>
+                            <li><i class="fas fa-check"></i> Advanced analytics</li>
+                            <li><i class="fas fa-check"></i> AI insights</li>
+                            <li><i class="fas fa-check"></i> Priority support</li>
+                            <li><i class="fas fa-check"></i> Custom themes</li>
+                        </ul>
+                        <a href="#" class="btn btn-primary btn-block">Start 7-Day Trial</a>
+                    </div>
+                    <div class="pricing-card" data-scatter>
+                        <div class="pricing-badge">For Teams</div>
+                        <h3>Team</h3>
+                        <div class="price"> ₦2000<span>/month</span></div>
+                        <ul>
+                            <li><i class="fas fa-check"></i> Unlimited commitments</li>
+                            <li><i class="fas fa-check"></i> Advanced analytics</li>
+                            <li><i class="fas fa-check"></i> AI insights</li>
+                            <li><i class="fas fa-check"></i> Priority support</li>
+                            <li><i class="fas fa-check"></i> Custom themes</li>
+                            <li><i class="fas fa-check"></i> Early access to future release</li>
+                            <li><i class="fas fa-check"></i> Team challenges</li>
+                            <li><i class="fas fa-check"></i> Admin dashboard</li>
+                            <li><i class="fas fa-check"></i> API access</li>
+                            <li><i class="fas fa-check"></i> custom storage</li>
+
+                        </ul>
+                        <a href="#" class="btn btn-outline btn-block">Contact Sales</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== FINAL CTA ========== -->
+        <section class="cta-bottom lazy-section">
+            <div class="container">
+                <h2>Ready to meet <span class="highlight">the real you</span>?</h2>
+                <p>No badges. No leaderboards. Just you vs. your word.</p>
+                <div class="cta-group">
+                    <a href="#" class="btn btn-primary btn-xl"><i class="fas fa-rocket"></i> Begin Your Streak — Free</a>
+                    <a href="#" class="btn btn-ghost"><i class="fas fa-play"></i> Watch Demo</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="/" class="logo-link">
+                        <img src="{% static 'img/logo.png' %}" alt="Logo" class="logo-img" width="36" height="36">
+                        <span class="logo-text">STREAK & DISCIPLINE</span>
+                    </a>
+                    <p>A private discipline journal for those serious about keeping promises to themselves.</p>
+                    <div class="social-links">
+                        <a href="https://x.com/lastissa" target="_blank" rel="noopener" aria-label="X (Twitter)"><i class="fab fa-x-twitter"></i></a>
+                        <a href="https://github.com/lastissa" target="_blank" rel="noopener" aria-label="GitHub"><i class="fab fa-github"></i></a>
+                        <a href="https://wa.me/+2348113577875" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                        <a href="mailto:lastissa11@gmail.com" aria-label="Email Developer"><i class="fas fa-envelope"></i></a>
+                    </div>
+                </div>
+                <div class="footer-links">
+                    <h4>Product</h4>
+                    <a href="#features">Features</a>
+                    <a href="#pricing">Pricing</a>
+                    <a href="#how-it-works">How It Works</a>
+                    <a href="#analysis">Analytics</a>
+                </div>
+                <div class="footer-links">
+                    <h4>Support</h4>
+                    <a href="https://wa.me/{{customer_care_whatsapp_number}}" target="_self" rel="noopener"><i class="fab fa-whatsapp"></i> WhatsApp Support</a>
+                    <a href="mailto:issaabdulsalamope11@gmail.com"><i class="fas fa-envelope"></i> support@gmail.com</a>
+                    <a href="{% url "origin_extra" %}#help"><i class="fas fa-question-circle"></i> Help Center</a>
+                    <a href="tel:{{customer_care_phone_number}}"><i class="fas fa-phone"></i> {{customer_care_phone_number}}</a>
+                </div>
+                <div class="footer-links">
+                    <h4>Developer</h4>
+                    <a href="https://github.com/lastissa" target="_blank" rel="noopener"><i class="fab fa-github"></i> GitHub</a>
+                    <a href="https://portfolio-lastissa.vercel.app/" target="_blank" rel="noopener"><i class="fas fa-globe"></i> Portfolio</a>
+                    <a href="mailto:lastissa11@gmail.com"><i class="fas fa-code"></i> developer@gmail.com</a>
+                    <a href="#"><i class="fas fa-file-contract"></i> API Docs</a>
+                </div>
+                <div class="footer-links">
+                    <h4>Company</h4>
+                    <p class="address"><i class="fas fa-map-marker-alt"></i> in progress<br>check back later</p>
+                    <a href="{% url "origin_extra" %}#privacy"><i class="fas fa-shield"></i> Privacy Policy</a>
+                    <a href="{% url "origin_extra" %}#terms"><i class="fas fa-file-lines"></i> Terms of Service</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; {{footer_copyright_note}}</p>
+            </div>
+        </div>
+    </footer>
+
+    <!--Using Django message and giviing it a custom html design-->
+    {% include "reusables/custom_message.html" %}
+
+    <!-- Basic JavaScript (inlined, lightweight) -->
+    <script>
+        // ===== LOADER WITH ROTATING TEXT & TIMEOUT =====
+        {% include "reusables/spinner.js" %}    
+        //Js for custom messages
+        {% include "reusables/custom_message.js" %}
+            // Load heavy CSS
+            const heavyCss = document.getElementById('heavy-css');
+            if (heavyCss && heavyCss.rel !== 'stylesheet') {
+                heavyCss.rel = 'stylesheet';
+            }
+            
+            // Load advanced JS
+            const advScript = document.createElement('script');
+            advScript.src = "https://res.cloudinary.com/brop3jeq/raw/upload/v1784439170/landing_page_njousx.js";
+            advScript.defer = true;
+            document.body.appendChild(advScript);
+    </script>
+
+</body>
+</html>

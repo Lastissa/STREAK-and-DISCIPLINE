@@ -1,0 +1,48 @@
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+.page-loader{
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    background:#0a0e17;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;z-index:99999;
+    transition:opacity .5s ease,visibility .5s;
+}
+.loader-hidden{opacity:0;visibility:hidden}
+
+/* Dual ring spinner */
+.loader-pulse{
+    width:60px;height:60px;position:relative;
+}
+.loader-pulse::before,.loader-pulse::after{
+    content:'';position:absolute;inset:0;
+    border-radius:50%;border:3px solid transparent;
+}
+.loader-pulse::before{
+    border-top-color:#3b82f6;border-right-color:#3b82f6;
+    animation:spinClockwise .8s linear infinite;
+}
+.loader-pulse::after{
+    border-bottom-color:#60a5fa;border-left-color:#60a5fa;
+    animation:spinCounterClockwise 1.2s linear infinite;
+    inset:8px;
+}
+@keyframes spinClockwise{to{transform:rotate(360deg)}}
+@keyframes spinCounterClockwise{to{transform:rotate(-360deg)}}
+
+/* Rotating text container */
+.loader-text-wrapper{
+    margin-top:2rem;height:1.5rem;overflow:hidden;
+    position:relative;width:280px;text-align:center;
+}
+.loader-text{
+    font-family:system-ui,sans-serif;font-size:.95rem;
+    letter-spacing:.04em;color:#93c5fd;
+    position:absolute;width:100%;top:0;left:0;
+    opacity:0;transform:translateY(20px);
+    transition:opacity .4s ease,transform .4s ease;
+}
+.loader-text.active{
+    opacity:1;transform:translateY(0);
+}
+.loader-text.exit{
+    opacity:0;transform:translateY(-20px);
+}

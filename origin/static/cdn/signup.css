@@ -1,0 +1,108 @@
+/* ===== FORM ENTRY ANIMATION ===== */
+.form-container {
+    animation: formSlideUp 0.7s cubic-bezier(0.23,1,0.32,1) both;
+}
+@keyframes formSlideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== INPUT FOCUS GLOW ===== */
+.form-input:focus {
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.2), 0 0 20px rgba(59,130,246,0.1);
+    transform: translateY(-1px);
+}
+
+/* ===== SOCIAL BUTTONS HOVER ===== */
+.btn-social {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.23,1,0.32,1);
+}
+.btn-social:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+.btn-social:active {
+    transform: scale(0.97);
+}
+
+/* ===== VISUAL PANEL ANIMATIONS ===== */
+.signup-visual {
+    animation: visualFadeIn 1s ease 0.3s both;
+}
+@keyframes visualFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+.visual-quote {
+    animation: quoteFloat 1s ease 0.8s both;
+}
+@keyframes quoteFloat {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== SUBMIT BUTTON PULSE ===== */
+.btn-primary[type="submit"] {
+    animation: submitPulse 2.5s ease-in-out infinite;
+}
+@keyframes submitPulse {
+    0%,100% { box-shadow: 0 4px 15px var(--accent-glow); }
+    50%     { box-shadow: 0 4px 25px rgba(59,130,246,0.5), 0 0 50px rgba(59,130,246,0.2); }
+}
+
+/* ===== PASSWORD STRENGTH INDICATOR (visual only) ===== */
+.form-input[type="password"]:focus {
+    border-left: 3px solid var(--accent);
+}
+
+/* ===== MOBILE ENHANCEMENTS ===== */
+@media(max-width:767px) {
+    .signup-form-panel {
+        animation: mobileSlideIn 0.6s cubic-bezier(0.23,1,0.32,1) both;
+    }
+    @keyframes mobileSlideIn {
+        from { opacity: 0; transform: translateY(40px) scale(0.96); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .form-group {
+        animation: fieldStagger 0.5s ease both;
+    }
+    .form-group:nth-child(1){ animation-delay: 0.1s; }
+    .form-group:nth-child(2){ animation-delay: 0.2s; }
+    .form-group:nth-child(3){ animation-delay: 0.3s; }
+    .form-group:nth-child(4){ animation-delay: 0.4s; }
+    @keyframes fieldStagger {
+        from { opacity: 0; transform: translateX(-15px); }
+        to   { opacity: 1; transform: translateX(0); }
+    }
+}
+
+/* ===== DESKTOP VISUAL ENHANCEMENTS ===== */
+@media(min-width:768px) {
+    .visual-img {
+        animation: slowZoom 20s ease-in-out infinite alternate;
+    }
+    @keyframes slowZoom {
+        from { transform: scale(1); }
+        to   { transform: scale(1.05); }
+    }
+    .visual-quote {
+        animation: quoteFloat 1s ease 0.8s both, quoteBob 4s ease-in-out 2s infinite;
+    }
+    @keyframes quoteBob {
+        0%,100% { transform: translateY(0); }
+        50%     { transform: translateY(-6px); }
+    }
+}
+
+/* ===== DIVIDER LINE ANIMATION ===== */
+.divider::before,
+.divider::after {
+    animation: lineExtend 0.8s ease both;
+}
+@keyframes lineExtend {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+}

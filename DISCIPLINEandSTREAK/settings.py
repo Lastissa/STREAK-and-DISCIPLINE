@@ -1,11 +1,19 @@
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-5d5byp9$*3q-6s)cgai!78u9)p(_njg15yt5b5r5j1(em16^*f'
+SECRET_KEY = os.getenv('django_key')
 
-DEBUG = True
+DEBUG = False
+# DEBUG = True
+
+SOCIAL_AUTH_RAISE_EXCEPTIONS = False # for django_social, it should be close to up so its easily reached
+
 
 AUTH_USER_MODEL = 'origin.CustomeUser'
 
@@ -18,7 +26,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'origin'
+    'origin',
+    'social_django' #auth login e.g google , fb etc --- pip install social-auth-app-django
 ]
 
 MIDDLEWARE = [
@@ -29,6 +38,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
 ]
 
 ROOT_URLCONF = 'DISCIPLINEandSTREAK.urls'
@@ -43,6 +54,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'utility.config.template_based_reusables'
             ],
         },
     },
@@ -84,4 +96,35 @@ USE_I18N = True
 USE_TZ = True
 
 
-STATIC_URL = 'static/'
+STATIC_URL = 'staticfiles/'
+
+STATIC_ROOT = 'staticfiles/'
+
+AUTHENTICATION_BACKENDS = [#used by social_django
+    'social_core.backends.google.GoogleOAuth2',
+    'social_core.backends.facebook.FacebookOAuth2',
+    'django.contrib.auth.backends.ModelBackend',  # Keep for email/password login
+]
+
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv('google_auth_client_id')
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv('google_auth_secret')
+SOCIAL_AUTH_FACEBOOK_KEY = os.getenv('fb_auth_app_id')
+SOCIAL_AUTH_FACEBOOK_SECRET = os.getenv('fb_auth_auth_secret')
+
+
+SOCIAL_AUTH_PIPELINE = (
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.auth_allowed',
+    'social_core.pipeline.social_auth.social_user',
+    'social_core.pipeline.user.create_user', # comment out so django_social wont auto-create user incase i want to handle this
+    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.load_extra_data',
+    'social_core.pipeline.user.user_details',
+)
+
+# Where to redirect when things go wrong
+SOCIAL_AUTH_LOGIN_ERROR_URL = 'v1/login/?error=auth_failed'
+SOCIAL_AUTH_NEW_USER_REDIRECT_URL = 'v1/onboarding/'
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/dashboard/'
+SOCIAL_AUTH_TIMEOUT = 15 # timeout for connection btwn django social and google or fb

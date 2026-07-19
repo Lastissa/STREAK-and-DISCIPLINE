@@ -1,0 +1,487 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy, Terms & Help — STREAK & DISCIPLINE</title>
+    <!-- Inline critical loader -->
+    <style>
+        {% include "reusables/spinner.css" %}
+    </style>
+
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" 
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <link rel="stylesheet" href="{% static 'css/privacy_etc.css' %}">
+</head>
+<body>
+    <!-- ========== LOADER ========== -->
+    {% include "reusables/spinner.html" %}
+    <!-- ========== HEADER ========== -->
+<header class="site-header" id="siteHeader">
+    <div class="container header-inner">
+        <a href="/" class="logo-link">
+            <img src="{% static 'img/logo.png' %}" 
+                 alt="Logo" class="logo-img" width="36" height="36"
+                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2236%22 height=%2236%22%3E%3Crect width=%2236%22 height=%2236%22 rx=%228%22 fill=%22%233b82f6%22/%3E%3Ctext x=%2250%25%22 y=%2255%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2218%22 font-family=%22system-ui%22%3ES%26D%3C/text%3E%3C/svg%3E'">
+            <span class="logo-text">STREAK & DISCIPLINE</span>
+        </a>
+        <nav class="nav-links" id="navLinks">
+            <a href="/#features">Features</a>
+            <a href="/#how-it-works">How It Works</a>
+            <a href="/#pricing">Pricing</a>
+            <div class="nav-auth-mobile">
+                <a href="{% url 'origin_login' %}" class="btn btn-outline btn-sm">Sign In</a>
+                <a href="{% url 'origin_signup' %}" class="btn btn-primary btn-sm">Start Free</a>
+            </div>
+        </nav>
+        <div class="nav-actions">
+            <a href="{% url 'origin_login' %}" class="btn btn-outline btn-sm desktop-only">Sign In</a>
+            <a href="{% url 'origin_signup' %}" class="btn btn-primary btn-sm desktop-only">Start Free</a>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <i class="fas fa-moon"></i>
+            </button>
+            <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- Mobile overlay -->
+<div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <main>
+        <!-- Hero -->
+        <section class="legal-hero">
+            <div class="container">
+                <h1>Privacy, Terms & Help Center</h1>
+                <p>Everything you need to know about how we handle your data and how to get support.</p>
+            </div>
+        </section>
+
+        <!-- Quick Navigation -->
+        <nav class="legal-nav" id="legalNav">
+            <div class="container">
+                <a href="#privacy">Privacy Policy</a>
+                <a href="#terms">Terms of Service</a>
+                <a href="#help">Help Center</a>
+                <a href="#contact">Contact Us</a>
+            </div>
+        </nav>
+
+        <!-- ========== PRIVACY POLICY ========== -->
+        <section class="legal-section" id="privacy">
+            <div class="container">
+                <h2><i class="fas fa-shield-halved"></i> Privacy Policy</h2>
+                <p class="effective-date"><strong>Effective Date:</strong> July 19, 2026</p>
+                
+                <p>At <strong>STREAK & DISCIPLINE</strong> ("we," "our," or "us"), your privacy is the foundation of our product. We are not in the business of selling or exploiting your personal data. This policy explains what information we collect, how we use it, and the choices you have.</p>
+
+                <h3>1. Information We Collect</h3>
+                <ul>
+                    <li><strong>Account Information:</strong> Email address and an optional username when you create an account. We do not require your real name.</li>
+                    <li><strong>Journal Content:</strong> The commitments you set, daily check‑in answers, reflections, and streaks. This is your private data — we do not access it for any purpose other than to display it to you and generate your weekly summaries.</li>
+                    <li><strong>Usage Data:</strong> Basic analytics such as pages visited, feature usage, and error logs to help us improve the service. This data is anonymized and aggregated.</li>
+                    <li><strong>Optional Data:</strong> If you enable reminders, we store your preferred reminder time and method. If you join a leaderboard or accountability group, your display name and streak count may be visible to other participants.</li>
+                </ul>
+
+                <h3>2. How We Use Your Information</h3>
+                <ul>
+                    <li>To create and maintain your account.</li>
+                    <li>To display your journal, streaks, and analytics to you.</li>
+                    <li>To send you reminders and weekly analysis emails (if opted in).</li>
+                    <li>To improve our product through aggregated usage analytics.</li>
+                    <li>To communicate with you about service updates, security alerts, and support inquiries.</li>
+                </ul>
+                <p>We <strong>never</strong> sell, rent, or share your personal data with third parties for their marketing purposes.</p>
+
+                <h3>3. Data Storage & Security</h3>
+                <p>Your data is stored on secure servers with encryption at rest and in transit (TLS 1.3). We implement industry‑standard security measures, including regular vulnerability scans and access controls.</p>
+
+                <h3>4. Your Rights</h3>
+                <ul>
+                    <li><strong>Access & Portability:</strong> You can export all your journal data from your account settings.</li>
+                    <li><strong>Deletion:</strong> You may delete your account and all associated data permanently.</li>
+                    <li><strong>Correction:</strong> You can edit or delete individual journal entries anytime.</li>
+                    <li><strong>Opt‑out:</strong> You can disable reminders, leaderboards, and any optional features from your settings.</li>
+                </ul>
+
+                <h3>5. Cookies</h3>
+                <p>We use essential cookies for authentication (session) and to remember your theme preference. We do not use tracking cookies or third‑party advertising cookies.</p>
+
+                <h3>6. Third‑Party Services</h3>
+                <p>We use trusted third‑party services for email delivery, hosting, and analytics. These providers are bound by data processing agreements and are not permitted to use your data for their own purposes.</p>
+
+                <h3>7. Children's Privacy</h3>
+                <p>Our service is not intended for individuals under the age of 10.</p>
+
+                <h3>8. Changes to This Policy</h3>
+
+                <h3>9. Data Deletion Request</h3>
+<p>You may request deletion of your account and all associated data at any time. We make this process straightforward and transparent:</p>
+<ul>
+    <li><strong>Self-Service:</strong> Log into your account, navigate to <strong>Account Settings → Delete Account</strong>. Your data will be permanently removed within 48 hours.</li>
+    <li><strong>Email Request:</strong> Send an email to <strong>issaabdulsalamope11@gmail.com</strong> with the subject line "Data Deletion Request" from the email address associated with your account. We will process your request within 7 business days.</li>
+    <li><strong>WhatsApp Request:</strong> Message us on WhatsApp at <strong>+234 701 368 7825</strong> with your registered email address and request for data deletion.</li>
+</ul>
+<p>Once deleted:</p>
+<ul>
+    <li>All journal entries, streaks, commitments, and analytics are permanently erased.</li>
+    <li>Your account credentials are removed from our system.</li>
+    <li>Any leaderboard or group associations are dissolved.</li>
+    <li>Backup copies are purged within 30 days.</li>
+</ul>
+<p>You will receive a confirmation email once the deletion is complete. If you change your mind, you have a 7-day grace period after requesting deletion to reactivate your account by contacting support.</p>
+
+<h3>10. Changes to This Policy</h3>
+<p>We will notify you of any material changes via email or in‑app notification. Continued use after changes constitutes acceptance.</p>
+
+                <p>We will notify you of any material changes via email or in‑app notification.</p>
+            </div>
+        </section>
+
+        <!-- ========== TERMS OF SERVICE ========== -->
+        <section class="legal-section" id="terms">
+            <div class="container">
+                <h2><i class="fas fa-file-contract"></i> Terms of Service</h2>
+                <p class="effective-date"><strong>Last Updated:</strong> July 19, 2026</p>
+
+                <p>Welcome to <strong>STREAK & DISCIPLINE</strong>. By creating an account or using our website, you agree to these Terms of Service.</p>
+
+                <h3>1. Acceptance of Terms</h3>
+                <p>By accessing or using the service, you agree to be bound by these terms and our Privacy Policy.</p>
+
+                <h3>2. Description of Service</h3>
+                <p>STREAK & DISCIPLINE provides a private digital journal for tracking personal commitments, daily check‑ins, and consistency streaks, with optional social features and reminders.</p>
+
+                <h3>3. User Accounts</h3>
+                <ul>
+                    <li>You are responsible for maintaining the confidentiality of your login credentials.</li>
+                    <li>You must provide a valid email address.</li>
+                    <li>We reserve the right to suspend or terminate accounts that violate these terms.</li>
+                </ul>
+
+                <h3>4. Acceptable Use</h3>
+                <p>You agree not to use the service for any illegal purpose, transmit malware or spam, attempt to access other users' private data, or scrape the platform.</p>
+
+                <h3>5. Intellectual Property</h3>
+                <p>All content you create remains your intellectual property. The platform itself, including its code, design, and branding, is owned by us.</p>
+
+                <h3>6. Payment & Refunds</h3>
+                <ul>
+                    <li>Free tier: No payment required. Certain features are limited.</li>
+                    <li>Pro and Team tiers: Billed monthly or annually. Cancel anytime.</li>
+                    <li>Refunds: 7‑day money‑back guarantee for first‑time Pro subscribers.</li>
+                </ul>
+
+                <h3>7. Disclaimer of Warranties</h3>
+                <p>The service is provided "as is" without warranties of any kind. We do not guarantee uninterrupted or error‑free operation.</p>
+
+                <h3>8. Limitation of Liability</h3>
+                <p>Our total liability for any claim is limited to the amount you paid us in the 12 months preceding the claim.</p>
+
+                <h3>9. Termination</h3>
+                <p>You may delete your account at any time. We may terminate accounts for violation of these terms.</p>
+
+                <h3>10. Governing Law</h3>
+                <p>These terms are governed by the laws of the Federal Republic of Nigeria.</p>
+
+                <h3>11. Changes to Terms</h3>
+                <p>Material changes will be notified via email. Continued use constitutes acceptance.</p>
+            </div>
+        </section>
+
+        <!-- ========== HELP CENTER ========== -->
+        <section class="legal-section" id="help">
+            <div class="container">
+                <h2><i class="fas fa-circle-question"></i> Help Center</h2>
+                <p class="effective-date">Frequently asked questions and guides</p>
+
+                <!-- FAQ Filter -->
+                <div class="faq-filter">
+                    <input type="text" id="faqSearch" placeholder="Search for answers... (e.g., 'delete data', 'cancel', 'export')" class="faq-search-input">
+                    <div class="faq-categories">
+                        <button class="faq-cat-btn active" data-category="all">All</button>
+                        <button class="faq-cat-btn" data-category="account">Account</button>
+                        <button class="faq-cat-btn" data-category="data">Data & Privacy</button>
+                        <button class="faq-cat-btn" data-category="billing">Billing</button>
+                        <button class="faq-cat-btn" data-category="features">Features</button>
+                    </div>
+                </div>
+
+                <div class="faq-grid" id="faqGrid">
+                    <!-- Account Questions -->
+                    <div class="faq-item" data-categories="account" data-keywords="start commitment begin first vow routine">
+                        <h4>How do I start my first commitment?</h4>
+                        <p>After signing up, you'll be guided through onboarding. Set a commitment, define your "why," and choose a minimum effort that's so small you can't skip it. Then check in daily.</p>
+                        <a href="/#how-it-works" class="faq-link">See How It Works →</a>
+                    </div>
+                    <div class="faq-item" data-categories="account" data-keywords="signup sign up create account register join">
+                        <h4>How do I create an account?</h4>
+                        <p>Click <strong>Start Free</strong> on any page. You can sign up with your email and password, or use Google or Facebook for one-click registration.</p>
+                        <a href="/#signup" class="faq-link">Create Account →</a>
+                    </div>
+                    <div class="faq-item" data-categories="account" data-keywords="login sign in access cant cannot trouble problem">
+                        <h4>I can't log into my account</h4>
+                        <p>Use the "Forgot Password" link on the login page. If you signed up with Google or Facebook, make sure you're using the same method. Still stuck? <a href="#contact">Contact support</a>.</p>
+                    </div>
+                    <div class="faq-item" data-categories="account" data-keywords="username change update profile edit name">
+                        <h4>How do I change my username?</h4>
+                        <p>Go to <strong>Account Settings → Profile</strong>. You can update your username anytime. This is the name shown on leaderboards and groups.</p>
+                    </div>
+
+                    <!-- Data & Privacy Questions -->
+                    <div class="faq-item" data-categories="data" data-keywords="delete data remove account erase wipe permanent">
+                        <h4>How can I delete my data?</h4>
+                        <p>You have three options: <strong>Self-service</strong> via Account Settings → Delete Account, <strong>Email</strong> us at support@streakanddiscipline.com, or <strong>WhatsApp</strong> us. Full details in our <a href="#privacy">Privacy Policy section 9</a>.</p>
+                        <a href="#privacy" class="faq-link">See Data Deletion Policy →</a>
+                    </div>
+                    <div class="faq-item" data-categories="data" data-keywords="privacy private who sees view access entries journal">
+                        <h4>Is my data really private?</h4>
+                        <p>Yes. Your journal entries are private by default. No one — not even our staff — can read them. Leaderboards only show your display name and streak count. <a href="#privacy">Read our full privacy policy</a>.</p>
+                        <a href="#privacy" class="faq-link">Privacy Policy →</a>
+                    </div>
+                    <div class="faq-item" data-categories="data" data-keywords="export download backup save entries journal data">
+                        <h4>Can I export my data?</h4>
+                        <p>Yes. Export all your journal entries, streaks, and analytics as JSON or CSV from <strong>Account Settings → Export Data</strong>.</p>
+                    </div>
+                    <div class="faq-item" data-categories="data" data-keywords="cookie cookies track tracking third party advertising">
+                        <h4>Do you use tracking cookies?</h4>
+                        <p>No. We only use essential cookies for authentication and theme preferences. We do not use tracking, advertising, or third-party cookies. <a href="#privacy">See section 5 of our Privacy Policy</a>.</p>
+                        <a href="#privacy" class="faq-link">Cookie Policy →</a>
+                    </div>
+                    <div class="faq-item" data-categories="data" data-keywords="gdrp right request access portability correction opt out">
+                        <h4>What are my data rights?</h4>
+                        <p>You have the right to access, export, correct, and delete your data at any time. You can also opt out of optional features like reminders and leaderboards. <a href="#privacy">See section 4 of our Privacy Policy</a>.</p>
+                        <a href="#privacy" class="faq-link">Your Rights →</a>
+                    </div>
+
+                    <!-- Billing Questions -->
+                    <div class="faq-item" data-categories="billing" data-keywords="cancel subscription pro team stop end terminate">
+                        <h4>How do I cancel my Pro subscription?</h4>
+                        <p>Go to <strong>Account Settings → Billing → Cancel Subscription</strong>. Your Pro features remain active until the end of the billing period. No questions asked.</p>
+                    </div>
+                    <div class="faq-item" data-categories="billing" data-keywords="refund money back guarantee payment">
+                        <h4>Can I get a refund?</h4>
+                        <p>We offer a <strong>7-day money-back guarantee</strong> for first-time Pro subscribers. Contact support to request a refund. <a href="#terms">See section 6 of our Terms</a>.</p>
+                        <a href="#terms" class="faq-link">Refund Policy →</a>
+                    </div>
+                    <div class="faq-item" data-categories="billing" data-keywords="payment method update card change billing">
+                        <h4>How do I update my payment method?</h4>
+                        <p>Navigate to <strong>Account Settings → Billing → Payment Methods</strong> to add, remove, or update your payment information.</p>
+                    </div>
+                    <div class="faq-item" data-categories="billing" data-keywords="free pro team difference compare features pricing plans">
+                        <h4>What's the difference between plans?</h4>
+                        <p>Starter (free) includes 3 commitments and basic features. Pro adds unlimited commitments, AI insights, and priority support. Team adds admin dashboard and API access. <a href="/#pricing">Compare plans</a>.</p>
+                        <a href="/#pricing" class="faq-link">See Pricing →</a>
+                    </div>
+
+                    <!-- Features Questions -->
+                    <div class="faq-item" data-categories="features" data-keywords="miss skip day streak break reset what happens">
+                        <h4>What happens if I miss a day?</h4>
+                        <p>Your streak resets (unless you have a Streak Freeze token). The app doesn't shame you — it asks you to reflect honestly. The goal is self-awareness, not perfection.</p>
+                    </div>
+                    <div class="faq-item" data-categories="features" data-keywords="offline internet connection no wifi work without">
+                        <h4>Can I use the app offline?</h4>
+                        <p>Currently an internet connection is required. Offline support is planned for future updates.</p>
+                    </div>
+                    <div class="faq-item" data-categories="features" data-keywords="group accountability join invite friend team">
+                        <h4>How do I join an accountability group?</h4>
+                        <p>Create a group from the Groups section and invite friends via email or link. Members see check-in consistency, never content.</p>
+                    </div>
+                    <div class="faq-item" data-categories="features" data-keywords="streak freeze token earn protect save">
+                        <h4>What are Streak Freeze tokens?</h4>
+                        <p>A Streak Freeze lets you miss one day without resetting your streak. Earn tokens by maintaining consistency (e.g., 7-day streak = 1 token). Capped at 3.</p>
+                    </div>
+                    <div class="faq-item" data-categories="features" data-keywords="mobile app phone android ios iphone download install">
+                        <h4>Is there a mobile app?</h4>
+                        <p>The website is fully responsive. A native mobile app is planned for early 2027.</p>
+                    </div>
+                    <div class="faq-item" data-categories="features" data-keywords="reminder notification email push whatsapp set configure">
+                        <h4>How do I set up reminders?</h4>
+                        <p>Go to <strong>Account Settings → Reminders</strong>. Choose your preferred time, method (email, push, WhatsApp), and frequency. <a href="/#reminders">Learn more</a>.</p>
+                    </div>
+                    <div class="faq-item" data-categories="features" data-keywords="ai insight analysis smart feature artificial intelligence">
+                        <h4>How do AI insights work?</h4>
+                        <p>AI analysis is optional. When enabled, it scans your journal entries for patterns (mood trends, productivity correlations) and surfaces them in your weekly report. Your data is never used to train external models.</p>
+                    </div>
+                    <div class="faq-item" data-categories="features,data" data-keywords="leaderboard privacy anonymous public show hide name">
+                        <h4>Can I use the app without leaderboards?</h4>
+                        <p>Absolutely. Leaderboards are completely optional. You can disable them in <strong>Account Settings → Privacy</strong> and use the app purely as a private journal.</p>
+                        <a href="#privacy" class="faq-link">Privacy Settings →</a>
+                    </div>
+                </div>
+
+                <div class="faq-no-results" id="faqNoResults" style="display:none;">
+                    <p><i class="fas fa-search"></i> No results found. Try a different search term or <a href="#contact">contact us</a> directly.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== CONTACT SECTION ========== -->
+        <section class="legal-section" id="contact">
+            <div class="container">
+                <h2><i class="fas fa-headset"></i> Contact Us</h2>
+                <p>We're here to help. Reach out through any of the channels below — we respond within an hour during business hours(8am–10pm GMT) and within 3 hours during off bussiness hours.</p>
+                
+                <div class="contact-links">
+                    <a href="mailto:issaabdulsalamope11@gmail.com" target="_blank" rel="noopener"><i class="fas fa-envelope"></i> support@streakanddiscipline.com</a>
+                    <a href="https://wa.me/2347013687825" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> WhatsApp: +234 701 368 7825</a>
+                    <a href="https://x.com/lastissa" target="_blank" rel="noopener"><i class="fab fa-x-twitter"></i> X (Twitter): @lastissa</a>
+                    <a href="tel:+2347013687825"><i class="fas fa-phone"></i> {{customer_care_phone_number}}</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="site-footer">
+        <div class="container footer-bottom">
+            <p>&copy; {{footer_copyright_note}}</p>
+            <p><a href="/">Back to Home</a> | <a href="#privacy">Privacy</a> | <a href="#terms">Terms</a></p>
+        </div>
+    </footer>
+
+    <!-- Theme + Smooth scroll script -->
+    <script>
+        // ===== LOADER WITH ROTATING TEXT & TIMEOUT =====
+        {% include "reusables/spinner.js" %}
+
+        // Read theme cookie (same name as landing page: 'sd-theme')
+        (function() {
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return null;
+            }
+            const saved = getCookie('sd-theme');
+            const body = document.body;
+            const btn = document.getElementById('themeToggle');
+            
+            if (saved === 'light') {
+                body.classList.add('light-mode');
+                if (btn) btn.innerHTML = '<i class="fas fa-sun"></i>';
+            }
+            
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    if (body.classList.contains('light-mode')) {
+                        body.classList.remove('light-mode');
+                        document.cookie = 'sd-theme=dark;path=/;max-age=' + (365*86400) + ';SameSite=Lax';
+                        btn.innerHTML = '<i class="fas fa-moon"></i>';
+                    } else {
+                        body.classList.add('light-mode');
+                        document.cookie = 'sd-theme=light;path=/;max-age=' + (365*86400) + ';SameSite=Lax';
+                        btn.innerHTML = '<i class="fas fa-sun"></i>';
+                    }
+                });
+            }
+        })();
+        
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+            a.addEventListener('click', function(e) {
+                e.preventDefault();
+                var t = document.querySelector(this.getAttribute('href'));
+                if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+
+        // ===== MOBILE MENU =====
+(function() {
+    var toggle = document.getElementById('mobileToggle');
+    var nav = document.getElementById('navLinks');
+    var overlay = document.getElementById('mobileOverlay');
+    var body = document.body;
+    
+    if (!toggle || !nav || !overlay) return;
+    
+    function openMenu() {
+        nav.classList.add('active');
+        overlay.classList.add('active');
+        toggle.classList.add('active');
+        body.style.overflow = 'hidden';
+    }
+    function closeMenu() {
+        nav.classList.remove('active');
+        overlay.classList.remove('active');
+        toggle.classList.remove('active');
+        body.style.overflow = '';
+    }
+    
+    toggle.addEventListener('click', function() {
+        nav.classList.contains('active') ? closeMenu() : openMenu();
+    });
+    overlay.addEventListener('click', closeMenu);
+    
+    // Close when a nav link is clicked
+    nav.querySelectorAll('a').forEach(function(link) {
+        link.addEventListener('click', function() {
+            if (window.innerWidth <= 767) closeMenu();
+        });
+    });
+    
+    // ESC key closes menu
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && nav.classList.contains('active')) closeMenu();
+    });
+})();
+
+// ===== FAQ FILTER & SEARCH =====
+(function() {
+    var searchInput = document.getElementById('faqSearch');
+    var catButtons = document.querySelectorAll('.faq-cat-btn');
+    var faqItems = document.querySelectorAll('.faq-item');
+    var noResults = document.getElementById('faqNoResults');
+    var activeCategory = 'all';
+    
+    if (!searchInput || !faqItems.length) return;
+    
+    function filterFAQs() {
+        var query = searchInput.value.toLowerCase().trim();
+        var visibleCount = 0;
+        
+        faqItems.forEach(function(item) {
+            var categories = item.getAttribute('data-categories').split(',');
+            var keywords = item.getAttribute('data-keywords').toLowerCase();
+            var title = item.querySelector('h4').textContent.toLowerCase();
+            var body = item.querySelector('p').textContent.toLowerCase();
+            
+            var matchesCategory = activeCategory === 'all' || categories.includes(activeCategory);
+            var matchesSearch = query === '' || 
+                title.includes(query) || 
+                body.includes(query) || 
+                keywords.includes(query);
+            
+            if (matchesCategory && matchesSearch) {
+                item.classList.remove('hidden');
+                visibleCount++;
+            } else {
+                item.classList.add('hidden');
+            }
+        });
+        
+        if (noResults) {
+            noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+    }
+    
+    searchInput.addEventListener('input', filterFAQs);
+    
+    catButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            catButtons.forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            activeCategory = btn.getAttribute('data-category');
+            filterFAQs();
+        });
+    });
+})();
+    </script>
+</body>
+</html>
