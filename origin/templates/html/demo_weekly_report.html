@@ -4,326 +4,997 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weekly Report Demo — STREAK & DISCIPLINE</title>
+    <meta name="description" content="Your private weekly discipline report — consistency score, daily reflections, and honest trend analysis.">
+    <meta name="theme-color" content="#0a0e17">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Weekly Truth Report — STREAK & DISCIPLINE">
+    <meta property="og:description" content="A private, honest breakdown of one week of daily discipline check-ins.">
+    <meta name="twitter:card" content="summary">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Weekly Truth Report — STREAK &amp; DISCIPLINE</title>
 
+    <!-- Font Awesome (icons) -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
-          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" 
-          crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
 
-    <style>{% include "reusables/spinner.css" %}</style>
+    <!-- Google Fonts: Space Grotesk for headings/data, Kalam for the handwritten reflection cards -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Kalam:wght@400;700&display=swap">
+
+    <!-- LIGHT critical-path CSS: loads render-blocking, keeps first paint fast and never broken -->
     <link rel="stylesheet" href="{% static 'css/demo_weekly_report.css' %}">
-    <link rel="preload" href="{% static 'cdn/demo_weekly_report.css' %}" as="style" 
-          onload="this.onload=null;this.rel='stylesheet'" id="heavy-css">
-    <noscript><link rel="stylesheet" href="{% static 'cdn/demo_weekly_report.css' %}"></noscript>
+
+    <!-- HEAVY engine CSS: preloaded, then swapped in as the real stylesheet once ready.
+         This is where every painted texture, 3D tilt, and spring animation lives. -->
+    <link rel="preload" href="{% static 'cdn/demo_weekly_report.css' %}" as="style"
+          onload="this.onload=null;this.rel='stylesheet';document.documentElement.classList.add('engine-ready')" id="engine-css">
+    <noscript>
+        <link rel="stylesheet" href="{% static 'cdn/demo_weekly_report.css' %}">
+    </noscript>
 </head>
 <body>
-    {% include "reusables/spinner.html" %}
-    {% include "reusables/custom_message.html" %}
 
-    <!-- ========== HEADER ========== -->
-    <header class="site-header">
-        <div class="container header-inner">
-            <a href="/" class="logo-link">
-                <img src="{% static 'img/logo.png' %}" alt="Logo" class="logo-img" width="36" height="36"
-                     onerror="this.src='data:image/svg+xml,...'">
-                <span class="logo-text">STREAK & DISCIPLINE</span>
+    <a href="#report-main" class="skip-link">Skip to report</a>
+
+    <!-- ========== PAGE LOADER ========== -->
+    <div class="page-loader" id="pageLoader" role="status" aria-live="polite">
+        <div class="loader-ring" aria-hidden="true"></div>
+        <span class="loader-text" id="loaderText">Pulling your week together…</span>
+    </div>
+
+    <!-- ========== SCROLL PROGRESS ========== -->
+    <div class="scroll-progress" id="scrollProgress"></div>
+
+    <!-- ========== MOBILE NAV OVERLAY ========== -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <!-- ========== HEADER / NAVBAR ========== -->
+    <header class="site-header" id="siteHeader">
+        <div class="container nav-inner">
+            <a href="{% static "img/logo.png" %}" class="nav-logo">
+                <span class="nav-logo-mark" aria-hidden="true">S&amp;D</span>
+                <span>
+                    <span class="nav-logo-text">STREAK &amp; DISCIPLINE</span>
+                    <span class="nav-logo-sub">Weekly Truth Report</span>
+                </span>
             </a>
+
+            <nav class="nav-links" id="navLinks" aria-label="Primary">
+                <a href=""><i class="fas fa-house"></i> Dashboard</a>
+                <a href=""><i class="fas fa-pen-fancy"></i> Journal</a>
+                <a href="{% url "origin_weekly_analysis" %}" class="current" aria-current="page"><i class="fas fa-chart-line"></i> Weekly Analysis</a>
+                <a href=""><i class="fas fa-bell"></i> Reminders</a>
+                <a href=""><i class="fas fa-user-group"></i> Groups</a>
+                <div class="nav-links-divider"></div>
+                <a href=""><i class="fas fa-gear"></i> Settings</a>
+                <a href="{% url "origin_extra" %}#help"><i class="fas fa-circle-question"></i> Help Center</a>
+                <a href=""><i class="fas fa-arrow-right-from-bracket"></i> Sign Out</a>
+            </nav>
+
             <div class="nav-actions">
-                <a href="{% url 'origin_signup' %}" class="btn btn-primary btn-sm">Start Free</a>
-                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-                    <i class="fas fa-moon"></i>
+                <button class="btn-icon desktop-only-flex" id="notifyBtn" aria-label="Notifications">
+                    <i class="fas fa-bell"></i>
+                </button>
+                <!-- User profile picture slot: falls back to initials when no avatar is set -->
+                <a href="" class="profile-chip" id="profileChip">
+                    {% if request.user.avatar_url %}
+                        <img src="{{ request.user.avatar_url }}" alt="Your profile picture" class="profile-avatar">
+                    {% else %}
+                        <span class="profile-avatar" aria-hidden="true">{{ request.user.first_name|slice:":1"|default:"A" }}{{ request.user.last_name|slice:":1"|default:"O" }}</span>
+                    {% endif %}
+                    <span class="profile-name">{{ request.user.first_name|default:"Aminat" }}</span>
+                </a>
+                <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+                    <span></span><span></span><span></span>
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="demo-main">
+    <main id="report-main">
+        <div class="container">
 
-        <!-- ═══════════════ WEEKLY HERO ═══════════════ -->
-        <section class="weekly-summary">
-            <div class="container">
-                <div class="summary-grid">
-                    <div class="summary-card main-stat" data-scatter>
-                        <div class="stat-label">Weekly Consistency</div>
-                        <div class="stat-value" id="consistencyCounter">0%</div>
-                        <div class="stat-desc">5 of 7 days completed</div>
-                        <div class="hand-drawn-check">
-                            <svg viewBox="0 0 100 100" class="check-svg">
-                                <circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" stroke-width="3" 
-                                        stroke-dasharray="239" stroke-dashoffset="239" class="draw-circle" />
-                                <polyline points="32,50 44,64 70,36" fill="none" stroke="currentColor" 
-                                          stroke-width="4" stroke-linecap="round" stroke-linejoin="round"
-                                          stroke-dasharray="70" stroke-dashoffset="70" class="draw-check" />
-                            </svg>
-                            <span class="check-label">Weekly goal met!</span>
-                        </div>
+            <!-- ========== REPORT HERO ========== -->
+            <section class="report-section report-hero" id="report-hero">
+                <div class="report-hero-top">
+                    <div>
+                        <span class="section-eyebrow"><i class="fas fa-scroll"></i> Sample Report</span>
+                        <h1>Your week, <span class="ink-highlight">without the spin</span>.</h1>
+                        <p class="section-sub">Every Sunday we pull your seven check-ins together and tell you the truth about them — no streak badges, no gamified noise. This is a sample report using placeholder data so you can see the shape of what lands in your inbox.</p>
+                        <p class="report-generated-note"><i class="fas fa-circle-check"></i> Sample generated for preview purposes — no real entries were read to build it.</p>
                     </div>
-                    <div class="summary-card streak-card" data-scatter>
-                        <div class="stat-label">Current Streak</div>
-                        <div class="streak-number">12</div>
-                        <div class="streak-label">Days</div>
-                        <div class="streak-progress">
-                            <div class="streak-progress-fill" style="width:38%"></div>
-                        </div>
-                        <div class="streak-sub">38% to 30‑day milestone · Longest: 31 days</div>
-                        <!-- Realistic fire effect via layered CSS particles -->
-                        <div class="realistic-fire">
-                            <div class="fire-particle fire-core"></div>
-                            <div class="fire-particle fire-mid"></div>
-                            <div class="fire-particle fire-outer"></div>
-                            <div class="fire-particle fire-spark-1"></div>
-                            <div class="fire-particle fire-spark-2"></div>
-                            <div class="fire-particle fire-spark-3"></div>
-                            <div class="fire-particle fire-spark-4"></div>
-                            <div class="fire-particle fire-spark-5"></div>
-                        </div>
+                    <div class="hero-actions">
+                        <button class="btn btn-outline btn-sm" id="printBtn"><i class="fas fa-print"></i> Print</button>
+                        <button class="btn btn-outline btn-sm" id="shareBtn"><i class="fas fa-share-nodes"></i> Share</button>
+                        <a href="#" class="btn btn-primary btn-sm"><i class="fas fa-download"></i> Download PDF</a>
                     </div>
                 </div>
-            </div>
-        </section>
 
-        <!-- ═══════════════ CHARTS ═══════════════ -->
-        <section class="charts-section" id="charts">
-            <div class="container">
-                <div class="section-header">
-                    <h2>Your Week in Data</h2>
-                    <p>Every bar, every dot — a day you showed up or didn't.</p>
-                </div>
-                <div class="charts-grid">
-                    <!-- Bar Chart -->
-                    <div class="chart-card" data-scatter>
-                        <h3>Daily Completions</h3>
-                        <div class="bar-chart">
-                            <div class="bar-wrapper"><div class="bar active" style="--h:90%"><span class="bar-val">M</span></div></div>
-                            <div class="bar-wrapper"><div class="bar active" style="--h:75%"><span class="bar-val">T</span></div></div>
-                            <div class="bar-wrapper"><div class="bar active" style="--h:80%"><span class="bar-val">W</span></div></div>
-                            <div class="bar-wrapper"><div class="bar missed" style="--h:30%"><span class="bar-val">T</span></div></div>
-                            <div class="bar-wrapper"><div class="bar active" style="--h:85%"><span class="bar-val">F</span></div></div>
-                            <div class="bar-wrapper"><div class="bar active" style="--h:100%"><span class="bar-val">S</span></div></div>
-                            <div class="bar-wrapper"><div class="bar active" style="--h:70%"><span class="bar-val">S</span></div></div>
-                        </div>
+                <div class="week-switcher" role="group" aria-label="Choose report week">
+                    <button class="week-nav-btn" id="prevWeekBtn" aria-label="Previous week"><i class="fas fa-chevron-left"></i></button>
+                    <div class="week-switcher-label">
+                        <i class="fas fa-calendar-week"></i>
+                        <span>Jul 13 – Jul 19, 2026</span>
+                        <span class="week-badge">Week 29</span>
                     </div>
-
-                    <!-- Line Chart with area -->
-                    <div class="chart-card" data-scatter>
-                        <h3>Streak Trend (4 Weeks)</h3>
-                        <div class="line-chart-wrap">
-                            <svg viewBox="0 0 300 160" class="line-chart-svg">
-                                <defs>
-                                    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.25"/>
-                                        <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
-                                    </linearGradient>
-                                </defs>
-                                <polygon points="20,140 20,120 90,100 160,40 230,60 290,20 290,140" fill="url(#areaGrad)" class="area-fill"/>
-                                <polyline points="20,120 90,100 160,40 230,60 290,20" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" class="line-path"/>
-                                <circle cx="20" cy="120" r="5" fill="var(--surface)" stroke="var(--accent)" stroke-width="2.5" class="line-dot"/>
-                                <circle cx="90" cy="100" r="5" fill="var(--surface)" stroke="var(--accent)" stroke-width="2.5" class="line-dot"/>
-                                <circle cx="160" cy="40" r="5" fill="var(--surface)" stroke="var(--accent)" stroke-width="2.5" class="line-dot"/>
-                                <circle cx="230" cy="60" r="5" fill="var(--surface)" stroke="var(--accent)" stroke-width="2.5" class="line-dot"/>
-                                <circle cx="290" cy="20" r="5" fill="var(--surface)" stroke="var(--accent)" stroke-width="2.5" class="line-dot"/>
-                            </svg>
-                        </div>
-                    </div>
-
-                    <!-- Donut Chart -->
-                    <div class="chart-card" data-scatter>
-                        <h3>Task Completion</h3>
-                        <div class="donut-wrap">
-                            <svg viewBox="0 0 140 140" class="donut-svg">
-                                <circle cx="70" cy="70" r="56" fill="none" stroke="var(--border)" stroke-width="16"/>
-                                <circle cx="70" cy="70" r="56" fill="none" stroke="url(#donutGrad)" stroke-width="16"
-                                        stroke-dasharray="351.86" stroke-dashoffset="102" stroke-linecap="round" class="donut-fill"/>
-                                <circle cx="70" cy="70" r="44" fill="var(--surface)"/>
-                                <text x="70" y="65" text-anchor="middle" font-size="24" font-weight="900" fill="var(--accent-light)">71%</text>
-                                <text x="70" y="84" text-anchor="middle" font-size="10" fill="var(--text-secondary)">completed</text>
-                                <defs>
-                                    <linearGradient id="donutGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stop-color="var(--accent)"/>
-                                        <stop offset="100%" stop-color="#818cf8"/>
-                                    </linearGradient>
-                                </defs>
-                            </svg>
-                        </div>
-                    </div>
+                    <button class="week-nav-btn" id="nextWeekBtn" disabled aria-label="Next week"><i class="fas fa-chevron-right"></i></button>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- ═══════════════ REALISTIC FIGURE ANIMATION ═══════════════ -->
-        <section class="discipline-demo" id="discipline">
-            <div class="container">
-                <div class="section-header">
-                    <h2>Your Discipline, Visualized</h2>
-                    <p>A real‑time representation of your consistency.</p>
-                </div>
-                <div class="realistic-figure-scene">
-                    <div class="figure-canvas">
-                        <!-- CSS-drawn realistic human silhouette doing a push-up -->
-                        <div class="real-human">
-                            <div class="human-head"></div>
-                            <div class="human-neck"></div>
-                            <div class="human-torso">
-                                <div class="human-shoulder left-shoulder"></div>
-                                <div class="human-shoulder right-shoulder"></div>
-                                <div class="human-core"></div>
-                            </div>
-                            <div class="human-arm left-upper-arm"></div>
-                            <div class="human-arm left-forearm"></div>
-                            <div class="human-arm right-upper-arm"></div>
-                            <div class="human-arm right-forearm"></div>
-                            <div class="human-leg left-thigh"></div>
-                            <div class="human-leg left-calf"></div>
-                            <div class="human-leg right-thigh"></div>
-                            <div class="human-leg right-calf"></div>
-                        </div>
-                        <div class="figure-shadow"></div>
-                        <div class="rep-counter-display">
-                            <span class="rep-num">12</span>
-                            <span class="rep-label">reps today</span>
-                        </div>
-                    </div>
-                    <p class="figure-caption">Every check‑in powers one push‑up. This is your discipline in physical form.</p>
-                </div>
-            </div>
-        </section>
+            <!-- ========== STAT OVERVIEW ========== -->
+            <section class="report-section stat-overview lazy-reveal" id="stat-overview">
+                <div class="grid grid-4">
 
-        <!-- ═══════════════ REAL INSIGHTS (NOT PROMISES) ═══════════════ -->
-        <section class="insights-section" id="insights">
-            <div class="container">
-                <div class="section-header">
-                    <h2>What Your Data Reveals</h2>
-                    <p>These aren't promises. This is what your actual data shows right now.</p>
-                </div>
-                <div class="insights-grid">
-                    <!-- Insight 1: Best time with mini bar chart proof -->
-                    <div class="insight-card" data-scatter>
-                        <div class="insight-head">
-                            <span class="insight-icon-wrap">⏰</span>
-                            <h4>Your Golden Hour is 7–8 AM</h4>
-                        </div>
-                        <div class="insight-proof">
-                            <div class="mini-proof-chart">
-                                <div class="proof-bar" style="--h:25%"><span>12am</span></div>
-                                <div class="proof-bar" style="--h:15%"><span>3am</span></div>
-                                <div class="proof-bar" style="--h:10%"><span>6am</span></div>
-                                <div class="proof-bar highlight-bar" style="--h:95%"><span>7am</span></div>
-                                <div class="proof-bar highlight-bar" style="--h:90%"><span>8am</span></div>
-                                <div class="proof-bar" style="--h:40%"><span>12pm</span></div>
-                                <div class="proof-bar" style="--h:55%"><span>6pm</span></div>
-                                <div class="proof-bar" style="--h:35%"><span>9pm</span></div>
+                    <!-- Consistency score: painted ring meter -->
+                    <div class="card stat-card ring-card" data-scatter>
+                        <div class="ring-meter" id="consistencyRing" style="--pct:86" role="img" aria-label="Consistency score 86 percent">
+                            <div class="ring-center">
+                                <span class="ring-value" data-count-to="86">0</span><span class="ring-unit">%</span>
                             </div>
                         </div>
-                        <p>Check‑ins at 7‑8 AM succeed <strong>2.3×</strong> more than any other time slot.</p>
+                        <h3>Consistency Score</h3>
+                        <p class="stat-note"><i class="fas fa-arrow-trend-up"></i> Up 9 points from last week</p>
                     </div>
 
-                    <!-- Insight 2: Miss pattern with day-of-week heatmap -->
-                    <div class="insight-card" data-scatter>
-                        <div class="insight-head">
-                            <span class="insight-icon-wrap">📉</span>
-                            <h4>Thursday is Your Kryptonite</h4>
+                    <!-- Current streak: painted flame -->
+                    <div class="card stat-card flame-card" data-scatter>
+                        <div class="flame-meter" aria-hidden="true">
+                            <span class="flame-core"></span>
+                            <span class="flame-core flame-core-2"></span>
+                            <span class="flame-core flame-core-3"></span>
                         </div>
-                        <div class="insight-proof">
-                            <div class="heatmap-row">
-                                <span class="heat-label">Mon</span><span class="heat-cell hot"></span>
-                                <span class="heat-label">Tue</span><span class="heat-cell hot"></span>
-                                <span class="heat-label">Wed</span><span class="heat-cell warm"></span>
-                                <span class="heat-label">Thu</span><span class="heat-cell cold"></span>
-                                <span class="heat-label">Fri</span><span class="heat-cell hot"></span>
-                                <span class="heat-label">Sat</span><span class="heat-cell hot"></span>
-                                <span class="heat-label">Sun</span><span class="heat-cell warm"></span>
-                            </div>
-                        </div>
-                        <p>3 of your last 4 misses happened on Thursday. Lighten your commitment that day.</p>
+                        <span class="stat-big"><span data-count-to="34">0</span> days</span>
+                        <h3>Current Streak</h3>
+                        <p class="stat-note"><i class="fas fa-fire"></i> Longest ever: 61 days</p>
                     </div>
 
-                    <!-- Insight 3: Streak momentum with actual numbers -->
-                    <div class="insight-card" data-scatter>
-                        <div class="insight-head">
-                            <span class="insight-icon-wrap">🚀</span>
-                            <h4>Day 7 Unlocks Momentum</h4>
+                    <!-- Entries this week -->
+                    <div class="card stat-card" data-scatter>
+                        <div class="mini-dots" aria-hidden="true">
+                            <span class="mini-dot filled"></span>
+                            <span class="mini-dot filled"></span>
+                            <span class="mini-dot filled"></span>
+                            <span class="mini-dot filled"></span>
+                            <span class="mini-dot filled"></span>
+                            <span class="mini-dot filled"></span>
+                            <span class="mini-dot"></span>
                         </div>
-                        <div class="insight-proof">
-                            <div class="momentum-display">
-                                <div class="momentum-phase">
-                                    <span class="phase-num">42%</span>
-                                    <span class="phase-label">Days 1‑3</span>
+                        <span class="stat-big"><span data-count-to="6">0</span>/7</span>
+                        <h3>Entries This Week</h3>
+                        <p class="stat-note"><i class="fas fa-circle-exclamation"></i> Missed Wednesday</p>
+                    </div>
+
+                    <!-- Avg words -->
+                    <div class="card stat-card" data-scatter>
+                        <i class="fas fa-feather-pointed stat-icon-big" aria-hidden="true"></i>
+                        <span class="stat-big"><span data-count-to="47">0</span> words</span>
+                        <h3>Avg per Entry</h3>
+                        <p class="stat-note"><i class="fas fa-arrow-trend-up"></i> Your longest week yet</p>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ========== DISCIPLINE CONSTELLATION ========== -->
+            <section class="report-section constellation-section lazy-reveal" id="constellation">
+                <div class="section-head">
+                    <span class="section-eyebrow"><i class="fas fa-star"></i> The Week At a Glance</span>
+                    <h2>Your discipline constellation</h2>
+                    <p class="section-sub">Each point is a day. Brighter, bigger stars mean you showed up and meant it — tap or hover a star for that day's note.</p>
+                </div>
+                <div class="constellation" id="constellation-row">
+                    <div class="constellation-line" aria-hidden="true"></div>
+
+                    <button class="const-node const-strong" style="--mood:#22c55e" data-day="Sun" data-note="Went to bed on time and it felt like a small miracle." type="button">
+                        <span class="const-star"></span><span class="const-label">Sun</span>
+                    </button>
+                    <button class="const-node const-strong" style="--mood:#3b82f6" data-day="Mon" data-note="Kept the promise before I even had coffee. Momentum matters." type="button">
+                        <span class="const-star"></span><span class="const-label">Mon</span>
+                    </button>
+                    <button class="const-node const-mid" style="--mood:#60a5fa" data-day="Tue" data-note="Rough morning, showed up anyway. That's the whole point." type="button">
+                        <span class="const-star"></span><span class="const-label">Tue</span>
+                    </button>
+                    <button class="const-node const-missed" style="--mood:#334155" data-day="Wed" data-note="No entry. Traveled all day and didn't open the app once." type="button">
+                        <span class="const-star"></span><span class="const-label">Wed</span>
+                    </button>
+                    <button class="const-node const-strong" style="--mood:#22c55e" data-day="Thu" data-note="Back on it. Told myself missing one day doesn't erase the other thirty." type="button">
+                        <span class="const-star"></span><span class="const-label">Thu</span>
+                    </button>
+                    <button class="const-node const-mid" style="--mood:#f59e0b" data-day="Fri" data-note="Tired but honest: I only half-tried today, and I said so." type="button">
+                        <span class="const-star"></span><span class="const-label">Fri</span>
+                    </button>
+                    <button class="const-node const-strong" style="--mood:#3b82f6" data-day="Sat" data-note="Best entry of the week. Wrote three sentences instead of one." type="button">
+                        <span class="const-star"></span><span class="const-label">Sat</span>
+                    </button>
+                </div>
+                <div class="const-tooltip" id="constTooltip" aria-live="polite">
+                    <strong id="constTooltipDay">Sat</strong>
+                    <p id="constTooltipNote">Best entry of the week. Wrote three sentences instead of one.</p>
+                </div>
+            </section>
+
+            <!-- ========== DAILY BREAKDOWN ========== -->
+            <section class="report-section daily-breakdown lazy-reveal" id="daily-breakdown">
+                <div class="section-head">
+                    <span class="section-eyebrow"><i class="fas fa-list-check"></i> Day by Day</span>
+                    <h2>Nothing smoothed over</h2>
+                    <p class="section-sub">Tap any day to read the full entry. We show the missed one too — that's the deal.</p>
+                </div>
+
+                <ul class="day-list">
+
+                    <li class="day-card is-open" data-scatter>
+                        <button class="day-card-head" type="button" aria-expanded="true">
+                            <span class="day-status good" aria-hidden="true"><i class="fas fa-check"></i></span>
+                            <span class="day-meta">
+                                <span class="day-name">Sunday <em>Jul 13</em></span>
+                                <span class="day-time"><i class="fas fa-clock"></i> Checked in 9:04 PM</span>
+                            </span>
+                            <span class="day-mood" title="Mood: Calm">🙂</span>
+                            <span class="day-words">61 words</span>
+                            <i class="fas fa-chevron-down day-caret"></i>
+                        </button>
+                        <div class="day-card-body">
+                            <p class="note-paper">"Went to bed on time and it felt like a small miracle. I keep forgetting that discipline is mostly just protecting tomorrow-me from tonight-me. One day at a time, I actually believed that today."</p>
+                        </div>
+                    </li>
+
+                    <li class="day-card" data-scatter>
+                        <button class="day-card-head" type="button" aria-expanded="false">
+                            <span class="day-status good" aria-hidden="true"><i class="fas fa-check"></i></span>
+                            <span class="day-meta">
+                                <span class="day-name">Monday <em>Jul 14</em></span>
+                                <span class="day-time"><i class="fas fa-clock"></i> Checked in 7:41 AM</span>
+                            </span>
+                            <span class="day-mood" title="Mood: Focused">💪</span>
+                            <span class="day-words">38 words</span>
+                            <i class="fas fa-chevron-down day-caret"></i>
+                        </button>
+                        <div class="day-card-body">
+                            <p class="note-paper">"Kept the promise before I even had coffee. Momentum matters more than motivation — I don't wait to feel ready anymore, I just start."</p>
+                        </div>
+                    </li>
+
+                    <li class="day-card" data-scatter>
+                        <button class="day-card-head" type="button" aria-expanded="false">
+                            <span class="day-status good" aria-hidden="true"><i class="fas fa-check"></i></span>
+                            <span class="day-meta">
+                                <span class="day-name">Tuesday <em>Jul 15</em></span>
+                                <span class="day-time"><i class="fas fa-clock"></i> Checked in 10:52 PM</span>
+                            </span>
+                            <span class="day-mood" title="Mood: Tired">😮‍💨</span>
+                            <span class="day-words">29 words</span>
+                            <i class="fas fa-chevron-down day-caret"></i>
+                        </button>
+                        <div class="day-card-body">
+                            <p class="note-paper">"Rough morning, showed up anyway. That's the whole point of this thing — not the good days, the days like today."</p>
+                        </div>
+                    </li>
+
+                    <li class="day-card day-card-missed" data-scatter>
+                        <button class="day-card-head" type="button" aria-expanded="false">
+                            <span class="day-status missed" aria-hidden="true"><i class="fas fa-xmark"></i></span>
+                            <span class="day-meta">
+                                <span class="day-name">Wednesday <em>Jul 16</em></span>
+                                <span class="day-time"><i class="fas fa-triangle-exclamation"></i> No check-in recorded</span>
+                            </span>
+                            <span class="day-mood" title="No entry">—</span>
+                            <span class="day-words">0 words</span>
+                            <i class="fas fa-chevron-down day-caret"></i>
+                        </button>
+                        <div class="day-card-body">
+                            <p class="note-paper note-paper-empty">No entry. Traveled all day and the app never opened. We log this honestly instead of quietly hiding the gap.</p>
+                        </div>
+                    </li>
+
+                    <li class="day-card" data-scatter>
+                        <button class="day-card-head" type="button" aria-expanded="false">
+                            <span class="day-status good" aria-hidden="true"><i class="fas fa-check"></i></span>
+                            <span class="day-meta">
+                                <span class="day-name">Thursday <em>Jul 17</em></span>
+                                <span class="day-time"><i class="fas fa-clock"></i> Checked in 8:15 PM</span>
+                            </span>
+                            <span class="day-mood" title="Mood: Determined">🔥</span>
+                            <span class="day-words">54 words</span>
+                            <i class="fas fa-chevron-down day-caret"></i>
+                        </button>
+                        <div class="day-card-body">
+                            <p class="note-paper">"Back on it. Told myself missing one day doesn't erase the other thirty-three before it. The streak counter reset but the identity didn't."</p>
+                        </div>
+                    </li>
+
+                    <li class="day-card" data-scatter>
+                        <button class="day-card-head" type="button" aria-expanded="false">
+                            <span class="day-status ok" aria-hidden="true"><i class="fas fa-check"></i></span>
+                            <span class="day-meta">
+                                <span class="day-name">Friday <em>Jul 18</em></span>
+                                <span class="day-time"><i class="fas fa-clock"></i> Checked in 11:47 PM</span>
+                            </span>
+                            <span class="day-mood" title="Mood: Drained">😐</span>
+                            <span class="day-words">19 words</span>
+                            <i class="fas fa-chevron-down day-caret"></i>
+                        </button>
+                        <div class="day-card-body">
+                            <p class="note-paper">"Tired but honest: I only half-tried today, and I said so instead of writing something that sounded better."</p>
+                        </div>
+                    </li>
+
+                    <li class="day-card" data-scatter>
+                        <button class="day-card-head" type="button" aria-expanded="false">
+                            <span class="day-status good" aria-hidden="true"><i class="fas fa-check"></i></span>
+                            <span class="day-meta">
+                                <span class="day-name">Saturday <em>Jul 19</em></span>
+                                <span class="day-time"><i class="fas fa-clock"></i> Checked in 6:30 AM</span>
+                            </span>
+                            <span class="day-mood" title="Mood: Proud">😄</span>
+                            <span class="day-words">73 words</span>
+                            <i class="fas fa-chevron-down day-caret"></i>
+                        </button>
+                        <div class="day-card-body">
+                            <p class="note-paper">"Best entry of the week. Wrote three sentences instead of one, because for once I had something worth saying about myself."</p>
+                        </div>
+                    </li>
+
+                </ul>
+            </section>
+
+            <!-- ========== REFLECTIONS SHOWCASE (pinned handwritten notes) ========== -->
+            <section class="report-section reflections lazy-reveal" id="reflections">
+                <div class="section-head">
+                    <span class="section-eyebrow"><i class="fas fa-thumbtack"></i> Worth Keeping</span>
+                    <h2>This week's reflections</h2>
+                    <p class="section-sub">Three lines you wrote that we think are worth reading again.</p>
+                </div>
+                <div class="pin-board grid grid-3">
+                    <blockquote class="pin-note pin-note-1" data-scatter>
+                        <p>"Discipline is mostly just protecting tomorrow-me from tonight-me."</p>
+                        <footer>— Sunday</footer>
+                    </blockquote>
+                    <blockquote class="pin-note pin-note-2" data-scatter>
+                        <p>"The streak counter reset but the identity didn't."</p>
+                        <footer>— Thursday</footer>
+                    </blockquote>
+                    <blockquote class="pin-note pin-note-3" data-scatter>
+                        <p>"I said so instead of writing something that sounded better."</p>
+                        <footer>— Friday</footer>
+                    </blockquote>
+                </div>
+            </section>
+
+            <!-- ========== TREND COMPARISON ========== -->
+            <section class="report-section trend-section lazy-reveal" id="trend">
+                <div class="grid grid-2">
+                    <div class="card chart-card">
+                        <div class="section-head">
+                            <span class="section-eyebrow"><i class="fas fa-scale-balanced"></i> This Week vs Last Week</span>
+                            <h2>Are you actually improving?</h2>
+                        </div>
+                        <div class="compare-chart" id="compareChart">
+                            <div class="compare-day">
+                                <div class="compare-bars">
+                                    <span class="bar bar-last" style="--h:64%" data-value="Last: 64%"></span>
+                                    <span class="bar bar-now" style="--h:100%" data-value="Now: 100%"></span>
                                 </div>
-                                <div class="momentum-arrow">→</div>
-                                <div class="momentum-phase">
-                                    <span class="phase-num">68%</span>
-                                    <span class="phase-label">Days 4‑6</span>
+                                <span class="compare-label">Sun</span>
+                            </div>
+                            <div class="compare-day">
+                                <div class="compare-bars">
+                                    <span class="bar bar-last" style="--h:100%" data-value="Last: 100%"></span>
+                                    <span class="bar bar-now" style="--h:100%" data-value="Now: 100%"></span>
                                 </div>
-                                <div class="momentum-arrow">→</div>
-                                <div class="momentum-phase highlight-phase">
-                                    <span class="phase-num">82%</span>
-                                    <span class="phase-label">Days 7+</span>
+                                <span class="compare-label">Mon</span>
+                            </div>
+                            <div class="compare-day">
+                                <div class="compare-bars">
+                                    <span class="bar bar-last" style="--h:40%" data-value="Last: 40%"></span>
+                                    <span class="bar bar-now" style="--h:100%" data-value="Now: 100%"></span>
                                 </div>
+                                <span class="compare-label">Tue</span>
+                            </div>
+                            <div class="compare-day">
+                                <div class="compare-bars">
+                                    <span class="bar bar-last" style="--h:100%" data-value="Last: 100%"></span>
+                                    <span class="bar bar-now" style="--h:6%" data-value="Now: missed"></span>
+                                </div>
+                                <span class="compare-label">Wed</span>
+                            </div>
+                            <div class="compare-day">
+                                <div class="compare-bars">
+                                    <span class="bar bar-last" style="--h:0%" data-value="Last: missed"></span>
+                                    <span class="bar bar-now" style="--h:100%" data-value="Now: 100%"></span>
+                                </div>
+                                <span class="compare-label">Thu</span>
+                            </div>
+                            <div class="compare-day">
+                                <div class="compare-bars">
+                                    <span class="bar bar-last" style="--h:80%" data-value="Last: 80%"></span>
+                                    <span class="bar bar-now" style="--h:100%" data-value="Now: 100%"></span>
+                                </div>
+                                <span class="compare-label">Fri</span>
+                            </div>
+                            <div class="compare-day">
+                                <div class="compare-bars">
+                                    <span class="bar bar-last" style="--h:100%" data-value="Last: 100%"></span>
+                                    <span class="bar bar-now" style="--h:100%" data-value="Now: 100%"></span>
+                                </div>
+                                <span class="compare-label">Sat</span>
                             </div>
                         </div>
-                        <p>Your consistency jumps <strong>40%</strong> after hitting a 7‑day streak. You're almost there.</p>
+                        <div class="chart-legend">
+                            <span><i class="legend-dot legend-dot-last"></i> Last week</span>
+                            <span><i class="legend-dot legend-dot-now"></i> This week</span>
+                        </div>
+                    </div>
+
+                    <div class="card sparkline-card">
+                        <div class="section-head">
+                            <span class="section-eyebrow"><i class="fas fa-chart-simple"></i> Longer View</span>
+                            <h2>Last 8 weeks</h2>
+                        </div>
+                        <div class="sparkline" id="sparkline" role="img" aria-label="Consistency trend rising over the last eight weeks, currently at 86 percent">
+                            <span class="spark-point" style="--x:0;--y:58"></span>
+                            <span class="spark-point" style="--x:1;--y:64"></span>
+                            <span class="spark-point" style="--x:2;--y:52"></span>
+                            <span class="spark-point" style="--x:3;--y:70"></span>
+                            <span class="spark-point" style="--x:4;--y:66"></span>
+                            <span class="spark-point" style="--x:5;--y:77"></span>
+                            <span class="spark-point" style="--x:6;--y:71"></span>
+                            <span class="spark-point spark-point-current" style="--x:7;--y:86"></span>
+                        </div>
+                        <p class="section-sub">You've climbed 28 points since the week you started. Weeks with a check-in reminder set average 22% higher consistency.</p>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- ═══════════════ FINAL CTA ═══════════════ -->
-        <section class="demo-cta">
-            <div class="container">
+            <!-- ========== BEST / TOUGHEST DAY ========== -->
+            <section class="report-section highlight-section lazy-reveal" id="highlights">
+                <div class="grid grid-2">
+                    <div class="card highlight-card highlight-best" data-scatter>
+                        <span class="highlight-tag"><i class="fas fa-trophy"></i> Best Day</span>
+                        <h3>Saturday</h3>
+                        <p>Longest entry of the week at 73 words, checked in before 7 AM, and the only day you mentioned feeling proud rather than just relieved.</p>
+                    </div>
+                    <div class="card highlight-card highlight-tough" data-scatter>
+                        <span class="highlight-tag"><i class="fas fa-cloud-rain"></i> Toughest Day</span>
+                        <h3>Wednesday</h3>
+                        <p>Missed entirely — first gap in 33 days. Travel days are your biggest risk pattern; three of your last five missed days were while away from home.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== COMMITMENTS BREAKDOWN ========== -->
+            <section class="report-section commitments-section lazy-reveal" id="commitments">
+                <div class="section-head">
+                    <span class="section-eyebrow"><i class="fas fa-list-ol"></i> By Commitment</span>
+                    <h2>Which promises held</h2>
+                    <p class="section-sub">You're tracking four commitments this month. Here's how each one actually did.</p>
+                </div>
+                <ul class="commitment-list">
+                    <li class="commitment-row" data-scatter>
+                        <span class="commitment-name"><i class="fas fa-sun"></i> Wake up by 6:00 AM</span>
+                        <div class="commitment-bar"><span style="--pct:86" data-pct="6/7"></span></div>
+                        <span class="commitment-frac">6/7</span>
+                    </li>
+                    <li class="commitment-row" data-scatter>
+                        <span class="commitment-name"><i class="fas fa-book"></i> Read 20 pages</span>
+                        <div class="commitment-bar"><span style="--pct:100" data-pct="7/7"></span></div>
+                        <span class="commitment-frac">7/7</span>
+                    </li>
+                    <li class="commitment-row" data-scatter>
+                        <span class="commitment-name"><i class="fas fa-mobile-screen-button"></i> No phone after 10 PM</span>
+                        <div class="commitment-bar"><span style="--pct:57" data-pct="4/7"></span></div>
+                        <span class="commitment-frac">4/7</span>
+                    </li>
+                    <li class="commitment-row" data-scatter>
+                        <span class="commitment-name"><i class="fas fa-utensils"></i> No takeout on weekdays</span>
+                        <div class="commitment-bar"><span style="--pct:80" data-pct="4/5"></span></div>
+                        <span class="commitment-frac">4/5</span>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- ========== MOOD DISTRIBUTION ========== -->
+            <section class="report-section mood-section lazy-reveal" id="mood">
+                <div class="section-head">
+                    <span class="section-eyebrow"><i class="fas fa-face-smile"></i> How You Felt</span>
+                    <h2>Mood across the week</h2>
+                </div>
+                <ul class="mood-list">
+                    <li class="mood-row" data-scatter>
+                        <span class="mood-emoji">😄</span>
+                        <span class="mood-label">Proud</span>
+                        <div class="mood-bar"><span style="--pct:14"></span></div>
+                        <span class="mood-count">1 day</span>
+                    </li>
+                    <li class="mood-row" data-scatter>
+                        <span class="mood-emoji">🙂</span>
+                        <span class="mood-label">Calm</span>
+                        <div class="mood-bar"><span style="--pct:14"></span></div>
+                        <span class="mood-count">1 day</span>
+                    </li>
+                    <li class="mood-row" data-scatter>
+                        <span class="mood-emoji">💪</span>
+                        <span class="mood-label">Focused</span>
+                        <div class="mood-bar"><span style="--pct:14"></span></div>
+                        <span class="mood-count">1 day</span>
+                    </li>
+                    <li class="mood-row" data-scatter>
+                        <span class="mood-emoji">🔥</span>
+                        <span class="mood-label">Determined</span>
+                        <div class="mood-bar"><span style="--pct:14"></span></div>
+                        <span class="mood-count">1 day</span>
+                    </li>
+                    <li class="mood-row" data-scatter>
+                        <span class="mood-emoji">😮‍💨</span>
+                        <span class="mood-label">Tired</span>
+                        <div class="mood-bar"><span style="--pct:14"></span></div>
+                        <span class="mood-count">1 day</span>
+                    </li>
+                    <li class="mood-row" data-scatter>
+                        <span class="mood-emoji">😐</span>
+                        <span class="mood-label">Drained</span>
+                        <div class="mood-bar"><span style="--pct:14"></span></div>
+                        <span class="mood-count">1 day</span>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- ========== INSIGHTS ========== -->
+            <section class="report-section insights-section lazy-reveal" id="insights">
+                <div class="section-head">
+                    <span class="section-eyebrow"><i class="fas fa-lightbulb"></i> Patterns We Noticed</span>
+                    <h2>What the data actually says</h2>
+                </div>
+                <div class="grid grid-3">
+                    <div class="card insight-card" data-scatter>
+                        <i class="fas fa-sun insight-icon"></i>
+                        <h4>Mornings win</h4>
+                        <p>Entries logged before 9 AM average 52 words. Evening entries average 24. You write more when you write early.</p>
+                    </div>
+                    <div class="card insight-card" data-scatter>
+                        <i class="fas fa-plane insight-icon"></i>
+                        <h4>Travel is your risk window</h4>
+                        <p>3 of your last 5 missed days coincided with travel. Consider a lighter, one-word check-in option for those days.</p>
+                    </div>
+                    <div class="card insight-card" data-scatter>
+                        <i class="fas fa-bell insight-icon"></i>
+                        <h4>Reminders are working</h4>
+                        <p>Weeks with your 9 PM reminder enabled show 22% higher consistency than weeks without it.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== WORDS YOU USED MOST ========== -->
+            <section class="report-section wordcloud-section lazy-reveal" id="wordcloud">
+                <div class="section-head">
+                    <span class="section-eyebrow"><i class="fas fa-quote-left"></i> Your Own Language</span>
+                    <h2>Words you kept coming back to</h2>
+                    <p class="section-sub">Pulled straight from this week's entries — sized by how often you reached for each one. Only you ever see the sentences behind them.</p>
+                </div>
+                <ul class="word-cloud" id="wordCloud">
+                    <li class="word-chip" style="--w:9">showed up</li>
+                    <li class="word-chip" style="--w:5">honest</li>
+                    <li class="word-chip" style="--w:7">tired</li>
+                    <li class="word-chip" style="--w:4">promise</li>
+                    <li class="word-chip" style="--w:8">anyway</li>
+                    <li class="word-chip" style="--w:3">tomorrow</li>
+                    <li class="word-chip" style="--w:6">proud</li>
+                    <li class="word-chip" style="--w:4">momentum</li>
+                    <li class="word-chip" style="--w:5">again</li>
+                    <li class="word-chip" style="--w:3">identity</li>
+                </ul>
+            </section>
+
+            <!-- ========== GROUP COMPARISON ========== -->
+            <section class="report-section group-compare-section lazy-reveal" id="group-compare">
+                <div class="section-head">
+                    <span class="section-eyebrow"><i class="fas fa-user-group"></i> Optional Context</span>
+                    <h2>How your group did this week</h2>
+                    <p class="section-sub">You're in "Morning People" — 5 members, private, opt-in only. Nobody sees your notes, just your consistency.</p>
+                </div>
+                <ul class="group-compare-list">
+                    <li class="group-compare-row group-compare-you" data-scatter>
+                        <span class="gc-rank">1</span>
+                        <span class="gc-avatar" aria-hidden="true">{{ request.user.first_name|slice:":1"|default:"A" }}{{ request.user.last_name|slice:":1"|default:"O" }}</span>
+                        <span class="gc-name">You</span>
+                        <div class="gc-bar"><span style="--pct:86"></span></div>
+                        <span class="gc-pct">86%</span>
+                    </li>
+                    <li class="group-compare-row" data-scatter>
+                        <span class="gc-rank">2</span>
+                        <span class="gc-avatar" aria-hidden="true">DN</span>
+                        <span class="gc-name">David N.</span>
+                        <div class="gc-bar"><span style="--pct:79"></span></div>
+                        <span class="gc-pct">79%</span>
+                    </li>
+                    <li class="group-compare-row" data-scatter>
+                        <span class="gc-rank">3</span>
+                        <span class="gc-avatar" aria-hidden="true">PM</span>
+                        <span class="gc-name">Priya M.</span>
+                        <div class="gc-bar"><span style="--pct:71"></span></div>
+                        <span class="gc-pct">71%</span>
+                    </li>
+                    <li class="group-compare-row" data-scatter>
+                        <span class="gc-rank">4</span>
+                        <span class="gc-avatar" aria-hidden="true">CO</span>
+                        <span class="gc-name">Chidi O.</span>
+                        <div class="gc-bar"><span style="--pct:64"></span></div>
+                        <span class="gc-pct">64%</span>
+                    </li>
+                    <li class="group-compare-row" data-scatter>
+                        <span class="gc-rank">5</span>
+                        <span class="gc-avatar" aria-hidden="true">SK</span>
+                        <span class="gc-name">Sarah K.</span>
+                        <div class="gc-bar"><span style="--pct:58"></span></div>
+                        <span class="gc-pct">58%</span>
+                    </li>
+                </ul>
+                <p class="group-compare-footnote"><i class="fas fa-circle-info"></i> Groups are entirely optional. You can leave "Morning People" or make your streak fully private at any time in Settings.</p>
+            </section>
+
+            <!-- ========== METHODOLOGY / HOW WE CALCULATE THIS (accordion) ========== -->
+            <section class="report-section methodology-section lazy-reveal" id="methodology">
+                <div class="section-head">
+                    <span class="section-eyebrow"><i class="fas fa-calculator"></i> Under the Hood</span>
+                    <h2>How this report is calculated</h2>
+                    <p class="section-sub">No black box. Here's exactly where every number above comes from.</p>
+                </div>
+                <ul class="accordion" id="methodologyAccordion">
+                    <li class="accordion-item is-open">
+                        <button class="accordion-trigger" type="button" aria-expanded="true">
+                            <span><i class="fas fa-percent"></i> Consistency Score</span>
+                            <i class="fas fa-chevron-down accordion-caret"></i>
+                        </button>
+                        <div class="accordion-panel">
+                            <p>Completed check-ins divided by days elapsed in the period, weighted slightly toward recent days so a strong finish counts a little more than a strong start. Today only counts once the day has ended in your local timezone.</p>
+                        </div>
+                    </li>
+                    <li class="accordion-item">
+                        <button class="accordion-trigger" type="button" aria-expanded="false">
+                            <span><i class="fas fa-fire"></i> Streak</span>
+                            <i class="fas fa-chevron-down accordion-caret"></i>
+                        </button>
+                        <div class="accordion-panel">
+                            <p>Consecutive days with at least one completed check-in, counting backward from the most recent entry. A single missed day resets the streak to zero — we don't offer streak freezes, since the whole point is an honest count.</p>
+                        </div>
+                    </li>
+                    <li class="accordion-item">
+                        <button class="accordion-trigger" type="button" aria-expanded="false">
+                            <span><i class="fas fa-face-smile"></i> Mood</span>
+                            <i class="fas fa-chevron-down accordion-caret"></i>
+                        </button>
+                        <div class="accordion-panel">
+                            <p>The single emoji you pick when you check in, nothing inferred from your writing. We never run sentiment analysis on your private notes — mood is only what you explicitly tell us.</p>
+                        </div>
+                    </li>
+                    <li class="accordion-item">
+                        <button class="accordion-trigger" type="button" aria-expanded="false">
+                            <span><i class="fas fa-feather-pointed"></i> Word Count &amp; Trends</span>
+                            <i class="fas fa-chevron-down accordion-caret"></i>
+                        </button>
+                        <div class="accordion-panel">
+                            <p>Plain word count on your entry text, and the "morning vs evening" or "travel risk" insights are simple correlations across your own history — compared only to your past weeks, never to other users.</p>
+                        </div>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- ========== NOTIFICATION PREVIEW ========== -->
+            <section class="report-section notify-preview-section lazy-reveal" id="notify-preview">
+                <div class="grid grid-2">
+                    <div class="notify-preview-text">
+                        <span class="section-eyebrow"><i class="fas fa-mobile-screen"></i> Delivery</span>
+                        <h2>This report lands here every Sunday</h2>
+                        <p class="section-sub">Choose email, push, or WhatsApp — or all three. Change it any time from Settings → Reminders.</p>
+                        <ul class="checklist">
+                            <li><i class="fas fa-check-circle"></i> Sundays at 8:00 AM, your local time</li>
+                            <li><i class="fas fa-check-circle"></i> Never sent if you had zero entries that week</li>
+                            <li><i class="fas fa-check-circle"></i> One tap unsubscribe, no dark patterns</li>
+                        </ul>
+                    </div>
+                    <div class="notify-preview-visual">
+                        <div class="phone-mock" aria-hidden="true">
+                            <div class="phone-status-bar">
+                                <span>9:41</span>
+                                <span class="phone-status-icons"><i class="fas fa-signal"></i><i class="fas fa-wifi"></i><i class="fas fa-battery-three-quarters"></i></span>
+                            </div>
+                            <div class="phone-notch"></div>
+                            <div class="phone-notif">
+                                <span class="phone-notif-icon">S&amp;D</span>
+                                <div class="phone-notif-body">
+                                    <strong>Streak &amp; Discipline</strong>
+                                    <span>Your Weekly Truth Report is ready — 86% this week, up 9 points.</span>
+                                </div>
+                                <span class="phone-notif-time">now</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== DATA & PRIVACY NOTE ========== -->
+            <aside class="report-section privacy-note lazy-reveal" id="privacy-note">
+                <i class="fas fa-lock privacy-icon" aria-hidden="true"></i>
+                <p><strong>Your notes are encrypted and private by default.</strong> This report only ever surfaces to you. Group members see your consistency percentage if you opt in — never your written entries, mood, or exact check-in times.</p>
+            </aside>
+
+            <!-- ========== CTA ========== -->
+            <section class="report-section cta-section lazy-reveal" id="report-cta">
                 <div class="cta-card">
-                    <h2>This is <span class="highlight">your data</span>. Real patterns. Real change.</h2>
-                    <p>No generic advice. No empty promises. Just the truth your consistency reveals.</p>
-                    <div class="cta-buttons">
-                        <a href="{% url 'origin_signup' %}" class="btn btn-primary btn-xl">
-                            <i class="fas fa-rocket"></i> Start My Free Journal
-                        </a>
-                        <a href="{% url 'origin_login' %}" class="btn btn-outline btn-xl">
-                            <i class="fas fa-sign-in-alt"></i> Sign In
-                        </a>
+                    <h2>Next Sunday, this report is about <span class="ink-highlight">your</span> week.</h2>
+                    <p>Start your own private streak — no leaderboard, no pressure, just an honest mirror.</p>
+                    <div class="hero-actions">
+                        <a href="{% url "origin_signup" %}" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Start Free</a>
+                        <a href="" class="btn btn-outline btn-lg"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
                     </div>
-                    <p class="cta-trust">Free forever plan · No credit card · Cancel anytime</p>
                 </div>
-            </div>
-        </section>
+            </section>
 
+        </div>
     </main>
 
     <!-- ========== FOOTER ========== -->
     <footer class="site-footer">
-        <div class="container footer-inner">
-            <p>&copy; {{ footer_copyright_note }}</p>
-            <nav>
-                <a href="{% url 'origin_extra' %}#privacy">Privacy</a>
-                <a href="{% url 'origin_extra' %}#terms">Terms</a>
-                <a href="{% url 'origin_extra' %}#help">Help</a>
-            </nav>
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <a href="" class="nav-logo">
+                    <span class="nav-logo-mark" aria-hidden="true">S&amp;D</span>
+                    <span class="nav-logo-text">STREAK &amp; DISCIPLINE</span>
+                </a>
+                <p>A private discipline journal for those serious about keeping promises to themselves.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Report</h4>
+                <a href="#stat-overview">Overview</a>
+                <a href="#daily-breakdown">Daily Breakdown</a>
+                <a href="#trend">Trends</a>
+                <a href="#commitments">Commitments</a>
+            </div>
+            <div class="footer-links">
+                <h4>Support</h4>
+                <a href="mailto:support@streakanddiscipline.com"><i class="fas fa-envelope"></i> support@streakanddiscipline.com</a>
+                <a href="{% url "origin_extra" %}#help"><i class="fas fa-question-circle"></i> Help Center</a>
+            </div>
+            <div class="footer-links">
+                <h4>Legal</h4>
+                <a href="{% url "origin_extra" %}#privacy">Privacy Policy</a>
+                <a href="{% url "origin_extra" %}#terms">Terms of Service</a>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>&copy; {{ footer_copyright_note|default:"2026 Streak & Discipline. All rights reserved." }}</p>
         </div>
     </footer>
 
+    <button class="btn-icon back-to-top" id="backToTop" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <!-- ========== COOKIE CONSENT ========== -->
+    <div class="cookie-banner" id="cookieBanner" role="dialog" aria-label="Cookie settings">
+        <p><strong>Your privacy, briefly.</strong> We use a small essential cookie to keep you signed in, plus an optional analytics cookie to see which parts of your report actually get read. No data is ever sold.</p>
+        <div class="cookie-actions">
+            <button class="btn btn-outline btn-sm" id="cookieDecline">Essential only</button>
+            <button class="btn btn-primary btn-sm" id="cookieAccept">Accept all</button>
+        </div>
+    </div>
+
     <!-- ========== SCRIPTS ========== -->
-    <style>{% include "reusables/custom_message.css" %}</style>
-    <script src="{% static 'reusables/custom_message.js' %}"></script>
-    <script>{% include "reusables/spinner.js" %}</script>
     <script>
-        // Theme toggle
-        (function(){
-            function getCookie(n){var v='; '+document.cookie;var p=v.split('; '+n+'=');if(p.length===2)return p.pop().split(';').shift();return null}
-            function setCookie(n,v,d){var t=new Date();t.setTime(t.getTime()+(d*86400000));document.cookie=n+'='+v+';expires='+t.toUTCString()+';path=/;SameSite=Lax'}
-            var body=document.body,btn=document.getElementById('themeToggle'),saved=getCookie('sd-theme');
-            if(saved==='light'){body.classList.add('light-mode');btn.innerHTML='<i class="fas fa-sun"></i>'}
-            btn.addEventListener('click',function(){
-                if(body.classList.contains('light-mode')){body.classList.remove('light-mode');setCookie('sd-theme','dark',365);btn.innerHTML='<i class="fas fa-moon"></i>'}
-                else{body.classList.add('light-mode');setCookie('sd-theme','light',365);btn.innerHTML='<i class="fas fa-sun"></i>'}
+    (function(){
+        "use strict";
+
+        /* ---------- 1. PAGE LOADER ---------- */
+        var loaderMessages = [
+            "Pulling your week together…",
+            "Counting the days you showed up…",
+            "Reading last Sunday's note…",
+            "Lining up the charts…"
+        ];
+        var loaderTextEl = document.getElementById('loaderText');
+        var loaderIdx = 0;
+        var loaderInterval = setInterval(function(){
+            loaderIdx = (loaderIdx + 1) % loaderMessages.length;
+            if(loaderTextEl) loaderTextEl.textContent = loaderMessages[loaderIdx];
+        }, 900);
+
+        function hideLoader(){
+            clearInterval(loaderInterval);
+            var loader = document.getElementById('pageLoader');
+            if(loader) loader.classList.add('hide');
+        }
+        window.addEventListener('load', function(){
+            setTimeout(hideLoader, 350); // small floor so it never just flashes
+        });
+        // Safety net: never trap the user behind the loader
+        setTimeout(hideLoader, 4000);
+
+        /* ---------- 2. MOBILE NAV ---------- */
+        var navToggle = document.getElementById('navToggle');
+        var navLinks = document.getElementById('navLinks');
+        var overlay = document.getElementById('mobileOverlay');
+        function closeNav(){
+            navLinks.classList.remove('active');
+            overlay.classList.remove('active');
+            navToggle.setAttribute('aria-expanded', 'false');
+        }
+        function toggleNav(){
+            var isOpen = navLinks.classList.toggle('active');
+            overlay.classList.toggle('active', isOpen);
+            navToggle.setAttribute('aria-expanded', String(isOpen));
+        }
+        if(navToggle){ navToggle.addEventListener('click', toggleNav); }
+        if(overlay){ overlay.addEventListener('click', closeNav); }
+        navLinks.querySelectorAll('a').forEach(function(a){
+            a.addEventListener('click', closeNav);
+        });
+
+        /* ---------- 3. SCROLL PROGRESS + BACK TO TOP ---------- */
+        var progressBar = document.getElementById('scrollProgress');
+        var backToTop = document.getElementById('backToTop');
+        function onScroll(){
+            var doc = document.documentElement;
+            var scrollTop = doc.scrollTop || document.body.scrollTop;
+            var height = doc.scrollHeight - doc.clientHeight;
+            var pct = height > 0 ? (scrollTop / height) * 100 : 0;
+            if(progressBar) progressBar.style.width = pct + '%';
+            if(backToTop) backToTop.classList.toggle('visible', scrollTop > 500);
+        }
+        document.addEventListener('scroll', onScroll, {passive:true});
+        onScroll();
+        if(backToTop){
+            backToTop.addEventListener('click', function(){
+                window.scrollTo({top:0, behavior:'smooth'});
             });
-        })();
-        // Heavy CSS
-        (function(){var h=document.getElementById('heavy-css');if(h&&h.rel!=='stylesheet')h.rel='stylesheet'})();
-        // Counter
-        function animateCounter(el,target,dur){var s=0,st=target/(dur/16);var t=setInterval(function(){s+=st;if(s>=target){el.textContent=Math.round(target)+'%';clearInterval(t)}else{el.textContent=Math.round(s)+'%'}},16)}
-        // Reveal + scatter
-        var obs=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('revealed');if(e.target.classList.contains('main-stat')&&!e.target.dataset.ani){e.target.dataset.ani='1';var c=e.target.querySelector('#consistencyCounter');if(c)animateCounter(c,71,1500)}if(e.target.hasAttribute('data-scatter')&&!e.target.dataset.sc){e.target.dataset.sc='1';var sx=(Math.random()-0.5)*60,sy=(Math.random()-0.5)*60,sr=(Math.random()-0.5)*35;e.target.style.setProperty('--sx',sx+'px');e.target.style.setProperty('--sy',sy+'px');e.target.style.setProperty('--sr',sr+'deg');e.target.classList.add('scattering');setTimeout(function(){e.target.classList.remove('scattering');e.target.classList.add('resetting')},400);setTimeout(function(){e.target.classList.remove('resetting')},1000)}}})},{threshold:0.2});
-        document.querySelectorAll('.summary-card,.chart-card,.insight-card,.weekly-summary,.charts-section,.discipline-demo,.insights-section').forEach(function(el){obs.observe(el)});
+        }
+
+        /* ---------- 4. COOKIE CONSENT (localStorage — demo only) ---------- */
+        var cookieBanner = document.getElementById('cookieBanner');
+        var CONSENT_KEY = 'sd_cookie_consent';
+        try {
+            if(!localStorage.getItem(CONSENT_KEY)){
+                setTimeout(function(){ cookieBanner.classList.add('visible'); }, 1200);
+            }
+        } catch(e) { /* localStorage unavailable — leave banner hidden */ }
+        function setConsent(value){
+            try { localStorage.setItem(CONSENT_KEY, value); } catch(e){}
+            cookieBanner.classList.remove('visible');
+        }
+        document.getElementById('cookieAccept').addEventListener('click', function(){ setConsent('all'); });
+        document.getElementById('cookieDecline').addEventListener('click', function(){ setConsent('essential'); });
+
+        /* ---------- 5. INTERSECTION OBSERVER REVEALS ---------- */
+        var revealTargets = document.querySelectorAll('.lazy-reveal, [data-scatter]');
+        if('IntersectionObserver' in window){
+            var io = new IntersectionObserver(function(entries){
+                entries.forEach(function(entry){
+                    if(entry.isIntersecting){
+                        entry.target.classList.add('revealed');
+                        io.unobserve(entry.target);
+                    }
+                });
+            }, {threshold:0.15, rootMargin:'0px 0px -40px 0px'});
+            revealTargets.forEach(function(el){ io.observe(el); });
+        } else {
+            revealTargets.forEach(function(el){ el.classList.add('revealed'); });
+        }
+
+        /* ---------- 6. ANIMATED NUMBER COUNTERS ---------- */
+        var counters = document.querySelectorAll('[data-count-to]');
+        function animateCounter(el){
+            var target = parseFloat(el.getAttribute('data-count-to'));
+            var start = 0;
+            var duration = 1100;
+            var startTime = null;
+            function step(ts){
+                if(!startTime) startTime = ts;
+                var progress = Math.min((ts - startTime) / duration, 1);
+                var eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+                el.textContent = Math.round(start + (target - start) * eased);
+                if(progress < 1) requestAnimationFrame(step);
+                else el.textContent = target;
+            }
+            requestAnimationFrame(step);
+        }
+        if('IntersectionObserver' in window && counters.length){
+            var counterIo = new IntersectionObserver(function(entries){
+                entries.forEach(function(entry){
+                    if(entry.isIntersecting){
+                        animateCounter(entry.target);
+                        counterIo.unobserve(entry.target);
+                    }
+                });
+            }, {threshold:0.6});
+            counters.forEach(function(el){ counterIo.observe(el); });
+        }
+
+        /* ---------- 7. CONSISTENCY RING — paint conic-gradient from data ---------- */
+        var ring = document.getElementById('consistencyRing');
+        if(ring){
+            var pct = parseFloat(getComputedStyle(ring).getPropertyValue('--pct')) || 0;
+            ring.style.setProperty('--deg', (pct * 3.6) + 'deg');
+        }
+
+        /* ---------- 8. DAY CARD EXPAND / COLLAPSE ---------- */
+        document.querySelectorAll('.day-card-head').forEach(function(head){
+            head.addEventListener('click', function(){
+                var card = head.closest('.day-card');
+                var isOpen = card.classList.toggle('is-open');
+                head.setAttribute('aria-expanded', String(isOpen));
+            });
+        });
+
+        /* ---------- 9. CONSTELLATION TOOLTIP ---------- */
+        var tooltip = document.getElementById('constTooltip');
+        var tooltipDay = document.getElementById('constTooltipDay');
+        var tooltipNote = document.getElementById('constTooltipNote');
+        document.querySelectorAll('.const-node').forEach(function(node){
+            function reveal(){
+                tooltipDay.textContent = node.getAttribute('data-day');
+                tooltipNote.textContent = node.getAttribute('data-note');
+                tooltip.classList.add('visible');
+            }
+            node.addEventListener('mouseenter', reveal);
+            node.addEventListener('focus', reveal);
+            node.addEventListener('click', reveal);
+        });
+
+        /* ---------- 10. PRINT / SHARE ---------- */
+        document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
+        document.getElementById('shareBtn').addEventListener('click', function(){
+            var shareData = {
+                title: 'My Weekly Truth Report',
+                text: 'My consistency score this week: 86%.',
+                url: window.location.href
+            };
+            if(navigator.share){
+                navigator.share(shareData).catch(function(){});
+            } else if(navigator.clipboard){
+                navigator.clipboard.writeText(window.location.href);
+                alert('Link copied to clipboard.');
+            }
+        });
+
+        /* ---------- 11b. METHODOLOGY ACCORDION ---------- */
+        var accordionItems = document.querySelectorAll('#methodologyAccordion .accordion-item');
+        accordionItems.forEach(function(item){
+            var trigger = item.querySelector('.accordion-trigger');
+            trigger.addEventListener('click', function(){
+                var willOpen = !item.classList.contains('is-open');
+                accordionItems.forEach(function(other){
+                    other.classList.remove('is-open');
+                    other.querySelector('.accordion-trigger').setAttribute('aria-expanded', 'false');
+                });
+                if(willOpen){
+                    item.classList.add('is-open');
+                    trigger.setAttribute('aria-expanded', 'true');
+                }
+            });
+        });
+
+        /* ---------- 11. WEEK SWITCHER (demo stub — no backend wired) ---------- */
+        document.getElementById('prevWeekBtn').addEventListener('click', function(){
+            alert('This is a static sample report — week navigation is disabled in the demo.');
+        });
+
+        /* ---------- 12. MOBILE VS DESKTOP MOTION FLAG ----------
+           The engine stylesheet reads this attribute to decide whether
+           ambient physics animations should run automatically (mobile,
+           no hover available) or wait for :hover (desktop). We detect
+           via a coarse pointer + hover media query rather than width,
+           since it's about input type, not viewport. */
+        var isCoarsePointer = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+        document.documentElement.setAttribute('data-input', isCoarsePointer ? 'touch' : 'fine');
+
+        /* Respect reduced motion preference across every animated component */
+        if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+            document.documentElement.classList.add('reduced-motion');
+        }
+
+    })();
     </script>
 </body>
 </html>
