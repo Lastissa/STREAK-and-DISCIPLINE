@@ -1,6 +1,7 @@
 from django.core.cache import cache
 import random
 from django.utils import timezone
+from django.templatetags.static import static
 
 def get_consistency_Value() -> str:
     """Return a string to be set in the consistency text on the landing_page, it send that same string to cache and it remain active for two minutes before it get reset again """
@@ -50,7 +51,7 @@ def intro_word(list_lenght = 2) -> list:
             "One day or day one. You decide.",
             "Champions don't wait for the mood. They build the habit."
                        ]
-    return random.sample(words, 2)
+    return random.sample(words, list_lenght)
     
 def template_based_reusables(request):
     """To save data that will be reused i template and i dont have to import them as they will be import automatically like i was in a render function"""
@@ -64,10 +65,23 @@ def template_based_reusables(request):
         'customer_care_phone_number' : customer_care_phone_number,
         'customer_care_whatsapp_number': customer_care_whatsapp_number,
         'footer_copyright_note': footer_copyright_note,
+        'custom_base_url' : custom_base_url,
         'logo_url' : 'https://res.cloudinary.com/brop3jeq/image/upload/v1784524604/logo_jvljxp.png',
-        'mobile_dark_url': 'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/mobile_dark_iuvjyq.png',
-        'mobile_light_url':'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/mobile_light_xvuaxj.png',
-        'desktop_dark_url' : 'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/desktop_dark_nvt6lr.png',
-        'desktop_light_url' : 'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/desktop_light_rrgglg.png',
-        'custom_base_url' : custom_base_url       
+        'mobile_dark_url': static('img/mobile_dark.png'), #'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/mobile_dark_iuvjyq.png',
+        'mobile_light_url': static('img/mobile_light.png'),#'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/mobile_light_xvuaxj.png',
+        'desktop_dark_url' : static('img/desktop_dark.png'),#'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/desktop_dark_nvt6lr.png',
+        'desktop_light_url' : static('img/desktop_light.png'),#'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/desktop_light_rrgglg.png',
+        'font_awesome_all_min_css' : static('fontawesome/css/all.min.css'),
+        'advance_landing_page_css': static('cdn/landing_page.css'),
+        'advance_landing_page_js': static('cdn/landing_page.js'),
+        'user_1': static('img/user_support/user_1.png'),
+        'user_2': static('img/user_support/user_2.png'),
+        'user_3': static('img/user_support/user_3.png'),
+        'user_4': static('img/user_support/user_4.png'),
+        'user_5': static('img/user_support/user_5.png'),
+        'user_6': static(''),
+        'customer_support_1': static('img/user_support/customer_support_1.jpg'),
+        'customer_support_2': static('img/user_support/customer_support_2.jpg'),
+        'customer_support_3': static('img/user_support/customer_support_3.jpg'),
+        'customer_support_4': static('img/user_support/customer_support_4.jpg'),        
     }

@@ -1,11 +1,8 @@
-/**
- * Messages: copy all, auto-dismiss, close button.
- */
 (function() {
     var container = document.getElementById('messagesContainer');
     if (!container) return;
 
-    // ===== COPY ALL BUTTON =====
+    // Copy all
     var copyBtn = document.getElementById('msgCopyAll');
     if (copyBtn) {
         copyBtn.addEventListener('click', function() {
@@ -16,19 +13,16 @@
             var allText = texts.join('\n');
 
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(allText).then(function() {
-                    showCopied();
-                });
+                navigator.clipboard.writeText(allText).then(showCopied);
             } else {
-                // Fallback for older browsers
-                var textarea = document.createElement('textarea');
-                textarea.value = allText;
-                textarea.style.position = 'fixed';
-                textarea.style.opacity = '0';
-                document.body.appendChild(textarea);
-                textarea.select();
+                var ta = document.createElement('textarea');
+                ta.value = allText;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
                 document.execCommand('copy');
-                document.body.removeChild(textarea);
+                document.body.removeChild(ta);
                 showCopied();
             }
         });
@@ -38,26 +32,22 @@
         if (!copyBtn) return;
         var span = copyBtn.querySelector('span');
         var icon = copyBtn.querySelector('i');
-        var originalText = span.textContent;
-        var originalIcon = icon.className;
-
+        var origText = span.textContent;
+        var origIcon = icon.className;
         copyBtn.classList.add('copied');
         span.textContent = 'Copied!';
         icon.className = 'fas fa-check';
-
         setTimeout(function() {
             copyBtn.classList.remove('copied');
-            span.textContent = originalText;
-            icon.className = originalIcon;
-        }, 2000);
+            span.textContent = origText;
+            icon.className = origIcon;
+        }, 1800);
     }
 
-    // ===== AUTO-DISMISS + CLOSE BUTTONS =====
-    var messages = container.querySelectorAll('.msg');
-    messages.forEach(function(msg) {
-        var timer = setTimeout(function() {
-            dismiss(msg);
-        }, 6000);
+    // Auto-dismiss + close
+    var msgs = container.querySelectorAll('.msg');
+    msgs.forEach(function(msg) {
+        var timer = setTimeout(function() { dismiss(msg); }, 6000);
 
         var closeBtn = msg.querySelector('.msg-close');
         if (closeBtn) {
@@ -67,23 +57,18 @@
             });
         }
 
-        msg.addEventListener('mouseenter', function() {
-            clearTimeout(timer);
-        });
+        msg.addEventListener('mouseenter', function() { clearTimeout(timer); });
         msg.addEventListener('mouseleave', function() {
-            timer = setTimeout(function() {
-                dismiss(msg);
-            }, 3000);
+            timer = setTimeout(function() { dismiss(msg); }, 3000);
         });
     });
 
     function dismiss(msg) {
+        if (msg.classList.contains('removing')) return;
         msg.classList.add('removing');
         msg.addEventListener('transitionend', function() {
             msg.remove();
-            if (container.querySelectorAll('.msg').length === 0) {
-                container.remove();
-            }
+            if (!container.querySelector('.msg')) container.remove();
         }, { once: true });
     }
 })();

@@ -125,7 +125,8 @@ SOCIAL_AUTH_PIPELINE = (
 # Where to redirect when things go wrong
 SOCIAL_AUTH_LOGIN_ERROR_URL = 'v1/login/?error=auth_failed'
 SOCIAL_AUTH_NEW_USER_REDIRECT_URL = 'v1/onboarding/'
-SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/dashboard/'
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = 'v1/dashboard/'
 SOCIAL_AUTH_TIMEOUT = 15 # timeout for connection btwn django social and google or fb
+SOCIAL_AUTH_ALREADY_ASSOCIATED_URL = 'v1/login/?error=already_linked' #if user is have already linked with one socials
 
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000').split(',')

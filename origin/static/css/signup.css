@@ -71,18 +71,12 @@ body.light-mode .site-header{background:rgba(248,250,252,0.85);border-color:rgba
 .form-header h1{font-size:clamp(1.6rem,4vw,2rem);margin-bottom:0.5rem}
 .form-header p{color:var(--text-secondary);font-size:0.9rem}
 
-/* Messages */
-.messages-container{margin-bottom:1rem}
-.message{padding:0.7rem 1rem;border-radius:var(--radius);font-size:0.85rem;margin-bottom:0.5rem}
-.message-error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5}
-.message-success{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#86efac}
-
 /* Social buttons */
 .social-signup{display:flex;flex-direction:column;gap:0.7rem;margin-bottom:1.5rem}
 .btn-social{justify-content:center;padding:0.7rem 1.5rem;font-weight:600;font-size:0.9rem;gap:0.7rem}
-.btn-google{background:#fff;color:#1f2937;border-color:#d1d5db}
+.btn-google{width: 100%;background:#fff;color:#1f2937;border-color:#d1d5db}
 .btn-google:hover{background:#f9fafb;border-color:#9ca3af}
-.btn-facebook{background:#1877f2;color:#fff;border-color:#1877f2}
+.btn-facebook{width: 100%;background:#1877f2;color:#fff;border-color:#1877f2}
 .btn-facebook:hover{background:#166fe5;border-color:#166fe5}
 
 /* Divider */

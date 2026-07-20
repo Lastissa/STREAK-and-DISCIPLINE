@@ -26,7 +26,7 @@ class Extras(View):
 class Signup(View):
     """signup page"""
     def get(self, request): 
-        messages.info(request, message="NB: Its important to agree to term and policy before create account button will be active, kindly go through before checking button")
+        messages.info(request=request, message="Please, Read term and services before you continue")
         return render(request, 'html/signup.html')
 
     

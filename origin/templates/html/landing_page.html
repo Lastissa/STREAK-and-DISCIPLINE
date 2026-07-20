@@ -8,11 +8,8 @@
     <!--Og for socials inclduing twitter and ALSO TITLE IS INCLUDED-->
 {% include "reusables/metadata.html" with og_title="STREAK & DISCIPLINE — Keep the promises you make to yourself." og_description="A private, no‑nonsense journal that holds you accountable — one honest sentence a day. No badges, no pressure, just you vs your word." %}
 
-    <!-- Font Awesome 6 for icons (loads fast from CDN) -->
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
-          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" 
-          crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Font Awesome 6 for icons (loads from my project)-->
+    <link rel="stylesheet" href="{{font_awesome_all_min_css}}"/>
 
     
     <style>
@@ -25,12 +22,12 @@
 
     <!-- Lightweight CSS (critical path, blocks rendering minimally) -->
     <link rel="stylesheet" href="{% static 'css/landing_page.css' %}">
-    
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com"> {% comment "important for external links" %}{% endcomment %}
     <!-- Heavy CSS (deferred, non-blocking) -->
-    <link rel="preload" href="https://res.cloudinary.com/brop3jeq/raw/upload/v1784439069/landing_page_t43fd3.css" as="style" 
+    <link rel="preload" href="{{advance_landing_page_css}}" as="style" 
           onload="this.onload=null;this.rel='stylesheet'" id="heavy-css">
     <noscript>
-        <link rel="stylesheet" href="https://res.cloudinary.com/brop3jeq/raw/upload/v1784439069/landing_page_t43fd3.css">
+        <link rel="stylesheet" href="{{advance_landing_page_css}}">
     </noscript>
 </head>
 <body>
@@ -56,6 +53,7 @@
                 <a href="#reminders"><i class="fas fa-bell"></i> Reminders</a>
                 <a href="#analysis"><i class="fas fa-chart-line"></i> Analysis</a>
                 <a href="#pricing"><i class="fas fa-tag"></i> Pricing</a>
+                <a href="{% url "origin_extra" %}"><i class="fas fa-link"></i> policy</a>
                 <div class="nav-auth-mobile">
                     <a href="{% url "origin_login" %}" class="btn btn-outline btn-sm">Sign In</a>
                     <a href="{% url "origin_signup" %}" class="btn btn-primary btn-sm">Start Free</a>
@@ -91,7 +89,7 @@
                     <h1>Keep the promises <br>you make to <span class="highlight">yourself</span>.</h1>
                     <p class="lead">A private, no‑nonsense journal that holds you accountable — one honest sentence a day.</p>
                     <div class="cta-group">
-                        <a href="#" class="btn btn-primary btn-lg">
+                        <a href="{% url "origin_signup" %}" class="btn btn-primary btn-lg">
                             <i class="fas fa-rocket"></i> Start Your Streak — Free
                         </a>
                         <a href="#how-it-works" class="btn btn-ghost">
@@ -101,7 +99,7 @@
                     <div class="hero-stats">
                         <div class="stat"><span class="stat-num">{{consistency}}%</span><span class="stat-label">Consistency Rate</span></div>
                         <div class="stat"><span class="stat-num">{{journal_created}}</span><span class="stat-label">Journals Created</span></div>
-                        <div class="stat"><span class="stat-num">4/5</span><span class="stat-label"><i class="fas fa-star"></i> Rating</span></div>
+                        <div class="stat"><span class="stat-num">9.4</span><span class="stat-label"><i class="fas fa-star"></i> Rating</span></div>
                     </div>
                 </div>
                 <div class="hero-visual">
@@ -255,8 +253,8 @@
             <div class="testimonial-card" data-scatter>
                 <div class="testimonial-img-wrapper">
                     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%231e293b'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='%233b82f6' font-size='30'%3E🙂%3C/text%3E%3C/svg%3E"
-                         data-src="https://images.pexels.com/photos/3769146/pexels-photo-3769146.jpeg?w=150&h=150&fit=crop&crop=face"
-                         alt="Happy user" class="lazy-img testimonial-avatar" width="80" height="80">
+                         data-src="{{user_1}}"
+                         alt="user_1" class="lazy-img testimonial-avatar" width="80" height="80">
                 </div>
                 <p class="testimonial-text">"For the first time in years, I've written every single day for 3 months straight. This tool rebuilt my confidence."</p>
                 <div class="testimonial-name">— Chidi O.</div>
@@ -266,7 +264,7 @@
             <div class="testimonial-card" data-scatter>
                 <div class="testimonial-img-wrapper">
                     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%231e293b'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='%233b82f6' font-size='30'%3E😊%3C/text%3E%3C/svg%3E"
-                         data-src="https://res.cloudinary.com/brop3jeq/image/upload/v1783760185/me_kjrska.jpg"
+                         data-src="{{user_2}}"
                          alt="Happy user" class="lazy-img testimonial-avatar" width="80" height="80">
                 </div>
                 <p class="testimonial-text">"The weekly analysis made me realize I was 4x more productive on mornings. Changed my whole schedule."</p>
@@ -277,7 +275,7 @@
             <div class="testimonial-card" data-scatter>
                 <div class="testimonial-img-wrapper">
                     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%231e293b'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='%233b82f6' font-size='30'%3E😄%3C/text%3E%3C/svg%3E"
-                         data-src="https://images.pexels.com/photos/1181263/pexels-photo-1181263.jpeg?w=150&h=150&fit=crop&crop=face"
+                         data-src="{{user_3}}"
                          alt="Happy user" class="lazy-img testimonial-avatar" width="80" height="80">
                 </div>
                 <p class="testimonial-text">"No social pressure. Just me and my own standards. Finally a tool built for adults, not kids chasing badges."</p>
@@ -288,18 +286,18 @@
             <div class="testimonial-card" data-scatter>
                 <div class="testimonial-img-wrapper">
                     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%231e293b'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='%233b82f6' font-size='30'%3E😃%3C/text%3E%3C/svg%3E"
-                         data-src="https://images.pexels.com/photos/1181519/pexels-photo-1181519.jpeg?w=150&h=150&fit=crop&crop=face"
+                         data-src="{{user_4}}"
                          alt="Happy user" class="lazy-img testimonial-avatar" width="80" height="80">
                 </div>
                 <p class="testimonial-text">"I stopped breaking promises to myself. 30 days in, my friends noticed the difference before I said a word."</p>
                 <div class="testimonial-name">— Sarah K.</div>
                 <div class="testimonial-streak"><i class="fas fa-fire"></i> 30 day streak</div>
             </div>
-            <!-- Card 5 - Male -->
+            <!-- Card 5  -->
             <div class="testimonial-card" data-scatter>
                 <div class="testimonial-img-wrapper">
                     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%231e293b'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='%233b82f6' font-size='30'%3E🙂%3C/text%3E%3C/svg%3E"
-                         data-src="https://images.pexels.com/photos/2887715/pexels-photo-2887715.jpeg?w=150&h=150&fit=crop&crop=face"
+                         data-src="{{user_5}}"
                          alt="Happy user" class="lazy-img testimonial-avatar" width="80" height="80">
                 </div>
                 <p class="testimonial-text">"The honesty this demands is uncomfortable — and that's exactly why it works. No more lying to myself."</p>
@@ -310,7 +308,7 @@
             <div class="testimonial-card" data-scatter>
                 <div class="testimonial-img-wrapper">
                     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%231e293b'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='%233b82f6' font-size='30'%3E😊%3C/text%3E%3C/svg%3E"
-                         data-src="https://images.pexels.com/photos/3768914/pexels-photo-3768914.jpeg?w=150&h=150&fit=crop&crop=face"
+                         data-src="{{user_6}}"
                          alt="Happy user" class="lazy-img testimonial-avatar" width="80" height="80">
                 </div>
                 <p class="testimonial-text">"From skipping workouts to 5am runs. The streak isn't the goal — becoming the person who shows up is."</p>
@@ -340,7 +338,7 @@
                         <div class="leaderboard-item rank-1">
                             <span class="rank">🥇</span>
                             <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Ccircle cx='18' cy='18' r='18' fill='%233b82f6'/%3E%3C/svg%3E"
-                                data-src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=72&h=72&fit=crop&crop=face"
+                                data-src="{{user_1}}"
                                 class="lazy-img leaderboard-avatar" width="36" height="36" alt="User">
                             <span class="name">Alex J.</span>
                             <span class="streak"><i class="fas fa-fire"></i> 312</span>
@@ -348,7 +346,7 @@
                         <div class="leaderboard-item rank-2">
                             <span class="rank">🥈</span>
                             <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Ccircle cx='18' cy='18' r='18' fill='%2360a5fa'/%3E%3C/svg%3E"
-                                data-src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=72&h=72&fit=crop&crop=face"
+                                data-src="{{user_2}}"
                                 class="lazy-img leaderboard-avatar" width="36" height="36" alt="User">
                             <span class="name">You</span>
                             <span class="streak highlight"><i class="fas fa-fire"></i> 298</span>
@@ -356,7 +354,7 @@
                         <div class="leaderboard-item rank-3">
                             <span class="rank">🥉</span>
                             <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Ccircle cx='18' cy='18' r='18' fill='%2322c55e'/%3E%3C/svg%3E"
-                                data-src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=72&h=72&fit=crop&crop=face"
+                                data-src="{{user_3}}"
                                 class="lazy-img leaderboard-avatar" width="36" height="36" alt="User">
                             <span class="name">Maria K.</span>
                             <span class="streak"><i class="fas fa-fire"></i> 275</span>
@@ -372,15 +370,15 @@
                     <div class="groups-visual">
                         <div class="group-avatars">
                             <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%233b82f6'/%3E%3C/svg%3E"
-                                data-src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=96&h=96&fit=crop&crop=face"
+                                data-src="{{user_5}}"
                                 class="lazy-img group-avatar" width="48" height="48" alt="Group member">
                             <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%2360a5fa'/%3E%3C/svg%3E"
-                                data-src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=96&h=96&fit=crop&crop=face"
+                                data-src="{{user_4}}"
                                 class="lazy-img group-avatar" width="48" height="48" alt="Group member" style="margin-left:-16px">
                             <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%2322c55e'/%3E%3C/svg%3E"
-                                data-src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=96&h=96&fit=crop&crop=face"
+                                data-src="{{user_3}}"
                                 class="lazy-img group-avatar" width="48" height="48" alt="Group member" style="margin-left:-16px">
-                            <span class="group-more">+12</span>
+                            <span class="group-more">+2</span>
                         </div>
                         <p class="groups-text">Small private groups (max 5 people). See each other's consistency — not the details. Just enough to keep you going.</p>
                     </div>
@@ -454,7 +452,7 @@
                         <div class="support-icon"><i class="fas fa-comments"></i></div>
                         <h4>Live Chat</h4>
                         <p>Talk to a real person in under 2 minutes. No bots, no scripts. We've walked this path too.</p>
-                        <a href="#" class="btn btn-outline btn-sm">Start Chat <i class="fas fa-arrow-right"></i></a>
+                        <a href="https://tawk.to/chat/6a5e73d9aa83a11d48ca5748/1ju0f92jn" class="btn btn-outline btn-sm">Start Chat <i class="fas fa-arrow-right"></i></a>
                     </div>
                     <div class="support-card featured-support" data-scatter>
                         <div class="support-icon"><i class="fab fa-whatsapp"></i></div>
@@ -478,23 +476,23 @@
                     <div class="support-avatars">
                         <div class="support-person">
                             <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%233b82f6'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='white' font-size='24'%3E👩‍💻%3C/text%3E%3C/svg%3E"
-                                data-src="https://res.cloudinary.com/brop3jeq/image/upload/v1784433967/20260206122047_va8rae.jpg"
+                                data-src="{{customer_support_1}}"
                                 class="lazy-img support-avatar" width="64" height="64" alt="Support team">
-                            <span class="support-name">Aminat</span>
+                            <span class="support-name">Issa</span>
                             <span class="support-role">Success Lead</span>
                         </div>
                         <div class="support-person">
                             <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%2360a5fa'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='white' font-size='24'%3E🧑‍💻%3C/text%3E%3C/svg%3E"
-                                data-src="https://res.cloudinary.com/brop3jeq/image/upload/v1784433945/2cbeb182b0bee21ad566dbb1fe6b36f4_lxpmln.jpg"
+                                data-src="{{customer_support_2}}"
                                 class="lazy-img support-avatar" width="64" height="64" alt="Support team">
                             <span class="support-name">Ope</span>
                             <span class="support-role">Tech Support</span>
                         </div>
                         <div class="support-person">
                             <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%2322c55e'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='white' font-size='24'%3E👩‍💼%3C/text%3E%3C/svg%3E"
-                                data-src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=128&h=128&fit=crop&crop=face"
+                                data-src="{{customer_support_3}}"
                                 class="lazy-img support-avatar" width="64" height="64" alt="Support team">
-                            <span class="support-name">Zainab</span>
+                            <span class="support-name">Isreal</span>
                             <span class="support-role">Community Manager</span>
                         </div>
                     </div>
@@ -515,7 +513,7 @@
                         <li><i class="fas fa-check-circle"></i> Streak freeze alerts before you lose progress</li>
                         <li><i class="fas fa-check-circle"></i> WhatsApp & push notification support</li>
                     </ul>
-                    <a href="#" class="btn btn-primary"><i class="fas fa-bell"></i> Set My Reminders</a>
+                    <a href="{% url "origin_login" %}" class="btn btn-primary"><i class="fas fa-bell"></i> Set My Reminders</a>
                 </div>
                 <div class="reminders-visual">
                     <div class="floating-card">
@@ -550,6 +548,7 @@
                         <div><i class="fas fa-check-circle"></i> Consistency score</div>
                         <div><i class="fas fa-check-circle"></i> Best & worst day highlight</div>
                         <div><i class="fas fa-check-circle"></i> Trend analysis over time</div>
+                        <div><i class="fas fa-check-circle"></i> Pdf format report file</div>
                     </div>
                     <a href="{% url "origin_weekly_analysis" %}" class="btn btn-primary"><i class="fas fa-chart-pie"></i> See Sample Report</a>
                 </div>
@@ -570,10 +569,12 @@
                         <h3>Starter</h3>
                         <div class="price"> ₦0<span>/month</span></div>
                         <ul>
-                            <li><i class="fas fa-check"></i> 3 active commitment</li>
+                            <li><i class="fas fa-check"></i> 5 active commitment</li>
                             <li><i class="fas fa-check"></i> Daily check-in</li>
-                            <li><i class="fas fa-check"></i> Weekly summary</li>
+                            <li><i class="fas fa-check"></i> default Weekly summary</li>
                             <li><i class="fas fa-check"></i> Basic reminders</li>
+                            <li><i class="fas fa-check"></i> </li>
+
                         </ul>
                         <a href="#" class="btn btn-outline btn-block">Get Started</a>
                     </div>
@@ -582,11 +583,15 @@
                         <h3>Pro</h3>
                         <div class="price"> ₦1,000<span>/month</span></div>
                         <ul>
-                            <li><i class="fas fa-check"></i> Unlimited commitments</li>
+                            <li><i class="fas fa-check"></i> 50 active commitments</li>
+                            <li><i class="fas fa-check"></i> custom background jobs</li>
                             <li><i class="fas fa-check"></i> Advanced analytics</li>
+                            <li><i class="fas fa-check"></i> custom periodical summary</li>
+                            <li><i class="fas fa-check"></i> personalized coach</li>
+                            <li><i class="fas fa-check"></i> </li>
                             <li><i class="fas fa-check"></i> AI insights</li>
-                            <li><i class="fas fa-check"></i> Priority support</li>
                             <li><i class="fas fa-check"></i> Custom themes</li>
+
                         </ul>
                         <a href="#" class="btn btn-primary btn-block">Start 7-Day Trial</a>
                     </div>
@@ -595,16 +600,18 @@
                         <h3>Team</h3>
                         <div class="price"> ₦2000<span>/month</span></div>
                         <ul>
-                            <li><i class="fas fa-check"></i> Unlimited commitments</li>
+                            <li><i class="fas fa-check"></i> 50 active commitments</li>
+                            <li><i class="fas fa-check"></i> custom background jobs</li>
                             <li><i class="fas fa-check"></i> Advanced analytics</li>
-                            <li><i class="fas fa-check"></i> AI insights</li>
-                            <li><i class="fas fa-check"></i> Priority support</li>
+                            <li><i class="fas fa-check"></i> custom periodical summary</li>
+                            <li><i class="fas fa-check"></i> personalized coach</li>
                             <li><i class="fas fa-check"></i> Custom themes</li>
+                            <li><i class="fas fa-check"></i> Priority support</li>
+                            <li><i class="fas fa-check"></i> AI insights</li>
                             <li><i class="fas fa-check"></i> Early access to future release</li>
-                            <li><i class="fas fa-check"></i> Team challenges</li>
                             <li><i class="fas fa-check"></i> Admin dashboard</li>
-                            <li><i class="fas fa-check"></i> API access</li>
                             <li><i class="fas fa-check"></i> custom storage</li>
+                            <li><i class="fas fa-check"></i>picture and video upload </li>
 
                         </ul>
                         <a href="#" class="btn btn-outline btn-block">Contact Sales</a>
@@ -632,7 +639,7 @@
             <div class="footer-grid">
                 <div class="footer-brand">
                     <a href="/" class="logo-link">
-                        <img src="{{logo}}" alt="Logo" class="logo-img" width="36" height="36">
+                        <img src="{{logo_url}}" alt="Logo" class="logo-img" width="36" height="36 >
                         <span class="logo-text">STREAK & DISCIPLINE</span>
                     </a>
                     <p>A private discipline journal for those serious about keeping promises to themselves.</p>
@@ -682,7 +689,6 @@
 
     <!-- Basic JavaScript (inlined, lightweight) -->
     <script>
-        // ===== LOADER WITH ROTATING TEXT & TIMEOUT =====
         {% include "reusables/spinner.js" %}    
         //Js for custom messages
         {% include "reusables/custom_message.js" %}
@@ -694,10 +700,34 @@
             
             // Load advanced JS
             const advScript = document.createElement('script');
-            advScript.src = "https://res.cloudinary.com/brop3jeq/raw/upload/v1784439170/landing_page_njousx.js";
+            advScript.src = "{{advance_landing_page_js}}";
             advScript.defer = true;
             document.body.appendChild(advScript);
-    </script>
+                </script>
 
+            <!--Start of Tawk.to Script-->
+        <script type="text/javascript">
+        var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+
+        // Custom text for the chat bubble
+        Tawk_API.customStyle = {
+            bubble: {
+                text: 'Live human support 👋'
+            },
+            chat: {
+                title: 'Live Human Customer Care Support'
+            }
+        };
+
+        (function(){
+        var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+        s1.async=true;
+        s1.src='https://embed.tawk.to/6a5e73d9aa83a11d48ca5748/1ju0f92jn';
+        s1.charset='UTF-8';
+        s1.setAttribute('crossorigin','*');
+        s0.parentNode.insertBefore(s1,s0);
+        })();
+        </script>
+        <!--End of Tawk.to Script-->
 </body>
 </html>

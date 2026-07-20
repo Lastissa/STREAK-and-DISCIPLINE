@@ -290,3 +290,119 @@ main{padding-top:6rem}
     margin-bottom: 0.8rem;
     color: var(--accent);
 }
+
+/* ===== PRICING GRID ===== */
+.pricing-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+    max-width: 1000px;
+}
+
+.pricing-card-extra {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem 1.5rem;
+    text-align: center;
+    position: relative;
+    transition: var(--transition);
+}
+.pricing-card-extra:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+}
+.pricing-card-featured {
+    border-color: var(--accent);
+    box-shadow: 0 0 25px rgba(59,130,246,0.1);
+}
+
+.pricing-badge-extra {
+    position: absolute;
+    top: -11px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: #fff;
+    padding: 0.25rem 1rem;
+    border-radius: 50px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.pricing-card-extra h3 {
+    font-size: 1.2rem;
+    margin: 0.5rem 0 0.3rem;
+}
+
+.pricing-price {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--text);
+    margin: 0.5rem 0 1rem;
+}
+.pricing-price span {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+.pricing-card-extra ul {
+    list-style: none;
+    text-align: left;
+    margin: 1rem 0 1.5rem;
+    padding: 0;
+}
+.pricing-card-extra li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+.pricing-card-extra li i {
+    color: var(--accent);
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+.pricing-btn-primary,
+.pricing-btn-outline {
+    display: block;
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-decoration: none;
+    text-align: center;
+    transition: var(--transition);
+    border: 2px solid transparent;
+    font-family: var(--font-sans);
+    cursor: pointer;
+}
+.pricing-btn-primary {
+    background: var(--accent);
+    color: #fff;
+}
+.pricing-btn-primary:hover {
+    background: var(--accent-light);
+}
+.pricing-btn-outline {
+    border-color: var(--border-light);
+    color: var(--text-secondary);
+}
+.pricing-btn-outline:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+@media (min-width: 768px) {
+    .pricing-grid {
+        grid-template-columns: repeat(3, 1fr);
+        margin: 1.5rem auto 0;
+    }
+}

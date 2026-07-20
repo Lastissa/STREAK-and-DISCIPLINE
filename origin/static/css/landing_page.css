@@ -269,6 +269,185 @@ h3{font-size:1.1rem}
 .step-number{font-size:2.5rem;font-weight:900;color:rgba(59,130,246,0.1);position:absolute;top:0.3rem;right:0.8rem;line-height:1}
 .step-connector{display:none}
 
+/* ===== HOW IT WORKS — PAINTED CARDS ===== */
+.how-it-works {
+    background: linear-gradient(175deg, var(--surface) 0%, var(--bg) 40%, var(--surface) 100%);
+    position: relative;
+}
+.how-it-works::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+        radial-gradient(circle at 10% 20%, rgba(59,130,246,0.06) 0%, transparent 50%),
+        radial-gradient(circle at 90% 80%, rgba(96,165,250,0.04) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(59,130,246,0.03) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+}
+/* Painted corner accent */
+.step::after {
+    content: '';
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+/* Number watermark */
+.step-number {
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: rgba(59,130,246,0.06);
+    position: absolute;
+    top: 0.2rem;
+    right: 0.6rem;
+    line-height: 1;
+    pointer-events: none;
+}
+/* Connector line between steps */
+.step-connector {
+    display: none;
+}
+@media (min-width: 1024px) {
+    .step-connector {
+        display: block;
+        width: 40px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--border), var(--accent), var(--border));
+        align-self: center;
+        flex-shrink: 0;
+        margin-top: 2rem;
+    }
+}
+/* Custom icons — replace Font Awesome with emoji for personality */
+.step-icon {
+    font-size: 2rem;
+    margin-bottom: 0.6rem;
+    display: inline-block;
+}
+.step:nth-child(1) .step-icon::before { content: '📝'; }
+.step:nth-child(3) .step-icon::before { content: '✅'; }
+.step:nth-child(5) .step-icon::before { content: '🔥'; }
+.step:nth-child(7) .step-icon::before { content: '📊'; }
+.step:nth-child(9) .step-icon::before { content: '🏆'; }
+/* Hide the original icon element text */
+.step-icon i { display: none; }
+
+/* ===== HOW IT WORKS — VISIBLE CARD BACKGROUNDS ===== */
+/* Add this after your existing .step styles in light CSS */
+
+.step {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Large decorative half-circle at the top */
+.step::before {
+    content: '';
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 80px;
+    background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(59,130,246,0.04) 60%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* Diagonal stripe accent */
+.step::after {
+    content: '';
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 70px;
+    height: 70px;
+    background: rgba(59,130,246,0.06);
+    transform: rotate(45deg);
+    pointer-events: none;
+    border-radius: 4px;
+}
+
+/* Step number — big, bold, visible */
+.step-number {
+    font-size: 2.8rem;
+    font-weight: 900;
+    color: var(--accent);
+    opacity: 0.15;
+    position: absolute;
+    top: 0.3rem;
+    right: 0.8rem;
+    line-height: 1;
+    pointer-events: none;
+}
+
+/* Step icon — colored circle */
+.step-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(59,130,246,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.8rem;
+    font-size: 1.4rem;
+    color: var(--accent);
+    border: 2px solid rgba(59,130,246,0.2);
+}
+
+/* Mobile: make cards pop more */
+@media (max-width: 767px) {
+    .step {
+        border-left: 3px solid var(--accent);
+        text-align: left;
+        padding: 1.2rem 1rem 1.2rem 1.5rem;
+        margin-bottom: 0.8rem;
+    }
+    .step::before {
+        top: auto;
+        bottom: -25px;
+        left: -25px;
+        width: 60px;
+        height: 60px;
+    }
+    .step::after {
+        display: none;
+    }
+    .step-number {
+        font-size: 2.2rem;
+        opacity: 0.2;
+        right: 0.5rem;
+        top: 0.2rem;
+    }
+    .step-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+        margin: 0 0 0.5rem;
+    }
+    .step h4 {
+        font-size: 1rem;
+    }
+    .step p {
+        font-size: 0.82rem;
+    }
+}
+
+
 /* ===== REMINDERS & ANALYSIS ===== */
 .reminders,.weekly-analysis{padding:4rem 0;border-top:1px solid var(--border)}
 .lazy-section{opacity:0;transform:translateY(25px);transition:opacity 0.7s ease,transform 0.7s ease}
