@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 class OriginHome(View):
     def get(self, request):
-        messages.info(request, message='"He who conquers himself conquers all" - Opeyemi')
-        messages.info(request, message= "if 'He' can do it, you can do it too")
+        messages.info(request, message=intro_word()[0])
+        messages.info(request, message= intro_word()[1])
         return render(request, 'html/landing_page.html', {
             'consistency' : get_consistency_Value(),
             'journal_created': get_journal_created_value(),
