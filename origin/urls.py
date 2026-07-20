@@ -35,3 +35,9 @@ def handler404(request, *args, **kwargs):
     messages.info(request,message='it seem the page you are trying to access does not exist')
     logger.error(f"here is a complete issue of request, can be messy though -ope : {request}")
     return render(request, 'error/404.html')
+
+def handler400(request, *args, **kwargs):
+    """Custom 400 error page."""
+    # messages.info(request,message='Deau user, if this page is consistent, it mean we are undergoing mantainance, bear with us please')
+    logger.error(f"here is a complete issue of request, can be messy though -ope : {request}")
+    return render(request, 'error/400.html')

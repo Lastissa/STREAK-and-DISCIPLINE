@@ -9,5 +9,7 @@ urlpatterns = [
     path('', views.Home.as_view(), name = 'true_base_dir'),
 ]
 
+
+handler400 = 'origin.urls.handler400'
 handler500  = 'origin.urls.handler500'
-handler404  = 'origin.urls.handler404'
+handler404  = 'origin.urls.handler400'

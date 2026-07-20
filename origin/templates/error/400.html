@@ -1,0 +1,172 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>400 — STREAK & DISCIPLINE</title>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" 
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        :root {
+            --bg:#0a0e17;--surface:#111827;--text:#e2e8f0;--text-secondary:#94a3b8;
+            --accent:#3b82f6;--accent-light:#60a5fa;--danger:#f87171;--border:#1e293b;
+            --radius:12px;--radius-lg:16px;--font-sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+            --transition:0.2s ease;--max-width:1100px;
+        }
+        body.light-mode{--bg:#f8fafc;--surface:#fff;--text:#1e293b;--text-secondary:#64748b;--border:#e2e8f0}
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        html{scroll-behavior:smooth;overflow-x:hidden;width:100%;height:100%}
+        body{font-family:var(--font-sans);background:var(--bg);color:var(--text);line-height:1.5;height:100vh;height:100dvh;overflow:hidden;width:100%;max-width:100vw;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+
+        /* ── HEADER ── */
+        .site-header{position:fixed;top:12px;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:calc(var(--max-width) - 24px);z-index:1000;border-radius:var(--radius-lg);background:rgba(10,14,23,0.78);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.06);box-shadow:0 8px 32px rgba(0,0,0,0.3);transition:var(--transition)}
+        body.light-mode .site-header{background:rgba(248,250,252,0.85);border-color:rgba(0,0,0,0.06)}
+        .header-inner{display:flex;justify-content:space-between;align-items:center;padding:0.5rem 1rem;gap:0.8rem}
+        .logo-link{display:flex;align-items:center;gap:0.5rem;text-decoration:none;color:var(--text);flex-shrink:0}
+        .logo-img{width:32px;height:32px;border-radius:8px;background:var(--surface)}
+        .logo-text{font-size:0.95rem;font-weight:700;color:var(--accent-light);white-space:nowrap}
+        .nav-links{display:flex;gap:0.2rem;align-items:center}
+        .nav-links a{color:var(--text-secondary);text-decoration:none;font-weight:500;padding:0.35rem 0.6rem;border-radius:8px;transition:var(--transition);font-size:0.78rem;white-space:nowrap}
+        .nav-links a:hover{color:#fff;background:rgba(255,255,255,0.04)}
+        .mobile-toggle{display:none;flex-direction:column;gap:4px;background:none;border:none;cursor:pointer;padding:0.4rem;border-radius:8px}
+        .mobile-toggle span{display:block;width:20px;height:2px;background:var(--text);border-radius:2px;transition:var(--transition)}
+        .mobile-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:998;opacity:0;visibility:hidden;transition:var(--transition)}
+        .mobile-overlay.active{opacity:1;visibility:visible}
+
+        /* ── MAIN ── */
+        main{flex:1;display:flex;align-items:center;justify-content:center;padding:5rem 1rem 1rem;overflow-y:auto}
+        .container{max-width:560px;width:100%;margin:0 auto}
+
+        .error-code{font-size:clamp(3rem,8vw,5rem);font-weight:900;color:var(--accent);line-height:1;text-align:center;margin-bottom:0.2rem;text-shadow:0 0 40px rgba(59,130,246,0.25)}
+        .error-title{font-size:1.15rem;text-align:center;margin-bottom:1rem;color:var(--text-secondary)}
+
+        .cards{display:grid;gap:0.7rem}
+        .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:0.9rem 1rem}
+        .card h3{font-size:0.8rem;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.35rem;font-weight:600}
+        .card p{color:var(--text-secondary);font-size:0.74rem;line-height:1.5;margin-bottom:0.5rem}
+
+        .card-new-user{border-left:3px solid var(--accent)}
+        .card-new-user h3{color:var(--accent-light)}
+        .card-warning{border-left:3px solid var(--danger)}
+        .card-warning h3{color:var(--danger)}
+        .card-warning .note{font-size:0.68rem;color:var(--danger);opacity:0.75}
+        .card-help h3{color:var(--accent-light)}
+
+        .card-links{display:flex;gap:0.4rem;flex-wrap:wrap}
+        .card-links a{font-size:0.7rem;padding:0.35rem 0.7rem;border-radius:var(--radius);text-decoration:none;font-weight:600;transition:var(--transition);display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap}
+        .lnk-wa{background:#14532d;color:#bbf7d0;border:1px solid #166534}
+        .lnk-wa:hover{background:#166534;color:#d1fae5}
+        .lnk-email{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+        .lnk-email:hover{border-color:var(--accent);color:var(--accent-light)}
+
+        .scroll-nudge{display:none;text-align:center;font-size:0.68rem;color:var(--text-secondary);padding:0.5rem 0;animation:bounce 1.5s ease-in-out infinite}
+        .scroll-nudge i{display:block;font-size:0.9rem;margin-bottom:0.15rem}
+        @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+        @media(max-width:767px){
+            .logo-text{display:none}
+            .mobile-toggle{display:flex;z-index:1001}
+            .nav-links{position:fixed;top:0;right:-100%;width:min(260px,80vw);height:100vh;height:100dvh;background:var(--bg);flex-direction:column;padding:5rem 1rem 2rem;z-index:999;transition:right 0.35s cubic-bezier(0.4,0,0.2,1);border-left:1px solid var(--border);gap:0;overflow-y:auto}
+            .nav-links.active{right:0}
+            .nav-links a{padding:0.7rem 0.8rem;width:100%;font-size:0.88rem}
+        }
+        @media(min-width:768px){
+            .mobile-toggle{display:none}
+            .mobile-only{display:none!important}
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="/" class="logo-link">
+                <img src="{{logo_url}}" alt="Logo" class="logo-img" width="32" height="32"
+                     onerror="this.src='data:image/svg+xml,...'">
+                <span class="logo-text">STREAK & DISCIPLINE</span>
+            </a>
+            <nav class="nav-links" id="navLinks">
+                <a href="/"><i class="fas fa-home"></i> Home</a>
+                <a href="{% url 'origin_extra' %}#privacy">Privacy</a>
+                <a href="{% url 'origin_extra' %}#terms">Terms</a>
+                <a href="{% url 'origin_extra' %}#help">Help</a>
+                <a href="{% url 'origin_extra' %}#contact">Contact</a>
+            </nav>
+            <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="error-code">400</div>
+            <h1 class="error-title">Rare Page. We're sorry about this.</h1>
+
+            <div class="cards">
+                <div class="card card-new-user">
+                    <h3><i class="fas fa-hand-sparkles"></i> First time seeing this?</h3>
+                    <p>The URL you used might be missing from our list. Report it — we'll fix it fast.</p>
+                    <div class="card-links">
+                        <a href="https://wa.me/2347013687825?text=Hi%2C%20I'm%20a%20first-time%20visitor%20on%20STREAK%20%26%20DISCIPLINE.%20The%20URL%20{{ custom_base_url }}{{ request.path }}%20gave%20a%20400%20error.%20Please%20add%20it%20to%20ALLOWED_HOSTS." target="_blank" rel="noopener" class="lnk-wa">
+                            <i class="fab fa-whatsapp"></i> Report URL
+                        </a>
+                        <a href="mailto:issaabdulsalamope11@gmail.com?subject=Missing%20ALLOWED_HOSTS&body=URL%3A%20{{ custom_base_url }}{{ request.path }}" class="lnk-email">
+                            <i class="fas fa-envelope"></i> Email us
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card card-warning">
+                    <h3><i class="fas fa-shield-halved"></i> Probing this site?</h3>
+                    <p>Your IP, timestamp and payload are logged.</p>
+                    <div class="note">Repeated attempts get rate‑limited and reported.</div>
+                </div>
+
+                <div class="card card-help">
+                    <h3><i class="fas fa-headset"></i> Here by accident?</h3>
+                    <p>Message us. The text is already pre-filled for you.</p>
+                    <div class="card-links">
+                        <a href="https://wa.me/2347013687825?text=Hi%2C%20I%20got%20a%20400%20error%20on%20STREAK%20%26%20DISCIPLINE." target="_blank" rel="noopener" class="lnk-wa">
+                            <i class="fab fa-whatsapp"></i> WhatsApp
+                        </a>
+                        <a href="mailto:issaabdulsalamope11@gmail.com?subject=400%20Error&body=Hi%2C%20I%20got%20a%20400%20error." class="lnk-email">
+                            <i class="fas fa-envelope"></i> Email
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="scroll-nudge" id="scrollNudge">
+                <i class="fas fa-chevron-down"></i> scroll for more
+            </div>
+        </div>
+    </main>
+
+    <script>
+        (function(){
+            var c=document.cookie.match('(^|;)\\s*sd-theme\\s*=\\s*([^;]+)');
+            if(c&&c.pop()==='light')document.body.classList.add('light-mode');
+        })();
+        (function(){
+            var t=document.getElementById('mobileToggle'),n=document.getElementById('navLinks'),o=document.getElementById('mobileOverlay'),b=document.body;
+            if(!t||!n||!o)return;
+            function close(){n.classList.remove('active');o.classList.remove('active');b.style.overflow=''}
+            t.addEventListener('click',function(){if(n.classList.contains('active'))close();else{n.classList.add('active');o.classList.add('active');b.style.overflow='hidden'}});
+            o.addEventListener('click',close);
+            n.querySelectorAll('a').forEach(function(l){l.addEventListener('click',function(){if(window.innerWidth<=767)close()})});
+        })();
+        (function(){
+            var m=document.querySelector('main'),n=document.getElementById('scrollNudge');
+            if(!m||!n)return;
+            function check(){if(m.scrollHeight>m.clientHeight+10){n.style.display='block'}else{n.style.display='none'}}
+            check();window.addEventListener('resize',check);
+            m.addEventListener('scroll',function(){if(m.scrollTop>20)n.style.opacity='0'});
+        })();
+    </script>
+</body>
+</html>
