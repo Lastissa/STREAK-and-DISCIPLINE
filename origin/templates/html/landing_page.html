@@ -43,8 +43,8 @@
     <header class="site-header" id="siteHeader">
         <div class="container header-inner">
             <a href="/" class="logo-link">
-                <img src="{% static 'img/logo.png' %}" 
-                     alt="Logo" class="logo-img" width="40" height="40"
+                <img src="{{logo_url}}" 
+                     alt="Logo" class="logo-img" width="40" height="40">
                 <span class="logo-text">STREAK & DISCIPLINE</span>
             </a>
             
@@ -107,17 +107,33 @@
                         <div class="hero-card-header">
                             <span class="dot"></span><span class="dot"></span><span class="dot"></span>
                         </div>
-                        <img 
-                            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400' viewBox='0 0 600 400'%3E%3Crect width='600' height='400' fill='%23111827'/%3E%3Ctext x='50%25' y='45%25' dominant-baseline='middle' text-anchor='middle' fill='%233b82f6' font-size='22' font-family='system-ui' font-weight='bold'%3EYour Daily Journal%3C/text%3E%3Ctext x='50%25' y='60%25' dominant-baseline='middle' text-anchor='middle' fill='%2360a5fa' font-size='14' font-family='system-ui'%3EDid you keep your word today?%3C/text%3E%3C/svg%3E"
-                            data-src="{% static 'img/hero-preview.jpg' %}" 
-                            alt="Journal interface preview" 
-                            class="lazy-img hero-img"
-                            width="600" height="400"
-                        >
-                    </div>
-                </div>
-            </div>
-        </section>
+                        
+                    <!-- Desktop Dark -->
+                    <img src=""
+                        data-src="{{desktop_dark_url}}"
+                        alt="Journal interface preview"
+                        class="theme-hero-img hero-img-desktop hero-img-dark lazy-img">
+
+                    <!-- Desktop Light -->
+                    <img src=""
+                        data-src="{{desktop_light_url}}"
+                        alt="Journal interface preview"
+                        class="theme-hero-img hero-img-desktop hero-img-light lazy-img">
+
+                    <!-- Mobile Dark -->
+                    <img src=""
+                        data-src="{{mobile_dark_url}}"
+                        alt="Journal interface preview"
+                        class="theme-hero-img hero-img-mobile hero-img-dark lazy-img">
+
+                    <!-- Mobile Light -->
+                    <img src=""
+                        data-src="{{mobile_light_url}}"
+                        alt="Journal interface preview"
+                        class="theme-hero-img hero-img-mobile hero-img-light lazy-img">
+                                    </div>
+                                </div>
+                            </section>
 
         <!-- ========== TRUSTED BY ========== -->
         <section class="trusted-by">
@@ -614,7 +630,7 @@
             <div class="footer-grid">
                 <div class="footer-brand">
                     <a href="/" class="logo-link">
-                        <img src="{% static 'img/logo.png' %}" alt="Logo" class="logo-img" width="36" height="36">
+                        <img src="{{logo}}" alt="Logo" class="logo-img" width="36" height="36">
                         <span class="logo-text">STREAK & DISCIPLINE</span>
                     </a>
                     <p>A private discipline journal for those serious about keeping promises to themselves.</p>

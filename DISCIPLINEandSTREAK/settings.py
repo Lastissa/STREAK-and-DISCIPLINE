@@ -17,7 +17,7 @@ SOCIAL_AUTH_RAISE_EXCEPTIONS = False # for django_social, it should be close to 
 
 AUTH_USER_MODEL = 'origin.CustomeUser'
 
-ALLOWED_HOSTS = ['localhost']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -32,14 +32,13 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  #  Must be right after SecurityMiddleware cos of production
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
 ]
 
 ROOT_URLCONF = 'DISCIPLINEandSTREAK.urls'
@@ -96,9 +95,9 @@ USE_I18N = True
 USE_TZ = True
 
 
-STATIC_URL = 'staticfiles/'
-
-STATIC_ROOT = 'staticfiles/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 AUTHENTICATION_BACKENDS = [#used by social_django
     'social_core.backends.google.GoogleOAuth2',
@@ -128,3 +127,5 @@ SOCIAL_AUTH_LOGIN_ERROR_URL = 'v1/login/?error=auth_failed'
 SOCIAL_AUTH_NEW_USER_REDIRECT_URL = 'v1/onboarding/'
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/dashboard/'
 SOCIAL_AUTH_TIMEOUT = 15 # timeout for connection btwn django social and google or fb
+
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000').split(',')

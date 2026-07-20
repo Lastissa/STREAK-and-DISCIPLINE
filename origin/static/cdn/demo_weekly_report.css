@@ -171,38 +171,86 @@ html[data-input="touch"] .stat-card:nth-child(4){animation-delay:-3.9s}
 html[data-input="touch"] .ring-meter{animation:ringPaint 1.4s var(--spring-soft) both,ringPulse 4s ease-in-out 1.4s infinite}
 @keyframes ringPulse{0%,100%{box-shadow:0 0 0 1px var(--border),0 15px 35px rgba(59,130,246,.15)}50%{box-shadow:0 0 0 1px var(--border),0 20px 50px rgba(59,130,246,.32)}}
 
-/* --- Flame meter: pure CSS painted flame, no SVG --- */
+/* --- Flame meter: layered painted flame, no SVG, with rising embers --- */
 .flame-meter{
-    width:64px;height:76px;position:relative;margin:0 auto .3rem;
+    width:72px;height:92px;position:relative;margin:0 auto .4rem;
+    filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));
+}
+.flame-glow{
+    position:absolute;left:50%;bottom:6px;translate:-50% 0;
+    width:90px;height:90px;border-radius:50%;
+    background:radial-gradient(circle,rgba(245,158,11,.35),rgba(245,158,11,0) 70%);
+    animation:flameGlowPulse 2.4s ease-in-out infinite;z-index:0;
+}
+.flame-bed{
+    position:absolute;left:50%;bottom:0;translate:-50% 0;
+    width:38px;height:8px;border-radius:50%;
+    background:radial-gradient(closest-side,#78350f,#451a03 80%,transparent 100%);
+    filter:blur(1px);opacity:.8;z-index:1;
 }
 .flame-core{
-    position:absolute;left:50%;bottom:0;translate:-50% 0;
-    width:44px;height:60px;border-radius:50% 50% 50% 50% / 65% 65% 35% 35%;
-    background:radial-gradient(circle at 50% 75%,#fff7ed 0%,var(--gold) 35%,#ea580c 65%,#7c2d12 100%);
-    filter:blur(.3px);
-    animation:flameFlicker 2.6s ease-in-out infinite;
-    transform-origin:50% 100%;
+    position:absolute;left:50%;bottom:4px;translate:-50% 0;
+    transform-origin:50% 100%;z-index:2;
+    /* asymmetric teardrop, hand-painted via mismatched corner radii */
+    border-radius:50% 50% 50% 50% / 68% 68% 32% 32%;
 }
-.flame-core-2{
-    width:30px;height:42px;bottom:2px;
-    background:radial-gradient(circle at 50% 70%,#fef9c3 0%,#facc15 45%,#ea580c 100%);
-    opacity:.9;animation-duration:2.1s;animation-direction:reverse;
+.flame-core-outer{
+    width:50px;height:78px;
+    background:
+        radial-gradient(circle at 46% 82%, #fef3c7 0%, transparent 22%),
+        radial-gradient(ellipse at 50% 68%, #f97316 0%, #c2410c 55%, #7c2d12 85%, #431407 100%);
+    animation:flameSwayOuter 2.8s ease-in-out infinite;
+    opacity:.92;
 }
-.flame-core-3{
-    width:16px;height:24px;bottom:4px;
-    background:radial-gradient(circle at 50% 65%,#ffffff 0%,#fef3c7 60%,#f59e0b 100%);
-    opacity:.95;animation-duration:1.6s;
+.flame-core-mid{
+    width:34px;height:56px;bottom:5px;
+    background:radial-gradient(ellipse at 50% 65%, #fde68a 0%, #f59e0b 45%, #ea580c 80%, #9a3412 100%);
+    animation:flameSwayMid 2.1s ease-in-out infinite reverse;
 }
-@keyframes flameFlicker{
-    0%,100%{transform:scaleY(1) scaleX(1) skewX(0deg)}
-    20%{transform:scaleY(1.06) scaleX(.95) skewX(-2deg)}
-    45%{transform:scaleY(.94) scaleX(1.04) skewX(2deg)}
-    70%{transform:scaleY(1.08) scaleX(.97) skewX(-1deg)}
+.flame-core-inner{
+    width:16px;height:30px;bottom:6px;
+    background:radial-gradient(ellipse at 50% 60%, #ffffff 0%, #fef9c3 40%, #fde047 75%, #f59e0b 100%);
+    mix-blend-mode:screen;opacity:.95;
+    animation:flameSwayInner 1.5s ease-in-out infinite;
+}
+@keyframes flameGlowPulse{0%,100%{opacity:.6;scale:1}50%{opacity:1;scale:1.12}}
+@keyframes flameSwayOuter{
+    0%,100%{transform:scaleY(1) scaleX(1) skewX(0deg) rotate(0deg)}
+    30%{transform:scaleY(1.05) scaleX(.94) skewX(-3deg) rotate(-1.5deg)}
+    60%{transform:scaleY(.95) scaleX(1.05) skewX(3deg) rotate(1.5deg)}
+    80%{transform:scaleY(1.08) scaleX(.96) skewX(-2deg) rotate(-.5deg)}
+}
+@keyframes flameSwayMid{
+    0%,100%{transform:scaleY(1) skewX(0deg)}
+    40%{transform:scaleY(1.08) skewX(4deg)}
+    75%{transform:scaleY(.92) skewX(-4deg)}
+}
+@keyframes flameSwayInner{
+    0%,100%{transform:scaleY(1) translateY(0)}
+    50%{transform:scaleY(1.15) translateY(-2px)}
+}
+.flame-ember{
+    position:absolute;left:50%;bottom:20px;--tx:0px;
+    width:3px;height:3px;border-radius:50%;z-index:3;
+    background:radial-gradient(circle,#fef3c7,#f59e0b 70%,transparent 100%);
+    box-shadow:0 0 4px rgba(245,158,11,.8);
+    opacity:0;animation:emberRise 2.6s ease-in infinite;
+}
+.flame-ember-1{--tx:-14px;animation-delay:.1s}
+.flame-ember-2{--tx:6px;animation-delay:.9s}
+.flame-ember-3{--tx:-4px;animation-delay:1.6s;width:2px;height:2px}
+.flame-ember-4{--tx:12px;animation-delay:2.1s;width:2px;height:2px}
+@keyframes emberRise{
+    0%{opacity:0;transform:translate(var(--tx),0) scale(.6)}
+    15%{opacity:1}
+    85%{opacity:.5}
+    100%{opacity:0;transform:translate(var(--tx),-58px) scale(.2)}
 }
 html[data-input="fine"] .flame-card:hover .flame-meter{
-    filter:drop-shadow(0 0 18px rgba(245,158,11,.55));
+    filter:drop-shadow(0 8px 20px rgba(245,158,11,.55));
 }
-html[data-input="fine"] .flame-card:hover .flame-core{animation-duration:1.1s}
+html[data-input="fine"] .flame-card:hover .flame-core-outer{animation-duration:1.3s}
+html[data-input="fine"] .flame-card:hover .flame-core-inner{animation-duration:.8s}
 
 /* --- Entry dots (mini calendar pips) --- */
 .mini-dots{display:flex;gap:5px;margin-bottom:.2rem}
@@ -214,6 +262,31 @@ html[data-input="fine"] .flame-card:hover .flame-core{animation-duration:1.1s}
     background:radial-gradient(circle at 35% 30%,var(--accent-light),var(--accent) 70%);
     box-shadow:0 0 8px var(--accent-glow);
 }
+
+/* ===== LIVE DISCIPLINE PULSE: continuous ambient "video-like" analysis =====
+   Unlike every other chart on this page, this one never finishes playing —
+   it's meant to read as a live monitor rather than a rendered snapshot. */
+.pulse-monitor{position:relative;overflow:hidden}
+.pulse-monitor::before{
+    content:'';position:absolute;top:0;bottom:0;left:-140px;width:140px;z-index:0;
+    background:linear-gradient(90deg,transparent,rgba(59,130,246,.14),transparent);
+    animation:pulseScan 4.5s linear infinite;
+}
+@keyframes pulseScan{to{left:calc(100% + 140px)}}
+.pulse-bars{position:relative;z-index:1}
+.pulse-bars span{
+    background:linear-gradient(180deg,var(--accent-light),var(--accent));
+    box-shadow:0 0 10px var(--accent-glow);border-radius:3px 3px 0 0;
+    transform-origin:bottom;animation:pulseBeat 1.6s ease-in-out infinite;
+}
+@keyframes pulseBeat{0%,100%{transform:scaleY(.32)}50%{transform:scaleY(1)}}
+.pulse-bars span:nth-child(4n+1){animation-delay:0s;animation-duration:1.35s}
+.pulse-bars span:nth-child(4n+2){animation-delay:.15s;animation-duration:1.7s}
+.pulse-bars span:nth-child(4n+3){animation-delay:.3s;animation-duration:1.25s}
+.pulse-bars span:nth-child(4n){animation-delay:.45s;animation-duration:1.9s}
+.pulse-dot{box-shadow:0 0 10px rgba(34,197,94,.65);animation:pulseDot 1.4s ease-in-out infinite}
+@keyframes pulseDot{0%,100%{opacity:1}50%{opacity:.25}}
+html[data-input="fine"] .pulse-monitor:hover .pulse-bars span{animation-duration:.75s}
 
 /* ===== CONSTELLATION: signature painted component ===== */
 .constellation-section{position:relative}
@@ -268,13 +341,18 @@ html[data-input="fine"] .const-node:hover .const-star,
 .const-tooltip p{margin-top:.3rem;font-size:.86rem;color:var(--text)}
 
 /* ===== DAILY BREAKDOWN: expandable, paper-textured notes ===== */
-.day-list{display:flex;flex-direction:column;gap:.7rem}
+/* Staggered "brick" layout instead of one flat vertical stack — each card
+   sits in its own column-independent row so heights vary naturally, and
+   the missed day breaks the rhythm by spanning full width to stand out. */
+.day-list{
+    display:grid;grid-template-columns:1fr;gap:.85rem;align-items:start;
+}
 .day-card{
     background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
-    overflow:hidden;transition:border-color .3s,transform .3s var(--spring-soft),box-shadow .3s;
+    overflow:hidden;transition:border-color .3s,transform .35s var(--spring-soft),box-shadow .35s,margin-top .35s var(--spring-soft);
 }
-html[data-input="fine"] .day-card:hover{transform:translateX(4px);border-color:var(--border-light)}
-.day-card.is-open{border-color:var(--accent)}
+html[data-input="fine"] .day-card:hover{transform:translateY(-5px) rotate(0deg)!important;border-color:var(--border-light);box-shadow:0 20px 40px rgba(0,0,0,.3)}
+.day-card.is-open{border-color:var(--accent);transform:rotate(0deg)!important}
 .day-card-missed{border-style:dashed}
 .day-card-head{
     width:100%;display:flex;align-items:center;gap:.8rem;padding:.9rem 1.1rem;
@@ -333,6 +411,11 @@ html[data-input="fine"] .day-card:hover{transform:translateX(4px);border-color:v
     box-shadow:0 3px 6px rgba(0,0,0,.5);
 }
 .pin-note footer{margin-top:.8rem;font-family:var(--font-sans);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:#7c6a45;font-weight:700}
+/* Wipe reveal instead of a plain fade — the line "writes itself" in once
+   the card enters view, rather than appearing fully formed. */
+.pin-note p{clip-path:inset(0 100% 0 0)}
+.pin-note.revealed p{animation:pinWipe 1.1s var(--spring-soft) .25s forwards}
+@keyframes pinWipe{to{clip-path:inset(0 0% 0 0)}}
 .pin-note-1{transform:rotate(-3deg)}
 .pin-note-2{transform:rotate(2deg)}
 .pin-note-3{transform:rotate(-1.5deg)}
@@ -399,6 +482,24 @@ html[data-input="touch"] .pin-note-3{animation-delay:-2.4s}
     animation:sparkPulse 1.8s ease-in-out infinite;
 }
 @keyframes sparkPulse{0%,100%{scale:1}50%{scale:1.25}}
+/* Traveling signal dot: continuously scrubs the same path the fill traces,
+   so the trend reads as a live feed instead of a rendered-once shape. */
+.sparkline::after{
+    content:'';position:absolute;z-index:2;width:7px;height:7px;border-radius:50%;
+    background:#fff;box-shadow:0 0 10px 3px var(--accent-light);
+    translate:-50% 50%;
+    animation:sparkTravel 5s linear infinite;
+}
+@keyframes sparkTravel{
+    0%{left:0%;bottom:58%}
+    14.29%{left:14.29%;bottom:64%}
+    28.57%{left:28.57%;bottom:52%}
+    42.86%{left:42.86%;bottom:70%}
+    57.14%{left:57.14%;bottom:66%}
+    71.43%{left:71.43%;bottom:77%}
+    85.71%{left:85.71%;bottom:71%}
+    100%{left:100%;bottom:86%}
+}
 
 /* ===== BEST/TOUGHEST HIGHLIGHTS ===== */
 .highlight-card{position:relative;overflow:hidden}
@@ -625,12 +726,23 @@ html[data-input="fine"] .group-compare-row:hover{transform:translateX(6px);borde
     .mood-emoji{grid-area:emoji}
     .mood-bar{grid-area:bar}
     .mood-count{grid-area:count}
+
+    /* Day notes: gentle alternating drift instead of a flat stack — subtle
+       enough to stay readable, resets to upright the moment a card opens. */
+    .day-list .day-card:nth-child(odd){transform:translateX(-3px) rotate(-.6deg)}
+    .day-list .day-card:nth-child(even){transform:translateX(3px) rotate(.6deg)}
+    .day-list .day-card.is-open,
+    .day-list .day-card:active{transform:translateX(0) rotate(0deg)!important}
 }
 
 /* ===== TABLET (640–1023px) ===== */
 @media(min-width:640px) and (max-width:1023px){
     .pin-board{grid-template-columns:1fr 1fr}
     .pin-note-3{grid-column:span 2;max-width:340px;margin:0 auto}
+
+    .day-list{grid-template-columns:1fr 1fr;column-gap:1rem}
+    .day-list .day-card:nth-child(even){margin-top:1.8rem}
+    .day-card-missed{grid-column:1 / -1;margin-top:0!important}
 }
 
 /* ===== DESKTOP (1024px+) ===== */
@@ -640,6 +752,10 @@ html[data-input="fine"] .group-compare-row:hover{transform:translateX(6px);borde
     .pin-board{grid-template-columns:repeat(3,1fr)}
     .compare-chart{height:220px}
     .sparkline{height:190px}
+
+    .day-list{grid-template-columns:1fr 1fr;column-gap:1.2rem}
+    .day-list .day-card:nth-child(even){margin-top:2.4rem}
+    .day-card-missed{grid-column:1 / -1;margin-top:0!important}
 }
 @media(max-width:1023px){
     .desktop-only-flex{display:none!important}

@@ -188,6 +188,40 @@ h3{font-size:1.1rem}
 .lazy-img{max-width:100%;height:auto;display:block;transition:filter 0.5s}
 .lazy-img:not(.loaded){filter:blur(8px)}
 
+/* ===== THEME-BASED HERO IMAGES ===== */
+.theme-hero-img {
+    display: none;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    aspect-ratio: 3 / 2;  /* 600:400 ratio — adjust to match your actual images */
+    transition: filter 0.5s;
+}
+.theme-hero-img:not(.loaded) {
+    filter: blur(8px);
+}
+
+/* Desktop (≥768px): show desktop images */
+@media (min-width: 768px) {
+    .hero-img-desktop.hero-img-dark  { display: block; }
+    .hero-img-desktop.hero-img-light { display: none; }
+    
+    body.light-mode .hero-img-desktop.hero-img-dark  { display: none; }
+    body.light-mode .hero-img-desktop.hero-img-light { display: block; }
+    
+    .hero-img-mobile { display: none !important; }
+}
+
+/* Mobile (<768px): show mobile images */
+@media (max-width: 767px) {
+    .hero-img-mobile.hero-img-dark  { display: block; }
+    .hero-img-mobile.hero-img-light { display: none; }
+    
+    body.light-mode .hero-img-mobile.hero-img-dark  { display: none; }
+    body.light-mode .hero-img-mobile.hero-img-light { display: block; }
+    
+    .hero-img-desktop { display: none !important; }
+}
 /* ===== TRUSTED BY ===== */
 .trusted-by{
     padding:1.5rem 0;border-top:1px solid var(--border);

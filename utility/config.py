@@ -37,5 +37,10 @@ def template_based_reusables(request):
     return {
         'customer_care_phone_number' : customer_care_phone_number,
         'customer_care_whatsapp_number': customer_care_whatsapp_number,
-        'footer_copyright_note': footer_copyright_note
+        'footer_copyright_note': footer_copyright_note,
+        'logo_url' : 'https://res.cloudinary.com/brop3jeq/image/upload/v1784524604/logo_jvljxp.png',
+        'mobile_dark_url': 'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/mobile_dark_iuvjyq.png',
+        'mobile_light_url':'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/mobile_light_xvuaxj.png',
+        'desktop_dark_url' : 'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/desktop_dark_nvt6lr.png',
+        'desktop_light_url' : 'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/desktop_light_rrgglg.png'       
     }

@@ -26,7 +26,9 @@
 
     <!-- LIGHT critical-path CSS: loads render-blocking, keeps first paint fast and never broken -->
     <link rel="stylesheet" href="{% static 'css/demo_weekly_report.css' %}">
-
+    <style>
+        {% include "reusables/spinner.css" %}
+    </style>
     <!-- HEAVY engine CSS: preloaded, then swapped in as the real stylesheet once ready.
          This is where every painted texture, 3D tilt, and spring animation lives. -->
     <link rel="preload" href="{% static 'cdn/demo_weekly_report.css' %}" as="style"
@@ -37,57 +39,44 @@
 </head>
 <body>
 
-    <a href="#report-main" class="skip-link">Skip to report</a>
-
-    <!-- ========== PAGE LOADER ========== -->
-    <div class="page-loader" id="pageLoader" role="status" aria-live="polite">
-        <div class="loader-ring" aria-hidden="true"></div>
-        <span class="loader-text" id="loaderText">Pulling your week together…</span>
-    </div>
+    <!-- ========== LOADER ========== -->
+    {% include "reusables/spinner.html" %}
 
     <!-- ========== SCROLL PROGRESS ========== -->
     <div class="scroll-progress" id="scrollProgress"></div>
 
-    <!-- ========== MOBILE NAV OVERLAY ========== -->
-    <div class="mobile-overlay" id="mobileOverlay"></div>
 
     <!-- ========== HEADER / NAVBAR ========== -->
     <header class="site-header" id="siteHeader">
-        <div class="container nav-inner">
-            <a href="{% static "img/logo.png" %}" class="nav-logo">
-                <span class="nav-logo-mark" aria-hidden="true">S&amp;D</span>
-                <span>
-                    <span class="nav-logo-text">STREAK &amp; DISCIPLINE</span>
-                    <span class="nav-logo-sub">Weekly Truth Report</span>
-                </span>
+        <div class="container header-inner">
+            <a href="/" class="logo-link">
+                <img src="{{logo_url}}" 
+                    alt="Logo" class="logo-img" width="40" height="40"
+                    onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Crect width=%2240%22 height=%2240%22 rx=%228%22 fill=%22%233b82f6%22/%3E%3Ctext x=%2250%25%22 y=%2255%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2220%22 font-family=%22system-ui%22%3ES%26D%3C/text%3E%3C/svg%3E'">
+                <span class="logo-text">STREAK & DISCIPLINE</span>
             </a>
-
-            <nav class="nav-links" id="navLinks" aria-label="Primary">
-                <a href=""><i class="fas fa-house"></i> Dashboard</a>
-                <a href=""><i class="fas fa-pen-fancy"></i> Journal</a>
-                <a href="{% url "origin_weekly_analysis" %}" class="current" aria-current="page"><i class="fas fa-chart-line"></i> Weekly Analysis</a>
-                <a href=""><i class="fas fa-bell"></i> Reminders</a>
-                <a href=""><i class="fas fa-user-group"></i> Groups</a>
-                <div class="nav-links-divider"></div>
-                <a href=""><i class="fas fa-gear"></i> Settings</a>
-                <a href="{% url "origin_extra" %}#help"><i class="fas fa-circle-question"></i> Help Center</a>
-                <a href=""><i class="fas fa-arrow-right-from-bracket"></i> Sign Out</a>
+            
+            <nav class="nav-links" id="navLinks">
+                <a href="#stat-overview">Stat-overview</a>
+                <a href="#daily-breakdown">Daily-breakdown</a>
+                <a href="#trend">Trends</a>
+                <a href="#commitments">commitments</a>
+                
+                
+                
+                <div class="nav-auth-mobile">
+                    <a href="{% url "origin_login" %}" class="btn btn-outline btn-sm">Sign In</a>
+                    <a href="{% url "origin_signup" %}" class="btn btn-primary btn-sm">Start Free</a>
+                </div>
             </nav>
 
             <div class="nav-actions">
-                <button class="btn-icon desktop-only-flex" id="notifyBtn" aria-label="Notifications">
-                    <i class="fas fa-bell"></i>
+                <a href="{% url "origin_login" %}" class="btn btn-outline btn-sm desktop-only">Sign In</a>
+                <a href="{% url "origin_signup" %}" class="btn btn-primary btn-sm desktop-only">Start Free</a>
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" style="display:none">
+                    <i class="fas fa-moon"></i>
                 </button>
-                <!-- User profile picture slot: falls back to initials when no avatar is set -->
-                <a href="" class="profile-chip" id="profileChip">
-                    {% if request.user.avatar_url %}
-                        <img src="{{ request.user.avatar_url }}" alt="Your profile picture" class="profile-avatar">
-                    {% else %}
-                        <span class="profile-avatar" aria-hidden="true">{{ request.user.first_name|slice:":1"|default:"A" }}{{ request.user.last_name|slice:":1"|default:"O" }}</span>
-                    {% endif %}
-                    <span class="profile-name">{{ request.user.first_name|default:"Aminat" }}</span>
-                </a>
-                <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+                <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">
                     <span></span><span></span><span></span>
                 </button>
             </div>
@@ -142,9 +131,15 @@
                     <!-- Current streak: painted flame -->
                     <div class="card stat-card flame-card" data-scatter>
                         <div class="flame-meter" aria-hidden="true">
-                            <span class="flame-core"></span>
-                            <span class="flame-core flame-core-2"></span>
-                            <span class="flame-core flame-core-3"></span>
+                            <span class="flame-glow"></span>
+                            <span class="flame-bed"></span>
+                            <span class="flame-core flame-core-outer"></span>
+                            <span class="flame-core flame-core-mid"></span>
+                            <span class="flame-core flame-core-inner"></span>
+                            <span class="flame-ember flame-ember-1"></span>
+                            <span class="flame-ember flame-ember-2"></span>
+                            <span class="flame-ember flame-ember-3"></span>
+                            <span class="flame-ember flame-ember-4"></span>
                         </div>
                         <span class="stat-big"><span data-count-to="34">0</span> days</span>
                         <h3>Current Streak</h3>
@@ -175,6 +170,28 @@
                         <p class="stat-note"><i class="fas fa-arrow-trend-up"></i> Your longest week yet</p>
                     </div>
 
+                </div>
+            </section>
+
+            <!-- ========== LIVE DISCIPLINE PULSE (continuous ambient analysis) ========== -->
+            <section class="report-section pulse-section lazy-reveal" id="pulse">
+                <div class="section-head">
+                    <span class="section-eyebrow"><i class="fas fa-wave-square"></i> Live Read</span>
+                    <h2>Your discipline pulse</h2>
+                    <p class="section-sub">An ambient read of the week's rhythm, not a static snapshot — steadier bars mean steadier days.</p>
+                </div>
+                <div class="pulse-monitor">
+                    <div class="pulse-bars" aria-hidden="true">
+                        <span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span></span><span></span>
+                    </div>
+                    <div class="pulse-readout">
+                        <span class="pulse-dot" aria-hidden="true"></span>
+                        <span>86% signal strength — steadiest between Thursday and Saturday</span>
+                    </div>
                 </div>
             </section>
 
@@ -728,7 +745,7 @@
                     <p>Start your own private streak — no leaderboard, no pressure, just an honest mirror.</p>
                     <div class="hero-actions">
                         <a href="{% url "origin_signup" %}" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Start Free</a>
-                        <a href="" class="btn btn-outline btn-lg"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+                        <a href="{% url "origin_dashboard_anonymous" %}" class="btn btn-outline btn-lg"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
                     </div>
                 </div>
             </section>
@@ -740,8 +757,7 @@
     <footer class="site-footer">
         <div class="container footer-grid">
             <div class="footer-brand">
-                <a href="" class="nav-logo">
-                    <span class="nav-logo-mark" aria-hidden="true">S&amp;D</span>
+                <a href="{% url 'origin_dashboard_anonymous' %}" class="nav-logo">
                     <span class="nav-logo-text">STREAK &amp; DISCIPLINE</span>
                 </a>
                 <p>A private discipline journal for those serious about keeping promises to themselves.</p>
@@ -784,54 +800,77 @@
 
     <!-- ========== SCRIPTS ========== -->
     <script>
+        {% include "reusables/spinner.js" %}
+                // ===== MOBILE NAV =====
+        (function() {
+            var toggle = document.getElementById('mobileToggle');
+            var nav = document.getElementById('navLinks');
+            var overlay = document.getElementById('mobileOverlay');
+            var body = document.body;
+
+            if (!toggle || !nav || !overlay) return;
+
+            function openMenu() {
+                nav.classList.add('active');
+                overlay.classList.add('active');
+                toggle.classList.add('active');
+                body.style.overflow = 'hidden';
+            }
+            function closeMenu() {
+                nav.classList.remove('active');
+                overlay.classList.remove('active');
+                toggle.classList.remove('active');
+                body.style.overflow = '';
+            }
+
+            toggle.addEventListener('click', function() {
+                nav.classList.contains('active') ? closeMenu() : openMenu();
+            });
+            overlay.addEventListener('click', closeMenu);
+
+            nav.querySelectorAll('a').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 767) closeMenu();
+                });
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && nav.classList.contains('active')) closeMenu();
+            });
+        })();
+
+    // ===== THEME TOGGLE =====
+        (function() {
+            function getCookie(n){var v='; '+document.cookie;var p=v.split('; '+n+'=');if(p.length===2)return p.pop().split(';').shift();return null}
+            function setCookie(n,v,d){var t=new Date();t.setTime(t.getTime()+(d*86400000));document.cookie=n+'='+v+';expires='+t.toUTCString()+';path=/;SameSite=Lax'}
+            var body = document.body;
+            var btn = document.getElementById('themeToggle');
+            var saved = getCookie('sd-theme');
+
+            if (saved === 'light') {
+                body.classList.add('light-mode');
+                if (btn) btn.innerHTML = '<i class="fas fa-sun"></i>';
+            }
+
+            // Show the button
+            if (btn) btn.style.display = 'flex';
+
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    if (body.classList.contains('light-mode')) {
+                        body.classList.remove('light-mode');
+                        setCookie('sd-theme', 'dark', 365);
+                        btn.innerHTML = '<i class="fas fa-moon"></i>';
+                    } else {
+                        body.classList.add('light-mode');
+                        setCookie('sd-theme', 'light', 365);
+                        btn.innerHTML = '<i class="fas fa-sun"></i>';
+                    }
+                });
+            }
+        })();
+
     (function(){
-        "use strict";
-
-        /* ---------- 1. PAGE LOADER ---------- */
-        var loaderMessages = [
-            "Pulling your week together…",
-            "Counting the days you showed up…",
-            "Reading last Sunday's note…",
-            "Lining up the charts…"
-        ];
-        var loaderTextEl = document.getElementById('loaderText');
-        var loaderIdx = 0;
-        var loaderInterval = setInterval(function(){
-            loaderIdx = (loaderIdx + 1) % loaderMessages.length;
-            if(loaderTextEl) loaderTextEl.textContent = loaderMessages[loaderIdx];
-        }, 900);
-
-        function hideLoader(){
-            clearInterval(loaderInterval);
-            var loader = document.getElementById('pageLoader');
-            if(loader) loader.classList.add('hide');
-        }
-        window.addEventListener('load', function(){
-            setTimeout(hideLoader, 350); // small floor so it never just flashes
-        });
-        // Safety net: never trap the user behind the loader
-        setTimeout(hideLoader, 4000);
-
-        /* ---------- 2. MOBILE NAV ---------- */
-        var navToggle = document.getElementById('navToggle');
-        var navLinks = document.getElementById('navLinks');
-        var overlay = document.getElementById('mobileOverlay');
-        function closeNav(){
-            navLinks.classList.remove('active');
-            overlay.classList.remove('active');
-            navToggle.setAttribute('aria-expanded', 'false');
-        }
-        function toggleNav(){
-            var isOpen = navLinks.classList.toggle('active');
-            overlay.classList.toggle('active', isOpen);
-            navToggle.setAttribute('aria-expanded', String(isOpen));
-        }
-        if(navToggle){ navToggle.addEventListener('click', toggleNav); }
-        if(overlay){ overlay.addEventListener('click', closeNav); }
-        navLinks.querySelectorAll('a').forEach(function(a){
-            a.addEventListener('click', closeNav);
-        });
-
         /* ---------- 3. SCROLL PROGRESS + BACK TO TOP ---------- */
         var progressBar = document.getElementById('scrollProgress');
         var backToTop = document.getElementById('backToTop');
