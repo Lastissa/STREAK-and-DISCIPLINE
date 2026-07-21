@@ -2,6 +2,7 @@ from django.core.cache import cache
 import random
 from django.utils import timezone
 from django.templatetags.static import static
+import os
 
 def get_consistency_Value() -> str:
     """Return a string to be set in the consistency text on the landing_page, it send that same string to cache and it remain active for two minutes before it get reset again """
@@ -59,13 +60,14 @@ def template_based_reusables(request):
     customer_care_phone_number = '+2347013687825' 
     customer_care_whatsapp_number = '+2347013687825'
     footer_copyright_note = f"{timezone.now().year} STREAK & DISCIPLINE. All rights reserved."
-    custom_base_url = '' # incase i need to access base url in templates in situations where i cannot use {% url ''%}
+    custom_base_url = CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000').split(',')# incase i need to access base url in templates in situations where i cannot use {% url ''%}
+    
     
     return {
         'customer_care_phone_number' : customer_care_phone_number,
         'customer_care_whatsapp_number': customer_care_whatsapp_number,
         'footer_copyright_note': footer_copyright_note,
-        'custom_base_url' : custom_base_url,
+        'custom_base_url' : os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8002').split(',')[0],
         'logo_url' : 'https://res.cloudinary.com/brop3jeq/image/upload/v1784524604/logo_jvljxp.png',
         'mobile_dark_url': static('img/mobile_dark.png'), #'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/mobile_dark_iuvjyq.png',
         'mobile_light_url': static('img/mobile_light.png'),#'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/mobile_light_xvuaxj.png',
@@ -83,5 +85,14 @@ def template_based_reusables(request):
         'customer_support_1': static('img/user_support/customer_support_1.jpg'),
         'customer_support_2': static('img/user_support/customer_support_2.jpg'),
         'customer_support_3': static('img/user_support/customer_support_3.jpg'),
-        'customer_support_4': static('img/user_support/customer_support_4.jpg'),        
+        'customer_support_4': static('img/user_support/customer_support_4.jpg'),      
     }
+    
+    
+    """
+    {
+"name" : "xxx", 
+"userid" : "",
+"profile_image" : "some link that i can pass in the src tag directly",
+}
+    """

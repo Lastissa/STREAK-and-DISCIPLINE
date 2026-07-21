@@ -1,0 +1,156 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page in Progress — STREAK & DISCIPLINE</title>
+    <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
+    <style>
+        :root {
+            --bg: #0a0e17;--surface: #111827;--text: #e2e8f0;--text-secondary: #94a3b8;
+            --accent: #3b82f6;--accent-light: #60a5fa;--accent-glow: rgba(59,130,246,0.3);
+            --border: #1e293b;--border-light: #334155;--radius: 12px;--radius-lg: 16px;
+            --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            --transition: 0.2s ease;--max-width: 1100px;
+        }
+        body.light-mode {
+            --bg: #f8fafc;--surface: #fff;--text: #1e293b;--text-secondary: #64748b;--border: #e2e8f0;
+        }
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:var(--font-sans);background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;display:flex;flex-direction:column}
+
+        /* Header */
+        .site-header{position:fixed;top:12px;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:calc(var(--max-width) - 24px);z-index:100;border-radius:var(--radius-lg);background:rgba(10,14,23,0.78);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.06);box-shadow:0 8px 32px rgba(0,0,0,0.3)}
+        body.light-mode .site-header{background:rgba(248,250,252,0.85);border-color:rgba(0,0,0,0.06)}
+        .header-inner{display:flex;justify-content:space-between;align-items:center;padding:0.5rem 1rem}
+        .logo-link{display:flex;align-items:center;gap:0.5rem;text-decoration:none;color:var(--text)}
+        .logo-img{width:32px;height:32px;border-radius:8px}
+        .logo-text{font-size:0.95rem;font-weight:700;color:var(--accent-light)}
+        .nav-links{display:flex;gap:0.2rem;align-items:center}
+        .nav-links a{color:var(--text-secondary);text-decoration:none;font-weight:500;padding:0.35rem 0.6rem;border-radius:8px;font-size:0.78rem;transition:var(--transition)}
+        .nav-links a:hover{color:#fff;background:rgba(255,255,255,0.04)}
+
+        /* Main */
+        main{flex:1;display:flex;align-items:center;justify-content:center;padding:7rem 1.5rem 3rem}
+        .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2.5rem 2rem;max-width:500px;width:100%;text-align:center}
+        .card svg{width:64px;height:64px;margin-bottom:1rem}
+        .card h1{font-size:1.4rem;margin-bottom:0.5rem}
+        .card p{color:var(--text-secondary);font-size:0.9rem;line-height:1.6;margin-bottom:1.5rem}
+        .links{display:flex;flex-direction:column;gap:0.5rem}
+        .links a{display:flex;align-items:center;justify-content:center;gap:0.4rem;padding:0.65rem 1rem;border-radius:var(--radius);font-size:0.85rem;text-decoration:none;font-weight:600;transition:var(--transition);border:2px solid transparent}
+        .btn-home{background:var(--accent);color:#fff}
+        .btn-home:hover{background:var(--accent-light)}
+        .btn-outline{border-color:var(--border-light);color:var(--text-secondary)}
+        .btn-outline:hover{border-color:var(--accent);color:var(--accent-light)}
+        .btn-wa{background:#14532d;color:#bbf7d0;border-color:#166534}
+        .btn-wa:hover{background:#166534}
+
+        /* Footer */
+        .site-footer{padding:2.5rem 0 1.5rem;border-top:1px solid var(--border);background:var(--surface);font-size:0.82rem;margin-top:auto}
+        .footer-grid{width:90%;max-width:var(--max-width);margin:0 auto;display:grid;grid-template-columns:1fr;gap:1.5rem;margin-bottom:1.5rem}
+        .footer-brand p{margin:0.6rem 0;color:var(--text-secondary);font-size:0.82rem}
+        .social-links{display:flex;gap:0.6rem;margin-top:0.8rem;flex-wrap:wrap}
+        .social-links a{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--text-secondary);transition:var(--transition);border:1px solid var(--border);font-size:0.85rem;text-decoration:none}
+        .social-links a:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+        .footer-links h4{font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.8rem;color:var(--text)}
+        .footer-links a,.footer-links .address{display:flex;align-items:center;gap:0.45rem;color:var(--text-secondary);text-decoration:none;margin-bottom:0.5rem;transition:var(--transition);font-size:0.8rem}
+        .footer-links a:hover{color:var(--accent-light)}
+        .address{line-height:1.5}
+        .footer-bottom{width:90%;max-width:var(--max-width);margin:0 auto;border-top:1px solid var(--border);padding-top:1rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;color:var(--text-secondary);font-size:0.75rem}
+        .footer-bottom a{color:var(--accent-light);text-decoration:none}
+
+        @media(max-width:639px){.logo-text{display:none}.footer-grid{grid-template-columns:1fr 1fr}.footer-brand{grid-column:1/-1}}
+        @media(min-width:768px){.footer-grid{grid-template-columns:2fr 1fr 1fr 1fr 1fr}}
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="/" class="logo-link">
+                <img src="{{ logo_url }}" alt="Logo" class="logo-img" width="32" height="32">
+                <span class="logo-text">STREAK & DISCIPLINE</span>
+            </a>
+            <nav class="nav-links">
+                <a href="/">Home</a>
+                <a href="{% url 'origin_extra' %}#privacy">Privacy</a>
+                <a href="{% url 'origin_extra' %}#terms">Terms</a>
+                <a href="{% url 'origin_extra' %}#help">Help</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="card">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <h1>Still in Progress</h1>
+            <p>This page is being built right now. It'll be ready soon. In the meantime, here are some useful links.</p>
+            <div class="links">
+                <a href="/" class="btn-home"><i class="fas fa-home"></i> Back to Homepage</a>
+                <a href="{% url 'origin_extra' %}" class="btn-outline"><i class="fas fa-file-contract"></i> Privacy, Terms & Help</a>
+                <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_blank" rel="noopener" class="btn-wa"><i class="fab fa-whatsapp"></i> WhatsApp Support</a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a href="/" class="logo-link">
+                    <img src="{{ logo_url }}" alt="Logo" class="logo-img" width="36" height="36">
+                    <span class="logo-text">STREAK & DISCIPLINE</span>
+                </a>
+                <p>A private discipline journal for those serious about keeping promises to themselves.</p>
+                <div class="social-links">
+                    <a href="https://x.com/lastissa" target="_blank" rel="noopener" aria-label="X (Twitter)"><i class="fab fa-x-twitter"></i></a>
+                    <a href="https://github.com/lastissa" target="_blank" rel="noopener" aria-label="GitHub"><i class="fab fa-github"></i></a>
+                    <a href="https://wa.me/+2348113577875" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    <a href="mailto:lastissa11@gmail.com" aria-label="Email Developer"><i class="fas fa-envelope"></i></a>
+                </div>
+            </div>
+            <div class="footer-links">
+                <h4>Product</h4>
+                <a href="/#features">Features</a>
+                <a href="/#pricing">Pricing</a>
+                <a href="/#how-it-works">How It Works</a>
+                <a href="/#analysis">Analytics</a>
+            </div>
+            <div class="footer-links">
+                <h4>Support</h4>
+                <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_self" rel="noopener"><i class="fab fa-whatsapp"></i> WhatsApp Support</a>
+                <a href="mailto:issaabdulsalamope11@gmail.com"><i class="fas fa-envelope"></i> support@gmail.com</a>
+                <a href="{% url 'origin_extra' %}#help"><i class="fas fa-question-circle"></i> Help Center</a>
+                <a href="tel:{{ customer_care_phone_number }}"><i class="fas fa-phone"></i> {{ customer_care_phone_number }}</a>
+            </div>
+            <div class="footer-links">
+                <h4>Developer</h4>
+                <a href="https://github.com/lastissa" target="_blank" rel="noopener"><i class="fab fa-github"></i> GitHub</a>
+                <a href="https://portfolio-lastissa.vercel.app/" target="_blank" rel="noopener"><i class="fas fa-globe"></i> Portfolio</a>
+                <a href="mailto:lastissa11@gmail.com"><i class="fas fa-code"></i> developer@gmail.com</a>
+                <a href="#"><i class="fas fa-file-contract"></i> API Docs</a>
+            </div>
+            <div class="footer-links">
+                <h4>Company</h4>
+                <p class="address"><i class="fas fa-map-marker-alt"></i> Lagos, Nigeria</p>
+                <a href="{% url 'origin_extra' %}#privacy"><i class="fas fa-shield"></i> Privacy Policy</a>
+                <a href="{% url 'origin_extra' %}#terms"><i class="fas fa-file-lines"></i> Terms of Service</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; {{ footer_copyright_note }}</p>
+        </div>
+    </footer>
+
+    <script>
+        (function(){
+            var c=document.cookie.match('(^|;)\\s*sd-theme\\s*=\\s*([^;]+)');
+            if(c&&c.pop()==='light')document.body.classList.add('light-mode');
+        })();
+    </script>
+</body>
+</html>

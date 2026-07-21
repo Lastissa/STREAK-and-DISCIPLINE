@@ -129,4 +129,4 @@ SOCIAL_AUTH_LOGIN_REDIRECT_URL = 'v1/dashboard/'
 SOCIAL_AUTH_TIMEOUT = 15 # timeout for connection btwn django social and google or fb
 SOCIAL_AUTH_ALREADY_ASSOCIATED_URL = 'v1/login/?error=already_linked' #if user is have already linked with one socials
 
-CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000').split(',')
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8002').split(',')

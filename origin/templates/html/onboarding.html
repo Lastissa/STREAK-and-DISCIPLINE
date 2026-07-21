@@ -1,0 +1,409 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onboarding — STREAK & DISCIPLINE</title>
+    <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
+    <style>{% include "reusables/spinner.css" %}</style>
+    <link rel="stylesheet" href="{% static 'css/onboarding_light.css' %}">
+    <link rel="preload" href="{% static 'cdn/onboarding_advance.css' %}" as="style" 
+          onload="this.onload=null;this.rel='stylesheet'" id="heavy-css">
+    <noscript><link rel="stylesheet" href="{% static 'cdn/onboarding_advance.css' %}"></noscript>
+</head>
+<body>
+    {% include "reusables/spinner.html" %}
+
+    <header class="onboard-header">
+        <a href="/" class="logo-link">
+            <img src="{{ logo_url }}" alt="Logo" class="logo-img" width="32" height="32">
+            <span class="logo-text">STREAK & DISCIPLINE</span>
+        </a>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
+    </header>
+
+    <main class="onboard-container" id="onboardApp" data-current-phase="1">
+        <div class="onboard-progress">
+            <div class="progress-fill" id="progressFill"></div>
+            <div class="progress-steps">
+                <span class="progress-dot active" data-step="1"></span>
+                <span class="progress-dot" data-step="2"></span>
+                <span class="progress-dot" data-step="3"></span>
+                <span class="progress-dot" data-step="4"></span>
+                <span class="progress-dot" data-step="5"></span>
+                <span class="progress-dot" data-step="6"></span>
+                <span class="progress-dot" data-step="7"></span>
+                <span class="progress-dot" data-step="8"></span>
+                <span class="progress-dot" data-step="9"></span>
+            </div>
+        </div>
+
+        <!-- 1: Welcome -->
+        <div class="onboard-phase active" data-phase="1" id="phase1">
+            <div class="phase-content">
+                <div class="welcome-graphic">
+                    <svg viewBox="0 0 120 120" class="welcome-svg">
+                        <circle cx="60" cy="45" r="22" fill="none" stroke="var(--accent)" stroke-width="2.5" class="welcome-circle"/>
+                        <path d="M20 95 Q60 60 100 95" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" class="welcome-smile"/>
+                        <circle cx="52" cy="40" r="3" fill="var(--accent)" class="welcome-eye"/>
+                        <circle cx="68" cy="40" r="3" fill="var(--accent)" class="welcome-eye"/>
+                        <line x1="60" y1="67" x2="60" y2="85" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" class="welcome-body"/>
+                        <line x1="60" y1="85" x2="40" y2="110" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" class="welcome-leg"/>
+                        <line x1="60" y1="85" x2="80" y2="110" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" class="welcome-leg"/>
+                        <line x1="60" y1="75" x2="30" y2="55" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" class="welcome-arm"/>
+                        <line x1="60" y1="75" x2="90" y2="55" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" class="welcome-arm"/>
+                    </svg>
+                </div>
+                <h1>Welcome{% if user.email %}, <span class="highlight">{{ user.email }}</span>{% endif %}</h1>
+                <p class="phase-hint">Let's set up your discipline journey in the next 3 minutes.</p>
+                <div class="pro-banner"><i class="fas fa-gem"></i> You're on a <strong>7‑day Pro trial</strong>. After that, you keep everything but some features lock. No credit card needed.</div>
+                <button class="btn btn-primary btn-lg phase-next" data-next="2">Start Setup</button>
+            </div>
+        </div>
+
+        <!-- 2: Commitment -->
+        <div class="onboard-phase" data-phase="2" id="phase2">
+            <div class="phase-content">
+                <div class="phase-step">Step 1 of 8</div>
+                <h2>What do you want to commit to?</h2>
+                <p class="phase-hint">Be specific. "Write 300 words" beats "Write more."</p>
+                <input type="text" class="onboard-input" id="commitmentWhat" placeholder="e.g., Exercise for 20 minutes" autofocus>
+                <div class="suggestions">
+                    <span class="suggestion-chip" data-fill="Read 20 pages daily">Read 20 pages daily</span>
+                    <span class="suggestion-chip" data-fill="No phone after 10 PM">No phone after 10 PM</span>
+                    <span class="suggestion-chip" data-fill="Wake up by 6 AM">Wake up by 6 AM</span>
+                    <span class="suggestion-chip" data-fill="Meditate for 10 minutes">Meditate for 10 minutes</span>
+                </div>
+                <div class="phase-actions">
+                    <button class="btn btn-outline phase-prev" data-prev="1">Back</button>
+                    <button class="btn btn-primary phase-next" data-next="3" data-validate="commitmentWhat">Continue</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3: Why -->
+        <div class="onboard-phase" data-phase="3" id="phase3">
+            <div class="phase-content">
+                <div class="phase-step">Step 2 of 8</div>
+                <h2>Why does this matter?</h2>
+                <p class="phase-hint">Not the LinkedIn answer. The real one.</p>
+                <textarea class="onboard-input onboard-textarea" id="commitmentWhy" placeholder="e.g., I told my dad I'd finish this before he turns 74." rows="3"></textarea>
+                <div class="privacy-note"><i class="fas fa-lock"></i> This stays private. Just for you.</div>
+                <div class="phase-actions">
+                    <button class="btn btn-outline phase-prev" data-prev="2">Back</button>
+                    <button class="btn btn-primary phase-next" data-next="4" data-validate="commitmentWhy">Continue</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4: Minimum -->
+        <div class="onboard-phase" data-phase="4" id="phase4">
+            <div class="phase-content">
+                <div class="phase-step">Step 3 of 8</div>
+                <h2>What's the smallest version of this?</h2>
+                <p class="phase-hint">On your worst day, what still counts as a win?</p>
+                <input type="text" class="onboard-input" id="commitmentMinimum" placeholder="e.g., Open the document and write one sentence.">
+                <div class="phase-actions">
+                    <button class="btn btn-outline phase-prev" data-prev="3">Back</button>
+                    <button class="btn btn-primary phase-next" data-next="5" data-validate="commitmentMinimum">Continue</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5: Reminder -->
+        <div class="onboard-phase" data-phase="5" id="phase5">
+            <div class="phase-content">
+                <div class="phase-step">Step 4 of 8</div>
+                <h2>Want a daily nudge?</h2>
+                <div class="toggle-row">
+                    <span>Remind me to check in</span>
+                    <label class="toggle"><input type="checkbox" id="reminderEnabled" checked><span class="toggle-slider"></span></label>
+                </div>
+                <div class="reminder-options" id="reminderOptions">
+                    <div class="form-row">
+                        <label>Time</label>
+                        <select class="onboard-input" id="reminderTime">
+                            <option value="00:00">00:00</option><option value="00:30">00:30</option>
+                            <option value="01:00">01:00</option><option value="01:30">01:30</option>
+                            <option value="02:00">02:00</option><option value="02:30">02:30</option>
+                            <option value="03:00">03:00</option><option value="03:30">03:30</option>
+                            <option value="04:00">04:00</option><option value="04:30">04:30</option>
+                            <option value="05:00">05:00</option><option value="05:30">05:30</option>
+                            <option value="06:00">06:00</option><option value="06:30">06:30</option>
+                            <option value="07:00">07:00</option><option value="07:30">07:30</option>
+                            <option value="08:00">08:00</option><option value="08:30">08:30</option>
+                            <option value="09:00">09:00</option><option value="09:30">09:30</option>
+                            <option value="10:00">10:00</option><option value="10:30">10:30</option>
+                            <option value="11:00">11:00</option><option value="11:30">11:30</option>
+                            <option value="12:00">12:00</option><option value="12:30">12:30</option>
+                            <option value="13:00">13:00</option><option value="13:30">13:30</option>
+                            <option value="14:00">14:00</option><option value="14:30">14:30</option>
+                            <option value="15:00">15:00</option><option value="15:30">15:30</option>
+                            <option value="16:00">16:00</option><option value="16:30">16:30</option>
+                            <option value="17:00">17:00</option><option value="17:30">17:30</option>
+                            <option value="18:00">18:00</option><option value="18:30">18:30</option>
+                            <option value="19:00">19:00</option><option value="19:30">19:30</option>
+                            <option value="20:00">20:00</option><option value="20:30">20:30</option>
+                            <option value="21:00" selected>21:00</option><option value="21:30">21:30</option>
+                            <option value="22:00">22:00</option><option value="22:30">22:30</option>
+                            <option value="23:00">23:00</option><option value="23:30">23:30</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label>Via</label>
+                        <div class="method-options">
+                            <label class="method-chip"><input type="radio" name="reminderMethod" value="email" checked> Email</label>
+                            <label class="method-chip"><input type="radio" name="reminderMethod" value="whatsapp"> WhatsApp</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="pro-note"><i class="fas fa-gem"></i> Pro: 3 reminder channels. Free: 1.</div>
+                <div class="phase-actions">
+                    <button class="btn btn-outline phase-prev" data-prev="4">Back</button>
+                    <button class="btn btn-primary phase-next" data-next="6">Continue</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6: Friend -->
+        <div class="onboard-phase" data-phase="6" id="phase6">
+            <div class="phase-content">
+                <div class="phase-step">Step 5 of 8</div>
+                <h2>Find an accountability partner</h2>
+                <p class="phase-hint">Optional. Search by their user ID.</p>
+                <div class="friend-search" id="friendSearch">
+                    <div class="search-row">
+                        <input type="text" class="onboard-input" id="friendCode" placeholder="Enter their user ID">
+                        <button class="btn btn-primary btn-sm" id="searchFriendBtn">Search</button>
+                    </div>
+                    <div class="friend-state" id="friendStateLoading" style="display:none"><div class="mini-spinner"></div><span>Searching...</span></div>
+                    <div class="friend-state friend-state-success" id="friendStateFound" style="display:none">
+                        <div class="friend-card">
+                            <img src="" alt="" class="friend-avatar" id="friendAvatar">
+                            <div class="friend-info"><strong id="friendName"></strong><span id="friendUserId"></span></div>
+                            <button class="btn btn-primary btn-sm" id="addFriendBtn">Send Friend Request</button>
+                        </div>
+                    </div>
+                    <div class="friend-state friend-state-error" id="friendStateNotFound" style="display:none"><i class="fas fa-user-slash"></i> No user found with that ID.</div>
+                    <div class="friend-state friend-state-error" id="friendStateError" style="display:none"><i class="fas fa-exclamation-circle"></i> <span id="friendErrorMessage">Something went wrong.</span></div>
+                    <div class="friend-state friend-state-success" id="friendStateSent" style="display:none"><i class="fas fa-check-circle"></i> Friend request sent!</div>
+                    <div class="friend-state" id="friendStateSkipped" style="display:none"><i class="fas fa-check-circle"></i> Skipped. You can add friends later from your dashboard.</div>
+                </div>
+                <div class="pro-note"><i class="fas fa-gem"></i> Pro: 4 friends. Free: 1 friend. One successful search during onboarding.</div>
+                <div class="phase-actions">
+                    <button class="btn btn-outline phase-prev" data-prev="5">Back</button>
+                    <button class="btn btn-outline" id="skipFriendBtn">Skip for now</button>
+                    <button class="btn btn-primary phase-next" data-next="7">Continue</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7: Check‑in -->
+        <div class="onboard-phase" data-phase="7" id="phase7">
+            <div class="phase-content">
+                <div class="phase-step">Step 6 of 8</div>
+                <h2>Let's start your streak now.</h2>
+                <p class="phase-hint" id="checkinQuestion">Did you keep your commitment today?</p>
+                <div class="checkin-options" id="checkinOptions">
+                    <button class="checkin-btn checkin-yes" id="checkinYes"><span class="checkin-emoji">✅</span><span>Yes, I did</span></button>
+                    <button class="checkin-btn checkin-no" id="checkinNo"><span class="checkin-emoji">❌</span><span>Not today</span></button>
+                </div>
+                <div class="checkin-note" id="checkinNote" style="display:none">
+                    <textarea class="onboard-input onboard-textarea" id="checkinNoteText" placeholder="Write one honest sentence about today." rows="2"></textarea>
+                </div>
+                <div class="phase-actions">
+                    <button class="btn btn-outline phase-prev" data-prev="6">Back</button>
+                    <button class="btn btn-primary phase-next" data-next="8">Continue</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8: Newsletter -->
+        <div class="onboard-phase" data-phase="8" id="phase8">
+            <div class="phase-content">
+                <div class="phase-step">Step 7 of 8</div>
+                <h2>One last thing...</h2>
+                <div class="newsletter-box">
+                    <div class="newsletter-icon">📬</div>
+                    <h3>Stay in the loop?</h3>
+                    <p class="phase-hint">Get updates on new features, events, and tips. No spam — we hate it too.</p>
+                    <div class="newsletter-options">
+                        <label class="newsletter-chip"><input type="radio" name="newsletter" value="yes" checked><span>Yes, keep me updated</span></label>
+                        <label class="newsletter-chip"><input type="radio" name="newsletter" value="no"><span>No, thanks</span></label>
+                    </div>
+                </div>
+                <div class="phase-actions">
+                    <button class="btn btn-outline phase-prev" data-prev="7">Back</button>
+                    <button class="btn btn-primary btn-lg" id="finishOnboarding">Complete Setup</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 9: Done -->
+        <div class="onboard-phase" data-phase="9" id="phase9">
+            <div class="phase-content">
+                <div class="hand-drawn-check">
+                    <svg viewBox="0 0 100 100" class="check-svg">
+                        <circle cx="50" cy="50" r="38" fill="none" stroke="var(--accent)" stroke-width="3" stroke-dasharray="239" stroke-dashoffset="239" class="draw-circle"/>
+                        <polyline points="32,50 44,64 70,36" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="70" stroke-dashoffset="70" class="draw-check"/>
+                    </svg>
+                </div>
+                <h2>You're all set!</h2>
+                <div class="summary-box">
+                    <div class="summary-row"><strong>Commitment:</strong> <span id="summaryWhat"></span></div>
+                    <div class="summary-row"><strong>Minimum:</strong> <span id="summaryMinimum"></span></div>
+                    <div class="summary-row"><strong>Reminder:</strong> <span id="summaryReminder"></span></div>
+                    <div class="summary-row"><strong>Newsletter:</strong> <span id="summaryNewsletter"></span></div>
+                    <div class="summary-row"><strong>Streak:</strong> 🔥 1 day</div>
+                </div>
+                <div class="pro-banner"><i class="fas fa-gem"></i> Pro trial: 7 days remaining</div>
+                <div class="phase-actions phase-actions-center">
+                    <a href="/dashboard/" class="btn btn-primary btn-lg">Go to Dashboard</a>
+                    <button class="btn btn-outline btn-sm" id="restartOnboarding">Restart Onboarding</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>{% include "reusables/spinner.js" %}</script>
+    <script>
+    (function(){
+        var app=document.getElementById('onboardApp'),phases=document.querySelectorAll('.onboard-phase'),
+            progressFill=document.getElementById('progressFill'),progressDots=document.querySelectorAll('.progress-dot'),
+            totalPhases=9,STORAGE_PHASE='onboard_phase',STORAGE_DATA='onboard_data';
+
+        function getCookie(n){var v='; '+document.cookie,p=v.split('; '+n+'=');return p.length===2?p.pop().split(';').shift():null}
+        function setCookie(n,v,d){var t=new Date();t.setTime(t.getTime()+d*86400000);document.cookie=n+'='+v+';expires='+t.toUTCString()+';path=/;SameSite=Lax'}
+
+        function saveAllData(){
+            var data={phase:parseInt(app.dataset.currentPhase)||1,
+                commitmentWhat:document.getElementById('commitmentWhat')?.value||window.onboard_commitmentWhat||'',
+                commitmentWhy:document.getElementById('commitmentWhy')?.value||window.onboard_commitmentWhy||'',
+                commitmentMinimum:document.getElementById('commitmentMinimum')?.value||window.onboard_commitmentMinimum||'',
+                reminderEnabled:document.getElementById('reminderEnabled')?.checked??true,
+                reminderTime:document.getElementById('reminderTime')?.value||'21:00',
+                reminderMethod:document.querySelector('input[name="reminderMethod"]:checked')?.value||'email',
+                friendSearched:getCookie('onboarding_friend_searched')==='true',
+                friendName:document.getElementById('friendName')?.textContent||'',
+                friendAvatar:document.getElementById('friendAvatar')?.src||'',
+                checkinStatus:window.onboard_checkinStatus??null,
+                checkinNote:document.getElementById('checkinNoteText')?.value||window.onboard_checkinNoteText||'',
+                newsletter:document.querySelector('input[name="newsletter"]:checked')?.value||'yes'};
+            try{localStorage.setItem(STORAGE_DATA,JSON.stringify(data))}catch(e){}
+            try{localStorage.setItem(STORAGE_PHASE,data.phase)}catch(e){}
+        }
+
+        function loadAllData(){try{var r=localStorage.getItem(STORAGE_DATA);return r?JSON.parse(r):null}catch(e){return null}}
+
+        function restoreData(data){
+            if(!data)return;
+            if(data.commitmentWhat){var e=document.getElementById('commitmentWhat');if(e)e.value=data.commitmentWhat;window.onboard_commitmentWhat=data.commitmentWhat}
+            if(data.commitmentWhy){var e=document.getElementById('commitmentWhy');if(e)e.value=data.commitmentWhy;window.onboard_commitmentWhy=data.commitmentWhy}
+            if(data.commitmentMinimum){var e=document.getElementById('commitmentMinimum');if(e)e.value=data.commitmentMinimum;window.onboard_commitmentMinimum=data.commitmentMinimum}
+            if(data.reminderEnabled!==undefined){var e=document.getElementById('reminderEnabled');if(e)e.checked=data.reminderEnabled;var o=document.getElementById('reminderOptions');if(o)o.style.display=data.reminderEnabled?'block':'none'}
+            if(data.reminderTime){var e=document.getElementById('reminderTime');if(e)e.value=data.reminderTime}
+            if(data.reminderMethod){var e=document.querySelector('input[name="reminderMethod"][value="'+data.reminderMethod+'"]');if(e)e.checked=true}
+            if(data.checkinStatus!==null&&data.checkinStatus!==undefined){window.onboard_checkinStatus=data.checkinStatus;document.getElementById('checkinOptions').style.display='none';document.getElementById('checkinNote').style.display='block';document.getElementById('checkinQuestion').textContent=data.checkinStatus?'Write one honest sentence about today.':'What got in the way? (optional)'}
+            if(data.checkinNote){var e=document.getElementById('checkinNoteText');if(e)e.value=data.checkinNote;window.onboard_checkinNoteText=data.checkinNote}
+            if(data.newsletter){var e=document.querySelector('input[name="newsletter"][value="'+data.newsletter+'"]');if(e)e.checked=true}
+            if(data.friendSearched&&data.friendName){document.getElementById('friendName').textContent=data.friendName;document.getElementById('friendAvatar').src=data.friendAvatar||'';document.getElementById('friendCode').disabled=true;document.getElementById('searchFriendBtn').disabled=true;showFriendState('Found')}
+        }
+
+        function goToPhase(num){
+            phases.forEach(function(p){p.classList.remove('active')});
+            var t=document.getElementById('phase'+num);
+            if(!t)return;
+            t.classList.add('active');
+            progressFill.style.width=((num/totalPhases)*100)+'%';
+            progressDots.forEach(function(d){d.classList.toggle('active',parseInt(d.dataset.step)<=num);d.classList.toggle('done',parseInt(d.dataset.step)<num)});
+            app.dataset.currentPhase=num;
+            saveAllData();
+            var inp=t.querySelector('.onboard-input');if(inp&&num<10)setTimeout(function(){inp.focus()},300);
+            window.scrollTo({top:0,behavior:'smooth'});
+        }
+
+        document.querySelectorAll('.phase-next').forEach(function(b){b.addEventListener('click',function(){
+            var n=this.dataset.next,v=this.dataset.validate;
+            if(v){var e=document.getElementById(v);if(!e||!e.value.trim()){if(e){e.classList.add('input-error');e.focus();setTimeout(function(){e.classList.remove('input-error')},600)}return}window['onboard_'+v]=e.value.trim()}
+            if(n)goToPhase(parseInt(n));saveAllData()
+        })});
+
+        document.querySelectorAll('.phase-prev').forEach(function(b){b.addEventListener('click',function(){var p=this.dataset.prev;if(p)goToPhase(parseInt(p));saveAllData()})});
+
+        document.querySelectorAll('.suggestion-chip').forEach(function(c){c.addEventListener('click',function(){document.getElementById('commitmentWhat').value=this.dataset.fill;saveAllData()})});
+
+        document.getElementById('reminderEnabled').addEventListener('change',function(){document.getElementById('reminderOptions').style.display=this.checked?'block':'none';saveAllData()});
+
+        document.getElementById('checkinYes').addEventListener('click',function(){document.getElementById('checkinOptions').style.display='none';document.getElementById('checkinNote').style.display='block';document.getElementById('checkinQuestion').textContent='Write one honest sentence about today.';document.getElementById('checkinNoteText').placeholder='e.g., Wrote 400 words. Felt good.';window.onboard_checkinStatus=true;saveAllData()});
+        document.getElementById('checkinNo').addEventListener('click',function(){document.getElementById('checkinOptions').style.display='none';document.getElementById('checkinNote').style.display='block';document.getElementById('checkinQuestion').textContent='What got in the way? (optional)';document.getElementById('checkinNoteText').placeholder='e.g., Traveled all day.';window.onboard_checkinStatus=false;saveAllData()});
+
+        document.getElementById('finishOnboarding').addEventListener('click',function(){
+            var cw=window.onboard_commitmentWhat||document.getElementById('commitmentWhat')?.value||'';
+            var cwy=window.onboard_commitmentWhy||document.getElementById('commitmentWhy')?.value||'';
+            var cm=window.onboard_commitmentMinimum||document.getElementById('commitmentMinimum')?.value||'';
+            var missing=[];
+            if(!cw.trim())missing.push({name:'Your commitment',step:2});
+            if(!cwy.trim())missing.push({name:'Your "why"',step:3});
+            if(!cm.trim())missing.push({name:'Your minimum effort',step:4});
+            if(missing.length>0){
+                var ew=document.getElementById('missingFieldsWarning');if(ew)ew.remove();
+                var w=document.createElement('div');w.className='onboard-missing-warning';w.id='missingFieldsWarning';
+                var items=missing.map(function(m){return'<li><a href="#" class="missing-link" data-step="'+m.step+'">'+m.name+' (Step '+(m.step-1)+')</a></li>'}).join('');
+                w.innerHTML='<strong>⚠️ You missed a few things:</strong><ul>'+items+'</ul><p style="margin-top:0.4rem;font-size:0.75rem;">Click any item to jump back. Your data is saved.</p>';
+                var nb=document.querySelector('.newsletter-box');nb.parentNode.insertBefore(w,nb);
+                w.querySelectorAll('.missing-link').forEach(function(l){l.addEventListener('click',function(e){e.preventDefault();var s=parseInt(this.dataset.step);w.remove();goToPhase(s)})});
+                var btn=document.getElementById('finishOnboarding');btn.classList.add('input-error');setTimeout(function(){btn.classList.remove('input-error')},600);
+                w.scrollIntoView({behavior:'smooth',block:'center'});
+                return;
+            }
+            saveAllData();
+            document.getElementById('summaryWhat').textContent=cw;
+            document.getElementById('summaryMinimum').textContent=cm;
+            var time=document.getElementById('reminderTime')?.value||'21:00';
+            var method=document.querySelector('input[name="reminderMethod"]:checked')?.value||'email';
+            document.getElementById('summaryReminder').textContent=time+' via '+method;
+            var nl=document.querySelector('input[name="newsletter"]:checked')?.value;
+            document.getElementById('summaryNewsletter').textContent=nl==='yes'?'Subscribed':'Not subscribed';
+            goToPhase(9);
+        });
+
+        document.getElementById('restartOnboarding').addEventListener('click',function(){if(confirm('Clear all onboarding data and start over?')){localStorage.removeItem(STORAGE_PHASE);localStorage.removeItem(STORAGE_DATA);document.cookie='onboarding_friend_searched=;path=/;max-age=0';window.location.reload()}});
+
+        var friendCode=document.getElementById('friendCode'),searchBtn=document.getElementById('searchFriendBtn'),skipBtn=document.getElementById('skipFriendBtn'),friendSearchSuccess=getCookie('onboarding_friend_searched')==='true';
+
+        function showFriendState(state){['Loading','Found','NotFound','Error','Sent','Skipped'].forEach(function(s){var e=document.getElementById('friendState'+s);if(e)e.style.display='none'});var e=document.getElementById('friendState'+state);if(e)e.style.display='block'}
+
+        if(friendSearchSuccess){showFriendState('Found');friendCode.disabled=true;searchBtn.disabled=true}
+
+        searchBtn.addEventListener('click',async function(){
+            var uuid=friendCode.value.trim();if(!uuid)return;
+            showFriendState('Loading');friendCode.disabled=true;searchBtn.disabled=true;
+            var fd=new FormData();fd.append('uuid',uuid);
+            try{
+                var r=await fetch('{% url "origin_search_friend" %}',{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken')},body:fd,signal:AbortSignal.timeout(5000)});
+                var d=await r.json();
+                if(r.status>=200&&r.status<400){document.getElementById('friendName').textContent=d.name;document.getElementById('friendUserId').textContent='@'+(d.username||d.userid);document.getElementById('friendAvatar').src=d.profile_image;showFriendState('Found');setCookie('onboarding_friend_searched','true',1);friendSearchSuccess=true;saveAllData()}
+                else if(r.status===404){showFriendState('NotFound');friendCode.disabled=false;searchBtn.disabled=false}
+                else{document.getElementById('friendErrorMessage').textContent=d.message||'Something went wrong.';showFriendState('Error');friendCode.disabled=false;searchBtn.disabled=false}
+            }catch(e){document.getElementById('friendErrorMessage').textContent='Request timed out.';showFriendState('Error');friendCode.disabled=false;searchBtn.disabled=false}
+        });
+
+        document.getElementById('addFriendBtn').addEventListener('click',async function(){
+            var uid=document.getElementById('friendUserId').textContent.replace('@','');var fd=new FormData();fd.append('userid',uid);
+            try{var r=await fetch('{% url "origin_add_friend" %}',{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken')},body:fd});var d=await r.json();if(r.status===200){showFriendState('Sent');saveAllData()}else{document.getElementById('friendErrorMessage').textContent=d.message||'Could not send request.';showFriendState('Error')}}
+            catch(e){document.getElementById('friendErrorMessage').textContent='Something went wrong.';showFriendState('Error')}
+        });
+
+        skipBtn.addEventListener('click',function(){friendCode.disabled=true;searchBtn.disabled=true;showFriendState('Skipped');saveAllData()});
+
+        (function(){var s=getCookie('sd-theme'),b=document.getElementById('themeToggle');if(s==='light'){document.body.classList.add('light-mode');b.innerHTML='<i class="fas fa-sun"></i>'}b.addEventListener('click',function(){if(document.body.classList.contains('light-mode')){document.body.classList.remove('light-mode');setCookie('sd-theme','dark',365);b.innerHTML='<i class="fas fa-moon"></i>'}else{document.body.classList.add('light-mode');setCookie('sd-theme','light',365);b.innerHTML='<i class="fas fa-sun"></i>'}})})();
+
+        document.querySelectorAll('.onboard-input,input,textarea,select').forEach(function(e){e.addEventListener('input',saveAllData);e.addEventListener('change',saveAllData)});
+
+        var sd=loadAllData();if(sd){restoreData(sd);goToPhase(sd.phase||1)}else goToPhase(1);
+        var h=document.getElementById('heavy-css');if(h&&h.rel!=='stylesheet')h.rel='stylesheet';
+    })();
+    </script>
+</body>
+</html>

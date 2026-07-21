@@ -1,0 +1,35 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting — STREAK & DISCIPLINE</title>
+    <style>
+        :root{--bg:#0a0e17;--text:#e2e8f0;--text-secondary:#94a3b8;--accent:#3b82f6;--font-sans:system-ui,sans-serif}
+        body{font-family:var(--font-sans);background:var(--bg);color:var(--text);display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;text-align:center;padding:2rem}
+        .spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1.5rem}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        h1{font-size:1.2rem;margin-bottom:0.5rem}
+        p{color:var(--text-secondary);font-size:0.85rem}
+    </style>
+</head>
+<body>
+    <div>
+        <div class="spinner"></div>
+        <h1>Please wait, redirecting…</h1>
+        <p>You'll be redirected in a moment.</p>
+    </div>
+
+    <form id="postForm" method="POST" action="{{custom_base_url}}{{redirect_path}}">
+        {% csrf_token %}
+        {% for key, value in request.POST.items %}
+        <input type="hidden" name="{{ key }}" value="{{ value }}">
+        {% endfor %}
+    </form>
+
+    <script>
+        document.getElementById('postForm').submit();
+    </script>
+</body>
+</html>

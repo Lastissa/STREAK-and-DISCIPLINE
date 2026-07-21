@@ -458,7 +458,7 @@
                         <div class="support-icon"><i class="fab fa-whatsapp"></i></div>
                         <h4>WhatsApp Support</h4>
                         <p>Prefer messaging? Reach us on WhatsApp. Send a voice note, a screenshot, or just say hi.</p>
-                        <a href="https://wa.me/1234567890" target="_blank" rel="noopener" class="btn btn-primary btn-sm">
+                        <a href="https://wa.me/1234567890" rel="noopener" class="btn btn-primary btn-sm">
                             <i class="fab fa-whatsapp"></i> Message Us
                         </a>
                         <p class="support-availability"><i class="fas fa-circle online-dot"></i> Available Always</p>
@@ -573,10 +573,9 @@
                             <li><i class="fas fa-check"></i> Daily check-in</li>
                             <li><i class="fas fa-check"></i> default Weekly summary</li>
                             <li><i class="fas fa-check"></i> Basic reminders</li>
-                            <li><i class="fas fa-check"></i> </li>
 
                         </ul>
-                        <a href="#" class="btn btn-outline btn-block">Get Started</a>
+                        <a href="{% url "origin_signup" %}" class="btn btn-outline btn-block">Get Started</a>
                     </div>
                     <div class="pricing-card featured" data-scatter>
                         <div class="pricing-badge">Most Popular</div>
@@ -588,12 +587,11 @@
                             <li><i class="fas fa-check"></i> Advanced analytics</li>
                             <li><i class="fas fa-check"></i> custom periodical summary</li>
                             <li><i class="fas fa-check"></i> personalized coach</li>
-                            <li><i class="fas fa-check"></i> </li>
                             <li><i class="fas fa-check"></i> AI insights</li>
                             <li><i class="fas fa-check"></i> Custom themes</li>
 
                         </ul>
-                        <a href="#" class="btn btn-primary btn-block">Start 7-Day Trial</a>
+                        <a href="{% url "origin_signup" %}?trial=true" class="btn btn-primary btn-block">Start 7-Day Trial</a>
                     </div>
                     <div class="pricing-card" data-scatter>
                         <div class="pricing-badge">For Teams</div>
@@ -614,7 +612,7 @@
                             <li><i class="fas fa-check"></i>picture and video upload </li>
 
                         </ul>
-                        <a href="#" class="btn btn-outline btn-block">Contact Sales</a>
+                        <a href="{% url "origin_signup" %}" class="btn btn-outline btn-block">Contact Sales</a>
                     </div>
                 </div>
             </div>

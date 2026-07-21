@@ -71,7 +71,7 @@
                 <div class="form-container">
                     <div class="form-header">
                         <h1>Start Your Journey</h1>
-                        <p>One honest sentence a day. No fluff. Just discipline.</p>
+                        <p>One honest sentence a day. Not Motivation. Just discipline.</p>
                     </div>
 
                     <!-- Social Signup Buttons -->
@@ -96,7 +96,7 @@
                     </div>
 
                     <!-- Email Signup Form -->
-                    <form method="POST" action="{% url 'origin_signup' %}" class="signup-form" id="signupForm" novalidate>
+                    <form method="POST" action="{{url_for_form}}?create_account=True" class="signup-form" id="signupForm" novalidate>
                         {% csrf_token %}
                         
                         <div class="form-group">
@@ -261,6 +261,100 @@
             });
         });
         
+        // Generate password + validate email + confirm passwords match
+(function() {
+    var form = document.getElementById('signupForm');
+    var email = document.getElementById('email');
+    var password1 = document.getElementById('password1');
+    var password2 = document.getElementById('password2');
+    var submitBtn = document.getElementById('submitBtn');
+    
+    if (!form || !email || !password1 || !password2) return;
+    
+    // ── Generate Password Button ──
+    var genBtn = document.createElement('button');
+    genBtn.type = 'button';
+    genBtn.className = 'btn btn-outline btn-sm';
+    genBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generate Strong Password';
+    genBtn.style.cssText = 'margin-bottom:0.8rem;width:100%;';
+    password1.parentNode.parentNode.insertBefore(genBtn, password1.parentNode.nextSibling);
+    
+    genBtn.addEventListener('click', function() {
+        var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+        var pwd = '';
+        for (var i = 0; i < 12; i++) {
+            pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        password1.value = pwd;
+        password2.value = pwd;
+        password1.type = 'text';
+        password2.type = 'text';
+        setTimeout(function() {
+            password1.type = 'password';
+            password2.type = 'password';
+        }, 3000);
+    });
+    
+    // ── Validate on Submit ──
+    form.addEventListener('submit', function(e) {
+        var errors = [];
+        
+        // Validate email
+        var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.value.trim())) {
+            errors.push({field: email, msg: 'Please enter a valid email address.'});
+        }
+        
+        // Validate password length
+        if (password1.value.length < 8) {
+            errors.push({field: password1, msg: 'Password must be at least 8 characters.'});
+        }
+        
+        // Validate passwords match
+        if (password1.value !== password2.value) {
+            errors.push({field: password2, msg: 'Passwords do not match.'});
+        }
+        
+        if (errors.length > 0) {
+            e.preventDefault();
+            
+            // Remove old warnings
+            document.querySelectorAll('.validation-warning').forEach(function(el) { el.remove(); });
+            document.querySelectorAll('.input-error').forEach(function(el) { el.classList.remove('input-error'); });
+            
+            // Show warnings
+            errors.forEach(function(err) {
+                var warning = document.createElement('div');
+                warning.className = 'form-error validation-warning';
+                warning.textContent = err.msg;
+                err.field.parentNode.parentNode.appendChild(warning);
+                err.field.classList.add('input-error');
+            });
+            
+            // Focus first error field
+            errors[0].field.focus();
+            
+            // Shake button
+            submitBtn.classList.add('input-error');
+            setTimeout(function() { submitBtn.classList.remove('input-error'); }, 600);
+            
+            return false;
+        }
+        
+        // Clear any old warnings on success
+        document.querySelectorAll('.validation-warning').forEach(function(el) { el.remove(); });
+    });
+    
+    // ── Clear warnings on input ──
+    [email, password1, password2].forEach(function(field) {
+        field.addEventListener('input', function() {
+            this.classList.remove('input-error');
+            var warning = this.parentNode.parentNode.querySelector('.validation-warning');
+            if (warning) warning.remove();
+        });
+    });
+})();
+
         // Toggle submit button based on terms checkbox
         (function() {
             var checkbox = document.querySelector('input[name="agree_terms"]');
