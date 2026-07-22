@@ -11,7 +11,6 @@
                 texts.push(el.textContent.trim());
             });
             var allText = texts.join('\n');
-
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(allText).then(showCopied);
             } else {
@@ -44,23 +43,15 @@
         }, 1800);
     }
 
-    // Auto-dismiss + close
+    // Close buttons only — no auto-dismiss
     var msgs = container.querySelectorAll('.msg');
     msgs.forEach(function(msg) {
-        var timer = setTimeout(function() { dismiss(msg); }, 6000);
-
         var closeBtn = msg.querySelector('.msg-close');
         if (closeBtn) {
             closeBtn.addEventListener('click', function() {
-                clearTimeout(timer);
                 dismiss(msg);
             });
         }
-
-        msg.addEventListener('mouseenter', function() { clearTimeout(timer); });
-        msg.addEventListener('mouseleave', function() {
-            timer = setTimeout(function() { dismiss(msg); }, 3000);
-        });
     });
 
     function dismiss(msg) {

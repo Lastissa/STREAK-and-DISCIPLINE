@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
     <style>{% include "reusables/spinner.css" %}</style>
     <link rel="stylesheet" href="{% static 'css/onboarding_light.css' %}">
-    <link rel="preload" href="{% static 'cdn/onboarding_advance.css' %}" as="style" 
+    <link rel="preload" href="{% static 'cdn/onboarding_advance.css' %}" as="style"
           onload="this.onload=null;this.rel='stylesheet'" id="heavy-css">
     <noscript><link rel="stylesheet" href="{% static 'cdn/onboarding_advance.css' %}"></noscript>
 </head>
@@ -20,7 +20,9 @@
             <img src="{{ logo_url }}" alt="Logo" class="logo-img" width="32" height="32">
             <span class="logo-text">STREAK & DISCIPLINE</span>
         </a>
-        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+            <span class="theme-icon">🌙</span>
+        </button>
     </header>
 
     <main class="onboard-container" id="onboardApp" data-current-phase="1">
@@ -39,7 +41,7 @@
             </div>
         </div>
 
-        <!-- 1: Welcome -->
+        <!-- Phase 1: Welcome / What to Expect -->
         <div class="onboard-phase active" data-phase="1" id="phase1">
             <div class="phase-content">
                 <div class="welcome-graphic">
@@ -56,13 +58,13 @@
                     </svg>
                 </div>
                 <h1>Welcome{% if user.email %}, <span class="highlight">{{ user.email }}</span>{% endif %}</h1>
-                <p class="phase-hint">Let's set up your discipline journey in the next 3 minutes.</p>
+                <p class="phase-hint">Your private discipline journal is ready. Let's set it up in 3 minutes.</p>
                 <div class="pro-banner"><i class="fas fa-gem"></i> You're on a <strong>7‑day Pro trial</strong>. After that, you keep everything but some features lock. No credit card needed.</div>
                 <button class="btn btn-primary btn-lg phase-next" data-next="2">Start Setup</button>
             </div>
         </div>
 
-        <!-- 2: Commitment -->
+        <!-- Phase 2: Commitment -->
         <div class="onboard-phase" data-phase="2" id="phase2">
             <div class="phase-content">
                 <div class="phase-step">Step 1 of 8</div>
@@ -82,7 +84,7 @@
             </div>
         </div>
 
-        <!-- 3: Why -->
+        <!-- Phase 3: Why -->
         <div class="onboard-phase" data-phase="3" id="phase3">
             <div class="phase-content">
                 <div class="phase-step">Step 2 of 8</div>
@@ -97,7 +99,7 @@
             </div>
         </div>
 
-        <!-- 4: Minimum -->
+        <!-- Phase 4: Minimum -->
         <div class="onboard-phase" data-phase="4" id="phase4">
             <div class="phase-content">
                 <div class="phase-step">Step 3 of 8</div>
@@ -111,7 +113,7 @@
             </div>
         </div>
 
-        <!-- 5: Reminder -->
+        <!-- Phase 5: Reminder -->
         <div class="onboard-phase" data-phase="5" id="phase5">
             <div class="phase-content">
                 <div class="phase-step">Step 4 of 8</div>
@@ -166,7 +168,7 @@
             </div>
         </div>
 
-        <!-- 6: Friend -->
+        <!-- Phase 6: Friend -->
         <div class="onboard-phase" data-phase="6" id="phase6">
             <div class="phase-content">
                 <div class="phase-step">Step 5 of 8</div>
@@ -199,7 +201,7 @@
             </div>
         </div>
 
-        <!-- 7: Check‑in -->
+        <!-- Phase 7: Check‑in -->
         <div class="onboard-phase" data-phase="7" id="phase7">
             <div class="phase-content">
                 <div class="phase-step">Step 6 of 8</div>
@@ -219,7 +221,7 @@
             </div>
         </div>
 
-        <!-- 8: Newsletter -->
+        <!-- Phase 8: Newsletter -->
         <div class="onboard-phase" data-phase="8" id="phase8">
             <div class="phase-content">
                 <div class="phase-step">Step 7 of 8</div>
@@ -240,7 +242,7 @@
             </div>
         </div>
 
-        <!-- 9: Done -->
+        <!-- Phase 9: Summary & Send -->
         <div class="onboard-phase" data-phase="9" id="phase9">
             <div class="phase-content">
                 <div class="hand-drawn-check">
@@ -250,16 +252,19 @@
                     </svg>
                 </div>
                 <h2>You're all set!</h2>
-                <div class="summary-box">
+                <div class="summary-box" id="summaryBox">
                     <div class="summary-row"><strong>Commitment:</strong> <span id="summaryWhat"></span></div>
+                    <div class="summary-row"><strong>Why:</strong> <span id="summaryWhy"></span></div>
                     <div class="summary-row"><strong>Minimum:</strong> <span id="summaryMinimum"></span></div>
                     <div class="summary-row"><strong>Reminder:</strong> <span id="summaryReminder"></span></div>
+                    <div class="summary-row"><strong>Check‑in:</strong> <span id="summaryCheckin"></span></div>
+                    <div class="summary-row"><strong>Friend:</strong> <span id="summaryFriend"></span></div>
                     <div class="summary-row"><strong>Newsletter:</strong> <span id="summaryNewsletter"></span></div>
                     <div class="summary-row"><strong>Streak:</strong> 🔥 1 day</div>
                 </div>
                 <div class="pro-banner"><i class="fas fa-gem"></i> Pro trial: 7 days remaining</div>
                 <div class="phase-actions phase-actions-center">
-                    <a href="/dashboard/" class="btn btn-primary btn-lg">Go to Dashboard</a>
+                    <button class="btn btn-primary btn-lg" id="sendToServer">Save &amp; Go to Dashboard</button>
                     <button class="btn btn-outline btn-sm" id="restartOnboarding">Restart Onboarding</button>
                 </div>
             </div>
@@ -338,6 +343,18 @@
         document.getElementById('checkinYes').addEventListener('click',function(){document.getElementById('checkinOptions').style.display='none';document.getElementById('checkinNote').style.display='block';document.getElementById('checkinQuestion').textContent='Write one honest sentence about today.';document.getElementById('checkinNoteText').placeholder='e.g., Wrote 400 words. Felt good.';window.onboard_checkinStatus=true;saveAllData()});
         document.getElementById('checkinNo').addEventListener('click',function(){document.getElementById('checkinOptions').style.display='none';document.getElementById('checkinNote').style.display='block';document.getElementById('checkinQuestion').textContent='What got in the way? (optional)';document.getElementById('checkinNoteText').placeholder='e.g., Traveled all day.';window.onboard_checkinStatus=false;saveAllData()});
 
+        function populateSummary(){
+            var sd=loadAllData();if(!sd)return;
+            document.getElementById('summaryWhat').textContent=sd.commitmentWhat||'—';
+            document.getElementById('summaryWhy').textContent=sd.commitmentWhy||'—';
+            document.getElementById('summaryMinimum').textContent=sd.commitmentMinimum||'—';
+            var time=sd.reminderTime||'21:00',method=sd.reminderMethod||'email';
+            document.getElementById('summaryReminder').textContent=(sd.reminderEnabled===false?'Off':time+' via '+method);
+            document.getElementById('summaryCheckin').textContent=sd.checkinNote||(sd.checkinStatus===true?'✅ Done':sd.checkinStatus===false?'❌ Not today':'Skipped');
+            document.getElementById('summaryFriend').textContent=sd.friendName||'None';
+            document.getElementById('summaryNewsletter').textContent=sd.newsletter==='yes'?'Subscribed':'Not subscribed';
+        }
+
         document.getElementById('finishOnboarding').addEventListener('click',function(){
             var cw=window.onboard_commitmentWhat||document.getElementById('commitmentWhat')?.value||'';
             var cwy=window.onboard_commitmentWhy||document.getElementById('commitmentWhy')?.value||'';
@@ -357,15 +374,18 @@
                 w.scrollIntoView({behavior:'smooth',block:'center'});
                 return;
             }
-            saveAllData();
-            document.getElementById('summaryWhat').textContent=cw;
-            document.getElementById('summaryMinimum').textContent=cm;
-            var time=document.getElementById('reminderTime')?.value||'21:00';
-            var method=document.querySelector('input[name="reminderMethod"]:checked')?.value||'email';
-            document.getElementById('summaryReminder').textContent=time+' via '+method;
-            var nl=document.querySelector('input[name="newsletter"]:checked')?.value;
-            document.getElementById('summaryNewsletter').textContent=nl==='yes'?'Subscribed':'Not subscribed';
-            goToPhase(9);
+            saveAllData();populateSummary();goToPhase(9);
+        });
+
+        document.getElementById('sendToServer').addEventListener('click',function(){
+            var sd=loadAllData();if(!sd)return;
+            fetch('/dummy_endpoint',{
+                method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
+                body:JSON.stringify(sd)
+            }).then(function(r){return r.json()}).then(function(d){
+                if(d.redirect){localStorage.removeItem(STORAGE_PHASE);localStorage.removeItem(STORAGE_DATA);window.location.href=d.redirect}
+                else{alert('Setup complete! You can now close this page.')}
+            }).catch(function(){alert('Something went wrong. Please try again.')});
         });
 
         document.getElementById('restartOnboarding').addEventListener('click',function(){if(confirm('Clear all onboarding data and start over?')){localStorage.removeItem(STORAGE_PHASE);localStorage.removeItem(STORAGE_DATA);document.cookie='onboarding_friend_searched=;path=/;max-age=0';window.location.reload()}});
@@ -397,11 +417,21 @@
 
         skipBtn.addEventListener('click',function(){friendCode.disabled=true;searchBtn.disabled=true;showFriendState('Skipped');saveAllData()});
 
-        (function(){var s=getCookie('sd-theme'),b=document.getElementById('themeToggle');if(s==='light'){document.body.classList.add('light-mode');b.innerHTML='<i class="fas fa-sun"></i>'}b.addEventListener('click',function(){if(document.body.classList.contains('light-mode')){document.body.classList.remove('light-mode');setCookie('sd-theme','dark',365);b.innerHTML='<i class="fas fa-moon"></i>'}else{document.body.classList.add('light-mode');setCookie('sd-theme','light',365);b.innerHTML='<i class="fas fa-sun"></i>'}})})();
+        (function(){var s=getCookie('sd-theme'),b=document.getElementById('themeToggle'),icon=b?b.querySelector('.theme-icon'):null;if(s==='light'){document.body.classList.add('light-mode');if(icon)icon.textContent='☀️'}b.addEventListener('click',function(){if(document.body.classList.contains('light-mode')){document.body.classList.remove('light-mode');setCookie('sd-theme','dark',365);if(icon)icon.textContent='🌙'}else{document.body.classList.add('light-mode');setCookie('sd-theme','light',365);if(icon)icon.textContent='☀️'}})})();
 
         document.querySelectorAll('.onboard-input,input,textarea,select').forEach(function(e){e.addEventListener('input',saveAllData);e.addEventListener('change',saveAllData)});
 
-        var sd=loadAllData();if(sd){restoreData(sd);goToPhase(sd.phase||1)}else goToPhase(1);
+        var sd=loadAllData();
+        if(sd&&sd.phase===9){
+            restoreData(sd);
+            populateSummary();
+            goToPhase(9);
+        }else if(sd){
+            restoreData(sd);
+            goToPhase(sd.phase||1);
+        }else{
+            goToPhase(1);
+        }
         var h=document.getElementById('heavy-css');if(h&&h.rel!=='stylesheet')h.rel='stylesheet';
     })();
     </script>

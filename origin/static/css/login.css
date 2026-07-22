@@ -40,8 +40,27 @@ body.light-mode .site-header{background:rgba(248,250,252,0.85);border-color:rgba
 .nav-links a{color:var(--text-secondary);text-decoration:none;font-weight:500;padding:0.3rem 0.6rem;border-radius:8px;font-size:0.78rem;transition:var(--transition);display:flex;align-items:center;gap:0.3rem;white-space:nowrap}
 .nav-links a:hover{color:#fff;background:rgba(255,255,255,0.04)}
 .nav-actions{display:flex;align-items:center;gap:0.5rem;flex-shrink:0}
-.theme-toggle{background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--text-secondary);padding:0.4rem;border-radius:50%;display:flex}
-.theme-toggle:hover{color:var(--accent-light)}
+.theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.4rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+.theme-toggle i {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+.theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+.theme-toggle:hover i {
+    color: var(--accent-light);
+}
 
 /* Buttons */
 .btn{display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1.4rem;border-radius:var(--radius);font-weight:600;font-size:0.85rem;text-decoration:none;cursor:pointer;transition:var(--transition);border:2px solid transparent;white-space:nowrap;font-family:var(--font-sans)}
@@ -157,3 +176,5 @@ body.light-mode .site-header{background:rgba(248,250,252,0.85);border-color:rgba
     .login-welcome{padding:3.5rem 4rem 2rem}
     .login-form-panel{padding:3rem 4rem 4rem}
 }
+
+.theme-toggle i { color: var(--text-secondary); }

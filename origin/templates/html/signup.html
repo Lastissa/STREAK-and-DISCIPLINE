@@ -119,17 +119,10 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="username">Username <span class="optional">(optional)</span></label>
+                            <label for="username">Username</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-user input-icon"></i>
-                                <input 
-                                    type="text" 
-                                    name="username" 
-                                    id="username" 
-                                    placeholder="Choose a username" 
-                                    autocomplete="username"
-                                    class="form-input"
-                                >
+                                <input type="text" name="username" id="username" placeholder="Choose a username" required autocomplete="username" class="form-input">
                             </div>
                             {% if form.username.errors %}
                             <span class="form-error">{{ form.username.errors.0 }}</span>
@@ -303,6 +296,11 @@
         var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email.value.trim())) {
             errors.push({field: email, msg: 'Please enter a valid email address.'});
+        }
+
+        // Validate username
+        if (!document.getElementById('username').value.trim()) {
+            errors.push({field: document.getElementById('username'), msg: 'Please choose a username.'});
         }
         
         // Validate password length

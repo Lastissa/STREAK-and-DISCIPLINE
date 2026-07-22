@@ -6,8 +6,9 @@ import logging
 
 urlpatterns = [
     path('redirect_url/<str:raw_url>/', views.RedirectHandler.as_view(), name='origin_redirect_handler'),
-    path('dashboard/<str:username>/', views.OriginHome.as_view(), name = 'origin_dashboard'),
-    path('dashboard/<str:username>/settings/', views.OriginHome.as_view(), name = 'origin_settings'),
+    path('dashboard/', views.UserDashBoard.as_view(), name = 'origin_dashboard_anonymous'),
+    path('dashboard/<str:username>/', views.UserDashBoard.as_view(), name = 'origin_dashboard'),
+    path('dashboard/<str:username>/settings/', views.UserDashBoard.as_view(), name = 'origin_settings'),
     
     path('', views.OriginHome.as_view(),name='origin_home'),
     path('extra/', views.Extras.as_view(),name='origin_extra'),
@@ -16,7 +17,6 @@ urlpatterns = [
     path('signup/', views.Signup.as_view(),name='origin_signup'),
     path('password-reset/', views.OriginHome.as_view(),name='origin_password_reset'),
     path('onboarding/', views.Onboarding.as_view(),name='origin_onboarding'),
-    path('dashboard/', views.OriginHome.as_view(), name = 'origin_dashboard_anonymous'),
 
     path('search_friend/', views.SearchFriend.as_view(), name = 'origin_search_friend'),
     path('add_friend/', views.AddFriend.as_view(), name = 'origin_add_friend'),

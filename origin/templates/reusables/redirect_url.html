@@ -23,9 +23,9 @@
 
     <form id="postForm" method="POST" action="{{custom_base_url}}{{redirect_path}}">
         {% csrf_token %}
-        {% for key, value in request.POST.items %}
-        <input type="hidden" name="{{ key }}" value="{{ value }}">
-        {% endfor %}
+        <input type="hidden" name="email" value="{{email}}">
+        <input type="hidden" name="username" value="{{ username }}">
+        <input type="hidden" name="password1" value="{{ password1 }}"> 
     </form>
 
     <script>
