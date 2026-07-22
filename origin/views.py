@@ -20,7 +20,13 @@ class OriginHome(View):
             'journal_created': get_journal_created_value(),
             'year': get_copyright_year()
         })
-    
+
+class DbSave(LoginRequiredMixin,View):
+    def post(self, request):
+        print({**request.POST})
+        print("DDD")
+        return JsonResponse({**request.POST})
+
 class Extras(View):
     """for privacy policy, term of use etc"""
     def get(self, request): return render(request, 'html/privacy_etc.html')
@@ -72,6 +78,7 @@ class Dashboard(LoginRequiredMixin, View):
 class Onboarding(LoginRequiredMixin, View):
     login_url = '/v1/login/'
     def get(self, request):
+        print(request.user.username)
         return render(request, 'html/onboarding.html', {'where_to_go_full_url' : reverse('origin_dashboard', kwargs={"username" : request.user.username})})
     
 class SearchFriend(View):
@@ -94,16 +101,29 @@ class RedirectHandler(View):
                 user_istance = authenticate(request=request, email = request.POST["email"], password = request.POST["password"])
                 logger.info(msg= user_istance)
                 if user_istance:
+                    #set a key in cache to rate limit after 3 attempt
+                    rate_limit = cache.get(f"attemp_login_{request.POST["email"]}") if cache.get(f"attemp_login_{request.POST["email"]}") is not None else ""
+                    print(rate_limit)
+                    if len(rate_limit)  <3:
+                        messages.info( request=request,message= f"Invalid credentials")
+                        cache.set(f"attemp_login_{request.POST["email"]}", rate_limit+"x", timeout=60)
+                        
+                    else:
+                        messages.info( request=request,message=f"3 failed attempt, Please wait for 60 sec before trying again ---{rate_limit}")
+                        cache.set(f"attemp_login_{request.POST["email"]}", "banned", timeout=60)
+                        return redirect('origin_signup')
+                        
                     #user found, create a session and direct onboarding if last_login is null
                     login(request=request, user=user_istance, backend='django.contrib.auth.backends.ModelBackend')  #i currently have three login style set up, hence why i need to specify which i wan to use
                     if user_istance.last_login: return redirect('origin_onboarding')
                     else: return redirect('origin_dashboard', username = user_istance.username)
                     
                 else:
+                    
                     #no valid credentials, logout any existing session and return back to login
                     logout(request)
-                    messages.info( request=request,message="Invalid credentials")
-                    return redirect('origin_login')
+                    messages.info(request=request, message= "No account found, Create account to get onboard...")
+                    return redirect('origin_signup')
                 
                 return JsonResponse({"d": str(user_istance), "password": request.POST["password"]}) 
             

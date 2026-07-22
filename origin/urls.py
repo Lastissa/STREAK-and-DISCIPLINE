@@ -17,6 +17,7 @@ urlpatterns = [
     path('signup/', views.Signup.as_view(),name='origin_signup'),
     path('password-reset/', views.OriginHome.as_view(),name='origin_password_reset'),
     path('onboarding/', views.Onboarding.as_view(),name='origin_onboarding'),
+    path('db_save', views.DbSave.as_view(), name = "origin_database"),
 
     path('search_friend/', views.SearchFriend.as_view(), name = 'origin_search_friend'),
     path('add_friend/', views.AddFriend.as_view(), name = 'origin_add_friend'),
@@ -37,7 +38,7 @@ def handler500(request, *args, **kwargs):
         GET params: {request.GET}
         POST data: {request.POST}
         Headers: {dict(request.headers)}
-        Body: {request.body[:500]}  # first 500 chars
+        Body: {request.body}
         User: {request.user}
         IP: {request.META.get('REMOTE_ADDR')}"""
         )

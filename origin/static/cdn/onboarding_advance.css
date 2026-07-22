@@ -1,263 +1,594 @@
-/* Ambient background particles */
-body::before {
+/* ============================================================
+   ONBOARDING ADVANCE CSS  —  STREAK & DISCIPLINE
+   Deferred / non-blocking. Loaded after light CSS.
+   All animations, spring physics, 3D, glow, glassmorphism.
+   "GTA-level physics" — mass, overshoot, settle.
+   ============================================================ */
+
+/* ---- Spring easing catalogue ----------------------------- */
+/* Overshoot (door swings open)     */ /* cubic-bezier(0.34,1.56,0.64,1) */
+/* Fast decelerate (car braking)    */ /* cubic-bezier(0.22,1,0.36,1)    */
+/* Elastic snap (rubber band)       */ /* cubic-bezier(0.68,-0.55,0.265,1.55) */
+/* Heavy settle (dropped object)    */ /* cubic-bezier(0.16,1,0.3,1)     */
+
+/* ============================================================
+   PHASE ENTRANCE / EXIT ANIMATIONS
+   ============================================================ */
+
+/* Card entrance — slides up, overshoots, settles */
+@keyframes phaseIn {
+  0%   { opacity:0; transform: translateY(48px) scale(0.94); }
+  55%  { opacity:1; transform: translateY(-7px) scale(1.008); }
+  75%  { transform: translateY(3px) scale(0.997); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* Full-screen phase entrance */
+@keyframes fsPhaseIn {
+  0%   { opacity:0; transform: translateY(60px); }
+  60%  { opacity:1; transform: translateY(-8px); }
+  80%  { transform: translateY(4px); }
+  100% { transform: translateY(0); }
+}
+
+/* Card exit — fly off upward */
+@keyframes phaseOut {
+  0%   { opacity:1; transform: translateY(0) scale(1); }
+  100% { opacity:0; transform: translateY(-42px) scale(0.95); }
+}
+
+/* Apply to active card */
+.ob-phase.ob-active .ob-card {
+  animation: phaseIn 0.65s cubic-bezier(0.22,1,0.36,1) both;
+}
+.ob-phase.ob-active.ob-fs .ob-welcome,
+.ob-phase.ob-active.ob-fs .ob-intro,
+.ob-phase.ob-active.ob-fs .ob-preview,
+.ob-phase.ob-active.ob-fs .ob-launch {
+  animation: fsPhaseIn 0.7s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* Exiting card */
+.ob-card.ob-exit {
+  animation: phaseOut 0.35s cubic-bezier(0.4,0,1,1) forwards;
+  pointer-events: none;
+}
+
+/* ============================================================
+   PROGRESS & DOTS
+   ============================================================ */
+
+.ob-progress-fill {
+  background: linear-gradient(90deg, var(--acc), #818cf8, #a78bfa, var(--acc));
+  background-size: 300% 100%;
+  animation: shimmerProg 3s ease-in-out infinite;
+  height: 3px;
+  border-radius: 0 2px 2px 0;
+}
+@keyframes shimmerProg {
+  0%,100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+.ob-dot.active {
+  animation: dotBeat 1.8s ease-in-out infinite;
+  box-shadow: 0 0 6px var(--glow);
+}
+@keyframes dotBeat {
+  0%,100% { box-shadow: 0 0 4px var(--glow); }
+  50%      { box-shadow: 0 0 12px var(--glow), 0 0 20px rgba(59,130,246,0.2); }
+}
+
+/* ============================================================
+   BACKGROUND ATMOSPHERE
+   ============================================================ */
+
+/* Ambient gradient orbs — desktop (supplement canvas) */
+@media(min-width:900px) {
+  .ob-left::before {
     content: '';
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: radial-gradient(circle at 20% 30%, rgba(59,130,246,0.04) 0%, transparent 50%),
-                radial-gradient(circle at 80% 70%, rgba(96,165,250,0.03) 0%, transparent 50%);
-    pointer-events: none;
+    inset: 0;
     z-index: 0;
-    animation: bgPulse 8s ease-in-out infinite alternate;
-}
-@keyframes bgPulse {
-    from { opacity: 0.6; transform: scale(1); }
-    to   { opacity: 1; transform: scale(1.05); }
-}
-
-/* Phase transitions with spring physics */
-.onboard-phase.active .phase-content {
-    animation: phaseSpringIn 0.6s cubic-bezier(0.23, 1, 0.32, 1) both;
-}
-@keyframes phaseSpringIn {
-    from { opacity: 0; transform: translateY(40px) scale(0.92); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 800px 600px at 20% 80%, rgba(59,130,246,0.055) 0%, transparent 60%),
+      radial-gradient(ellipse 600px 500px at 80% 10%, rgba(129,140,248,0.045) 0%, transparent 55%),
+      radial-gradient(ellipse 400px 300px at 55% 50%, rgba(167,139,250,0.025) 0%, transparent 50%);
+    animation: orbitOrbs 25s ease-in-out infinite alternate;
+  }
+  @keyframes orbitOrbs {
+    0%   { transform: scale(1) rotate(0deg); }
+    50%  { transform: scale(1.08) rotate(2deg); }
+    100% { transform: scale(1) rotate(-1deg); }
+  }
 }
 
-/* Progress bar shimmer */
-.progress-fill {
-    background: linear-gradient(90deg, var(--accent), #818cf8, #a78bfa, var(--accent));
-    background-size: 300% 100%;
-    animation: progressShimmer 3s ease-in-out infinite;
-    height: 4px;
-}
-@keyframes progressShimmer {
-    0%, 100% { background-position: 0% 50%; }
-    50%      { background-position: 100% 50%; }
-}
-
-/* Dot pulse */
-.progress-dot.active {
-    animation: dotPulse 1.5s ease-in-out infinite;
-}
-@keyframes dotPulse {
-    0%, 100% { box-shadow: 0 0 4px var(--accent-glow); }
-    50%      { box-shadow: 0 0 12px var(--accent-glow), 0 0 20px rgba(59,130,246,0.2); }
+/* Mobile: CSS orb background (no canvas) */
+@media(max-width:899px) {
+  .ob-left::before {
+    content:'';
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(ellipse 350px 350px at 80% 10%, rgba(59,130,246,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 280px 280px at 10% 85%, rgba(129,140,248,0.07) 0%, transparent 55%);
+    animation: mobileOrb 12s ease-in-out infinite alternate;
+  }
+  @keyframes mobileOrb {
+    0%   { opacity:0.5; transform:scale(1); }
+    100% { opacity:1;   transform:scale(1.12); }
+  }
 }
 
-/* Welcome SVG draw + wave (GTA character physics) */
-.welcome-circle, .welcome-smile, .welcome-eye, .welcome-body, .welcome-leg, .welcome-arm {
-    stroke-dasharray: 300;
-    stroke-dashoffset: 300;
-    animation: welcomeDraw 2s ease forwards;
-}
-.welcome-smile { animation-delay: 0.4s; }
-.welcome-body  { animation-delay: 0.8s; }
-.welcome-leg   { animation-delay: 1.1s; }
-.welcome-arm   { animation-delay: 1.4s; }
-@keyframes welcomeDraw { to { stroke-dashoffset: 0; } }
+/* ============================================================
+   GLASSMORPHISM CARD UPGRADE
+   ============================================================ */
 
-@media (min-width: 768px) {
-    .welcome-svg .welcome-arm:last-child {
-        animation: welcomeDraw 2s ease forwards, armWave 2s ease-in-out 2.5s infinite;
-        transform-origin: top center;
-    }
-    @keyframes armWave {
-        0%, 100% { transform: rotate(0deg); }
-        50%      { transform: rotate(-15deg); }
-    }
+.ob-card {
+  background: rgba(13,20,33,0.88);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(42,61,86,0.7);
+  box-shadow:
+    0 4px 32px rgba(0,0,0,0.35),
+    0 1px 0 rgba(255,255,255,0.04) inset;
+}
+body.sd-light .ob-card {
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(226,232,240,0.8);
+  box-shadow: 0 4px 32px rgba(0,0,0,0.08), 0 1px 0 rgba(255,255,255,0.8) inset;
 }
 
-/* Pro banner gentle glow */
-.pro-banner {
-    animation: proGlow 3s ease-in-out infinite;
-}
-@keyframes proGlow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.15); }
-    50%      { box-shadow: 0 0 0 10px rgba(59,130,246,0); }
-}
-
-/* Suggestion chips pop */
-.suggestion-chip {
-    transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55), border-color 0.2s, box-shadow 0.2s;
-}
-.suggestion-chip:hover {
-    transform: scale(1.06);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+/* Card hover: subtle 3D tilt */
+@media(min-width:900px) {
+  .ob-card {
+    transition: transform 0.3s cubic-bezier(0.22,1,0.36,1),
+                box-shadow 0.3s cubic-bezier(0.22,1,0.36,1);
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+  /* JS adds inline transforms for true mouse-tracked tilt */
 }
 
-/* Input focus glow + lift */
-.onboard-input:focus {
-    box-shadow: 0 0 0 3px rgba(59,130,246,0.15), 0 0 20px rgba(59,130,246,0.08);
-    transform: translateY(-1px);
-}
-.onboard-input:focus::placeholder {
-    color: transparent;
-}
+/* ============================================================
+   BUTTONS — GTA SPRING PHYSICS
+   ============================================================ */
 
-/* Button hover lift + press */
 .btn-primary {
-    transition: transform 0.25s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.25s, background 0.2s;
+  box-shadow: 0 0 0 0 var(--glow);
+  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.28s cubic-bezier(0.34,1.56,0.64,1),
+              background 0.18s ease;
 }
 .btn-primary:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px var(--accent-glow);
+  transform: translateY(-3px) scale(1.025);
+  box-shadow: 0 8px 28px var(--glow), 0 4px 12px rgba(59,130,246,0.35);
 }
 .btn-primary:active {
-    transform: scale(0.96);
+  transform: translateY(1px) scale(0.96);
+  box-shadow: 0 2px 8px var(--glow);
+  transition-duration: 0.1s;
 }
 
-/* Toggle bounce */
-.toggle input:checked + .toggle-slider::after {
-    animation: toggleBounce 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+.btn-outline {
+  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1),
+              border-color 0.18s ease, color 0.18s ease,
+              box-shadow 0.28s ease;
 }
-@keyframes toggleBounce {
-    0%   { transform: translateX(0); }
-    50%  { transform: translateX(24px); }
-    75%  { transform: translateX(18px); }
-    100% { transform: translateX(20px); }
+.btn-outline:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+}
+.btn-outline:active { transform: scale(0.96); transition-duration:0.1s; }
+
+/* ============================================================
+   INPUT SPRING
+   ============================================================ */
+
+.ob-input {
+  transition: border-color 0.2s ease,
+              box-shadow 0.3s cubic-bezier(0.34,1.56,0.64,1),
+              transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.ob-input:focus {
+  box-shadow:
+    0 0 0 3px rgba(59,130,246,0.18),
+    0 0 22px rgba(59,130,246,0.08);
+  transform: translateY(-1.5px);
+}
+.ob-input:focus::placeholder { opacity:0; transition:opacity 0.2s; }
+
+/* ============================================================
+   CHIP SPRING
+   ============================================================ */
+
+.chip {
+  transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1),
+              border-color 0.18s ease,
+              color 0.18s ease,
+              background 0.18s ease,
+              box-shadow 0.28s ease;
+}
+.chip:hover {
+  transform: scale(1.07);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+}
+.chip:active { transform: scale(0.93); transition-duration:0.1s; }
+.chip.on {
+  transform: scale(1.04);
+  box-shadow: 0 3px 10px rgba(59,130,246,0.3);
 }
 
-/* Friend card reveal */
-.friend-state-success .friend-card {
-    animation: cardPopIn 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) both;
+/* ============================================================
+   TOGGLE BOUNCE
+   ============================================================ */
+
+.ob-switch input:checked + .ob-sw-track .ob-sw-thumb {
+  animation: thumbSlam 0.42s cubic-bezier(0.68,-0.55,0.265,1.55) forwards;
 }
-@keyframes cardPopIn {
-    from { opacity: 0; transform: scale(0.85); }
-    to   { opacity: 1; transform: scale(1); }
-}
-.friend-card {
-    transition: transform 0.3s, box-shadow 0.3s;
-    padding: 0.5rem;
-    border-radius: var(--radius);
-}
-.friend-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+@keyframes thumbSlam {
+  0%   { transform: translateX(0); }
+  55%  { transform: translateX(23px); }
+  75%  { transform: translateX(17px); }
+  100% { transform: translateX(19px); }
 }
 
-/* Check‑in buttons physics */
-.checkin-btn {
-    transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1), border-color 0.3s, box-shadow 0.3s, background 0.3s;
-    position: relative;
-    overflow: hidden;
+/* ============================================================
+   PRO BANNER PULSE
+   ============================================================ */
+
+.pro-banner {
+  animation: proPulse 3.5s ease-in-out infinite;
 }
-.checkin-btn::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, rgba(59,130,246,0.1) 0%, transparent 70%);
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-.checkin-btn:hover::after {
-    opacity: 1;
-}
-.checkin-btn:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.3);
-}
-.checkin-btn:active {
-    transform: scale(0.94);
-}
-.checkin-yes:hover {
-    border-color: var(--success);
-    background: rgba(34,197,94,0.08);
-    box-shadow: 0 8px 25px rgba(34,197,94,0.15);
-}
-.checkin-no:hover {
-    border-color: var(--danger);
-    background: rgba(239,68,68,0.08);
-    box-shadow: 0 8px 25px rgba(239,68,68,0.15);
+@keyframes proPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.12); }
+  50%      { box-shadow: 0 0 0 8px rgba(59,130,246,0); }
 }
 
-/* Newsletter chip hover */
-.newsletter-chip {
-    transition: border-color 0.2s, background 0.2s, transform 0.2s;
+/* ============================================================
+   CATEGORY / GOAL / METHOD / SOCIAL CARDS — SPRING HOVER
+   ============================================================ */
+
+.cat-card {
+  transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1),
+              border-color 0.18s ease,
+              background 0.18s ease,
+              box-shadow 0.28s ease;
 }
-.newsletter-chip:hover {
-    border-color: var(--accent);
-    transform: translateX(4px);
+.cat-card:hover { transform: translateY(-4px) scale(1.03); box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
+.cat-card:active { transform: scale(0.95); transition-duration:0.1s; }
+.cat-card.on { box-shadow: 0 4px 16px rgba(59,130,246,0.25); }
+
+.goal-card {
+  transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1),
+              border-color 0.2s ease, background 0.2s ease,
+              box-shadow 0.3s ease;
 }
-.newsletter-chip:has(input:checked) {
-    border-color: var(--accent);
-    background: rgba(59,130,246,0.06);
+.goal-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 10px 28px rgba(0,0,0,0.28); }
+.goal-card:active { transform: scale(0.95); }
+.goal-card.on { box-shadow: 0 6px 20px rgba(59,130,246,0.3); }
+
+.method-card, .social-card, .ft, .cat-card {
+  transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1),
+              border-color 0.18s ease, background 0.18s ease,
+              box-shadow 0.28s ease;
+}
+.method-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
+.method-card:active { transform: scale(0.95); }
+.method-card.on { box-shadow: 0 4px 16px rgba(59,130,246,0.25); }
+
+.social-card:hover { transform: translateY(-5px); box-shadow: 0 10px 28px rgba(0,0,0,0.28); }
+.social-card:active { transform: scale(0.95); }
+.social-card.on { box-shadow: 0 6px 20px rgba(59,130,246,0.3); }
+
+.ft:hover { transform: translateY(-5px) rotate(-0.5deg); box-shadow: 0 12px 28px rgba(0,0,0,0.3); }
+.ft:active { transform: scale(0.96); }
+
+/* ============================================================
+   FEATURE TILE ENTRANCE (phase 2)
+   ============================================================ */
+
+.ob-phase.ob-active .ft:nth-child(1) { animation: ftIn 0.55s 0.1s cubic-bezier(0.22,1,0.36,1) both; }
+.ob-phase.ob-active .ft:nth-child(2) { animation: ftIn 0.55s 0.22s cubic-bezier(0.22,1,0.36,1) both; }
+.ob-phase.ob-active .ft:nth-child(3) { animation: ftIn 0.55s 0.34s cubic-bezier(0.22,1,0.36,1) both; }
+
+@keyframes ftIn {
+  from { opacity:0; transform: translateY(30px) scale(0.92); }
+  to   { opacity:1; transform: translateY(0) scale(1); }
 }
 
-/* Hand‑drawn check animation */
-.draw-circle {
-    stroke-dasharray: 239;
-    stroke-dashoffset: 239;
-    animation: drawCircleAnim 1.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-}
-.draw-check {
-    stroke-dasharray: 70;
-    stroke-dashoffset: 70;
-    animation: drawCheckAnim 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) 1.3s forwards;
-}
-@keyframes drawCircleAnim { to { stroke-dashoffset: 0; } }
-@keyframes drawCheckAnim  { to { stroke-dashoffset: 0; } }
+/* ============================================================
+   DASHBOARD PREVIEW — LIVE PANEL
+   ============================================================ */
 
-/* Confetti burst on final phase */
-#phase9.active .hand-drawn-check::before {
-    content: '🎉';
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    font-size: 2rem;
-    animation: confetti1 1.5s ease-out forwards;
+/* Window pops in when split activates */
+@keyframes dashWinIn {
+  from { opacity:0; transform: scale(0.92) translateX(30px); }
+  to   { opacity:1; transform: scale(1) translateX(0); }
 }
-#phase9.active .hand-drawn-check::after {
-    content: '✨';
-    position: absolute;
-    top: -10px;
-    right: 20%;
-    font-size: 1.5rem;
-    animation: confetti2 1.8s ease-out 0.2s forwards;
+.ob-right.ob-visible .dash-win {
+  animation: dashWinIn 0.7s cubic-bezier(0.22,1,0.36,1) both;
 }
+
+/* Widget reveal — used by JS via class */
+@keyframes widgetPop {
+  0%   { opacity:0; transform: scale(0.86) translateY(10px); }
+  60%  { opacity:1; transform: scale(1.03) translateY(-2px); }
+  80%  { transform: scale(0.98) translateY(1px); }
+  100% { transform: scale(1) translateY(0); }
+}
+.dw-pop { animation: widgetPop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* Highlight when a widget updates */
+@keyframes widgetUpdate {
+  0%,100% { border-color: var(--edge); }
+  40%     { border-color: var(--acc); box-shadow: 0 0 12px var(--glow); }
+}
+.dw-updated { animation: widgetUpdate 0.8s ease forwards; }
+
+.dash-win {
+  box-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.04) inset;
+  transition: box-shadow 0.4s ease;
+}
+.dash-win:hover {
+  box-shadow: 0 28px 72px rgba(0,0,0,0.65), 0 0 40px rgba(59,130,246,0.07);
+}
+
+/* Streak counter tick */
+@keyframes countUp {
+  from { transform: translateY(10px); opacity:0; }
+  to   { transform: translateY(0);    opacity:1; }
+}
+.dw-num.tick { animation: countUp 0.35s cubic-bezier(0.22,1,0.36,1); }
+
+/* ============================================================
+   WELCOME PHASE — CINEMATIC ENTRANCE
+   ============================================================ */
+
+@keyframes logoReveal {
+  from { opacity:0; transform: scale(0.7) rotate(-8deg); filter: blur(10px); }
+  70%  { opacity:1; transform: scale(1.06) rotate(1deg); filter: blur(0); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+@keyframes brandReveal {
+  from { opacity:0; transform: translateY(15px); letter-spacing:0.25em; }
+  to   { opacity:1; transform: translateY(0);    letter-spacing:0.06em; }
+}
+@keyframes h1Reveal {
+  from { opacity:0; transform: translateY(24px); }
+  60%  { opacity:1; transform: translateY(-3px); }
+  100% { transform: translateY(0); }
+}
+@keyframes fadeUp {
+  from { opacity:0; transform: translateY(16px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+.ob-phase.ob-active .ob-welcome-logo img   { animation: logoReveal 0.9s 0.15s cubic-bezier(0.22,1,0.36,1) both; }
+.ob-phase.ob-active .ob-welcome-logo .brand{ animation: brandReveal 0.6s 0.65s cubic-bezier(0.22,1,0.36,1) both; }
+.ob-phase.ob-active .ob-h1.w-title         { animation: h1Reveal 0.65s 0.8s cubic-bezier(0.22,1,0.36,1) both; }
+.ob-phase.ob-active .ob-hint.w-hint        { animation: fadeUp 0.5s 1.05s cubic-bezier(0.22,1,0.36,1) both; }
+.ob-phase.ob-active .pro-banner.w-pro      { animation: fadeUp 0.5s 1.2s cubic-bezier(0.22,1,0.36,1) both; }
+.ob-phase.ob-active .w-cta                { animation: fadeUp 0.5s 1.4s cubic-bezier(0.22,1,0.36,1) both; }
+.ob-phase.ob-active .w-stats              { animation: fadeUp 0.5s 1.55s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* Floating fire emoji */
+@keyframes fireFloat {
+  0%,100% { transform: translateY(0) rotate(-3deg); }
+  50%      { transform: translateY(-8px) rotate(3deg); }
+}
+.fire-icon { display:inline-block; animation: fireFloat 2.5s ease-in-out infinite; }
+
+/* Stats row */
+.w-stats {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1.5rem;
+  justify-content: center;
+}
+.w-stat-n { font-size: 1.4rem; font-weight: 700; color: var(--accL); display:block; }
+.w-stat-l { font-size: 0.68rem; color: var(--ink2); }
+
+/* ============================================================
+   PHASE 2: INTRO STAGGER
+   ============================================================ */
+
+.ob-phase.ob-active .ob-intro .ob-eyebrow { animation: fadeUp 0.4s 0.1s ease both; }
+.ob-phase.ob-active .ob-intro .ob-h1      { animation: h1Reveal 0.6s 0.2s cubic-bezier(0.22,1,0.36,1) both; }
+.ob-phase.ob-active .ob-intro .ob-hint    { animation: fadeUp 0.4s 0.38s ease both; }
+.ob-phase.ob-active .ob-intro .btn-row    { animation: fadeUp 0.4s 0.85s ease both; }
+
+/* Flow arrows */
+.app-flow {
+  display:flex;align-items:center;gap:0;
+  margin:1.2rem 0;flex-wrap:wrap;justify-content:center;
+}
+.flow-step {
+  background:var(--surf);border:1px solid var(--edge);
+  border-radius:var(--r);padding:0.6rem 0.75rem;
+  font-size:0.72rem;text-align:center;
+  min-width:80px;flex-shrink:0;
+}
+.flow-step i{display:block;font-size:1rem;color:var(--accL);margin-bottom:0.2rem}
+.flow-arrow{color:var(--ink3);font-size:0.8rem;padding:0 0.2rem;flex-shrink:0}
+
+.ob-phase.ob-active .flow-step:nth-child(1) { animation: ftIn 0.45s 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.ob-phase.ob-active .flow-step:nth-child(3) { animation: ftIn 0.45s 0.62s cubic-bezier(0.22,1,0.36,1) both; }
+.ob-phase.ob-active .flow-step:nth-child(5) { animation: ftIn 0.45s 0.74s cubic-bezier(0.22,1,0.36,1) both; }
+.ob-phase.ob-active .flow-step:nth-child(7) { animation: ftIn 0.45s 0.86s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ============================================================
+   THEME PICKER
+   ============================================================ */
+
+.theme-opt {
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1),
+              border-color 0.2s ease, box-shadow 0.3s ease;
+}
+.theme-opt:hover { transform: translateY(-3px); box-shadow:0 6px 18px rgba(0,0,0,0.2); }
+.theme-opt.on { box-shadow: 0 4px 16px rgba(59,130,246,0.25); }
+
+/* ============================================================
+   FRIEND CARD POP-IN
+   ============================================================ */
+
+@keyframes friendPop {
+  from { opacity:0; transform: scale(0.85) translateY(8px); }
+  60%  { opacity:1; transform: scale(1.03) translateY(-2px); }
+  100% { transform: scale(1) translateY(0); }
+}
+.friend-result.show { animation: friendPop 0.45s cubic-bezier(0.22,1,0.36,1) both; }
+.friend-result { transition: box-shadow 0.3s ease; }
+.friend-result:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.22); }
+
+/* Loading spinner for friend search */
+@keyframes friendSpin { to { transform: rotate(360deg); } }
+.fr-spinner {
+  width:16px;height:16px;
+  border:2px solid var(--edgeL);
+  border-top-color:var(--acc);
+  border-radius:50%;
+  animation: friendSpin 0.65s linear infinite;
+  flex-shrink:0;
+}
+
+/* ============================================================
+   CHECK MARK DRAW (phase 11 / 12)
+   ============================================================ */
+
+.check-circle { stroke-dasharray:239; stroke-dashoffset:239; }
+.check-tick   { stroke-dasharray:70;  stroke-dashoffset:70; }
+
+.ob-phase.ob-active .check-circle {
+  animation: drawCircle 1.1s cubic-bezier(0.22,1,0.36,1) 0.2s forwards;
+}
+.ob-phase.ob-active .check-tick {
+  animation: drawTick 0.6s cubic-bezier(0.22,1,0.36,1) 1.1s forwards;
+}
+
+@keyframes drawCircle { to { stroke-dashoffset:0; } }
+@keyframes drawTick   { to { stroke-dashoffset:0; } }
+
+/* Pulse after draw */
+@keyframes checkPulse {
+  0%,100% { filter: drop-shadow(0 0 4px var(--glow)); }
+  50%      { filter: drop-shadow(0 0 16px rgba(59,130,246,0.5)); }
+}
+.check-wrap svg { animation: checkPulse 2s ease-in-out 1.8s infinite; }
+
+/* ============================================================
+   PHASE 11: PREVIEW WIDGETS
+   ============================================================ */
+
+.ob-phase.ob-active .ob-preview .ob-eyebrow { animation: fadeUp 0.4s 0.1s ease both; }
+.ob-phase.ob-active .ob-preview .ob-h1      { animation: h1Reveal 0.55s 0.2s cubic-bezier(0.22,1,0.36,1) both; }
+.ob-phase.ob-active .ob-preview .ob-hint    { animation: fadeUp 0.4s 0.35s ease both; }
+.ob-phase.ob-active .mock-win              { animation: ftIn 0.6s 0.45s cubic-bezier(0.22,1,0.36,1) both; }
+
+.mock-win {
+  transition: box-shadow 0.35s ease, transform 0.35s ease;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+}
+.mock-win:hover { transform: translateY(-3px); box-shadow: 0 18px 50px rgba(0,0,0,0.45); }
+
+/* ============================================================
+   PHASE 12: LAUNCH CONFETTI
+   ============================================================ */
+
 @keyframes confetti1 {
-    0%   { opacity: 1; transform: translate(-50%, 0) rotate(0deg); }
-    100% { opacity: 0; transform: translate(-50%, -60px) rotate(180deg); }
+  0%   { opacity:1; transform:translate(-50%,-50%) translate(0,0) rotate(0deg); }
+  100% { opacity:0; transform:translate(-50%,-50%) translate(-50px,-80px) rotate(200deg); }
 }
 @keyframes confetti2 {
-    0%   { opacity: 1; transform: translateY(0) rotate(0deg); }
-    100% { opacity: 0; transform: translateY(-50px) rotate(-180deg); }
+  0%   { opacity:1; transform:translate(-50%,-50%) translate(0,0) rotate(0deg); }
+  100% { opacity:0; transform:translate(-50%,-50%) translate(60px,-70px) rotate(-200deg); }
+}
+@keyframes confetti3 {
+  0%   { opacity:1; transform:translate(-50%,-50%) translate(0,0) rotate(0deg); }
+  100% { opacity:0; transform:translate(-50%,-50%) translate(-30px,-90px) rotate(280deg); }
 }
 
-/* Summary box hover */
-.summary-box {
-    transition: border-color 0.3s, box-shadow 0.3s;
+.ob-phase.ob-active .ob-launch .check-wrap::before {
+  content:'🔥'; position:absolute; left:50%; top:0; font-size:1.8rem;
+  animation: confetti1 1.6s cubic-bezier(0.22,1,0.36,1) 1.8s both;
 }
-.summary-box:hover {
-    border-color: var(--accent);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+.ob-phase.ob-active .ob-launch .check-wrap::after {
+  content:'⚡'; position:absolute; left:50%; top:0; font-size:1.5rem;
+  animation: confetti2 1.6s cubic-bezier(0.22,1,0.36,1) 2s both;
+}
+.ob-launch-msg { animation: h1Reveal 0.6s cubic-bezier(0.22,1,0.36,1) 1.4s both; }
+.ob-launch-sub { animation: fadeUp 0.5s ease 1.7s both; }
+.ob-launch-sum { animation: fadeUp 0.5s ease 1.95s both; }
+.ob-launch-cta { animation: fadeUp 0.5s cubic-bezier(0.34,1.56,0.64,1) 2.1s both; }
+
+/* ============================================================
+   MOBILE: SWIPE TRANSITION HELPERS
+   ============================================================ */
+
+/* Applied by JS during touch swipe */
+.ob-phase.ob-swiping { transition: transform 0.1s linear; }
+.ob-phase.ob-swipe-out-l {
+  animation: swipeOutLeft 0.42s cubic-bezier(0.4,0,1,1) forwards;
+}
+.ob-phase.ob-swipe-out-r {
+  animation: swipeOutRight 0.42s cubic-bezier(0.4,0,1,1) forwards;
+}
+.ob-phase.ob-swipe-in-l {
+  animation: swipeInLeft 0.5s cubic-bezier(0.22,1,0.36,1) both;
+}
+.ob-phase.ob-swipe-in-r {
+  animation: swipeInRight 0.5s cubic-bezier(0.22,1,0.36,1) both;
 }
 
-/* Mobile distinct physics */
-@media (max-width: 767px) {
-    .onboard-phase.active .phase-content {
-        animation: phaseSlideMobile 0.45s cubic-bezier(0.23, 1, 0.32, 1) both;
-    }
-    @keyframes phaseSlideMobile {
-        from { opacity: 0; transform: translateY(50px) scale(0.94); }
-        to   { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    .checkin-btn:hover {
-        transform: translateY(-2px);
-    }
-    .suggestion-chip:hover {
-        transform: scale(1.03);
-    }
+@keyframes swipeOutLeft  { to { opacity:0; transform: translateX(-60px) scale(0.94); } }
+@keyframes swipeOutRight { to { opacity:0; transform: translateX(60px) scale(0.94); } }
+@keyframes swipeInLeft  { from { opacity:0; transform: translateX(70px) scale(0.95); } }
+@keyframes swipeInRight { from { opacity:0; transform: translateX(-70px) scale(0.95); } }
+
+/* ============================================================
+   FORM FIELDS — STAGGER ON CARD ENTRANCE
+   ============================================================ */
+
+.ob-phase.ob-active .ob-card .ob-eyebrow { animation: fadeUp 0.35s 0.2s ease both; }
+.ob-phase.ob-active .ob-card .ob-h2      { animation: fadeUp 0.4s 0.28s cubic-bezier(0.22,1,0.36,1) both; }
+.ob-phase.ob-active .ob-card .ob-hint    { animation: fadeUp 0.35s 0.36s ease both; }
+.ob-phase.ob-active .ob-card .ob-input   { animation: fadeUp 0.35s 0.44s ease both; }
+.ob-phase.ob-active .ob-card .chip-wrap  { animation: fadeUp 0.35s 0.52s ease both; }
+.ob-phase.ob-active .ob-card .cat-grid   { animation: fadeUp 0.35s 0.48s ease both; }
+.ob-phase.ob-active .ob-card .goal-grid  { animation: fadeUp 0.35s 0.44s ease both; }
+.ob-phase.ob-active .ob-card .method-grid{ animation: fadeUp 0.35s 0.48s ease both; }
+.ob-phase.ob-active .ob-card .social-grid{ animation: fadeUp 0.35s 0.44s ease both; }
+.ob-phase.ob-active .ob-card .btn-row    { animation: fadeUp 0.35s 0.6s ease both; }
+.ob-phase.ob-active .ob-card .pro-banner { animation: fadeUp 0.35s 0.56s ease both; }
+
+/* ============================================================
+   SPLIT MODE — DASHBOARD REVEAL
+   ============================================================ */
+
+@keyframes rightPanelIn {
+  from { opacity:0; transform: translateX(40px); }
+  to   { opacity:1; transform: translateX(0); }
+}
+.ob-right.ob-visible { animation: rightPanelIn 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ============================================================
+   REDUCED MOTION OVERRIDES
+   ============================================================ */
+
+@media(prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration:0.01ms !important; transition-duration:0.1s !important; }
 }
 
-/* Desktop richer hover physics */
-@media (min-width: 768px) {
-    .phase-content {
-        box-shadow: 0 4px 24px rgba(0,0,0,0.2);
-    }
-    .summary-box {
-        padding: 1.2rem 1.5rem;
-    }
-    .checkin-btn {
-        min-width: 160px;
-    }
+/* ============================================================
+   LIGHT MODE CARD OVERRIDE
+   ============================================================ */
+
+body.sd-light .ob-card {
+  background: rgba(255,255,255,0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+body.sd-light .dash-win {
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
 }

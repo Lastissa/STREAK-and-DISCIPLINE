@@ -2,438 +2,1757 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Onboarding — STREAK & DISCIPLINE</title>
-    <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
-    <style>{% include "reusables/spinner.css" %}</style>
-    <link rel="stylesheet" href="{% static 'css/onboarding_light.css' %}">
-    <link rel="preload" href="{% static 'cdn/onboarding_advance.css' %}" as="style"
-          onload="this.onload=null;this.rel='stylesheet'" id="heavy-css">
-    <noscript><link rel="stylesheet" href="{% static 'cdn/onboarding_advance.css' %}"></noscript>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Get Started — STREAK & DISCIPLINE</title>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
+
+  <!-- Inline spinner CSS — critical, must render before anything else -->
+  <style>{% include "reusables/spinner.css" %}</style>
+
+  <!-- LIGHT CSS: blocking, but tiny — keeps first paint stable & unstyled-flash-free -->
+  <link rel="stylesheet" href="{% static 'css/onboarding_light.css' %}">
+
+  <!-- HEAVY CSS: preloaded non-blocking; animations & glass effects land when ready -->
+  <link rel="preload" href="{% static 'cdn/onboarding_advance.css' %}" as="style"
+        onload="this.onload=null;this.rel='stylesheet';document.documentElement.classList.add('adv-ready')"
+        id="heavy-css">
+  <noscript><link rel="stylesheet" href="{% static 'cdn/onboarding_advance.css' %}"></noscript>
 </head>
 <body>
-    {% include "reusables/spinner.html" %}
 
-    <header class="onboard-header">
-        <a href="/" class="logo-link">
-            <img src="{{ logo_url }}" alt="Logo" class="logo-img" width="32" height="32">
-            <span class="logo-text">STREAK & DISCIPLINE</span>
-        </a>
-        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-            <span class="theme-icon">🌙</span>
+  <!-- ======================================================
+       LOADER — waits for heavy CSS (max 8 s)
+       ====================================================== -->
+  {% include "reusables/spinner.html" %}
+
+  <!-- ======================================================
+       APP ROOT — hidden until CSS ready
+       ====================================================== -->
+  <div class="ob-main" id="obMain">
+
+    <!-- Particle canvas (desktop only, shown via CSS) -->
+    <canvas id="ob-canvas"></canvas>
+
+    <!-- Fixed header -->
+    <header class="ob-header">
+      <a href="/" class="ob-logo">
+        <img src="{{ logo_url }}" alt="S&D" width="28" height="28"
+             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2228%22 height=%2228%22%3E%3Crect width=%2228%22 height=%2228%22 rx=%227%22 fill=%22%233b82f6%22/%3E%3Ctext x=%2250%25%22 y=%2255%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2213%22%3ES%26D%3C/text%3E%3C/svg%3E'">
+        <span class="ob-logo-text">STREAK &amp; DISCIPLINE</span>
+      </a>
+      <div class="ob-header-r">
+        <span class="ob-phase-lbl" id="obPhaseLbl">Welcome</span>
+        <button class="ob-theme-btn" id="obThemeBtn" aria-label="Toggle theme">
+          <i class="fas fa-moon" id="obThemeIcon"></i>
         </button>
+      </div>
     </header>
 
-    <main class="onboard-container" id="onboardApp" data-current-phase="1">
-        <div class="onboard-progress">
-            <div class="progress-fill" id="progressFill"></div>
-            <div class="progress-steps">
-                <span class="progress-dot active" data-step="1"></span>
-                <span class="progress-dot" data-step="2"></span>
-                <span class="progress-dot" data-step="3"></span>
-                <span class="progress-dot" data-step="4"></span>
-                <span class="progress-dot" data-step="5"></span>
-                <span class="progress-dot" data-step="6"></span>
-                <span class="progress-dot" data-step="7"></span>
-                <span class="progress-dot" data-step="8"></span>
-                <span class="progress-dot" data-step="9"></span>
+    <!-- Progress stripe -->
+    <div class="ob-progress"><div class="ob-progress-fill" id="obFill"></div></div>
+
+    <!-- ====================================================
+         OUTER WRAPPER — becomes ob-split for phases 3–10
+         ==================================================== -->
+    <div class="ob-wrap" id="obWrap">
+
+      <!-- LEFT: form wizard -->
+      <div class="ob-left">
+        <div class="ob-phases" id="obPhases">
+
+          <!-- ================================================
+               PHASE 1 — WELCOME  (full-screen, cinematic)
+               ================================================ -->
+          <div class="ob-phase ob-fs" data-phase="1" id="p1">
+            <div class="ob-welcome">
+              <div class="ob-welcome-logo">
+                <img src="{{ logo_url }}" alt="S&D" width="72" height="72"
+                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2272%22 height=%2272%22%3E%3Crect width=%2272%22 height=%2272%22 rx=%2218%22 fill=%22%233b82f6%22/%3E%3Ctext x=%2250%25%22 y=%2255%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2228%22%3ES%26D%3C/text%3E%3C/svg%3E'">
+                <div class="brand">STREAK &amp; DISCIPLINE</div>
+              </div>
+
+              <h1 class="ob-h1 w-title">
+                Keep the promises<br>you make to <span class="hl">yourself</span>.
+              </h1>
+              <p class="ob-hint w-hint" style="max-width:400px">
+                A private, no-nonsense journal that holds you accountable — 
+                one honest sentence a day. <span class="fire-icon">🔥</span>
+              </p>
+
+              <div class="pro-banner w-pro" style="max-width:400px">
+                <i class="fas fa-gem"></i> You're starting a <strong>free 7-day Pro trial</strong> — 
+                every feature unlocked, no credit card needed.
+              </div>
+
+              <div class="w-cta">
+                <button class="btn btn-primary btn-xl" data-next="2" id="beginBtn">
+                  <span class="btn-txt"><i class="fas fa-rocket"></i> Begin Your Journey</span>
+                  <span class="btn-spin"></span>
+                </button>
+              </div>
+
+              <div class="w-stats">
+                <div class="w-stat">
+                  <span class="w-stat-n">{{ consistency|default:"86" }}%</span>
+                  <span class="w-stat-l">Consistency rate</span>
+                </div>
+                <div class="w-stat">
+                  <span class="w-stat-n">{{ journal_created|default:"140+" }}</span>
+                  <span class="w-stat-l">Journals started</span>
+                </div>
+                <div class="w-stat">
+                  <span class="w-stat-n">9.4 <i class="fas fa-star" style="font-size:0.8rem;color:var(--warn)"></i></span>
+                  <span class="w-stat-l">User rating</span>
+                </div>
+              </div>
             </div>
-        </div>
+          </div>
 
-        <!-- Phase 1: Welcome / What to Expect -->
-        <div class="onboard-phase active" data-phase="1" id="phase1">
-            <div class="phase-content">
-                <div class="welcome-graphic">
-                    <svg viewBox="0 0 120 120" class="welcome-svg">
-                        <circle cx="60" cy="45" r="22" fill="none" stroke="var(--accent)" stroke-width="2.5" class="welcome-circle"/>
-                        <path d="M20 95 Q60 60 100 95" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" class="welcome-smile"/>
-                        <circle cx="52" cy="40" r="3" fill="var(--accent)" class="welcome-eye"/>
-                        <circle cx="68" cy="40" r="3" fill="var(--accent)" class="welcome-eye"/>
-                        <line x1="60" y1="67" x2="60" y2="85" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" class="welcome-body"/>
-                        <line x1="60" y1="85" x2="40" y2="110" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" class="welcome-leg"/>
-                        <line x1="60" y1="85" x2="80" y2="110" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" class="welcome-leg"/>
-                        <line x1="60" y1="75" x2="30" y2="55" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" class="welcome-arm"/>
-                        <line x1="60" y1="75" x2="90" y2="55" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" class="welcome-arm"/>
-                    </svg>
+          <!-- ================================================
+               PHASE 2 — INTRO  (what S&D is + what you'll get)
+               ================================================ -->
+          <div class="ob-phase ob-fs" data-phase="2" id="p2">
+            <div class="ob-intro">
+              <div class="ob-eyebrow"><i class="fas fa-circle-info"></i> Before we dive in</div>
+              <h1 class="ob-h1">Here's exactly what<br>you're stepping into.</h1>
+              <p class="ob-hint">
+                STREAK &amp; DISCIPLINE is where you make a vow to yourself and 
+                then face the truth about whether you kept it — every single day.
+                No badges. No dopamine tricks. Just you vs your word.
+              </p>
+
+              <div class="ft-grid">
+                <div class="ft">
+                  <i class="fas fa-pen-to-square"></i>
+                  <h4>One Check-in a Day</h4>
+                  <p>Did you keep your commitment? Answer honestly. Write one sentence. Done.</p>
                 </div>
-                <h1>Welcome{% if user.email %}, <span class="highlight">{{ user.email }}</span>{% endif %}</h1>
-                <p class="phase-hint">Your private discipline journal is ready. Let's set it up in 3 minutes.</p>
-                <div class="pro-banner"><i class="fas fa-gem"></i> You're on a <strong>7‑day Pro trial</strong>. After that, you keep everything but some features lock. No credit card needed.</div>
-                <button class="btn btn-primary btn-lg phase-next" data-next="2">Start Setup</button>
+                <div class="ft">
+                  <i class="fas fa-fire"></i>
+                  <h4>Streak Tracking</h4>
+                  <p>Every consecutive check-in extends your streak. Miss one and feel it. Fix it.</p>
+                </div>
+                <div class="ft">
+                  <i class="fas fa-chart-line"></i>
+                  <h4>Weekly Truth Report</h4>
+                  <p>Every Sunday — a private email that tells you exactly how your week looked, no spin.</p>
+                </div>
+              </div>
+
+              <div class="app-flow">
+                <div class="flow-step"><i class="fas fa-pen-fancy"></i>Make a Vow</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step"><i class="fas fa-check"></i>Check In Daily</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step"><i class="fas fa-fire"></i>Build Streak</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step"><i class="fas fa-scroll"></i>See Your Truth</div>
+              </div>
+
+              <div class="btn-row btn-row-c">
+                <button class="btn btn-ghost" data-prev="1"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary btn-lg" data-next="3">
+                  <span class="btn-txt">I'm In <i class="fas fa-arrow-right"></i></span>
+                  <span class="btn-spin"></span>
+                </button>
+              </div>
             </div>
-        </div>
+          </div>
 
-        <!-- Phase 2: Commitment -->
-        <div class="onboard-phase" data-phase="2" id="phase2">
-            <div class="phase-content">
-                <div class="phase-step">Step 1 of 8</div>
-                <h2>What do you want to commit to?</h2>
-                <p class="phase-hint">Be specific. "Write 300 words" beats "Write more."</p>
-                <input type="text" class="onboard-input" id="commitmentWhat" placeholder="e.g., Exercise for 20 minutes" autofocus>
-                <div class="suggestions">
-                    <span class="suggestion-chip" data-fill="Read 20 pages daily">Read 20 pages daily</span>
-                    <span class="suggestion-chip" data-fill="No phone after 10 PM">No phone after 10 PM</span>
-                    <span class="suggestion-chip" data-fill="Wake up by 6 AM">Wake up by 6 AM</span>
-                    <span class="suggestion-chip" data-fill="Meditate for 10 minutes">Meditate for 10 minutes</span>
-                </div>
-                <div class="phase-actions">
-                    <button class="btn btn-outline phase-prev" data-prev="1">Back</button>
-                    <button class="btn btn-primary phase-next" data-next="3" data-validate="commitmentWhat">Continue</button>
-                </div>
+          <!-- ================================================
+               PHASE 3 — YOUR NAME
+               ================================================ -->
+          <div class="ob-phase" data-phase="3" id="p3">
+            <div class="ob-card">
+              <div class="ob-eyebrow">Step 1 of 9</div>
+              <h2 class="ob-h2">What should we call you?</h2>
+              <p class="ob-hint">This is for your dashboard greeting. default is {{request.user.username}}.</p>
+              <label class="ob-label" for="obName">Your first name or nickname</label>
+              <input type="text" class="ob-input" id="obName"
+                     placeholder="e.g., {{request.user.username.upper}}" maxlength="40" autocomplete="off" ">
+              <div class="ob-field-err" id="nameErr">Tell us what to call you.</div>
+              <div class="privacy-note">
+                <i class="fas fa-lock"></i> Stored locally on your account. Never public.
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-ghost" data-prev="2"><i class="fas fa-arrow-left"></i></button>
+                <button class="btn btn-primary" data-next="4" data-req="obName" data-err="nameErr">
+                  <span class="btn-txt">Continue <i class="fas fa-arrow-right"></i></span>
+                  <span class="btn-spin"></span>
+                </button>
+              </div>
             </div>
-        </div>
+          </div>
 
-        <!-- Phase 3: Why -->
-        <div class="onboard-phase" data-phase="3" id="phase3">
-            <div class="phase-content">
-                <div class="phase-step">Step 2 of 8</div>
-                <h2>Why does this matter?</h2>
-                <p class="phase-hint">Not the LinkedIn answer. The real one.</p>
-                <textarea class="onboard-input onboard-textarea" id="commitmentWhy" placeholder="e.g., I told my dad I'd finish this before he turns 74." rows="3"></textarea>
-                <div class="privacy-note"><i class="fas fa-lock"></i> This stays private. Just for you.</div>
-                <div class="phase-actions">
-                    <button class="btn btn-outline phase-prev" data-prev="2">Back</button>
-                    <button class="btn btn-primary phase-next" data-next="4" data-validate="commitmentWhy">Continue</button>
-                </div>
+          <!-- ================================================
+               PHASE 4 — YOUR VOW  (what + category)
+               ================================================ -->
+          <div class="ob-phase" data-phase="4" id="p4">
+            <div class="ob-card">
+              <div class="ob-eyebrow">Step 2 of 9</div>
+              <h2 class="ob-h2">What do you want to commit to?</h2>
+              <p class="ob-hint">Be specific. "Write 300 words" beats "Write more." "Walk 30 minutes" beats "exercise."</p>
+              <label class="ob-label" for="obWhat">Your commitment</label>
+              <input type="text" class="ob-input" id="obWhat"
+                     placeholder="e.g., Read 20 pages before bed" maxlength="120" autocomplete="off">
+              <div class="ob-field-err" id="whatErr">Please describe your commitment.</div>
+
+              <div class="chip-wrap" id="whatSuggestions">
+                <span class="chip" data-fill="obWhat">Read 20 pages daily</span>
+                <span class="chip" data-fill="obWhat">Exercise for 30 minutes</span>
+                <span class="chip" data-fill="obWhat">No phone after 10 PM</span>
+                <span class="chip" data-fill="obWhat">Wake up by 6 AM</span>
+                <span class="chip" data-fill="obWhat">Meditate 10 minutes</span>
+                <span class="chip" data-fill="obWhat">Write 200 words</span>
+              </div>
+
+              <label class="ob-label" style="margin-top:0.25rem">Category</label>
+              <div class="cat-grid" id="catGrid">
+                <div class="cat-card" data-cat="fitness"><i class="fas fa-dumbbell"></i>Fitness</div>
+                <div class="cat-card" data-cat="study"><i class="fas fa-book-open"></i>Study</div>
+                <div class="cat-card" data-cat="work"><i class="fas fa-briefcase"></i>Work</div>
+                <div class="cat-card" data-cat="health"><i class="fas fa-heart-pulse"></i>Health</div>
+                <div class="cat-card" data-cat="mindset"><i class="fas fa-brain"></i>Mindset</div>
+                <div class="cat-card" data-cat="other"><i class="fas fa-ellipsis"></i>Other</div>
+              </div>
+
+              <div class="btn-row">
+                <button class="btn btn-ghost" data-prev="3"><i class="fas fa-arrow-left"></i></button>
+                <button class="btn btn-primary" data-next="5" data-req="obWhat" data-err="whatErr">
+                  <span class="btn-txt">Continue <i class="fas fa-arrow-right"></i></span>
+                  <span class="btn-spin"></span>
+                </button>
+              </div>
             </div>
-        </div>
+          </div>
 
-        <!-- Phase 4: Minimum -->
-        <div class="onboard-phase" data-phase="4" id="phase4">
-            <div class="phase-content">
-                <div class="phase-step">Step 3 of 8</div>
-                <h2>What's the smallest version of this?</h2>
-                <p class="phase-hint">On your worst day, what still counts as a win?</p>
-                <input type="text" class="onboard-input" id="commitmentMinimum" placeholder="e.g., Open the document and write one sentence.">
-                <div class="phase-actions">
-                    <button class="btn btn-outline phase-prev" data-prev="3">Back</button>
-                    <button class="btn btn-primary phase-next" data-next="5" data-validate="commitmentMinimum">Continue</button>
-                </div>
+          <!-- ================================================
+               PHASE 5 — YOUR WHY
+               ================================================ -->
+          <div class="ob-phase" data-phase="5" id="p5">
+            <div class="ob-card">
+              <div class="ob-eyebrow">Step 3 of 9</div>
+              <h2 class="ob-h2">Why does this matter?</h2>
+              <p class="ob-hint">Not the LinkedIn answer. The real one. What's actually at stake here?</p>
+              <textarea class="ob-input ob-textarea" id="obWhy"
+                        placeholder="e.g., I promised my dad I'd finish this before he turns 70. I keep breaking that promise." rows="3"></textarea>
+              <div class="ob-field-err" id="whyErr">Write your honest reason. It stays private.</div>
+
+              <label class="ob-label" style="margin-bottom:0.4rem">Or pick a starting point:</label>
+              <div class="chip-wrap">
+                <span class="chip" data-fill="obWhy">To build real self-discipline</span>
+                <span class="chip" data-fill="obWhy">My health depends on it</span>
+                <span class="chip" data-fill="obWhy">I want to prove it to myself</span>
+                <span class="chip" data-fill="obWhy">My career needs this</span>
+                <span class="chip" data-fill="obWhy">I keep starting and quitting</span>
+              </div>
+
+              <div class="privacy-note">
+                <i class="fas fa-lock"></i> This stays completely private. Just between you and you.
+              </div>
+
+              <div class="btn-row">
+                <button class="btn btn-ghost" data-prev="4"><i class="fas fa-arrow-left"></i></button>
+                <button class="btn btn-primary" data-next="6" data-req="obWhy" data-err="whyErr">
+                  <span class="btn-txt">Continue <i class="fas fa-arrow-right"></i></span>
+                  <span class="btn-spin"></span>
+                </button>
+              </div>
             </div>
-        </div>
+          </div>
 
-        <!-- Phase 5: Reminder -->
-        <div class="onboard-phase" data-phase="5" id="phase5">
-            <div class="phase-content">
-                <div class="phase-step">Step 4 of 8</div>
-                <h2>Want a daily nudge?</h2>
-                <div class="toggle-row">
-                    <span>Remind me to check in</span>
-                    <label class="toggle"><input type="checkbox" id="reminderEnabled" checked><span class="toggle-slider"></span></label>
-                </div>
-                <div class="reminder-options" id="reminderOptions">
-                    <div class="form-row">
-                        <label>Time</label>
-                        <select class="onboard-input" id="reminderTime">
-                            <option value="00:00">00:00</option><option value="00:30">00:30</option>
-                            <option value="01:00">01:00</option><option value="01:30">01:30</option>
-                            <option value="02:00">02:00</option><option value="02:30">02:30</option>
-                            <option value="03:00">03:00</option><option value="03:30">03:30</option>
-                            <option value="04:00">04:00</option><option value="04:30">04:30</option>
-                            <option value="05:00">05:00</option><option value="05:30">05:30</option>
-                            <option value="06:00">06:00</option><option value="06:30">06:30</option>
-                            <option value="07:00">07:00</option><option value="07:30">07:30</option>
-                            <option value="08:00">08:00</option><option value="08:30">08:30</option>
-                            <option value="09:00">09:00</option><option value="09:30">09:30</option>
-                            <option value="10:00">10:00</option><option value="10:30">10:30</option>
-                            <option value="11:00">11:00</option><option value="11:30">11:30</option>
-                            <option value="12:00">12:00</option><option value="12:30">12:30</option>
-                            <option value="13:00">13:00</option><option value="13:30">13:30</option>
-                            <option value="14:00">14:00</option><option value="14:30">14:30</option>
-                            <option value="15:00">15:00</option><option value="15:30">15:30</option>
-                            <option value="16:00">16:00</option><option value="16:30">16:30</option>
-                            <option value="17:00">17:00</option><option value="17:30">17:30</option>
-                            <option value="18:00">18:00</option><option value="18:30">18:30</option>
-                            <option value="19:00">19:00</option><option value="19:30">19:30</option>
-                            <option value="20:00">20:00</option><option value="20:30">20:30</option>
-                            <option value="21:00" selected>21:00</option><option value="21:30">21:30</option>
-                            <option value="22:00">22:00</option><option value="22:30">22:30</option>
-                            <option value="23:00">23:00</option><option value="23:30">23:30</option>
-                        </select>
-                    </div>
-                    <div class="form-row">
-                        <label>Via</label>
-                        <div class="method-options">
-                            <label class="method-chip"><input type="radio" name="reminderMethod" value="email" checked> Email</label>
-                            <label class="method-chip"><input type="radio" name="reminderMethod" value="whatsapp"> WhatsApp</label>
-                        </div>
-                    </div>
-                </div>
-                <div class="pro-note"><i class="fas fa-gem"></i> Pro: 3 reminder channels. Free: 1.</div>
-                <div class="phase-actions">
-                    <button class="btn btn-outline phase-prev" data-prev="4">Back</button>
-                    <button class="btn btn-primary phase-next" data-next="6">Continue</button>
-                </div>
+          <!-- ================================================
+               PHASE 6 — MINIMUM EFFORT
+               ================================================ -->
+          <div class="ob-phase" data-phase="6" id="p6">
+            <div class="ob-card">
+              <div class="ob-eyebrow">Step 4 of 9</div>
+              <h2 class="ob-h2">What's the smallest version of this?</h2>
+              <p class="ob-hint">On your worst day — exhausted, sick, overwhelmed — what still counts as a win? Define the floor.</p>
+              <label class="ob-label" for="obMin">Your minimum effort</label>
+              <input type="text" class="ob-input" id="obMin"
+                     placeholder="e.g., Open the book and read even one page." maxlength="120" autocomplete="off">
+              <div class="ob-field-err" id="minErr">Set your minimum. Even tiny counts.</div>
+
+              <div class="chip-wrap">
+                <span class="chip" data-fill="obMin">Even 5 minutes counts</span>
+                <span class="chip" data-fill="obMin">Just show up, no excuses</span>
+                <span class="chip" data-fill="obMin">One sentence is enough</span>
+                <span class="chip" data-fill="obMin">One rep / one step</span>
+              </div>
+
+              <div class="ob-note">
+                <i class="fas fa-lightbulb" style="color:var(--warn)"></i>
+                People who set a minimum are <strong>3× more likely</strong> to maintain streaks through hard days.
+              </div>
+
+              <div class="btn-row">
+                <button class="btn btn-ghost" data-prev="5"><i class="fas fa-arrow-left"></i></button>
+                <button class="btn btn-primary" data-next="7" data-req="obMin" data-err="minErr">
+                  <span class="btn-txt">Continue <i class="fas fa-arrow-right"></i></span>
+                  <span class="btn-spin"></span>
+                </button>
+              </div>
             </div>
-        </div>
+          </div>
 
-        <!-- Phase 6: Friend -->
-        <div class="onboard-phase" data-phase="6" id="phase6">
-            <div class="phase-content">
-                <div class="phase-step">Step 5 of 8</div>
-                <h2>Find an accountability partner</h2>
-                <p class="phase-hint">Optional. Search by their user ID.</p>
-                <div class="friend-search" id="friendSearch">
-                    <div class="search-row">
-                        <input type="text" class="onboard-input" id="friendCode" placeholder="Enter their user ID">
-                        <button class="btn btn-primary btn-sm" id="searchFriendBtn">Search</button>
-                    </div>
-                    <div class="friend-state" id="friendStateLoading" style="display:none"><div class="mini-spinner"></div><span>Searching...</span></div>
-                    <div class="friend-state friend-state-success" id="friendStateFound" style="display:none">
-                        <div class="friend-card">
-                            <img src="" alt="" class="friend-avatar" id="friendAvatar">
-                            <div class="friend-info"><strong id="friendName"></strong><span id="friendUserId"></span></div>
-                            <button class="btn btn-primary btn-sm" id="addFriendBtn">Send Friend Request</button>
-                        </div>
-                    </div>
-                    <div class="friend-state friend-state-error" id="friendStateNotFound" style="display:none"><i class="fas fa-user-slash"></i> No user found with that ID.</div>
-                    <div class="friend-state friend-state-error" id="friendStateError" style="display:none"><i class="fas fa-exclamation-circle"></i> <span id="friendErrorMessage">Something went wrong.</span></div>
-                    <div class="friend-state friend-state-success" id="friendStateSent" style="display:none"><i class="fas fa-check-circle"></i> Friend request sent!</div>
-                    <div class="friend-state" id="friendStateSkipped" style="display:none"><i class="fas fa-check-circle"></i> Skipped. You can add friends later from your dashboard.</div>
-                </div>
-                <div class="pro-note"><i class="fas fa-gem"></i> Pro: 4 friends. Free: 1 friend. One successful search during onboarding.</div>
-                <div class="phase-actions">
-                    <button class="btn btn-outline phase-prev" data-prev="5">Back</button>
-                    <button class="btn btn-outline" id="skipFriendBtn">Skip for now</button>
-                    <button class="btn btn-primary phase-next" data-next="7">Continue</button>
-                </div>
+          <!-- ================================================
+               PHASE 7 — GOAL DURATION
+               ================================================ -->
+          <div class="ob-phase" data-phase="7" id="p7">
+            <div class="ob-card">
+              <div class="ob-eyebrow">Step 5 of 9</div>
+              <h2 class="ob-h2">How long are you committing?</h2>
+              <p class="ob-hint">Pick a target. You can extend it once you hit it — but having a horizon makes it real.</p>
+              <div class="goal-grid" id="goalGrid">
+                <div class="goal-card" data-days="30"><div class="gn">30</div><div class="gl">days — trial run</div></div>
+                <div class="goal-card" data-days="90"><div class="gn">90</div><div class="gl">days — habit lock</div></div>
+                <div class="goal-card" data-days="180"><div class="gn">180</div><div class="gl">days — identity shift</div></div>
+                <div class="goal-card on" data-days="365"><div class="gn">365</div><div class="gl">days — transformation</div></div>
+              </div>
+              <div class="ob-toggle-row">
+                <span>I'm committing for life — no end date</span>
+                <label class="ob-switch">
+                  <input type="checkbox" id="obForever">
+                  <span class="ob-sw-track"><span class="ob-sw-thumb"></span></span>
+                </label>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-ghost" data-prev="6"><i class="fas fa-arrow-left"></i></button>
+                <button class="btn btn-primary" data-next="8">
+                  <span class="btn-txt">Continue <i class="fas fa-arrow-right"></i></span>
+                  <span class="btn-spin"></span>
+                </button>
+              </div>
             </div>
-        </div>
+          </div>
 
-        <!-- Phase 7: Check‑in -->
-        <div class="onboard-phase" data-phase="7" id="phase7">
-            <div class="phase-content">
-                <div class="phase-step">Step 6 of 8</div>
-                <h2>Let's start your streak now.</h2>
-                <p class="phase-hint" id="checkinQuestion">Did you keep your commitment today?</p>
-                <div class="checkin-options" id="checkinOptions">
-                    <button class="checkin-btn checkin-yes" id="checkinYes"><span class="checkin-emoji">✅</span><span>Yes, I did</span></button>
-                    <button class="checkin-btn checkin-no" id="checkinNo"><span class="checkin-emoji">❌</span><span>Not today</span></button>
+          <!-- ================================================
+               PHASE 8 — SCHEDULE & REMINDERS
+               ================================================ -->
+          <div class="ob-phase" data-phase="8" id="p8">
+            <div class="ob-card">
+              <div class="ob-eyebrow">Step 6 of 9</div>
+              <h2 class="ob-h2">When do you want to check in?</h2>
+              <p class="ob-hint">Set a time that fits your day. We'll remind you so you never break the chain accidentally.</p>
+
+              <div class="form-row">
+                <label class="ob-label" for="obCheckinTime">Daily check-in time</label>
+                <select class="ob-input" id="obCheckinTime" style="margin-bottom:0.4rem"></select>
+              </div>
+
+              <div class="ob-toggle-row" style="margin-bottom:0.75rem">
+                <span>Send me a reminder</span>
+                <label class="ob-switch">
+                  <input type="checkbox" id="obReminderOn" checked>
+                  <span class="ob-sw-track"><span class="ob-sw-thumb"></span></span>
+                </label>
+              </div>
+
+              <div id="obReminderSection">
+                <div class="form-row">
+                  <label class="ob-label" for="obReminderTime">Reminder time (a little before check-in)</label>
+                  <select class="ob-input" id="obReminderTime" style="margin-bottom:0.5rem"></select>
                 </div>
-                <div class="checkin-note" id="checkinNote" style="display:none">
-                    <textarea class="onboard-input onboard-textarea" id="checkinNoteText" placeholder="Write one honest sentence about today." rows="2"></textarea>
+                <label class="ob-label">Via</label>
+                <div class="method-grid" id="methodGrid">
+                  <div class="method-card on" data-method="email"><i class="fas fa-envelope"></i><span>Email</span></div>
+                  <div class="method-card" data-method="whatsapp"><i class="fab fa-whatsapp"></i><span>WhatsApp</span></div>
+                  <div class="method-card" data-method="push"><i class="fas fa-bell"></i><span>Push</span></div>
                 </div>
-                <div class="phase-actions">
-                    <button class="btn btn-outline phase-prev" data-prev="6">Back</button>
-                    <button class="btn btn-primary phase-next" data-next="8">Continue</button>
+                <div id="ob-wa-field">
+                  <label class="ob-label" for="obWaNum">WhatsApp number</label>
+                  <input type="tel" class="ob-input" id="obWaNum" placeholder="+234 800 000 0000">
                 </div>
+              </div>
+
+              <div class="pro-banner">
+                <i class="fas fa-gem"></i> <strong>Pro:</strong> All 3 reminder channels + custom schedule.
+                <strong>Free:</strong> 1 channel, default timing.
+              </div>
+
+              <div class="btn-row">
+                <button class="btn btn-ghost" data-prev="7"><i class="fas fa-arrow-left"></i></button>
+                <button class="btn btn-primary" data-next="9">
+                  <span class="btn-txt">Continue <i class="fas fa-arrow-right"></i></span>
+                  <span class="btn-spin"></span>
+                </button>
+              </div>
             </div>
-        </div>
+          </div>
 
-        <!-- Phase 8: Newsletter -->
-        <div class="onboard-phase" data-phase="8" id="phase8">
-            <div class="phase-content">
-                <div class="phase-step">Step 7 of 8</div>
-                <h2>One last thing...</h2>
-                <div class="newsletter-box">
-                    <div class="newsletter-icon">📬</div>
-                    <h3>Stay in the loop?</h3>
-                    <p class="phase-hint">Get updates on new features, events, and tips. No spam — we hate it too.</p>
-                    <div class="newsletter-options">
-                        <label class="newsletter-chip"><input type="radio" name="newsletter" value="yes" checked><span>Yes, keep me updated</span></label>
-                        <label class="newsletter-chip"><input type="radio" name="newsletter" value="no"><span>No, thanks</span></label>
-                    </div>
+          <!-- ================================================
+               PHASE 9 — ACCOUNTABILITY
+               ================================================ -->
+          <div class="ob-phase" data-phase="9" id="p9">
+            <div class="ob-card">
+              <div class="ob-eyebrow">Step 7 of 9</div>
+              <h2 class="ob-h2">Solo or with a partner?</h2>
+              <p class="ob-hint">Some people go harder when someone else can see their consistency. Others need privacy to be honest.</p>
+
+              <div class="social-grid" id="socialGrid">
+                <div class="social-card on" data-mode="solo">
+                  <i class="fas fa-user"></i>
+                  <h4>Solo</h4>
+                  <p>Just me. Total privacy. My word, my rules.</p>
                 </div>
-                <div class="phase-actions">
-                    <button class="btn btn-outline phase-prev" data-prev="7">Back</button>
-                    <button class="btn btn-primary btn-lg" id="finishOnboarding">Complete Setup</button>
+                <div class="social-card" data-mode="friend">
+                  <i class="fas fa-user-group"></i>
+                  <h4>With Partner</h4>
+                  <p>Someone sees my consistency score. Not my entries.</p>
                 </div>
+              </div>
+
+              <!-- Friend search (visible when mode = friend) -->
+              <div id="friendSection" style="display:none">
+                <label class="ob-label" for="obFriendCode">Enter their User ID</label>
+                <div class="friend-row">
+                  <input type="text" class="ob-input" id="obFriendCode" placeholder="e.g., chidi-007">
+                  <button class="btn btn-primary btn-sm" id="searchFriendBtn">
+                    <span class="btn-txt">Search</span><span class="btn-spin"></span>
+                  </button>
+                </div>
+
+                <!-- States -->
+                <div id="frLoading" style="display:none;align-items:center;gap:0.5rem;font-size:0.78rem;color:var(--ink2);padding:0.4rem 0">
+                  <div class="fr-spinner"></div> Searching...
+                </div>
+                <div class="friend-result" id="frFound">
+                  <img src="" alt="" id="frAvatar">
+                  <div class="fr-info"><strong id="frName"></strong><span id="frId"></span></div>
+                  <button class="btn btn-primary btn-sm" id="addFriendBtn">
+                    <span class="btn-txt">Add</span><span class="btn-spin"></span>
+                  </button>
+                </div>
+                <div id="frSent"   style="display:none;font-size:0.78rem;color:var(--ok);padding:0.4rem 0"><i class="fas fa-check-circle"></i> Request sent!</div>
+                <div id="frNone"   style="display:none;font-size:0.78rem;color:var(--bad);padding:0.4rem 0"><i class="fas fa-user-slash"></i> No user found with that ID.</div>
+                <div id="frError"  style="display:none;font-size:0.78rem;color:var(--bad);padding:0.4rem 0"><i class="fas fa-exclamation-circle"></i> <span id="frErrMsg">Something went wrong.</span></div>
+                <div id="frSkipped" style="display:none;font-size:0.78rem;color:var(--ink2);padding:0.4rem 0"><i class="fas fa-check"></i> Skipped — add friends any time from your dashboard.</div>
+
+                <button class="btn btn-ghost btn-sm" id="skipFriendBtn" style="margin-top:0.25rem">Skip for now</button>
+                <div class="ob-note"><i class="fas fa-gem"></i> Pro: up to 4 partners. Free: 1.</div>
+              </div>
+
+              <hr class="ob-sep">
+
+              <!-- Leaderboard opt-in -->
+              <div class="lb-opt">
+                <div class="ob-toggle-row" style="border:none;padding:0">
+                  <div>
+                    <span style="font-size:0.84rem">Join the leaderboard</span>
+                    <div class="ob-note" style="margin-top:0.1rem">Others see your streak count, not your entries.</div>
+                  </div>
+                  <label class="ob-switch">
+                    <input type="checkbox" id="obLeaderboard" checked>
+                    <span class="ob-sw-track"><span class="ob-sw-thumb"></span></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="btn-row">
+                <button class="btn btn-ghost" data-prev="8"><i class="fas fa-arrow-left"></i></button>
+                <button class="btn btn-primary" data-next="10">
+                  <span class="btn-txt">Continue <i class="fas fa-arrow-right"></i></span>
+                  <span class="btn-spin"></span>
+                </button>
+              </div>
             </div>
-        </div>
+          </div>
 
-        <!-- Phase 9: Summary & Send -->
-        <div class="onboard-phase" data-phase="9" id="phase9">
-            <div class="phase-content">
-                <div class="hand-drawn-check">
-                    <svg viewBox="0 0 100 100" class="check-svg">
-                        <circle cx="50" cy="50" r="38" fill="none" stroke="var(--accent)" stroke-width="3" stroke-dasharray="239" stroke-dashoffset="239" class="draw-circle"/>
-                        <polyline points="32,50 44,64 70,36" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="70" stroke-dashoffset="70" class="draw-check"/>
-                    </svg>
+          <!-- ================================================
+               PHASE 10 — PREFERENCES
+               ================================================ -->
+          <div class="ob-phase" data-phase="10" id="p10">
+            <div class="ob-card">
+              <div class="ob-eyebrow">Step 8 of 9 — Almost there</div>
+              <h2 class="ob-h2">Make it yours.</h2>
+              <p class="ob-hint">These preferences shape your dashboard experience. You can change them anytime.</p>
+
+              <label class="ob-label">Appearance</label>
+              <div class="theme-row">
+                <div class="theme-opt on" data-theme="dark">
+                  <div class="theme-swatch sw-dark"></div> Dark (default)
                 </div>
-                <h2>You're all set!</h2>
-                <div class="summary-box" id="summaryBox">
-                    <div class="summary-row"><strong>Commitment:</strong> <span id="summaryWhat"></span></div>
-                    <div class="summary-row"><strong>Why:</strong> <span id="summaryWhy"></span></div>
-                    <div class="summary-row"><strong>Minimum:</strong> <span id="summaryMinimum"></span></div>
-                    <div class="summary-row"><strong>Reminder:</strong> <span id="summaryReminder"></span></div>
-                    <div class="summary-row"><strong>Check‑in:</strong> <span id="summaryCheckin"></span></div>
-                    <div class="summary-row"><strong>Friend:</strong> <span id="summaryFriend"></span></div>
-                    <div class="summary-row"><strong>Newsletter:</strong> <span id="summaryNewsletter"></span></div>
-                    <div class="summary-row"><strong>Streak:</strong> 🔥 1 day</div>
+                <div class="theme-opt" data-theme="light">
+                  <div class="theme-swatch sw-light"></div> Light
                 </div>
-                <div class="pro-banner"><i class="fas fa-gem"></i> Pro trial: 7 days remaining</div>
-                <div class="phase-actions phase-actions-center">
-                    <button class="btn btn-primary btn-lg" id="sendToServer">Save &amp; Go to Dashboard</button>
-                    <button class="btn btn-outline btn-sm" id="restartOnboarding">Restart Onboarding</button>
+              </div>
+
+              <div class="ob-toggle-row">
+                <div>
+                  <span>AI-powered weekly insights</span>
+                  <div class="ob-note">Claude analyses your entries and spots patterns you'd miss.</div>
                 </div>
+                <label class="ob-switch">
+                  <input type="checkbox" id="obAI" checked>
+                  <span class="ob-sw-track"><span class="ob-sw-thumb"></span></span>
+                </label>
+              </div>
+
+              <div class="ob-toggle-row">
+                <div>
+                  <span>Weekly truth report (email)</span>
+                  <div class="ob-note">Every Sunday. An honest breakdown. No fluff.</div>
+                </div>
+                <label class="ob-switch">
+                  <input type="checkbox" id="obWeeklyReport" checked>
+                  <span class="ob-sw-track"><span class="ob-sw-thumb"></span></span>
+                </label>
+              </div>
+
+              <div class="ob-toggle-row">
+                <div>
+                  <span>Product newsletter</span>
+                  <div class="ob-note">New features, tips, discipline content.</div>
+                </div>
+                <label class="ob-switch">
+                  <input type="checkbox" id="obNewsletter">
+                  <span class="ob-sw-track"><span class="ob-sw-thumb"></span></span>
+                </label>
+              </div>
+
+              <div class="btn-row">
+                <button class="btn btn-ghost" data-prev="9"><i class="fas fa-arrow-left"></i></button>
+                <button class="btn btn-primary" data-next="11">
+                  <span class="btn-txt">Preview My Dashboard <i class="fas fa-arrow-right"></i></span>
+                  <span class="btn-spin"></span>
+                </button>
+              </div>
             </div>
+          </div>
+
+          <!-- ================================================
+               PHASE 11 — DASHBOARD PREVIEW  (full-screen)
+               ================================================ -->
+          <div class="ob-phase ob-fs" data-phase="11" id="p11">
+            <div class="ob-preview">
+              <div class="ob-eyebrow">Step 9 of 9</div>
+              <h1 class="ob-h1">Your dashboard is<br>ready to <span class="hl">fill up.</span></h1>
+              <p class="ob-hint">
+                This is what you'll see every day. Right now it shows Day 1 — tomorrow it'll show Day 2.
+                Every check-in adds a tile to that calendar. Every honest entry builds the streak.
+              </p>
+
+              <!-- Mock dashboard window -->
+              <div class="mock-win">
+                <div class="mock-bar">
+                  <div class="db-dot db-r"></div>
+                  <div class="db-dot db-y"></div>
+                  <div class="db-dot db-g"></div>
+                  <span style="font-size:0.62rem;color:var(--ink3);margin-left:0.5rem">dashboard · streak & discipline</span>
+                </div>
+                <div class="mock-body">
+                  <!-- Greeting -->
+                  <div style="font-size:0.9rem;font-weight:600">
+                    Good day, <span style="color:var(--accL)" id="mockName">—</span> 👋
+                  </div>
+                  <!-- Stats -->
+                  <div class="mock-stats">
+                    <div class="mock-stat"><span class="mock-stat-n">1</span><span class="mock-stat-l">Day Streak</span></div>
+                    <div class="mock-stat"><span class="mock-stat-n">100%</span><span class="mock-stat-l">Consistency</span></div>
+                    <div class="mock-stat"><span class="mock-stat-n">0</span><span class="mock-stat-l">Missed</span></div>
+                  </div>
+                  <!-- Calendar -->
+                  <div>
+                    <div style="font-size:0.6rem;color:var(--ink3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.3rem">This month</div>
+                    <div class="mock-cal" id="mockCal"></div>
+                  </div>
+                  <!-- Commitment card -->
+                  <div class="mock-commit-card">
+                    <div class="mock-commit-lbl">Your commitment</div>
+                    <div class="mock-commit-txt" id="mockCommit">—</div>
+                  </div>
+                  <!-- Why -->
+                  <div class="mock-why-card" id="mockWhy">Your "why" will appear here.</div>
+                  <!-- Reminder -->
+                  <div style="font-size:0.65rem;color:var(--ink2);display:flex;align-items:center;gap:0.3rem" id="mockReminder">
+                    <i class="fas fa-bell" style="color:var(--accL)"></i>
+                    <span>Reminder at 21:00 via Email</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="btn-row btn-row-c" style="margin-top:1.5rem;flex-direction:column;gap:0.6rem">
+                <button class="btn btn-primary btn-xl" data-next="12" id="toLaunchBtn">
+                  <span class="btn-txt"><i class="fas fa-rocket"></i> Launch My Dashboard</span>
+                  <span class="btn-spin"></span>
+                </button>
+                <button class="btn btn-ghost btn-sm" data-prev="10">
+                  <i class="fas fa-arrow-left"></i> Tweak something
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ================================================
+               PHASE 12 — LAUNCH  (full-screen, celebration)
+               ================================================ -->
+          <div class="ob-phase ob-fs" data-phase="12" id="p12">
+            <div class="ob-launch">
+              <div class="check-wrap" style="position:relative">
+                <svg viewBox="0 0 100 100" width="82" height="82">
+                  <circle class="check-circle" cx="50" cy="50" r="38" fill="none"
+                          stroke="var(--acc)" stroke-width="3" stroke-linecap="round"/>
+                  <polyline class="check-tick" points="32,50 44,64 70,36" fill="none"
+                            stroke="var(--acc)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+
+              <h1 class="ob-h1 ob-launch-msg">Day 1 starts <span class="hl">now.</span></h1>
+              <p class="ob-hint ob-launch-sub" style="max-width:380px">
+                Your commitment has been set. Come back tonight and do your first check-in. 
+                That's all. One sentence. Keep your word.
+              </p>
+
+              <!-- Summary -->
+              <div class="sum-box ob-launch-sum" style="max-width:420px;width:100%;margin:1rem 0">
+                <div class="sum-row">
+                  <span class="sum-lbl">Commitment</span>
+                  <span class="sum-val" id="sumWhat">—</span>
+                </div>
+                <div class="sum-row">
+                  <span class="sum-lbl">Why</span>
+                  <span class="sum-val" id="sumWhy">—</span>
+                </div>
+                <div class="sum-row">
+                  <span class="sum-lbl">Minimum</span>
+                  <span class="sum-val" id="sumMin">—</span>
+                </div>
+                <div class="sum-row">
+                  <span class="sum-lbl">Goal</span>
+                  <span class="sum-val" id="sumGoal">—</span>
+                </div>
+                <div class="sum-row">
+                  <span class="sum-lbl">Reminder</span>
+                  <span class="sum-val" id="sumReminder">—</span>
+                </div>
+                <div class="sum-row">
+                  <span class="sum-lbl">Mode</span>
+                  <span class="sum-val" id="sumMode">—</span>
+                </div>
+              </div>
+
+              <div class="ob-launch-cta">
+                <button class="btn btn-primary btn-xl" id="submitBtn">
+                  <span class="btn-txt"><i class="fas fa-arrow-right"></i> Go to My Dashboard</span>
+                  <span class="btn-spin"></span>
+                </button>
+                <div class="ob-note" style="margin-top:0.75rem">
+                  <button class="btn btn-ghost btn-sm" id="restartBtn">
+                    <i class="fas fa-rotate-left"></i> Start over
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /ob-phases -->
+      </div><!-- /ob-left -->
+
+      <!-- ====================================================
+           RIGHT: Live dashboard preview  (desktop, phases 3–10)
+           ==================================================== -->
+      <div class="ob-right" id="obRight">
+        <div class="ob-dash">
+          <p class="ob-dash-label"><i class="fas fa-eye"></i> Your dashboard preview — live</p>
+          <div class="dash-win">
+            <div class="dash-bar">
+              <div class="db-dot db-r"></div>
+              <div class="db-dot db-y"></div>
+              <div class="db-dot db-g"></div>
+              <span class="db-title">dashboard · streak & discipline</span>
+            </div>
+            <div class="dash-body">
+              <div class="dw-greeting">Good day, <span class="dw-name" id="dwName">friend</span></div>
+              <div class="dw-stats">
+                <div class="dw-stat"><span class="dw-num" id="dwStreak">1</span><span class="dw-lbl">Day Streak</span></div>
+                <div class="dw-stat"><span class="dw-num">100%</span><span class="dw-lbl">Consistency</span></div>
+                <div class="dw-stat"><span class="dw-num">0</span><span class="dw-lbl">Missed</span></div>
+              </div>
+              <div class="dw-commit" id="dwCommit">
+                <div class="dw-commit-lbl">Your commitment</div>
+                <div class="dw-commit-txt ph" id="dwCommitTxt">Will appear as you type...</div>
+              </div>
+              <div>
+                <div style="font-size:0.55rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink3);margin-bottom:0.3rem">This month</div>
+                <div class="dw-cal" id="dwCal"></div>
+              </div>
+              <div class="dw-why ph" id="dwWhy">Your "why" will appear in Step 3...</div>
+              <div class="dw-reminder" id="dwReminder">
+                <i class="fas fa-bell"></i> <span>Reminder at 21:00 via Email</span>
+              </div>
+            </div>
+          </div>
         </div>
-    </main>
+      </div><!-- /ob-right -->
 
-    <script>{% include "reusables/spinner.js" %}</script>
-    <script>
-    (function(){
-        var app=document.getElementById('onboardApp'),phases=document.querySelectorAll('.onboard-phase'),
-            progressFill=document.getElementById('progressFill'),progressDots=document.querySelectorAll('.progress-dot'),
-            totalPhases=9,STORAGE_PHASE='onboard_phase',STORAGE_DATA='onboard_data';
+    </div><!-- /ob-wrap -->
 
-        function getCookie(n){var v='; '+document.cookie,p=v.split('; '+n+'=');return p.length===2?p.pop().split(';').shift():null}
-        function setCookie(n,v,d){var t=new Date();t.setTime(t.getTime()+d*86400000);document.cookie=n+'='+v+';expires='+t.toUTCString()+';path=/;SameSite=Lax'}
+    <!-- Dot nav (mobile) -->
+    <div class="ob-dots" id="obDots"></div>
 
-        function saveAllData(){
-            var data={phase:parseInt(app.dataset.currentPhase)||1,
-                commitmentWhat:document.getElementById('commitmentWhat')?.value||window.onboard_commitmentWhat||'',
-                commitmentWhy:document.getElementById('commitmentWhy')?.value||window.onboard_commitmentWhy||'',
-                commitmentMinimum:document.getElementById('commitmentMinimum')?.value||window.onboard_commitmentMinimum||'',
-                reminderEnabled:document.getElementById('reminderEnabled')?.checked??true,
-                reminderTime:document.getElementById('reminderTime')?.value||'21:00',
-                reminderMethod:document.querySelector('input[name="reminderMethod"]:checked')?.value||'email',
-                friendSearched:getCookie('onboarding_friend_searched')==='true',
-                friendName:document.getElementById('friendName')?.textContent||'',
-                friendAvatar:document.getElementById('friendAvatar')?.src||'',
-                checkinStatus:window.onboard_checkinStatus??null,
-                checkinNote:document.getElementById('checkinNoteText')?.value||window.onboard_checkinNoteText||'',
-                newsletter:document.querySelector('input[name="newsletter"]:checked')?.value||'yes'};
-            try{localStorage.setItem(STORAGE_DATA,JSON.stringify(data))}catch(e){}
-            try{localStorage.setItem(STORAGE_PHASE,data.phase)}catch(e){}
+  </div><!-- /ob-main -->
+
+  <!-- ==============================================================
+       INLINE CRITICAL JS — spinner wait + 8-second fallback
+       ============================================================== -->
+  <script>
+    (function() {
+      var ready = false;
+      var TIMEOUT = 8000;
+      var main = document.getElementById('obMain');
+
+      function reveal() {
+        if (ready) return;
+        ready = true;
+        if (main) {
+          main.classList.add('ob-visible');
         }
+        // Also initialise right-panel visibility
+        var right = document.getElementById('obRight');
+        if (right) right.classList.add('ob-visible');
+        // Trigger the heavy spinner hide — include spinner.js handles it
+        {% include "reusables/spinner.js" %}
+      }
 
-        function loadAllData(){try{var r=localStorage.getItem(STORAGE_DATA);return r?JSON.parse(r):null}catch(e){return null}}
-
-        function restoreData(data){
-            if(!data)return;
-            if(data.commitmentWhat){var e=document.getElementById('commitmentWhat');if(e)e.value=data.commitmentWhat;window.onboard_commitmentWhat=data.commitmentWhat}
-            if(data.commitmentWhy){var e=document.getElementById('commitmentWhy');if(e)e.value=data.commitmentWhy;window.onboard_commitmentWhy=data.commitmentWhy}
-            if(data.commitmentMinimum){var e=document.getElementById('commitmentMinimum');if(e)e.value=data.commitmentMinimum;window.onboard_commitmentMinimum=data.commitmentMinimum}
-            if(data.reminderEnabled!==undefined){var e=document.getElementById('reminderEnabled');if(e)e.checked=data.reminderEnabled;var o=document.getElementById('reminderOptions');if(o)o.style.display=data.reminderEnabled?'block':'none'}
-            if(data.reminderTime){var e=document.getElementById('reminderTime');if(e)e.value=data.reminderTime}
-            if(data.reminderMethod){var e=document.querySelector('input[name="reminderMethod"][value="'+data.reminderMethod+'"]');if(e)e.checked=true}
-            if(data.checkinStatus!==null&&data.checkinStatus!==undefined){window.onboard_checkinStatus=data.checkinStatus;document.getElementById('checkinOptions').style.display='none';document.getElementById('checkinNote').style.display='block';document.getElementById('checkinQuestion').textContent=data.checkinStatus?'Write one honest sentence about today.':'What got in the way? (optional)'}
-            if(data.checkinNote){var e=document.getElementById('checkinNoteText');if(e)e.value=data.checkinNote;window.onboard_checkinNoteText=data.checkinNote}
-            if(data.newsletter){var e=document.querySelector('input[name="newsletter"][value="'+data.newsletter+'"]');if(e)e.checked=true}
-            if(data.friendSearched&&data.friendName){document.getElementById('friendName').textContent=data.friendName;document.getElementById('friendAvatar').src=data.friendAvatar||'';document.getElementById('friendCode').disabled=true;document.getElementById('searchFriendBtn').disabled=true;showFriendState('Found')}
-        }
-
-        function goToPhase(num){
-            phases.forEach(function(p){p.classList.remove('active')});
-            var t=document.getElementById('phase'+num);
-            if(!t)return;
-            t.classList.add('active');
-            progressFill.style.width=((num/totalPhases)*100)+'%';
-            progressDots.forEach(function(d){d.classList.toggle('active',parseInt(d.dataset.step)<=num);d.classList.toggle('done',parseInt(d.dataset.step)<num)});
-            app.dataset.currentPhase=num;
-            saveAllData();
-            var inp=t.querySelector('.onboard-input');if(inp&&num<10)setTimeout(function(){inp.focus()},300);
-            window.scrollTo({top:0,behavior:'smooth'});
-        }
-
-        document.querySelectorAll('.phase-next').forEach(function(b){b.addEventListener('click',function(){
-            var n=this.dataset.next,v=this.dataset.validate;
-            if(v){var e=document.getElementById(v);if(!e||!e.value.trim()){if(e){e.classList.add('input-error');e.focus();setTimeout(function(){e.classList.remove('input-error')},600)}return}window['onboard_'+v]=e.value.trim()}
-            if(n)goToPhase(parseInt(n));saveAllData()
-        })});
-
-        document.querySelectorAll('.phase-prev').forEach(function(b){b.addEventListener('click',function(){var p=this.dataset.prev;if(p)goToPhase(parseInt(p));saveAllData()})});
-
-        document.querySelectorAll('.suggestion-chip').forEach(function(c){c.addEventListener('click',function(){document.getElementById('commitmentWhat').value=this.dataset.fill;saveAllData()})});
-
-        document.getElementById('reminderEnabled').addEventListener('change',function(){document.getElementById('reminderOptions').style.display=this.checked?'block':'none';saveAllData()});
-
-        document.getElementById('checkinYes').addEventListener('click',function(){document.getElementById('checkinOptions').style.display='none';document.getElementById('checkinNote').style.display='block';document.getElementById('checkinQuestion').textContent='Write one honest sentence about today.';document.getElementById('checkinNoteText').placeholder='e.g., Wrote 400 words. Felt good.';window.onboard_checkinStatus=true;saveAllData()});
-        document.getElementById('checkinNo').addEventListener('click',function(){document.getElementById('checkinOptions').style.display='none';document.getElementById('checkinNote').style.display='block';document.getElementById('checkinQuestion').textContent='What got in the way? (optional)';document.getElementById('checkinNoteText').placeholder='e.g., Traveled all day.';window.onboard_checkinStatus=false;saveAllData()});
-
-        function populateSummary(){
-            var sd=loadAllData();if(!sd)return;
-            document.getElementById('summaryWhat').textContent=sd.commitmentWhat||'—';
-            document.getElementById('summaryWhy').textContent=sd.commitmentWhy||'—';
-            document.getElementById('summaryMinimum').textContent=sd.commitmentMinimum||'—';
-            var time=sd.reminderTime||'21:00',method=sd.reminderMethod||'email';
-            document.getElementById('summaryReminder').textContent=(sd.reminderEnabled===false?'Off':time+' via '+method);
-            document.getElementById('summaryCheckin').textContent=sd.checkinNote||(sd.checkinStatus===true?'✅ Done':sd.checkinStatus===false?'❌ Not today':'Skipped');
-            document.getElementById('summaryFriend').textContent=sd.friendName||'None';
-            document.getElementById('summaryNewsletter').textContent=sd.newsletter==='yes'?'Subscribed':'Not subscribed';
-        }
-
-        document.getElementById('finishOnboarding').addEventListener('click',function(){
-            var cw=window.onboard_commitmentWhat||document.getElementById('commitmentWhat')?.value||'';
-            var cwy=window.onboard_commitmentWhy||document.getElementById('commitmentWhy')?.value||'';
-            var cm=window.onboard_commitmentMinimum||document.getElementById('commitmentMinimum')?.value||'';
-            var missing=[];
-            if(!cw.trim())missing.push({name:'Your commitment',step:2});
-            if(!cwy.trim())missing.push({name:'Your "why"',step:3});
-            if(!cm.trim())missing.push({name:'Your minimum effort',step:4});
-            if(missing.length>0){
-                var ew=document.getElementById('missingFieldsWarning');if(ew)ew.remove();
-                var w=document.createElement('div');w.className='onboard-missing-warning';w.id='missingFieldsWarning';
-                var items=missing.map(function(m){return'<li><a href="#" class="missing-link" data-step="'+m.step+'">'+m.name+' (Step '+(m.step-1)+')</a></li>'}).join('');
-                w.innerHTML='<strong>⚠️ You missed a few things:</strong><ul>'+items+'</ul><p style="margin-top:0.4rem;font-size:0.75rem;">Click any item to jump back. Your data is saved.</p>';
-                var nb=document.querySelector('.newsletter-box');nb.parentNode.insertBefore(w,nb);
-                w.querySelectorAll('.missing-link').forEach(function(l){l.addEventListener('click',function(e){e.preventDefault();var s=parseInt(this.dataset.step);w.remove();goToPhase(s)})});
-                var btn=document.getElementById('finishOnboarding');btn.classList.add('input-error');setTimeout(function(){btn.classList.remove('input-error')},600);
-                w.scrollIntoView({behavior:'smooth',block:'center'});
-                return;
-            }
-            saveAllData();populateSummary();goToPhase(9);
-        });
-
-        document.getElementById('sendToServer').addEventListener('click',function(){
-            var sd=loadAllData();if(!sd)return;
-            fetch('/dummy_endpoint',{
-                method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
-                body:JSON.stringify(sd)
-            }).then(function(r){return r.json()}).then(function(d){
-                if(d.redirect){localStorage.removeItem(STORAGE_PHASE);localStorage.removeItem(STORAGE_DATA);window.location.href=d.redirect}
-                else{alert('Setup complete! You can now close this page.')}
-            }).catch(function(){alert('Something went wrong. Please try again.')});
-        });
-
-        document.getElementById('restartOnboarding').addEventListener('click',function(){if(confirm('Clear all onboarding data and start over?')){localStorage.removeItem(STORAGE_PHASE);localStorage.removeItem(STORAGE_DATA);document.cookie='onboarding_friend_searched=;path=/;max-age=0';window.location.reload()}});
-
-        var friendCode=document.getElementById('friendCode'),searchBtn=document.getElementById('searchFriendBtn'),skipBtn=document.getElementById('skipFriendBtn'),friendSearchSuccess=getCookie('onboarding_friend_searched')==='true';
-
-        function showFriendState(state){['Loading','Found','NotFound','Error','Sent','Skipped'].forEach(function(s){var e=document.getElementById('friendState'+s);if(e)e.style.display='none'});var e=document.getElementById('friendState'+state);if(e)e.style.display='block'}
-
-        if(friendSearchSuccess){showFriendState('Found');friendCode.disabled=true;searchBtn.disabled=true}
-
-        searchBtn.addEventListener('click',async function(){
-            var uuid=friendCode.value.trim();if(!uuid)return;
-            showFriendState('Loading');friendCode.disabled=true;searchBtn.disabled=true;
-            var fd=new FormData();fd.append('uuid',uuid);
-            try{
-                var r=await fetch('{% url "origin_search_friend" %}',{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken')},body:fd,signal:AbortSignal.timeout(5000)});
-                var d=await r.json();
-                if(r.status>=200&&r.status<400){document.getElementById('friendName').textContent=d.name;document.getElementById('friendUserId').textContent='@'+(d.username||d.userid);document.getElementById('friendAvatar').src=d.profile_image;showFriendState('Found');setCookie('onboarding_friend_searched','true',1);friendSearchSuccess=true;saveAllData()}
-                else if(r.status===404){showFriendState('NotFound');friendCode.disabled=false;searchBtn.disabled=false}
-                else{document.getElementById('friendErrorMessage').textContent=d.message||'Something went wrong.';showFriendState('Error');friendCode.disabled=false;searchBtn.disabled=false}
-            }catch(e){document.getElementById('friendErrorMessage').textContent='Request timed out.';showFriendState('Error');friendCode.disabled=false;searchBtn.disabled=false}
-        });
-
-        document.getElementById('addFriendBtn').addEventListener('click',async function(){
-            var uid=document.getElementById('friendUserId').textContent.replace('@','');var fd=new FormData();fd.append('userid',uid);
-            try{var r=await fetch('{% url "origin_add_friend" %}',{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken')},body:fd});var d=await r.json();if(r.status===200){showFriendState('Sent');saveAllData()}else{document.getElementById('friendErrorMessage').textContent=d.message||'Could not send request.';showFriendState('Error')}}
-            catch(e){document.getElementById('friendErrorMessage').textContent='Something went wrong.';showFriendState('Error')}
-        });
-
-        skipBtn.addEventListener('click',function(){friendCode.disabled=true;searchBtn.disabled=true;showFriendState('Skipped');saveAllData()});
-
-        (function(){var s=getCookie('sd-theme'),b=document.getElementById('themeToggle'),icon=b?b.querySelector('.theme-icon'):null;if(s==='light'){document.body.classList.add('light-mode');if(icon)icon.textContent='☀️'}b.addEventListener('click',function(){if(document.body.classList.contains('light-mode')){document.body.classList.remove('light-mode');setCookie('sd-theme','dark',365);if(icon)icon.textContent='🌙'}else{document.body.classList.add('light-mode');setCookie('sd-theme','light',365);if(icon)icon.textContent='☀️'}})})();
-
-        document.querySelectorAll('.onboard-input,input,textarea,select').forEach(function(e){e.addEventListener('input',saveAllData);e.addEventListener('change',saveAllData)});
-
-        var sd=loadAllData();
-        if(sd&&sd.phase===9){
-            restoreData(sd);
-            populateSummary();
-            goToPhase(9);
-        }else if(sd){
-            restoreData(sd);
-            goToPhase(sd.phase||1);
-        }else{
-            goToPhase(1);
-        }
-        var h=document.getElementById('heavy-css');if(h&&h.rel!=='stylesheet')h.rel='stylesheet';
+      var css = document.getElementById('heavy-css');
+      if (css) {
+        if (css.rel === 'stylesheet') { reveal(); }
+        else { css.addEventListener('load', reveal); }
+      }
+      setTimeout(reveal, TIMEOUT);
     })();
-    </script>
+  </script>
+
+  <!-- ==============================================================
+       FULL APP SCRIPT — phase engine, physics, particles
+       Placed at bottom of body — no defer needed
+       ============================================================== -->
+  <script>
+  (function() {
+    'use strict';
+
+    /* ============================================================
+       SPRING PHYSICS ENGINE
+       GTA-level: mass, damping, overshoot, settle
+       ============================================================ */
+    function Spring(cfg) {
+      cfg = cfg || {};
+      this.k  = cfg.stiffness || 170;   // spring constant
+      this.c  = cfg.damping   || 26;    // damping coefficient
+      this.m  = cfg.mass      || 1;     // mass
+      this.x  = 0;                      // position
+      this.v  = 0;                      // velocity
+      this.t  = 0;                      // target
+      this.lt = null;                   // last time
+    }
+    Spring.prototype.to = function(target) { this.t = target; return this; };
+    Spring.prototype.step = function(now) {
+      if (!this.lt) { this.lt = now; return this.x; }
+      var dt = Math.min((now - this.lt) / 1000, 0.064);
+      this.lt = now;
+      var f = -this.k * (this.x - this.t) - this.c * this.v;
+      this.v += (f / this.m) * dt;
+      this.x += this.v * dt;
+      return this.x;
+    };
+    Spring.prototype.settled = function() {
+      return Math.abs(this.v) < 0.008 && Math.abs(this.x - this.t) < 0.008;
+    };
+
+    /* ============================================================
+       CANVAS PARTICLE SYSTEM — desktop only
+       Particles drift, connect to neighbours, react to mouse
+       ============================================================ */
+    var canvas  = document.getElementById('ob-canvas');
+    var ctx     = canvas && canvas.getContext('2d');
+    var mouse   = { x: -9999, y: -9999 };
+    var particles = [];
+    var W, H;
+
+    function resizeCanvas() {
+      if (!canvas) return;
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+
+    function initParticles() {
+      particles = [];
+      var count = Math.min(Math.floor(W / 18), 70);
+      for (var i = 0; i < count; i++) {
+        particles.push({
+          x:  Math.random() * W,
+          y:  Math.random() * H,
+          vx: (Math.random() - 0.5) * 0.25,
+          vy: (Math.random() - 0.5) * 0.25,
+          r:  Math.random() * 1.4 + 0.4,
+          a:  Math.random() * 0.4 + 0.08
+        });
+      }
+    }
+
+    function drawParticles() {
+      if (!ctx || window.innerWidth < 900) return;
+      ctx.clearRect(0, 0, W, H);
+      for (var i = 0; i < particles.length; i++) {
+        var p = particles[i];
+        // Mouse attraction
+        var dx = mouse.x - p.x, dy = mouse.y - p.y;
+        var dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 180 && dist > 0) {
+          p.vx += dx / dist * 0.018;
+          p.vy += dy / dist * 0.018;
+        }
+        // Friction
+        p.vx *= 0.985;
+        p.vy *= 0.985;
+        // Wrap
+        p.x = ((p.x + p.vx) + W) % W;
+        p.y = ((p.y + p.vy) + H) % H;
+        // Draw
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(59,130,246,' + p.a + ')';
+        ctx.fill();
+        // Connections
+        for (var j = i + 1; j < particles.length; j++) {
+          var q = particles[j];
+          var ddx = p.x - q.x, ddy = p.y - q.y;
+          var d = Math.sqrt(ddx*ddx + ddy*ddy);
+          if (d < 110) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(q.x, q.y);
+            ctx.strokeStyle = 'rgba(59,130,246,' + ((1 - d/110) * 0.12) + ')';
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(drawParticles);
+    }
+
+    if (canvas) {
+      resizeCanvas();
+      initParticles();
+      requestAnimationFrame(drawParticles);
+      window.addEventListener('resize', function() { resizeCanvas(); initParticles(); });
+      window.addEventListener('mousemove', function(e) { mouse.x = e.clientX; mouse.y = e.clientY; });
+    }
+
+    /* ============================================================
+       PARTICLE BURST — fires on CTA clicks
+       ============================================================ */
+    function burst(el, count) {
+      count = count || 16;
+      var rect = el.getBoundingClientRect();
+      var cx = rect.left + rect.width  / 2;
+      var cy = rect.top  + rect.height / 2;
+      var colors = ['#60a5fa','#818cf8','#a78bfa','#3b82f6','#93c5fd'];
+      for (var i = 0; i < count; i++) {
+        (function(i) {
+          var dot = document.createElement('div');
+          var angle = (i / count) * Math.PI * 2;
+          var speed = 55 + Math.random() * 90;
+          var tx = Math.cos(angle) * speed;
+          var ty = Math.sin(angle) * speed;
+          var size = 4 + Math.random() * 4;
+          dot.style.cssText = [
+            'position:fixed',
+            'border-radius:50%',
+            'pointer-events:none',
+            'z-index:9999',
+            'width:'  + size + 'px',
+            'height:' + size + 'px',
+            'left:'   + (cx - size/2) + 'px',
+            'top:'    + (cy - size/2) + 'px',
+            'background:' + colors[i % colors.length]
+          ].join(';');
+          document.body.appendChild(dot);
+          if (dot.animate) {
+            dot.animate([
+              { transform:'translate(0,0)',                       opacity:1 },
+              { transform:'translate('+tx+'px,'+ty+'px) scale(0)', opacity:0 }
+            ], {
+              duration: 450 + Math.random() * 250,
+              easing: 'cubic-bezier(0.22,1,0.36,1)',
+              fill: 'forwards'
+            }).onfinish = function() { dot.remove(); };
+          } else {
+            setTimeout(function(){ dot.remove(); }, 700);
+          }
+        })(i);
+      }
+    }
+
+    /* ============================================================
+       CARD 3D TILT — desktop mouse tracking
+       ============================================================ */
+    function initTilt(card) {
+      if (!card || window.innerWidth < 900) return;
+      card.addEventListener('mousemove', function(e) {
+        var r = card.getBoundingClientRect();
+        var nx = (e.clientX - r.left) / r.width  - 0.5; // -0.5..0.5
+        var ny = (e.clientY - r.top)  / r.height - 0.5;
+        card.style.transform = 'perspective(800px) rotateY(' + (nx*6) + 'deg) rotateX(' + (-ny*4) + 'deg)';
+      });
+      card.addEventListener('mouseleave', function() {
+        card.style.transform = 'perspective(800px) rotateY(0deg) rotateX(0deg)';
+      });
+    }
+
+    /* ============================================================
+       STATE
+       ============================================================ */
+    var STATE = {
+      phase: 1,
+      name: '',
+      what: '',
+      category: '',
+      why: '',
+      minimum: '',
+      goalDays: 365,
+      goalForever: false,
+      checkinTime: '21:00',
+      reminderOn: true,
+      reminderTime: '20:30',
+      reminderMethod: 'email',
+      waNumber: '',
+      socialMode: 'solo',
+      friendUUID: '',
+      friendName: '',
+      leaderboard: true,
+      theme: 'dark',
+      aiInsights: true,
+      weeklyReport: true,
+      newsletter: false,
+      STORAGE_KEY: 'sd_ob_v2'
+    };
+
+    /* ============================================================
+       PERSISTENCE
+       ============================================================ */
+    function save() {
+      try {
+        localStorage.setItem(STATE.STORAGE_KEY, JSON.stringify({
+          phase: STATE.phase,
+          name: STATE.name,
+          what: STATE.what,
+          category: STATE.category,
+          why: STATE.why,
+          minimum: STATE.minimum,
+          goalDays: STATE.goalDays,
+          goalForever: STATE.goalForever,
+          checkinTime: STATE.checkinTime,
+          reminderOn: STATE.reminderOn,
+          reminderTime: STATE.reminderTime,
+          reminderMethod: STATE.reminderMethod,
+          waNumber: STATE.waNumber,
+          socialMode: STATE.socialMode,
+          friendUUID: STATE.friendUUID,
+          friendName: STATE.friendName,
+          leaderboard: STATE.leaderboard,
+          theme: STATE.theme,
+          aiInsights: STATE.aiInsights,
+          weeklyReport: STATE.weeklyReport,
+          newsletter: STATE.newsletter
+        }));
+      } catch(e) {}
+    }
+
+    function loadSaved() {
+      try {
+        var raw = localStorage.getItem(STATE.STORAGE_KEY);
+        if (!raw) return false;
+        var d = JSON.parse(raw);
+        Object.assign(STATE, d);
+        return true;
+      } catch(e) { return false; }
+    }
+
+    /* ============================================================
+       POPULATE CALENDARS (right panel + preview)
+       ============================================================ */
+    function buildCal(container) {
+      if (!container) return;
+      container.innerHTML = '';
+      var today = new Date().getDate() - 1; // 0-indexed day of month
+      var days = new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate();
+      var show = Math.min(days, 35);
+      for (var i = 0; i < show; i++) {
+        var cell = document.createElement('div');
+        cell.className = 'dw-cell' + (i === today ? ' today' : '');
+        container.appendChild(cell);
+      }
+    }
+
+    /* ============================================================
+       LIVE DASHBOARD PREVIEW UPDATES
+       ============================================================ */
+    function updateDash() {
+      // Greeting name
+      var dwName = document.getElementById('dwName');
+      if (dwName) {
+        var n = STATE.name || 'friend';
+        if (dwName.textContent !== n) {
+          dwName.textContent = n;
+          dwName.classList.remove('dw-pop');
+          void dwName.offsetWidth; // reflow
+          dwName.classList.add('dw-pop');
+        }
+      }
+      // Commitment
+      var dwCommitTxt = document.getElementById('dwCommitTxt');
+      if (dwCommitTxt) {
+        if (STATE.what) {
+          if (dwCommitTxt.textContent !== STATE.what) {
+            dwCommitTxt.textContent = STATE.what;
+            dwCommitTxt.classList.remove('ph','dw-pop');
+            void dwCommitTxt.offsetWidth;
+            dwCommitTxt.classList.add('dw-pop');
+            var dc = document.getElementById('dwCommit');
+            if (dc) { dc.classList.remove('dw-updated'); void dc.offsetWidth; dc.classList.add('dw-updated'); }
+          }
+        } else {
+          dwCommitTxt.textContent = 'Will appear as you type...';
+          dwCommitTxt.classList.add('ph');
+        }
+      }
+      // Why
+      var dwWhy = document.getElementById('dwWhy');
+      if (dwWhy) {
+        if (STATE.why) {
+          dwWhy.textContent = '"' + STATE.why.slice(0,80) + (STATE.why.length > 80 ? '…' : '') + '"';
+          dwWhy.classList.remove('ph');
+        } else {
+          dwWhy.textContent = 'Your "why" will appear in Step 3...';
+          dwWhy.classList.add('ph');
+        }
+      }
+      // Reminder
+      var dwRem = document.getElementById('dwReminder');
+      if (dwRem) {
+        var m = STATE.reminderMethod.charAt(0).toUpperCase() + STATE.reminderMethod.slice(1);
+        dwRem.innerHTML = '<i class="fas fa-bell"></i> <span>Reminder at '+ STATE.reminderTime +' via '+ m +'</span>';
+      }
+      // Also update phase-11 preview
+      var mn = document.getElementById('mockName');
+      if (mn) mn.textContent = STATE.name || '—';
+      var mc = document.getElementById('mockCommit');
+      if (mc) mc.textContent = STATE.what || '—';
+      var mw = document.getElementById('mockWhy');
+      if (mw) mw.textContent = STATE.why ? '"' + STATE.why.slice(0,100) + '"' : 'Your "why" will appear here.';
+      var mr = document.getElementById('mockReminder');
+      if (mr) {
+        var mm = STATE.reminderMethod.charAt(0).toUpperCase() + STATE.reminderMethod.slice(1);
+        mr.innerHTML = '<i class="fas fa-bell" style="color:var(--accL)"></i><span>Reminder at '+STATE.reminderTime+' via '+mm+'</span>';
+      }
+    }
+
+    /* ============================================================
+       PROGRESS
+       ============================================================ */
+    function updateProgress(n) {
+      var fill = document.getElementById('obFill');
+      if (fill) fill.style.width = ((n / 12) * 100).toFixed(1) + '%';
+      var lbl = document.getElementById('obPhaseLbl');
+      var labels = [
+        '', 'Welcome {{request.user.username}}','About S&D','Your Name','Your Vow','Your Why',
+        'Minimum','Your Goal','Schedule','Accountability',
+        'Preferences','Preview','Launch 🚀'
+      ];
+      if (lbl) lbl.textContent = labels[n] || '';
+      // Dots
+      var dots = document.querySelectorAll('.ob-dot');
+      dots.forEach(function(d, i) {
+        var phNum = parseInt(d.dataset.ph);
+        d.classList.remove('active','done');
+        if (phNum === n) d.classList.add('active');
+        else if (phNum < n) d.classList.add('done');
+      });
+    }
+
+    /* ============================================================
+       SPLIT MODE — show/hide right dashboard panel
+       ============================================================ */
+    var splitPhases = {3:1,4:1,5:1,6:1,7:1,8:1,9:1,10:1};
+    function updateSplit(n) {
+      var wrap  = document.getElementById('obWrap');
+      var right = document.getElementById('obRight');
+      if (!wrap || !right) return;
+      if (splitPhases[n] && window.innerWidth >= 900) {
+        wrap.classList.add('ob-split');
+        right.classList.add('ob-visible');
+      } else {
+        wrap.classList.remove('ob-split');
+        right.classList.remove('ob-visible');
+      }
+    }
+
+    /* ============================================================
+       PHASE NAVIGATION
+       ============================================================ */
+    var currentPhase = 1;
+
+    function goTo(n) {
+      if (n < 1 || n > 12) return;
+      var old = document.getElementById('p' + currentPhase);
+      var next = document.getElementById('p' + n);
+      if (!next) return;
+      currentPhase = n;
+      STATE.phase = n;
+      // Hide all, activate new
+      document.querySelectorAll('.ob-phase').forEach(function(el) {
+        el.classList.remove('ob-active');
+      });
+      next.classList.add('ob-active');
+      // Init tilts on new card
+      var card = next.querySelector('.ob-card');
+      if (card) initTilt(card);
+      updateProgress(n);
+      updateSplit(n);
+      updateDash();
+      populateSummary();
+      save();
+      window.scrollTo({ top:0, behavior:'smooth' });
+    }
+
+    /* ============================================================
+       VALIDATION
+       ============================================================ */
+    function validatePhase(n) {
+      var ok = true;
+      function fail(id, errId) {
+        var el = document.getElementById(id);
+        var err = document.getElementById(errId);
+        if (el && !el.value.trim()) {
+          el.classList.add('ob-err');
+          if (err) err.classList.add('show');
+          if (ok) { // shake first fail
+            el.style.animation = 'none';
+            el.getBoundingClientRect();
+            el.style.animation = 'shakeX 0.4s ease';
+          }
+          ok = false;
+        }
+      }
+      if (n === 3) fail('obName','nameErr');
+      if (n === 4) fail('obWhat','whatErr');
+      if (n === 5) fail('obWhy','whyErr');
+      if (n === 6) fail('obMin','minErr');
+      return ok;
+    }
+
+    // Clear error on type
+    ['obName','obWhat','obWhy','obMin'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', function() {
+        el.classList.remove('ob-err');
+        var err = el.parentElement.querySelector('.ob-field-err');
+        if (err) err.classList.remove('show');
+      });
+    });
+
+    /* ============================================================
+       COLLECT STATE FROM FORM
+       ============================================================ */
+    function collectState() {
+      var n = document.getElementById('obName');   if(n) STATE.name = n.value.trim();
+      var w = document.getElementById('obWhat');   if(w) STATE.what = w.value.trim();
+      var y = document.getElementById('obWhy');    if(y) STATE.why  = y.value.trim();
+      var m = document.getElementById('obMin');    if(m) STATE.minimum = m.value.trim();
+      var ct = document.getElementById('obCheckinTime'); if(ct) STATE.checkinTime = ct.value;
+      var ron = document.getElementById('obReminderOn'); if(ron) STATE.reminderOn = ron.checked;
+      var rt = document.getElementById('obReminderTime'); if(rt) STATE.reminderTime = rt.value;
+      var wa = document.getElementById('obWaNum'); if(wa) STATE.waNumber = wa.value.trim();
+      var ldr = document.getElementById('obLeaderboard'); if(ldr) STATE.leaderboard = ldr.checked;
+      var ai  = document.getElementById('obAI'); if(ai) STATE.aiInsights = ai.checked;
+      var wr  = document.getElementById('obWeeklyReport'); if(wr) STATE.weeklyReport = wr.checked;
+      var nl  = document.getElementById('obNewsletter'); if(nl) STATE.newsletter = nl.checked;
+      var fw  = document.getElementById('obForever'); if(fw) STATE.goalForever = fw.checked;
+    }
+
+    /* ============================================================
+       RESTORE FORM FROM STATE
+       ============================================================ */
+    function restoreForm() {
+      function set(id, val) {
+        var el = document.getElementById(id);
+        if (el) el.value = val || '';
+      }
+      set('obName', STATE.name);
+      set('obWhat', STATE.what);
+      set('obWhy',  STATE.why);
+      set('obMin',  STATE.minimum);
+      set('obCheckinTime', STATE.checkinTime);
+      set('obReminderTime', STATE.reminderTime);
+      set('obWaNum', STATE.waNumber);
+
+      var ron = document.getElementById('obReminderOn');
+      if(ron) ron.checked = STATE.reminderOn;
+      var ldr = document.getElementById('obLeaderboard');
+      if(ldr) ldr.checked = STATE.leaderboard;
+      var ai = document.getElementById('obAI');
+      if(ai) ai.checked = STATE.aiInsights;
+      var wr = document.getElementById('obWeeklyReport');
+      if(wr) wr.checked = STATE.weeklyReport;
+      var nl = document.getElementById('obNewsletter');
+      if(nl) nl.checked = STATE.newsletter;
+      var fw = document.getElementById('obForever');
+      if(fw) fw.checked = STATE.goalForever;
+
+      // Category
+      document.querySelectorAll('[data-cat]').forEach(function(c) {
+        c.classList.toggle('on', c.dataset.cat === STATE.category);
+      });
+      // Goal
+      document.querySelectorAll('[data-days]').forEach(function(g) {
+        g.classList.toggle('on', parseInt(g.dataset.days) === STATE.goalDays);
+      });
+      // Method
+      document.querySelectorAll('[data-method]').forEach(function(mm) {
+        mm.classList.toggle('on', mm.dataset.method === STATE.reminderMethod);
+      });
+      // Social
+      document.querySelectorAll('[data-mode]').forEach(function(s) {
+        s.classList.toggle('on', s.dataset.mode === STATE.socialMode);
+      });
+      // Theme
+      document.querySelectorAll('[data-theme]').forEach(function(t) {
+        t.classList.toggle('on', t.dataset.theme === STATE.theme);
+      });
+      // Theme on body
+      if (STATE.theme === 'light') document.body.classList.add('sd-light');
+      // WhatsApp field
+      var waField = document.getElementById('ob-wa-field');
+      if (waField) waField.classList.toggle('show', STATE.reminderMethod === 'whatsapp');
+      // Friend section
+      var fs = document.getElementById('friendSection');
+      if (fs) fs.style.display = STATE.socialMode === 'friend' ? 'block' : 'none';
+    }
+
+    /* ============================================================
+       POPULATE SUMMARY (phase 12)
+       ============================================================ */
+    function populateSummary() {
+      collectState();
+      var m = document.getElementById('sumWhat');   if(m) m.textContent = STATE.what || '—';
+      var y = document.getElementById('sumWhy');    if(y) y.textContent = STATE.why  || '—';
+      var mn = document.getElementById('sumMin');   if(mn) mn.textContent = STATE.minimum || '—';
+      var g = document.getElementById('sumGoal');
+      if(g) g.textContent = STATE.goalForever ? 'Lifelong' : (STATE.goalDays + ' days');
+      var r = document.getElementById('sumReminder');
+      if(r) r.textContent = STATE.reminderOn
+        ? (STATE.reminderTime + ' via ' + STATE.reminderMethod)
+        : 'Off';
+      var md = document.getElementById('sumMode');
+      if(md) md.textContent = STATE.socialMode === 'friend' && STATE.friendName
+        ? 'With ' + STATE.friendName
+        : STATE.socialMode === 'friend' ? 'With partner' : 'Solo';
+    }
+
+    /* ============================================================
+       BUILD TIME SELECT OPTIONS
+       ============================================================ */
+    function buildTimeSelect(selId, def) {
+      var sel = document.getElementById(selId);
+      if (!sel) return;
+      for (var h = 0; h < 24; h++) {
+        for (var n = 0; n < 60; n += 30) {
+          var t = (h < 10 ? '0' : '') + h + ':' + (n === 0 ? '00' : '30');
+          var opt = document.createElement('option');
+          opt.value = t; opt.textContent = t;
+          if (t === def) opt.selected = true;
+          sel.appendChild(opt);
+        }
+      }
+    }
+    buildTimeSelect('obCheckinTime',  '21:00');
+    buildTimeSelect('obReminderTime', '20:30');
+
+    /* ============================================================
+       BUILD DOTS (mobile)
+       ============================================================ */
+    var dotsEl = document.getElementById('obDots');
+    if (dotsEl) {
+      for (var d = 1; d <= 12; d++) {
+        var dot = document.createElement('button');
+        dot.className = 'ob-dot';
+        dot.dataset.ph = d;
+        dot.setAttribute('aria-label', 'Phase ' + d);
+        dotsEl.appendChild(dot);
+      }
+    }
+
+    /* ============================================================
+       BUILD CALENDARS
+       ============================================================ */
+    buildCal(document.getElementById('dwCal'));
+    buildCal(document.getElementById('mockCal'));
+
+    /* ============================================================
+       BUTTON DELEGATION — data-next / data-prev
+       ============================================================ */
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-next]');
+      if (btn && !btn.closest('.ob-right')) {
+        var to = parseInt(btn.dataset.next);
+        var reqId = btn.dataset.req;
+        var errId = btn.dataset.err;
+        if (reqId) {
+          var el = document.getElementById(reqId);
+          if (el && !el.value.trim()) {
+            el.classList.add('ob-err');
+            var err = document.getElementById(errId);
+            if(err) err.classList.add('show');
+            el.focus();
+            return;
+          }
+        }
+        if (!validatePhase(currentPhase)) return;
+        collectState();
+        burst(btn);
+        goTo(to);
+      }
+
+      var prevBtn = e.target.closest('[data-prev]');
+      if (prevBtn) {
+        collectState();
+        goTo(parseInt(prevBtn.dataset.prev));
+      }
+    });
+
+    /* ============================================================
+       LIVE INPUT UPDATES → dashboard preview
+       ============================================================ */
+    ['obName','obWhat','obWhy'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', function() {
+        collectState();
+        updateDash();
+      });
+    });
+
+    /* ============================================================
+       CATEGORY CHIPS
+       ============================================================ */
+    document.querySelectorAll('[data-cat]').forEach(function(c) {
+      c.addEventListener('click', function() {
+        document.querySelectorAll('[data-cat]').forEach(function(cc){cc.classList.remove('on')});
+        c.classList.add('on');
+        STATE.category = c.dataset.cat;
+        save();
+      });
+    });
+
+    /* ============================================================
+       SUGGESTION CHIPS (fill input)
+       ============================================================ */
+    document.querySelectorAll('[data-fill]').forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        var target = document.getElementById(chip.dataset.fill);
+        if (target) {
+          target.value = chip.textContent;
+          target.focus();
+          chip.classList.add('on');
+          setTimeout(function(){ chip.classList.remove('on'); }, 1000);
+          collectState();
+          updateDash();
+        }
+      });
+    });
+
+    /* ============================================================
+       GOAL CARDS
+       ============================================================ */
+    document.querySelectorAll('[data-days]').forEach(function(g) {
+      g.addEventListener('click', function() {
+        document.querySelectorAll('[data-days]').forEach(function(gg){gg.classList.remove('on')});
+        g.classList.add('on');
+        STATE.goalDays = parseInt(g.dataset.days);
+        var fw = document.getElementById('obForever');
+        if(fw) fw.checked = false;
+        STATE.goalForever = false;
+        save();
+      });
+    });
+
+    var foreverToggle = document.getElementById('obForever');
+    if (foreverToggle) {
+      foreverToggle.addEventListener('change', function() {
+        if (this.checked) {
+          document.querySelectorAll('[data-days]').forEach(function(g){g.classList.remove('on')});
+          STATE.goalForever = true;
+        }
+        save();
+      });
+    }
+
+    /* ============================================================
+       METHOD CARDS (reminder channel)
+       ============================================================ */
+    document.querySelectorAll('[data-method]').forEach(function(mc) {
+      mc.addEventListener('click', function() {
+        document.querySelectorAll('[data-method]').forEach(function(mm){mm.classList.remove('on')});
+        mc.classList.add('on');
+        STATE.reminderMethod = mc.dataset.method;
+        var waField = document.getElementById('ob-wa-field');
+        if (waField) waField.classList.toggle('show', STATE.reminderMethod === 'whatsapp');
+        updateDash();
+        save();
+      });
+    });
+
+    /* ============================================================
+       REMINDER TOGGLE
+       ============================================================ */
+    var remOn = document.getElementById('obReminderOn');
+    var remSec = document.getElementById('obReminderSection');
+    if (remOn && remSec) {
+      remOn.addEventListener('change', function() {
+        remSec.style.display = this.checked ? '' : 'none';
+        STATE.reminderOn = this.checked;
+        save();
+      });
+    }
+
+    document.getElementById('obReminderTime') && document.getElementById('obReminderTime').addEventListener('change', function() {
+      STATE.reminderTime = this.value;
+      updateDash();
+      save();
+    });
+    document.getElementById('obCheckinTime') && document.getElementById('obCheckinTime').addEventListener('change', function() {
+      STATE.checkinTime = this.value;
+      save();
+    });
+
+    /* ============================================================
+       SOCIAL MODE CARDS
+       ============================================================ */
+    document.querySelectorAll('[data-mode]').forEach(function(sc) {
+      sc.addEventListener('click', function() {
+        document.querySelectorAll('[data-mode]').forEach(function(s){s.classList.remove('on')});
+        sc.classList.add('on');
+        STATE.socialMode = sc.dataset.mode;
+        var fs = document.getElementById('friendSection');
+        if(fs) fs.style.display = STATE.socialMode === 'friend' ? 'block' : 'none';
+        save();
+      });
+    });
+
+    /* ============================================================
+       THEME PICKER
+       ============================================================ */
+    document.querySelectorAll('[data-theme]').forEach(function(t) {
+      t.addEventListener('click', function() {
+        document.querySelectorAll('[data-theme]').forEach(function(tt){tt.classList.remove('on')});
+        t.classList.add('on');
+        STATE.theme = t.dataset.theme;
+        if (STATE.theme === 'light') {
+          document.body.classList.add('sd-light');
+          setCookie('sd-theme','light',365);
+        } else {
+          document.body.classList.remove('sd-light');
+          setCookie('sd-theme','dark',365);
+        }
+        var icon = document.getElementById('obThemeIcon');
+        if (icon) icon.className = STATE.theme === 'light' ? 'fas fa-sun' : 'fas fa-moon';
+        save();
+      });
+    });
+
+    /* ============================================================
+       HEADER THEME BUTTON
+       ============================================================ */
+    var themeBtn = document.getElementById('obThemeBtn');
+    if (themeBtn) {
+      themeBtn.addEventListener('click', function() {
+        var isDark = !document.body.classList.contains('sd-light');
+        var toTheme = isDark ? 'light' : 'dark';
+        document.querySelectorAll('[data-theme]').forEach(function(t) {
+          t.classList.toggle('on', t.dataset.theme === toTheme);
+        });
+        STATE.theme = toTheme;
+        document.body.classList.toggle('sd-light', toTheme === 'light');
+        setCookie('sd-theme', toTheme, 365);
+        var icon = document.getElementById('obThemeIcon');
+        if (icon) icon.className = toTheme === 'light' ? 'fas fa-sun' : 'fas fa-moon';
+        save();
+      });
+    }
+
+    /* ============================================================
+       FRIEND SEARCH
+       ============================================================ */
+    function friendState(which) {
+      ['frLoading','frFound','frSent','frNone','frError','frSkipped'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if(el) el.style.display = 'none';
+      });
+      var show = document.getElementById(which);
+      if(show) show.style.display = which === 'frFound' ? 'flex' : 'block';
+    }
+
+    var searchBtn = document.getElementById('searchFriendBtn');
+    if (searchBtn) {
+      searchBtn.addEventListener('click', function() {
+        var code = document.getElementById('obFriendCode').value.trim();
+        if (!code) return;
+        friendState('frLoading');
+        searchBtn.disabled = true;
+        var fd = new FormData();
+        fd.append('uuid', code);
+        fetch('{% url "origin_search_friend" %}', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+          body: fd,
+          signal: AbortSignal.timeout(6000)
+        }).then(function(r) {
+          return r.json().then(function(d) { return { status: r.status, data: d }; });
+        }).then(function(res) {
+          searchBtn.disabled = false;
+          if (res.status >= 200 && res.status < 400) {
+            document.getElementById('frName').textContent = res.data.name;
+            document.getElementById('frId').textContent   = '@' + (res.data.username || res.data.userid);
+            document.getElementById('frAvatar').src       = res.data.profile_image || '';
+            STATE.friendName = res.data.name;
+            STATE.friendUUID = code;
+            friendState('frFound');
+            save();
+          } else if (res.status === 404) {
+            friendState('frNone');
+          } else {
+            document.getElementById('frErrMsg').textContent = res.data.message || 'Something went wrong.';
+            friendState('frError');
+          }
+        }).catch(function() {
+          searchBtn.disabled = false;
+          document.getElementById('frErrMsg').textContent = 'Request timed out. Try again.';
+          friendState('frError');
+        });
+      });
+    }
+
+    var addFriendBtn = document.getElementById('addFriendBtn');
+    if (addFriendBtn) {
+      addFriendBtn.addEventListener('click', function() {
+        var uid = document.getElementById('frId').textContent.replace('@','');
+        var fd = new FormData(); fd.append('userid', uid);
+        fetch('{% url "origin_add_friend" %}', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+          body: fd
+        }).then(function(r) {
+          return r.json().then(function(d) { return { status: r.status, data: d }; });
+        }).then(function(res) {
+          if (res.status === 200) { friendState('frSent'); save(); }
+          else {
+            document.getElementById('frErrMsg').textContent = res.data.message || 'Could not send request.';
+            friendState('frError');
+          }
+        }).catch(function() {
+          document.getElementById('frErrMsg').textContent = 'Something went wrong.';
+          friendState('frError');
+        });
+      });
+    }
+
+    var skipFriendBtn = document.getElementById('skipFriendBtn');
+    if (skipFriendBtn) {
+      skipFriendBtn.addEventListener('click', function() {
+        STATE.friendUUID = ''; STATE.friendName = '';
+        friendState('frSkipped');
+        save();
+      });
+    }
+
+    /* ============================================================
+       SUBMIT — POST JSON to /dummy_endpoint
+       ============================================================ */
+    var submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) {
+      submitBtn.addEventListener('click', function() {
+        collectState();
+        submitBtn.classList.add('ob-loading');
+        submitBtn.disabled = true;
+
+        var payload = {
+          meta: {
+            completed_at: new Date().toISOString(),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+            user_agent: navigator.userAgent
+          },
+          user: {
+            name: STATE.name
+          },
+          commitment: {
+            what:     STATE.what,
+            category: STATE.category,
+            why:      STATE.why,
+            minimum:  STATE.minimum,
+            goal_days: STATE.goalForever ? 0 : STATE.goalDays
+          },
+          schedule: {
+            checkin_time:     STATE.checkinTime,
+            reminder_enabled: STATE.reminderOn,
+            reminder_time:    STATE.reminderTime,
+            reminder_method:  STATE.reminderMethod,
+            whatsapp_number:  STATE.waNumber
+          },
+          social: {
+            mode:            STATE.socialMode,
+            friend_uuid:     STATE.friendUUID,
+            friend_name:     STATE.friendName,
+            leaderboard_optin: STATE.leaderboard
+          },
+          preferences: {
+            theme:         STATE.theme,
+            ai_insights:   STATE.aiInsights,
+            weekly_report: STATE.weeklyReport,
+            newsletter:    STATE.newsletter
+          }
+        };
+
+        fetch('{% url "origin_database" %}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+          },
+          body: JSON.stringify(payload)
+        }).then(function(r) {
+          return r.json();
+        }).then(function(d) {
+          localStorage.removeItem(STATE.STORAGE_KEY);
+          var dest = d.redirect || '{{ where_to_go_full_url }}?';
+          console.log(payload)
+          window.location.href = dest;
+        }).catch(function() {
+          submitBtn.classList.remove('ob-loading');
+          submitBtn.disabled = false;
+          // Even on network error, clear and redirect if we have a URL
+          localStorage.removeItem(STATE.STORAGE_KEY);
+          window.location.href = '{{ where_to_go_full_url }}';
+        });
+      });
+    }
+
+    /* ============================================================
+       RESTART BUTTON
+       ============================================================ */
+    var restartBtn = document.getElementById('restartBtn');
+    if (restartBtn) {
+      restartBtn.addEventListener('click', function() {
+        if (confirm('Clear all onboarding data and start over?')) {
+          localStorage.removeItem(STATE.STORAGE_KEY);
+          window.location.reload();
+        }
+      });
+    }
+
+    /* ============================================================
+       TOUCH SWIPE (mobile) — velocity-aware, spring feel
+       ============================================================ */
+    var touchStart = { x:0, y:0, t:0 };
+    var phases = document.getElementById('obPhases');
+    if (phases) {
+      phases.addEventListener('touchstart', function(e) {
+        touchStart.x = e.touches[0].clientX;
+        touchStart.y = e.touches[0].clientY;
+        touchStart.t = Date.now();
+      }, { passive: true });
+
+      phases.addEventListener('touchend', function(e) {
+        var dx = e.changedTouches[0].clientX - touchStart.x;
+        var dy = e.changedTouches[0].clientY - touchStart.y;
+        var dt = Date.now() - touchStart.t;
+        var vx = Math.abs(dx) / dt;
+
+        // Only count horizontal swipes with enough velocity/distance
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 55 && vx > 0.28) {
+          if (dx < 0 && currentPhase < 12) {
+            collectState();
+            if (validatePhase(currentPhase)) goTo(currentPhase + 1);
+          } else if (dx > 0 && currentPhase > 1) {
+            collectState();
+            goTo(currentPhase - 1);
+          }
+        }
+      });
+    }
+
+    /* ============================================================
+       COOKIE HELPERS
+       ============================================================ */
+    function getCookie(name) {
+      var v = document.cookie.match('(?:^|;) ?' + name + '=([^;]*)(;|$)');
+      return v ? decodeURIComponent(v[1]) : '';
+    }
+    function setCookie(name, value, days) {
+      var d = new Date();
+      d.setDate(d.getDate() + (days || 1));
+      document.cookie = name + '=' + encodeURIComponent(value) + ';path=/;expires=' + d.toUTCString();
+    }
+
+    /* ============================================================
+       SHAKE KEYFRAME (inline for browsers that need it)
+       ============================================================ */
+    var shakeStyle = document.createElement('style');
+    shakeStyle.textContent = '@keyframes shakeX{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}';
+    document.head.appendChild(shakeStyle);
+
+    /* ============================================================
+       INIT — restore saved state and go to saved phase
+       ============================================================ */
+    var hasData = loadSaved();
+    restoreForm();
+    updateDash();
+    updateProgress(STATE.phase);
+
+    if (hasData && STATE.phase > 1) {
+      goTo(STATE.phase);
+    } else {
+      goTo(1);
+    }
+
+    /* ============================================================
+       AUTO-SAVE on any input change across the whole form
+       ============================================================ */
+    document.querySelectorAll('.ob-input,.ob-switch input').forEach(function(el) {
+      el.addEventListener('change', function() { collectState(); updateDash(); save(); });
+      el.addEventListener('input',  function() { collectState(); updateDash(); });
+    });
+
+    /* ============================================================
+       THEME INIT from cookie
+       ============================================================ */
+    (function() {
+      var saved = getCookie('sd-theme') || STATE.theme;
+      if (saved === 'light') {
+        document.body.classList.add('sd-light');
+        document.querySelectorAll('[data-theme]').forEach(function(t) {
+          t.classList.toggle('on', t.dataset.theme === 'light');
+        });
+        var icon = document.getElementById('obThemeIcon');
+        if (icon) icon.className = 'fas fa-sun';
+        STATE.theme = 'light';
+      }
+    })();
+
+    /* ============================================================
+       HEAVY CSS FALLBACK (set rel=stylesheet if not done yet)
+       ============================================================ */
+    var hcss = document.getElementById('heavy-css');
+    if (hcss && hcss.rel !== 'stylesheet') hcss.rel = 'stylesheet';
+
+  })();
+  </script>
+
 </body>
 </html>
