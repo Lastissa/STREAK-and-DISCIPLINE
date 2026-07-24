@@ -207,7 +207,9 @@ class PasswordReset(View):
                 return JsonResponse({'message': 'Request received, If email exist in our database you will receive a reset link within the next few seconds, refresh page to resend get a new link - old user'}, status = 200)
             #no user found
             return JsonResponse({'message': 'Request received, If email exist in our database you will receive a reset link -new user'})
-        except ResendError:return JsonResponse({'message': 'Oops, you dont seem to have internet connection, please try again when you are connected. -Refresh page to resend link'})
+        except ResendError as e:
+            logger.error(msg=f"Error happened while trying to send user their password reset email , error is {e}")
+            return JsonResponse({'message': 'Oops, you dont seem to have internet connection, please try again when you are connected. -Refresh page to resend link'})
         except ValidationError as e: return JsonResponse({"message" : "Invalid Email, Refresh page to try again"})
         except Exception as e:
             logger.error(msg=f"user {fetched_email} tried to reset password and eperience error  : {e}")

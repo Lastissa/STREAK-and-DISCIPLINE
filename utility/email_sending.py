@@ -83,7 +83,7 @@ def send_password_reset_successful_email(to_email: str, username: str) -> None:
                                 <table cellpadding="0" cellspacing="0" style="margin-bottom:16px">
                                     <tr>
                                         <td style="padding-right:10px">
-                                            <span style="display:inline-block;width:36px;height:36px;background:#dcfce7;border-radius:50%;text-align:center;line-height:36px;font-size:18px"></span>
+                                            <span style="display:inline-block;width:36px;height:36px;background:#dcfce7;border-radius:50%;text-align:center;line-height:36px;font-size:18px"> </span>
                                         </td>
                                         <td>
                                             <h2 style="margin:0;font-size:18px;color:#0f172a;font-weight:700">Password Changed Successfully</h2>
