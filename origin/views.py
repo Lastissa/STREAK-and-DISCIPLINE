@@ -186,7 +186,7 @@ class InProgress(View):
 
 class PasswordReset(View):
     def post(self, request):
-        """To send a jsonresponse back saying, email have been set and on any error, send maybe status 500"""
+        """To send a jsonresponse for the password reset pageback saying, email have been set and on any error, send maybe status 500"""
         try:
             #create a ticket for user if user exist
             fetched_email = request.POST["email"]
@@ -220,6 +220,13 @@ class PasswordReset(View):
 class PasswordValidate(View):
     """after the user have click the link and input their new password and confirm the email on their account , password will be reset here"""
     def get(self, request, email, token):
+        """Check if the url is valid."""
+        token_still_valid_in_db = PasswordResetToken.objects.filter(user__email__iexact = email, token = token).first()
+        #validate token still exist
+        if token_still_valid_in_db is None:
+            messages.error(request, message="This URL is INVALID. This might happen if the url have been used before OR your account does not exist.")
+            return render(request, 'html/full_screen_message.html')
+        #return normal page for reset since token still exist.
         return render(request, 'html/final_step_of_password_reset.html', {'expiry_seconds': Static.token_expiry_time})
     
     def post(self, request, email, token):
@@ -227,7 +234,7 @@ class PasswordValidate(View):
         token_still_valid_in_db = PasswordResetToken.objects.filter(user__email__iexact = email, token = token).first()
         #validate token still exist
         if token_still_valid_in_db is None:
-            messages.error(request, message="This token have been invalidated. This might happen if the url have been used before OR your account does not exist.")
+            messages.error(request, message="This URL is INVALID. This might happen if the url have been used before OR your account does not exist.")
             return render(request, 'html/full_screen_message.html')
         
         #token is still in the db, check if it have expired
