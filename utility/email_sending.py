@@ -2,11 +2,13 @@ import os, resend, random
 from utility.config import Static
 from time import time
 
-def send_light_email(to_email: str, endpoint: str, expiry: int, username: str) -> None:
+def send_password_reset_email(to_email: str, endpoint: str, expiry: int, username: str) -> None:
+    """Sends email with link for password reset."""
+    
     api_key = os.getenv("RESEND_API_KEY")
     resend.api_key = api_key
     resend.Emails.send({
-        "from": "STREAK & DISCIPLINE <noreply@resend.dev>",
+        "from": Static.official_email(),
         "to": [to_email],
         "subject": "Password Reset Link — STREAK & DISCIPLINE",
         "html": """
@@ -35,3 +37,41 @@ def send_light_email(to_email: str, endpoint: str, expiry: int, username: str) -
             </div>
         </div>
         """.format(link=Static.custom_base_url() + endpoint, expiry=int(expiry/60), username=username, logo_url=Static.logo_url(), identifier_to_make_each_email_unique = "".join(random.sample("{username}{link}{time}", 8)))})
+
+
+
+
+
+def send_password_reset_successful_email(to_email: str, username: str)-> None:
+    """Notify user that their password was successfully reset."""
+    resend.Emails.send({
+        "from": Static.official_email(),
+        "to": [to_email],
+        "subject": "Password Changed — STREAK & DISCIPLINE",
+        "html": """
+        <div style="max-width:480px;margin:0 auto;font-family:system-ui,-apple-system,sans-serif;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0">
+            <table style="width:100%;padding:20px 24px">
+                <tr>
+                    <td style="width:44px;vertical-align:top;padding-right:14px">
+                        <img src="{logo_url}" alt="S&D" style="width:40px;height:40px;border-radius:8px">
+                    </td>
+                    <td style="vertical-align:top">
+                        <p style="margin:0 0 2px;font-weight:700;font-size:15px;color:#0f172a">STREAK & DISCIPLINE</p>
+                        <p style="margin:0;font-size:12px;color:#64748b">Password Changed</p>
+                    </td>
+                </tr>
+            </table>
+            <div style="padding:0 24px 24px">
+                <p style="margin:0 0 8px;font-size:14px;color:#334155;line-height:1.6">Hello <strong>{username}</strong>,</p>
+                <p style="margin:0 0 16px;font-size:14px;color:#334155;line-height:1.6">Your password was changed successfully. You can now sign in with your new password.</p>
+                <a href="{login_url}" style="display:inline-block;padding:11px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:13px;margin-bottom:16px">Sign In</a>
+                <div style="background:#fef2f2;border-left:3px solid #ef4444;padding:10px 12px;border-radius:6px">
+                    <p style="margin:0;font-size:12px;color:#991b1b;line-height:1.5"><strong>If this wasn't you</strong>, reset your password immediately and contact support.</p>
+                </div>
+            </div>
+            <div style="background:#f8fafc;padding:12px 24px;border-top:1px solid #e2e8f0;text-align:center">
+                <p style="margin:0;font-size:11px;color:#94a3b8">Need help? <a href="mailto:issaabdulsalamope11@gmail.com" style="color:#2563eb">support@streakanddiscipline.com</a></p>
+            </div>
+        </div>
+        """.format(logo_url=Static.logo_url(), username=username, login_url=Static.custom_base_url() + "/v1/login/"),
+    })

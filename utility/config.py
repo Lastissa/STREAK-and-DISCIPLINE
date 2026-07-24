@@ -95,13 +95,12 @@ class Static:
     def __int__(self):
         """For data that will not change and are short """
         pass
-    
     @classmethod
     def token_lenght(self) -> int:
         """Lenght for token in url"""
         return 8
     @classmethod
-    def logo_url(self):
+    def logo_url(self) -> str:
         """Logo url for the site"""
         return 'https://res.cloudinary.com/brop3jeq/image/upload/v1784524604/logo_jvljxp.png'
     
@@ -110,8 +109,12 @@ class Static:
         """The Official amount of seconds it takes before expirey"""
         return int(10*60)
     @classmethod
-    def custom_base_url(self):
+    def custom_base_url(self) -> str:
         """the official domain of streak adn discipline"""
         return os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8002').split(',')[0]# incase i need to access base url in templates in situations where i cannot use {% url ''%}
+    @classmethod
+    def official_email(self) -> str:
+        """The official email account i use to send email to users"""
+        return "STREAK & DISCIPLINE <noreply@resend.dev>"
     
     

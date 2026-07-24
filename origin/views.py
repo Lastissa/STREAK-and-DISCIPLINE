@@ -3,6 +3,7 @@ from django.http import JsonResponse, Http404
 from django.views import View
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib import messages
+from django.core.cache import cache
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
@@ -10,9 +11,10 @@ from django.core.validators import validate_email
 from resend.exceptions import ResendError
 from origin.models import PasswordResetToken
 
+
 import json, random, uuid
 from utility.config import *
-from utility.email_sending import send_light_email
+from utility.email_sending import send_password_reset_email, send_password_reset_successful_email
 import logging
 
 logger = logging.getLogger(__name__)
@@ -152,7 +154,7 @@ class Login(View):
     """login dashbaord"""
     def get(self, request): return render(request, 'html/login.html', {'url_for_form' : reverse('origin_redirect_handler', kwargs={'raw_url' : 'origin_login'})})
     
-    def post(self,request): return JsonResponse({'user_email' : str(request.user), **request.POST}, safe=False)
+    def post(self,request): return JsonResponse({'user_email' : str(request.user)}, safe=False)
 
 class Reports(View):
     def get(self, request): return render(request, 'html/demo_weekly_report.html')
@@ -191,16 +193,17 @@ class PasswordReset(View):
             validate_email(fetched_email)
             user_email = get_user_model().objects.filter(email__iexact = fetched_email).first()
             if user_email:
-                """Valid user, prepae token"""
+                """Valid user, prepare token"""
                 token = "".join(random.sample("123456789abcdefghijklmnopqrsuvwxyzABCDEFGHIJKLMNOPRSTUVWXYZ", Static.token_lenght()))
-                save_token_to_sb = PasswordResetToken.objects.create(user = user_email, token  = token)
-                save_token_to_sb.save()
-                send_light_email(
+                save_token_to_db = PasswordResetToken.objects.create(user = user_email, token  = token)
+                save_token_to_db.save()
+                send_password_reset_email(
                     to_email=fetched_email,
                     endpoint=reverse('origin_password_reset_validate',
                     kwargs={'email' : user_email, 'token': token}),
                     expiry=Static.token_expiry_time(),
-                    username=user_email)      
+                    username=user_email)  
+                    
                 return JsonResponse({'message': 'Request received, If email exist in our database you will receive a reset link within the next few seconds, refresh page to resend get a new link - old user'}, status = 200)
             #no user found
             return JsonResponse({'message': 'Request received, If email exist in our database you will receive a reset link -new user'})
@@ -239,6 +242,7 @@ class PasswordValidate(View):
             get_istance.set_password(request.POST['password1'])
             get_istance.save()
             PasswordResetToken.objects.filter(user__email__iexact = email).delete()
+            send_password_reset_successful_email(to_email=email, username=f"{get_istance.username}")
             messages.info(request, message="Password Reset Successfully")
             return redirect('origin_login')
 
