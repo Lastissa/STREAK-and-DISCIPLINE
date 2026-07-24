@@ -12,6 +12,22 @@
     <style>
         {% include "reusables/spinner.css" %}
         {% include "reusables/custom_message.css" %}
+        .mini-spinner {
+        display: none;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255,255,255,0.2);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn-primary:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        transform: none;
+    }
+    .theme-toggle i { color: var(--text-secondary); }
     </style>
     <link rel="stylesheet" href="{% static 'css/login.css' %}">
 </head>
@@ -149,8 +165,9 @@
                             <a href="{% url 'origin_password_reset' %}" class="forgot-link">Forgot password?</a>
                         </div>
 
-                        <button type="submit" class="btn btn-primary btn-block btn-lg">
-                            <i class="fas fa-sign-in-alt"></i> Sign In
+                        <button type="submit" class="btn btn-primary btn-block btn-lg" id="loginSubmitBtn">
+                            <span class="mini-spinner" style="display:none;"></span>
+                            <span class="btn-text"><i class="fas fa-sign-in"></i> Sign In</span>
                         </button>
                     </form>
 
@@ -167,44 +184,54 @@
         {% include "reusables/custom_message.js" %}
     </script>
     <script>
+        //Coockie setting
         (function() {
             function getCookie(n){var v='; '+document.cookie;var p=v.split('; '+n+'=');if(p.length===2)return p.pop().split(';').shift();return null}
             function setCookie(n,v,d){var t=new Date();t.setTime(t.getTime()+(d*86400000));document.cookie=n+'='+v+';expires='+t.toUTCString()+';path=/;SameSite=Lax'}
             var body=document.body,btn=document.getElementById('themeToggle'),saved=getCookie('sd-theme');
-            var body=document.body,btn=document.getElementById('themeToggle'),saved=getCookie('sd-theme');
-            btn.style.display = 'flex'; 
+            btn.style.display = 'flex';
             if(saved==='light'){body.classList.add('light-mode');btn.innerHTML='<i class="fas fa-sun"></i>'}
             btn.addEventListener('click',function(){
                 if(body.classList.contains('light-mode')){body.classList.remove('light-mode');setCookie('sd-theme','dark',365);btn.innerHTML='<i class="fas fa-moon"></i>'}
                 else{body.classList.add('light-mode');setCookie('sd-theme','light',365);btn.innerHTML='<i class="fas fa-sun"></i>'}
             });
         })();
-        document.querySelector('.toggle-password').addEventListener('click',function(){
-            var input=document.getElementById('password'),icon=this.querySelector('i');
-            if(input.type==='password'){input.type='text';icon.classList.replace('fa-eye','fa-eye-slash')}
-            else{input.type='password';icon.classList.replace('fa-eye-slash','fa-eye')}
-        });
 
+        //Password Visibilit
+        document.querySelector('.toggle-password').addEventListener('click', function(){
+            var input = document.getElementById('password'), icon = this.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        });
         (function() {
             var form = document.querySelector('.login-form');
             if (!form) return;
             
+            var btn = document.getElementById('loginSubmitBtn');
+            var btnText = btn.querySelector('.btn-text');
+            var spinner = btn.querySelector('.mini-spinner');
+            var submitted = false;
+            
             form.addEventListener('submit', function(e) {
+                if (submitted) return;
+                
                 var email = document.getElementById('email');
                 var password = document.getElementById('password');
                 var errors = [];
                 
-                // Remove old errors
                 document.querySelectorAll('.validation-warning').forEach(function(el) { el.remove(); });
                 document.querySelectorAll('.input-error').forEach(function(el) { el.classList.remove('input-error'); });
                 
-                // Validate email
                 var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!email.value.trim() || !emailRegex.test(email.value.trim())) {
                     errors.push({field: email, msg: 'Please enter a valid email address.'});
                 }
                 
-                // Validate password is not empty
                 if (!password.value.trim()) {
                     errors.push({field: password, msg: 'Please enter your password.'});
                 }
@@ -219,10 +246,16 @@
                         err.field.classList.add('input-error');
                     });
                     errors[0].field.focus();
+                    return;
                 }
+                
+                // All valid — show loading
+                submitted = true;
+                btn.disabled = true;
+                spinner.style.display = 'inline-block';
+                btnText.innerHTML = 'redirecting...';
             });
             
-            // Clear warnings on input
             document.querySelectorAll('.form-input').forEach(function(input) {
                 input.addEventListener('input', function() {
                     this.classList.remove('input-error');
@@ -231,7 +264,6 @@
                 });
             });
         })();
-  
     </script>
 
 </body>

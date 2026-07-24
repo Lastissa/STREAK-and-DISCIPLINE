@@ -4,25 +4,31 @@ from django.shortcuts import render
 from django.contrib import messages
 import logging
 
+
 urlpatterns = [
+    path('', views.OriginHome.as_view(),name='origin_home'),
     path('redirect_url/<str:raw_url>/', views.RedirectHandler.as_view(), name='origin_redirect_handler'),
+    path('in-progress/', views.InProgress.as_view(), name = 'in_progess'),
+    
     path('dashboard/', views.UserDashBoard.as_view(), name = 'origin_dashboard_anonymous'),
     path('dashboard/<str:username>/', views.UserDashBoard.as_view(), name = 'origin_dashboard'),
     path('dashboard/<str:username>/settings/', views.UserDashBoard.as_view(), name = 'origin_settings'),
     
-    path('', views.OriginHome.as_view(),name='origin_home'),
     path('extra/', views.Extras.as_view(),name='origin_extra'),
     path('login/', views.Login.as_view(),name='origin_login'),
-    path('weekly-analysis/', views.Reports.as_view(),name='origin_weekly_analysis'),
     path('signup/', views.Signup.as_view(),name='origin_signup'),
-    path('password-reset/', views.OriginHome.as_view(),name='origin_password_reset'),
+    
+    
+    path('password-reset/', views.PasswordReset.as_view(),name='origin_password_reset'),
+    path('password/<str:email>/<str:token>/',views.PasswordValidate.as_view(), name = 'origin_password_reset_validate' ),
+    
     path('onboarding/', views.Onboarding.as_view(),name='origin_onboarding'),
     path('db_save', views.DbSave.as_view(), name = "origin_database"),
 
     path('search_friend/', views.SearchFriend.as_view(), name = 'origin_search_friend'),
     path('add_friend/', views.AddFriend.as_view(), name = 'origin_add_friend'),
 
-    
+    path('weekly-analysis/', views.Reports.as_view(),name='origin_weekly_analysis'),
 ]
 
 

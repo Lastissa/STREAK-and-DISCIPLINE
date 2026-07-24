@@ -21,8 +21,6 @@ class CustomManager(BaseUserManager):
         user.save()
         return user
 
-
-
 #replacement for user model
 class CustomeUser(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(null=False, unique=True)
@@ -42,4 +40,14 @@ class CustomeUser(AbstractBaseUser, PermissionsMixin):
     def staff_superuser_active(self):
         """Return true if user is staff, superuser and also active"""
         if self.is_superuser and self.is_active and self.is_staff: return True
+    
+    
+#saving credentials for when password reset password so i can verify and delete once they have been used
+class PasswordResetToken(models.Model):
+    user = models.ForeignKey(CustomeUser, on_delete=models.CASCADE)
+    token = models.CharField(blank=False, null=False)
+    date_created = models.DateTimeField(auto_now_add=True) #i will check for this for validity period
+    
+    def __str__(self):
+        return "PasswordResetToken"
     

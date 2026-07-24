@@ -377,8 +377,6 @@ body.sd-light .ob-card {
   0%,100% { transform: translateY(0) rotate(-3deg); }
   50%      { transform: translateY(-8px) rotate(3deg); }
 }
-.fire-icon { display:inline-block; animation: fireFloat 2.5s ease-in-out infinite; }
-
 /* Stats row */
 .w-stats {
   display: flex;

@@ -90,7 +90,7 @@
                     <p class="lead">A private, no‑nonsense journal that holds you accountable — one honest sentence a day.</p>
                     <div class="cta-group">
                         <a href="{% url "origin_signup" %}" class="btn btn-primary btn-lg">
-                            <i class="fas fa-rocket"></i> Start Your Streak — Free
+                            <i class="fas fa-user-plus"></i> Start Your Streak — Free
                         </a>
                         <a href="#how-it-works" class="btn btn-ghost">
                             <i class="fas fa-arrow-down"></i> See How It Works
@@ -161,7 +161,7 @@
                     <div class="feature-card" data-scatter>
                         <div class="feature-icon-box"><i class="fas fa-shield-halved"></i></div>
                         <h3>100% Private</h3>
-                        <p>Your entries are yours alone. End-to-end encrypted. No social features, no public profiles.</p>
+                        <p>Your entries are yours alone. End-to-end encrypted. No social features, no public profiles unless allowed.</p>
                     </div>
                     <div class="feature-card" data-scatter>
                         <div class="feature-icon-box"><i class="fas fa-mirror"></i></div>
@@ -256,9 +256,9 @@
                          data-src="{{user_1}}"
                          alt="user_1" class="lazy-img testimonial-avatar" width="80" height="80">
                 </div>
-                <p class="testimonial-text">"For the first time in years, I've written every single day for 3 months straight. This tool rebuilt my confidence."</p>
+                <p class="testimonial-text">"For the first time in years, I've written every single day for 2 months straight. This tool rebuilt my confidence."</p>
                 <div class="testimonial-name">— Chidi O.</div>
-                <div class="testimonial-streak"><i class="fas fa-fire"></i> 94 day streak</div>
+                <div class="testimonial-streak"><i class="fas fa-fire"></i> 61 day streak</div>
             </div>
             <!-- Card 2 - Female (Cloudinary) -->
             <div class="testimonial-card" data-scatter>
@@ -301,7 +301,7 @@
                          alt="Happy user" class="lazy-img testimonial-avatar" width="80" height="80">
                 </div>
                 <p class="testimonial-text">"The honesty this demands is uncomfortable — and that's exactly why it works. No more lying to myself."</p>
-                <div class="testimonial-name">— Priya M. </div>
+                <div class="testimonial-name">— Adebowale M. </div>
                 <div class="testimonial-streak"><i class="fas fa-fire"></i> 183 day streak</div>
             </div>
             <!-- Card 6 - Female (Pexels new) -->
@@ -431,7 +431,7 @@
                             <div class="timeline-time">Sunday 8 AM</div>
                             <i class="fas fa-envelope"></i>
                             <h4>Weekly Analysis Email</h4>
-                            <p>A detailed breakdown lands in your inbox. No fluff. Just your truth.</p>
+                            <p>A detailed breakdown lands in your inbox. No suger coating text. Just your truth.</p>
                         </div>
                     </div>
                 </div>
@@ -467,7 +467,7 @@
                         <div class="support-icon"><i class="fas fa-video"></i></div>
                         <h4>Onboarding Call</h4>
                         <p>Book a free 15‑minute call. We'll help you set up your first commitment and answer any questions.</p>
-                        <a href="#" class="btn btn-outline btn-sm">Book a Call <i class="fas fa-calendar"></i></a>
+                        <a href="{% url "in_progess" %}" class="btn btn-outline btn-sm">Book a Call <i class="fas fa-calendar"></i></a>
                     </div>
                 </div>
                 <!-- Support team images row -->
@@ -479,7 +479,7 @@
                                 data-src="{{customer_support_1}}"
                                 class="lazy-img support-avatar" width="64" height="64" alt="Support team">
                             <span class="support-name">Issa</span>
-                            <span class="support-role">Success Lead</span>
+                            <span class="support-role">Customer Support</span>
                         </div>
                         <div class="support-person">
                             <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%2360a5fa'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='white' font-size='24'%3E🧑‍💻%3C/text%3E%3C/svg%3E"
@@ -492,7 +492,7 @@
                             <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%2322c55e'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' fill='white' font-size='24'%3E👩‍💼%3C/text%3E%3C/svg%3E"
                                 data-src="{{customer_support_3}}"
                                 class="lazy-img support-avatar" width="64" height="64" alt="Support team">
-                            <span class="support-name">Isreal</span>
+                            <span class="support-name">Issa</span>
                             <span class="support-role">Community Manager</span>
                         </div>
                     </div>
@@ -624,7 +624,7 @@
                 <h2>Ready to meet <span class="highlight">the real you</span>?</h2>
                 <p>No badges. No leaderboards. Just you vs. your word.</p>
                 <div class="cta-group">
-                    <a href="#" class="btn btn-primary btn-xl"><i class="fas fa-rocket"></i> Begin Your Streak — Free</a>
+                    <a href="#" class="btn btn-primary btn-xl"><i class="fas fa-user-plus"></i> Begin Your Streak — Free</a>
                     <a href="#" class="btn btn-ghost"><i class="fas fa-play"></i> Watch Demo</a>
                 </div>
             </div>
@@ -667,7 +667,7 @@
                     <a href="https://github.com/lastissa" target="_blank" rel="noopener"><i class="fab fa-github"></i> GitHub</a>
                     <a href="https://portfolio-lastissa.vercel.app/" target="_blank" rel="noopener"><i class="fas fa-globe"></i> Portfolio</a>
                     <a href="mailto:lastissa11@gmail.com"><i class="fas fa-code"></i> developer@gmail.com</a>
-                    <a href="#"><i class="fas fa-file-contract"></i> API Docs</a>
+                    <a href="{% url "in_progess" %}"><i class="fas fa-file-contract"></i> API Docs</a>
                 </div>
                 <div class="footer-links">
                     <h4>Company</h4>

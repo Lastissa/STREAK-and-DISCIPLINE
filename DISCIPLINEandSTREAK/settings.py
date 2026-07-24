@@ -9,8 +9,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('django_key')
 
-DEBUG = False
-# DEBUG = True
+# DEBUG = False
+DEBUG = True
 
 SOCIAL_AUTH_RAISE_EXCEPTIONS = False # for django_social, it should be close to up so its easily reached
 

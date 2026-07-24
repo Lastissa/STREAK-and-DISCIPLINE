@@ -1,0 +1,85 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message — STREAK & DISCIPLINE</title>
+    <style>
+        {% include "reusables/spinner.css" %}
+        :root{--bg:#0a0e17;--surface:#111827;--text:#ffffff;--text-secondary:#cbd5e1;--accent:#3b82f6;--accent-light:#60a5fa;--border:#1e293b;--radius:12px;--radius-lg:16px;--font-sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;--transition:0.2s ease;--max-width:1100px}
+        body.light-mode{--bg:#f8fafc;--surface:#fff;--text:#0f172a;--text-secondary:#475569;--border:#e2e8f0}
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        html{overflow:hidden;height:100%}
+        body{font-family:var(--font-sans);background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+        .site-header{position:fixed;top:12px;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:calc(var(--max-width) - 24px);z-index:100;border-radius:var(--radius-lg);background:rgba(10,14,23,0.78);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.06);box-shadow:0 8px 32px rgba(0,0,0,0.3);display:flex;justify-content:space-between;align-items:center;padding:0.5rem 1rem}
+        body.light-mode .site-header{background:rgba(248,250,252,0.85);border-color:rgba(0,0,0,0.06)}
+        .logo-link{display:flex;align-items:center;gap:0.5rem;text-decoration:none;color:var(--text)}
+        .logo-img{width:32px;height:32px;border-radius:8px;background:var(--surface)}
+        .logo-text{font-size:0.9rem;font-weight:700;color:var(--accent-light)}
+        .nav-links{display:flex;gap:0.3rem;align-items:center}
+        .nav-links a{color:var(--text-secondary);text-decoration:none;font-weight:500;padding:0.35rem 0.6rem;border-radius:8px;font-size:0.78rem;transition:var(--transition)}
+        .nav-links a:hover{color:#fff;background:rgba(255,255,255,0.04)}
+        .theme-toggle{background:none;border:none;cursor:pointer;padding:0.4rem;border-radius:50%;display:flex;align-items:center}
+        .theme-toggle i{color:var(--text-secondary);font-size:1.1rem}
+        .theme-toggle:hover i{color:var(--accent-light)}
+        main{flex:1;display:flex;align-items:center;justify-content:center;padding:5rem 1.5rem 1rem}
+        .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;max-width:460px;width:100%;text-align:center}
+        .card i{font-size:2rem;margin-bottom:0.8rem}
+        .card p{color:var(--text-secondary);font-size:0.9rem;line-height:1.6;font-weight:500}
+        .msg-footer{text-align:center;padding:0.5rem 1rem;font-size:0.68rem;font-weight:700;letter-spacing:0.03em;color:#0f172a;background:#f1f5f9;border-top:1px solid #e2e8f0;flex-shrink:0}
+        body:not(.light-mode) .msg-footer{color:#f1f5f9;background:#0f172a;border-color:#1e293b}
+        .msg-footer a{color:#2563eb;text-decoration:none}body:not(.light-mode) .msg-footer a{color:#60a5fa}
+        @media(max-width:639px){.logo-text{display:none}}
+    </style>
+    <link rel="preload" href="{{ font_awesome_all_min_css }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{{ font_awesome_all_min_css }}"></noscript>
+</head>
+<body>
+    {% include "reusables/spinner.html" %}
+    <header class="site-header">
+        <a href="/" class="logo-link">
+            <img src="{{ logo_url }}" alt="Logo" class="logo-img" width="32" height="32">
+            <span class="logo-text">STREAK & DISCIPLINE</span>
+        </a>
+        <nav class="nav-links">
+            <a href="/">Home</a>
+            <a href="{% url 'origin_login' %}">Sign In</a>
+            <a href="{% url 'origin_extra' %}#help">Help</a>
+        </nav>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
+    </header>
+
+    <main>
+        <div class="card">
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'success' %}
+                        <i class="fas fa-check-circle" style="color:#16a34a"></i>
+                    {% elif message.tags == 'error' %}
+                        <i class="fas fa-times-circle" style="color:#dc2626"></i>
+                    {% elif message.tags == 'warning' %}
+                        <i class="fas fa-exclamation-triangle" style="color:#d97706"></i>
+                    {% else %}
+                        <i class="fas fa-info-circle" style="color:#2563eb"></i>
+                    {% endif %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            {% else %}
+                <i class="fas fa-inbox" style="color:#94a3b8"></i>
+                <p>Nothing here right now. If you were expecting a message, it may have expired or already been read.</p>
+            {% endif %}
+        </div>
+    </main>
+
+    <footer class="msg-footer">
+        Need help? <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> WhatsApp</a> · 
+        <a href="mailto:issaabdulsalamope11@gmail.com"><i class="fas fa-envelope"></i> support@streakanddiscipline.com</a>
+    </footer>
+
+    <script>
+        {% include "reusables/spinner.js" %}
+        (function(){function g(n){var v='; '+document.cookie,p=v.split('; '+n+'=');return p.length===2?p.pop().split(';').shift():null}function s(n,v,d){var t=new Date();t.setTime(t.getTime()+d*86400000);document.cookie=n+'='+v+';expires='+t.toUTCString()+';path=/;SameSite=Lax'}var b=document.body,btn=document.getElementById('themeToggle'),sv=g('sd-theme');btn.style.display='flex';if(sv==='light'){b.classList.add('light-mode');btn.innerHTML='<i class="fas fa-sun"></i>'}btn.addEventListener('click',function(){if(b.classList.contains('light-mode')){b.classList.remove('light-mode');s('sd-theme','dark',365);btn.innerHTML='<i class="fas fa-moon"></i>'}else{b.classList.add('light-mode');s('sd-theme','light',365);btn.innerHTML='<i class="fas fa-sun"></i>'}})})();
+    </script>
+</body>
+</html>
