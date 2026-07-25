@@ -173,7 +173,13 @@
               <p class="ob-hint">This is for your dashboard greeting. default is {{request.user.username}}.</p>
               <label class="ob-label" for="obName">Your first name or nickname</label>
               <input type="text" class="ob-input" id="obName"
-                     placeholder="e.g., {{request.user.username.upper}}" maxlength="40" autocomplete="off" ">
+                    placeholder="e.g., {{request.user.username.upper}}" 
+                    maxlength="40" autocomplete="off"
+                    list="suggestions">
+
+              <datalist id="suggestions">
+                  <option value="{{request.user.username}}">
+              </datalist>
               <div class="ob-field-err" id="nameErr">Tell us what to call you.</div>
               <div class="privacy-note">
                 <i class="fas fa-lock"></i> Only for the pupose of this onboarding.
@@ -194,7 +200,7 @@
           <div class="ob-phase" data-phase="4" id="p4">
             <div class="ob-card">
               <div class="ob-eyebrow">Step 2 of 9</div>
-              <h2 class="ob-h2">What do you want to commit to?</h2>
+              <h2 class="ob-h2">What do you want to commit to {{request.user.username}} ?</h2>
               <p class="ob-hint">Be specific. "Write 300 words" beats "Write more." "Walk 30 minutes" beats "exercise."</p>
               <label class="ob-label" for="obWhat">Your commitment</label>
               <input type="text" class="ob-input" id="obWhat"
@@ -203,11 +209,11 @@
 
               <div class="chip-wrap" id="whatSuggestions">
                 <span class="chip" data-fill="obWhat">Read 20 pages daily</span>
-                <span class="chip" data-fill="obWhat">Exercise for 30 minutes</span>
+                <span class="chip" data-fill="obWhat">Exercise every morning</span>
                 <span class="chip" data-fill="obWhat">No phone after 10 PM</span>
                 <span class="chip" data-fill="obWhat">Wake up by 6 AM</span>
                 <span class="chip" data-fill="obWhat">Meditate 10 minutes</span>
-                <span class="chip" data-fill="obWhat">Write 200 words</span>
+                <span class="chip" data-fill="obWhat">Maximum 5 hours of screen time</span>
               </div>
 
               <label class="ob-label" style="margin-top:0.25rem">Category</label>
@@ -272,7 +278,7 @@
             <div class="ob-card">
               <div class="ob-eyebrow">Step 4 of 9</div>
               <h2 class="ob-h2">What's the smallest version of this?</h2>
-              <p class="ob-hint">On your worst day — exhausted, sick, overwhelmed — what still counts as a win? Define the floor.</p>
+              <p class="ob-hint">On your worst day — exhausted, sick, overwhelmed — what still counts as a win? Define the least.</p>
               <label class="ob-label" for="obMin">Your minimum effort</label>
               <input type="text" class="ob-input" id="obMin"
                      placeholder="e.g., Open the book and read even one page." maxlength="120" autocomplete="off">
@@ -307,7 +313,7 @@
             <div class="ob-card">
               <div class="ob-eyebrow">Step 5 of 9</div>
               <h2 class="ob-h2">How long are you committing?</h2>
-              <p class="ob-hint">Pick a target. You can extend it once you hit it — but having a horizon makes it real.</p>
+              <p class="ob-hint">Pick a target. You can extend it once you hit it — but having an horizon makes it real.</p>
               <div class="goal-grid" id="goalGrid">
                 <div class="goal-card" data-days="30"><div class="gn">30</div><div class="gl">days — trial run</div></div>
                 <div class="goal-card" data-days="90"><div class="gn">90</div><div class="gl">days — habit lock</div></div>
@@ -365,8 +371,9 @@
                   <div class="method-card" data-method="push"><i class="fas fa-bell"></i><span>Push</span></div>
                 </div>
                 <div id="ob-wa-field">
-                  <label class="ob-label" for="obWaNum">WhatsApp number</label>
-                  <input type="tel" class="ob-input" id="obWaNum" placeholder="+234 800 000 0000">
+                  <label class="ob-label" for="obWaNum">WhatsApp number --invalid number can lead to no reminder</label>
+                  <input type="tel" class="ob-input" id="obWaNum" placeholder="+2348000000000">
+                  <label class="ob-label" for="obWaNum">If you don't receive a notification after this onboarding. please edit the number in settings</label>
                 </div>
               </div>
 
@@ -434,7 +441,7 @@
                 <div id="frSkipped" style="display:none;font-size:0.78rem;color:var(--ink2);padding:0.4rem 0"><i class="fas fa-check"></i> Skipped — add friends any time from your dashboard.</div>
 
                 <button class="btn btn-ghost btn-sm" id="skipFriendBtn" style="margin-top:0.25rem">Skip for now</button>
-                <div class="ob-note"><i class="fas fa-gem"></i> Pro: up to 4 partners. Free: 1.</div>
+                <div class="ob-note"><i class="fas fa-gem"></i>Gold: unlimited. Premium: up to 4 partners. Free: 1.</div>
               </div>
 
               <hr class="ob-sep">
@@ -1063,7 +1070,7 @@
       var labels = [
         '', 'Welcome {{request.user.username}}','About S&D','Your Name','Your Vow','Your Why',
         'Minimum','Your Goal','Schedule','Accountability',
-        'Preferences','Preview','Launch 🚀'
+        'Preferences','Preview','Launch'
       ];
       if (lbl) lbl.textContent = labels[n] || '';
       // Dots
@@ -1169,7 +1176,7 @@
       var ct = document.getElementById('obCheckinTime'); if(ct) STATE.checkinTime = ct.value;
       var ron = document.getElementById('obReminderOn'); if(ron) STATE.reminderOn = ron.checked;
       var rt = document.getElementById('obReminderTime'); if(rt) STATE.reminderTime = rt.value;
-      var wa = document.getElementById('obWaNum'); if(wa) STATE.waNumber = wa.value.trim();
+      var wa = document.getElementById('obWaNum'); if (wa) {var raw = wa.value.trim();STATE.waNumber = raw.replace(/[\s\-\(\)]/g, '');}
       var ldr = document.getElementById('obLeaderboard'); if(ldr) STATE.leaderboard = ldr.checked;
       var ai  = document.getElementById('obAI'); if(ai) STATE.aiInsights = ai.checked;
       var wr  = document.getElementById('obWeeklyReport'); if(wr) STATE.weeklyReport = wr.checked;
@@ -1518,10 +1525,10 @@
         }).then(function(res) {
           searchBtn.disabled = false;
           if (res.status >= 200 && res.status < 400) {
-            document.getElementById('frName').textContent = res.data.name;
-            document.getElementById('frId').textContent   = '@' + (res.data.username || res.data.userid);
+            document.getElementById('frName').textContent = res.data.userid;
+            document.getElementById('frId').textContent   = '@' + (res.data.username || 'empty');
             document.getElementById('frAvatar').src       = res.data.profile_image || '';
-            STATE.friendName = res.data.name;
+            STATE.friendName = res.data.userid;
             STATE.friendUUID = code;
             friendState('frFound');
             save();

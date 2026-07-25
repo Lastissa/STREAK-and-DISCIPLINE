@@ -11,5 +11,5 @@ urlpatterns = [
 
 
 handler400 = 'origin.urls.handler400'
-handler500  = 'origin.urls.handler500'
-handler404  = 'origin.urls.handler400'
+handler500 = 'origin.urls.handler500'
+handler404 = 'origin.urls.handler400'

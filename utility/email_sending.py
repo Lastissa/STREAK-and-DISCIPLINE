@@ -160,4 +160,5 @@ def send_password_reset_successful_email(to_email: str, username: str) -> None:
     
     
 def login_alert(to_email: str):
-    """Send alert for logins Optional if user signed out"""
+    """Send alert for logins Optional if user signed in"""
+

@@ -11,6 +11,7 @@ from django.core.validators import validate_email
 from resend.exceptions import ResendError
 from origin.models import PasswordResetToken
 
+from origin.models import Profile
 
 import json, random, uuid
 from utility.config import *
@@ -32,10 +33,10 @@ class RedirectHandler(View):
                     #set a key in cache to rate limit after 3 attempt
                     rate_limit = cache.get(f"attemp_login_{request.POST["email"]}") if cache.get(f"attemp_login_{request.POST["email"]}") is not None else ""
                     if len(rate_limit)  <3:
-                        messages.info( request=request,message= f"Invalid credentials")
+                        messages.info( request=request,message= f"Incorrect password or Email.")
                         cache.set(f"attemp_login_{request.POST["email"]}", rate_limit+"x", timeout=120)
                     elif len(rate_limit) == 3:
-                        messages.warn( request=request,message= f"invalid credentials, one more fail attempt will lock you out. ")
+                        messages.warn( request=request,message= f"Incorrect password or Email., one more fail attempt will lock you out. ")
                         cache.set(f"attemp_login_{request.POST["email"]}", rate_limit+"x", timeout=120)
                     else:
                         messages.info( request=request,message=f"Too many attempts. Please wait 2 minutes before trying again. If you try again before the time is up, the wait period will reset.---{rate_limit}")
@@ -47,11 +48,11 @@ class RedirectHandler(View):
                         logout(request)
                         return redirect('origin_login') 
                         
-                    #user found, create a session and direct onboarding if last_login is null
+                    #user found, create a session and direct onboarding to handle wether it should direct user to dashboard or stay
                     login(request=request, user=user_istance, backend='django.contrib.auth.backends.ModelBackend')  #i currently have three login style set up, hence why i need to specify which i wan to use
-                    if user_istance.last_login: return redirect('origin_onboarding')
-                    else: return redirect('origin_onboarding', username = user_istance.username)
+                    return redirect('origin_onboarding')
                 else:
+                    logger.warning(msg=f"userexist : {user_exist} is false and also user_istance {user_istance} is false")
                     #no valid credentials, logout any existing session and return back to login
                     logout(request)
                     messages.info(request=request, message= "No account found, Create account to get onboard...")
@@ -104,7 +105,7 @@ class RedirectHandler(View):
 class OriginHome(View):
     def get(self, request):
         messages.info(request, message=intro_word()[0])
-        messages.info(request, message= intro_word()[1])
+        # messages.info(request, message= intro_word()[1])
         return render(request, 'html/landing_page.html', {
             'consistency' : get_consistency_Value(),
             'journal_created': get_journal_created_value(),
@@ -115,7 +116,6 @@ class DbSave(LoginRequiredMixin,View):
     def post(self, request):
         data = json.loads(request.body)
         print(data)
-        print("DDD")
         return JsonResponse({**data})
 
 class Extras(View):
@@ -160,23 +160,41 @@ class Reports(View):
     def get(self, request): return render(request, 'html/demo_weekly_report.html')
 
 class Dashboard(LoginRequiredMixin, View):
-    pass
+    login_url = '/v1/login/'
+    def get(self, request):
+        return JsonResponse({
+            'username' : request.user.username,
+            'email' : request.user.email,
+            'last_login' : request.user.last_login,
+            'join_date' : request.user.date_joined
+        })
 
 class Onboarding(LoginRequiredMixin, View):
     login_url = '/v1/login/'
     def get(self, request):
         print(request.user.username)
-        return render(request, 'html/onboarding.html', {'where_to_go_full_url' : reverse('origin_onboarding')})
+        #check user tier, if it does not exist, redirect user to onboarding
+        user_profile = Profile.objects.filter(user = request.user).first()
+        print(user_profile)
+        if user_profile is None: return render(request,'html/onboarding.html')
+        else: return redirect('origin_dashboard')
+
     
-class SearchFriend(View):
-    def get(self, request):pass
-    def get(self, request): 
-        uuid = request.POST.get('uuid', None) #user id to look up - look up for user once this is seen
+class SearchFriend(LoginRequiredMixin,View):#This one is specifically only for logged in user
+    login_url = '/v1/login/'
+    def get(self, request): return self.post(request)
+    def post(self, request): 
+        return JsonResponse({
+            'userid' : 'test-username01', #use username + dabatase pk to make it unique
+            'username' : 'test-username',
+            'profile_image' : Static.logo_url()
+        })
         
 class AddFriend(View):
-    def get(self, request):pass
-    def get(self, request): 
-        uuid = request.POST.get('uuid', None) #user id to look up - look up for user once this is seen
+    def get(self, request):return self.post(request)
+    def post(self, request): 
+        print({**request.POST})
+        return JsonResponse({**request.POST})
         
 
 class InProgress(View):
@@ -209,7 +227,7 @@ class PasswordReset(View):
             return JsonResponse({'message': 'Request received, If email exist in our database you will receive a reset link -new user'})
         except ResendError as e:
             logger.error(msg=f"Error happened while trying to send user their password reset email , error is {e}")
-            return JsonResponse({'message': 'Oops, you dont seem to have internet connection, please try again when you are connected. -Refresh page to resend link'})
+            return JsonResponse({'message': 'Oops, you dont seem to have internet connection, please try again when you are connected.-Refresh page to resend link'})
         except ValidationError as e: return JsonResponse({"message" : "Invalid Email, Refresh page to try again"})
         except Exception as e:
             logger.error(msg=f"user {fetched_email} tried to reset password and eperience error  : {e}")
@@ -227,6 +245,11 @@ class PasswordValidate(View):
         #validate token still exist
         if token_still_valid_in_db is None:
             messages.error(request, message="This URL is INVALID. This might happen if the url have been used before OR your account does not exist.")
+            return render(request, 'html/full_screen_message.html')
+        #check if it has expired
+        token_have_not_expired = (timezone.now() - token_still_valid_in_db.date_created).seconds < Static.token_expiry_time()
+        if token_have_not_expired is False:
+            messages.info(request, message=f"The Link have Expired as the {int(Static.token_expiry_time()/60)} minutes timeout have been reached.")
             return render(request, 'html/full_screen_message.html')
         #return normal page for reset since token still exist.
         return render(request, 'html/final_step_of_password_reset.html', {'expiry_seconds': Static.token_expiry_time})
@@ -257,14 +280,21 @@ class PasswordValidate(View):
 
         return JsonResponse({'user': email, 'token' : token, 'still_valid' : token_still_valid_in_db is not None, 'token_have_not_expired': token_have_not_expired, 'password1' : request.POST['password1']}, safe=False)
 
-class UserDashBoard(LoginRequiredMixin, View):
-    login_url = "/v1/login/"
-    def get(self, request, username):
-        try:
-            username_on_user = request.user.username
-            return JsonResponse({
-                'username on account'  :username_on_user,
-                'username from url' : username,
-                'user_type' : str(request.user)
-            })
-        except: return {'user type' : 'anonymous'}
+# class UserDashBoard(LoginRequiredMixin, View):
+#     login_url = "/v1/login/"
+#     def get(self, request):
+#         # logout(request)
+#         try:
+#             username_on_user = request.user.username
+#             return JsonResponse({
+#                 'username on account'  :username_on_user,
+#                 'user_type' : str(request.user)
+#             })
+#         except: return {'user type' : 'anonymous'}
+        
+
+class Logout(View):
+    def get(self, request): return self.post(request)
+    def post(self, request):
+        logout(request)
+        return JsonResponse({'message' : 'All active members  have been logged out on this device'}, status = 200)

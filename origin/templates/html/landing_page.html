@@ -569,11 +569,9 @@
                         <h3>Starter</h3>
                         <div class="price"> ₦0<span>/month</span></div>
                         <ul>
-                            <li><i class="fas fa-check"></i> 5 active commitment</li>
-                            <li><i class="fas fa-check"></i> Daily check-in</li>
-                            <li><i class="fas fa-check"></i> default Weekly summary</li>
-                            <li><i class="fas fa-check"></i> Basic reminders</li>
-
+                            {% for i in free_tier_member %}
+                                <li><i class="fas fa-check"></i> {{i}}</li>
+                            {% endfor %}
                         </ul>
                         <a href="{% url "origin_signup" %}" class="btn btn-outline btn-block">Get Started</a>
                     </div>
@@ -582,34 +580,20 @@
                         <h3>Pro</h3>
                         <div class="price"> ₦1,000<span>/month</span></div>
                         <ul>
-                            <li><i class="fas fa-check"></i> 50 active commitments</li>
-                            <li><i class="fas fa-check"></i> custom background jobs</li>
-                            <li><i class="fas fa-check"></i> Advanced analytics</li>
-                            <li><i class="fas fa-check"></i> custom periodical summary</li>
-                            <li><i class="fas fa-check"></i> personalized coach</li>
-                            <li><i class="fas fa-check"></i> AI insights</li>
-                            <li><i class="fas fa-check"></i> Custom themes</li>
-
+                            {% for i in premium_tier_member %}
+                                <li><i class="fas fa-check"></i> {{i}}</li>
+                            {% endfor %}
                         </ul>
                         <a href="{% url "origin_signup" %}?trial=true" class="btn btn-primary btn-block">Start 7-Day Trial</a>
                     </div>
                     <div class="pricing-card" data-scatter>
-                        <div class="pricing-badge">For Teams</div>
-                        <h3>Team</h3>
+                        <div class="pricing-badge"></div>
+                        <h3>Gold</h3>
                         <div class="price"> ₦2000<span>/month</span></div>
                         <ul>
-                            <li><i class="fas fa-check"></i> 50 active commitments</li>
-                            <li><i class="fas fa-check"></i> custom background jobs</li>
-                            <li><i class="fas fa-check"></i> Advanced analytics</li>
-                            <li><i class="fas fa-check"></i> custom periodical summary</li>
-                            <li><i class="fas fa-check"></i> personalized coach</li>
-                            <li><i class="fas fa-check"></i> Custom themes</li>
-                            <li><i class="fas fa-check"></i> Priority support</li>
-                            <li><i class="fas fa-check"></i> AI insights</li>
-                            <li><i class="fas fa-check"></i> Early access to future release</li>
-                            <li><i class="fas fa-check"></i> Admin dashboard</li>
-                            <li><i class="fas fa-check"></i> custom storage</li>
-                            <li><i class="fas fa-check"></i>picture and video upload </li>
+                            {% for i in gold_tier_member %}
+                                <li><i class="fas fa-check"></i> {{i}}</li>
+                            {% endfor %}
 
                         </ul>
                         <a href="{% url "origin_signup" %}" class="btn btn-outline btn-block">Contact Sales</a>
@@ -624,7 +608,7 @@
                 <h2>Ready to meet <span class="highlight">the real you</span>?</h2>
                 <p>No badges. No leaderboards. Just you vs. your word.</p>
                 <div class="cta-group">
-                    <a href="#" class="btn btn-primary btn-xl"><i class="fas fa-user-plus"></i> Begin Your Streak — Free</a>
+                    <a href="{% url "origin_dashboard" %}" class="btn btn-primary btn-xl"><i class="fas fa-user-plus"></i> Begin Your Streak</a>
                     <a href="#" class="btn btn-ghost"><i class="fas fa-play"></i> Watch Demo</a>
                 </div>
             </div>
@@ -667,7 +651,7 @@
                     <a href="https://github.com/lastissa" target="_blank" rel="noopener"><i class="fab fa-github"></i> GitHub</a>
                     <a href="https://portfolio-lastissa.vercel.app/" target="_blank" rel="noopener"><i class="fas fa-globe"></i> Portfolio</a>
                     <a href="mailto:lastissa11@gmail.com"><i class="fas fa-code"></i> developer@gmail.com</a>
-                    <a href="{% url "in_progess" %}"><i class="fas fa-file-contract"></i> API Docs</a>
+                    <a href="{% url "in_progess" %}"><i class="fas fa-file-contract"></i> site Navigator</a>
                 </div>
                 <div class="footer-links">
                     <h4>Company</h4>

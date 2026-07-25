@@ -87,6 +87,9 @@ def template_based_reusables(request):
         'customer_support_2': static('img/user_support/customer_support_2.jpg'),
         'customer_support_3': static('img/user_support/customer_support_3.jpg'),
         'customer_support_4': static('img/user_support/customer_support_4.jpg'),      
+        'free_tier_member' : Static.tier(0),
+        'premium_tier_member' : Static.tier(1),
+        'gold_tier_member' : Static.tier(2)
     }
     
     
@@ -117,4 +120,118 @@ class Static:
         """The official email account i use to send email to users"""
         return "STREAK & DISCIPLINE <noreply@resend.dev>"
     
+    @classmethod
+    def tier(self, tier : int) -> list:
+        """returns the features shown in a tier"""
+        if tier == 0: return ['5 active commitment','Daily check-in reminder via email','Weekly report summary']
+        elif tier == 1: return ['50 active commitments', 'Daily check-in reminder via whatsapp or email and push', 'Advance weekly report summary', 'Custom periodical summary','Personalized coach','1 partner']
+        elif tier == 2: return ['unlimited commitments', 'Daily check-in reminder via whatsapp or email and push + offline reminders','Custom periodical summary','Personalized coach', '4 partners' , 'Advance analytics includes what you should do istead of just data visualization']
+        
+    @classmethod
+    def emoji_translator(self):
+        """Mappping for each feeling that cam possvile in the database"""
+        MOOD_EMOJI = {
+        # Positive / High Energy
+        'proud': '😄',
+        'accomplished': '🏆',
+        'confident': '😎',
+        'determined': '🔥',
+        'focused': '💪',
+        'motivated': '🚀',
+        'disciplined': '⚡',
+        'strong': '🦾',
+        'unstoppable': '💥',
+        'excited': '🤩',
+        'energetic': '⚡',
+        'optimistic': '🌤️',
+        'inspired': '✨',
+        'passionate': '❤️‍🔥',
+        'courageous': '🦁',
+
+        # Positive / Calm
+        'calm': '🙂',
+        'peaceful': '🧘',
+        'content': '😊',
+        'grateful': '🙏',
+        'hopeful': '🌈',
+        'relieved': '😌',
+        'satisfied': '👍',
+        'balanced': '⚖️',
+        'patient': '⏳',
+        'present': '🧠',
+        'grounded': '🌍',
+
+        # Positive / Social
+        'loved': '🥰',
+        'supported': '🤝',
+        'connected': '🔗',
+        'appreciated': '💛',
+        'valued': '🌟',
+
+        # Neutral
+        'okay': '😐',
+        'meh': '😑',
+        'numb': '😶',
+        'indifferent': '🤷',
+        'neutral': '➖',
+        'distracted': '📱',
+        'restless': '🔄',
+        'bored': '🥱',
+        'curious': '🤔',
+
+        # Low Energy / Tired
+        'tired': '😮‍💨',
+        'exhausted': '😩',
+        'drained': '🪫',
+        'lazy': '🛋️',
+        'unmotivated': '😒',
+        'sluggish': '🐌',
+        'burnt_out': '🔥',
+        'sleepy': '🥱',
+        'lethargic': '💤',
+
+        # Negative / Mild
+        'worried': '😟',
+        'anxious': '😰',
+        'nervous': '😬',
+        'stressed': '😫',
+        'overwhelmed': '🌊',
+        'uncertain': '❓',
+        'confused': '😕',
+        'hesitant': '🤚',
+        'doubtful': '🤨',
+
+        # Negative / Moderate
+        'frustrated': '😤',
+        'irritated': '😠',
+        'annoyed': '🙄',
+        'angry': '😡',
+        'resentful': '😾',
+        'bitter': '🍋',
+        'disappointed': '😔',
+        'discouraged': '📉',
+        'defeated': '🏳️',
+
+        # Negative / Deep
+        'sad': '😢',
+        'lonely': '🧍',
+        'isolated': '🏝️',
+        'hopeless': '🕳️',
+        'empty': '🫙',
+        'ashamed': '😳',
+        'guilty': '😞',
+        'regretful': '💭',
+        'worthless': '🗑️',
+        'broken': '💔',
+        'grieving': '🕊️',
+        'depressed': '🌧️',
+
+        # Reflective
+        'reflective': '🪞',
+        'introspective': '🔍',
+        'thoughtful': '💡',
+        'nostalgic': '📸',
+        'humbled': '🙇',
+        }
+        return MOOD_EMOJI
     

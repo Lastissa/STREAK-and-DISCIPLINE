@@ -61,7 +61,7 @@
 
                 <h3>1. Information We Collect</h3>
                 <ul>
-                    <li><strong>Account Information:</strong> Email address and an optional username.</li>
+                    <li><strong>Account Information:</strong> Email address and username.</li>
                     <li><strong>Journal Content:</strong> Commitments, check‑ins, reflections, and streaks — private to you.</li>
                     <li><strong>Usage Data:</strong> Anonymized analytics for service improvement.</li>
                     <li><strong>Optional Data:</strong> Reminder preferences, leaderboard display name.</li>
@@ -93,10 +93,7 @@
                 <h3>6. Third‑Party Services</h3>
                 <p>Trusted providers for hosting and email. Bound by data processing agreements.</p>
 
-                <h3>7. Children's Privacy</h3>
-                <p>Not intended for individuals under 10.</p>
-
-                <h3>8. Data Deletion Request</h3>
+                <h3>7. Data Deletion Request</h3>
                 <p>Request deletion via <strong>Account Settings → Delete Account</strong>, email <strong>issaabdulsalamope11@gmail.com</strong>, or WhatsApp <strong>+234 701 368 7825</strong>. Data erased within 48 hours (self-service) or 7 business days (manual). Backup copies purged within 30 days. 7‑day grace period to reactivate.</p>
 
                 <h3>9. Changes to This Policy</h3>
@@ -239,11 +236,9 @@
                         <h3>Starter</h3>
                         <div class="pricing-price">₦0<span>/month</span></div>
                         <ul>
-                            <li><i class="fas fa-check"></i> 5 active commitments</li>
-                            <li><i class="fas fa-check"></i> Daily check-in</li>
-                            <li><i class="fas fa-check"></i> Default weekly summary</li>
-                            <li><i class="fas fa-check"></i> Basic reminders</li>
-                            <li><i class="fas fa-check"></i> Community access</li>
+                            {% for i in free_tier_member %}
+                                <li><i class="fas fa-check"></i> {{i}}</li>
+                            {% endfor %}
                         </ul>
                         <a href="{% url 'origin_signup' %}" class="pricing-btn-outline">Get Started Free</a>
                     </div>
@@ -253,13 +248,9 @@
                         <h3>Pro</h3>
                         <div class="pricing-price">₦1,000<span>/month</span></div>
                         <ul>
-                            <li><i class="fas fa-check"></i> 50 active commitments</li>
-                            <li><i class="fas fa-check"></i> Custom background jobs</li>
-                            <li><i class="fas fa-check"></i> Advanced analytics</li>
-                            <li><i class="fas fa-check"></i> Custom periodical summary</li>
-                            <li><i class="fas fa-check"></i> Personalized coach</li>
-                            <li><i class="fas fa-check"></i> AI insights</li>
-                            <li><i class="fas fa-check"></i> Custom themes</li>
+                            {% for i in premium_tier_member %}
+                                <li><i class="fas fa-check"></i> {{i}}</li>
+                            {% endfor %}
                         </ul>
                         <a href="{% url 'origin_signup' %}" class="pricing-btn-primary">Start 7-Day Trial</a>
                     </div>
@@ -269,12 +260,9 @@
                         <h3>Team</h3>
                         <div class="pricing-price">₦2,000<span>/month</span></div>
                         <ul>
-                            <li><i class="fas fa-check"></i> Everything in Pro</li>
-                            <li><i class="fas fa-check"></i> Priority support</li>
-                            <li><i class="fas fa-check"></i> Admin dashboard</li>
-                            <li><i class="fas fa-check"></i> Picture & video upload</li>
-                            <li><i class="fas fa-check"></i> Custom storage</li>
-                            <li><i class="fas fa-check"></i> Early access to new releases</li>
+                            {% for i in gold_tier_member %}
+                                <li><i class="fas fa-check"></i> {{i}}</li>
+                            {% endfor %}
                         </ul>
                         <a href="mailto:issaabdulsalamope11@gmail.com?subject=Team%20Plan%20Enquiry" class="pricing-btn-outline">Contact Sales</a>
                     </div>

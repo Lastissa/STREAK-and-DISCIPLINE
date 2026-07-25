@@ -1,6 +1,6 @@
 from django.urls import path
 from origin import views
-from django.shortcuts import render
+from django.shortcuts import render, redirect, resolve_url
 from django.contrib import messages
 import logging
 
@@ -9,10 +9,8 @@ urlpatterns = [
     path('', views.OriginHome.as_view(),name='origin_home'),
     path('redirect_url/<str:raw_url>/', views.RedirectHandler.as_view(), name='origin_redirect_handler'),
     path('in-progress/', views.InProgress.as_view(), name = 'in_progess'),
-    
-    path('dashboard/', views.UserDashBoard.as_view(), name = 'origin_dashboard_anonymous'),
-    path('dashboard/<str:username>/', views.UserDashBoard.as_view(), name = 'origin_dashboard'),
-    path('dashboard/<str:username>/settings/', views.UserDashBoard.as_view(), name = 'origin_settings'),
+    path('dashboard/', views.Dashboard.as_view(), name = 'origin_dashboard'),
+    path('dashboard/settings/', views.Dashboard.as_view(), name = 'origin_settings'),
     
     path('extra/', views.Extras.as_view(),name='origin_extra'),
     path('login/', views.Login.as_view(),name='origin_login'),
@@ -29,6 +27,8 @@ urlpatterns = [
     path('add_friend/', views.AddFriend.as_view(), name = 'origin_add_friend'),
 
     path('weekly-analysis/', views.Reports.as_view(),name='origin_weekly_analysis'),
+    
+    path('logout/', views.Logout.as_view(), name = 'origin_logout_active_user'),
 ]
 
 
@@ -39,53 +39,55 @@ def handler500(request, *args, **kwargs):
     """Custom 500 error page."""
     messages.info(request,message='Try again in few seconds, if error persist, Please Contact Customer Suppport ')
     messages.warning(request, message=f"""If you are seeing this\nPlease copy and send this message to our customer support -
-        Method: {request.method}
-        Path: {request.path}
-        GET params: {request.GET}
-        POST data: {request.POST}
-        Headers: {dict(request.headers)}
-        Body: {request.body}
-        User: {request.user}
-        IP: {request.META.get('REMOTE_ADDR')}"""
+    Method: {request.method}
+    status code: 500
+    GET params:  {[(i, request.GET[i]) for i in request.GET]}
+    POST data: {[i for i in request.POST]}
+    Body: {request.body[:500]}
+    User: {request.user}
+    IP: {request.META.get('REMOTE_ADDR')}"""
         )
-    logger.error(f"""
-        Method: {request.method}
-        Path: {request.path}
-        GET params: {request.GET}
-        POST data: {request.POST}
-        Headers: {dict(request.headers)}
-        Body: {request.body[:500]}  # first 500 chars
-        User: {request.user}
-        IP: {request.META.get('REMOTE_ADDR')}
-    """)
+    logger.error(f"""Method: {request.method}
+status code: 500
+GET params: {[(i + " : " + request.GET[i], ) for i in request.GET]}
+POST data: {[i for i in request.POST]}
+Body: {request.body[:500]}
+User: {request.user}
+IP: {request.META.get('REMOTE_ADDR')}
+ARGS: {args}
+KWARGS: {kwargs}
+""")
     return render(request, 'error/500.html')
 
 def handler404(request, *args, **kwargs):
     """Custom 404 error page."""
     messages.info(request,message='it seem the page you are trying to access does not exist')
-    logger.error(f"""
-        Method: {request.method}
-        Path: {request.path}
-        GET params: {request.GET}
-        POST data: {request.POST}
-        Headers: {dict(request.headers)}
-        Body: {request.body[:500]}  # first 500 chars
-        User: {request.user}
-        IP: {request.META.get('REMOTE_ADDR')}
-    """)
+    logger.error(f"""Method: {request.method}
+status code: 404
+GET params: {[(i + " : " + request.GET[i], ) for i in request.GET]}
+POST data: {[i for i in request.POST]}
+Body: {request.body[:500]}
+User: {request.user}
+IP: {request.META.get('REMOTE_ADDR')}
+ARGS: {args}
+""")
     return render(request, 'error/404.html')
 
 def handler400(request, *args, **kwargs):
     """Custom 400 error page."""
     # messages.info(request,message='Deau user, if this page is consistent, it mean we are undergoing mantainance, bear with us please')
-    logger.error(f"""
-        Method: {request.method}
-        Path: {request.path}
-        GET params: {request.GET}
-        POST data: {request.POST}
-        Headers: {dict(request.headers)}
-        Body: {request.body[:500]}  # first 500 chars
-        User: {request.user}
-        IP: {request.META.get('REMOTE_ADDR')}
-    """)
+    logger.error(f"""Method: {request.method}
+status code: 400
+GET params: {[(i + " : " + request.GET[i], ) for i in request.GET]}
+POST data: {[i for i in request.POST]}
+Body: {request.body[:500]}
+User: {request.user}
+IP: {request.META.get('REMOTE_ADDR')}
+ARGS: {args}
+""")
     return render(request, 'error/400.html')
+
+
+#normally, it should have been to login page but if user is logged in asking them to login again is not ideal on error they know nothing about, so i assign it to onboarding as that one can tell if user is login, if not it return login straight and if user is logged in but last login is not null, it return dashboard
+def csrf_failure(request, *args, **kwargs):
+    return redirect('origin_onboarding')

@@ -12,7 +12,7 @@ SECRET_KEY = os.getenv('django_key')
 DEBUG = False
 # DEBUG = True
 
-SOCIAL_AUTH_RAISE_EXCEPTIONS = False # for django_social, it should be close to up so its easily reached
+SOCIAL_AUTH_RAISE_EXCEPTIONS = False # for django_social to not debug, it should be close to up so its easily reached
 
 
 AUTH_USER_MODEL = 'origin.CustomeUser'
@@ -110,14 +110,17 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv('google_auth_secret')
 SOCIAL_AUTH_FACEBOOK_KEY = os.getenv('fb_auth_app_id')
 SOCIAL_AUTH_FACEBOOK_SECRET = os.getenv('fb_auth_auth_secret')
 
+SOCIAL_AUTH_FACEBOOK_SCOPE = ["email",]
+SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMS = {"fields": "id,name,email"}
 
 SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
     'social_core.pipeline.social_auth.auth_allowed',
     'social_core.pipeline.social_auth.social_user',
+    'social_core.pipeline.social_auth.associate_by_email', #this one first check if i have the email already in normal User db to avoid integrity error
     'social_core.pipeline.user.create_user', # comment out so django_social wont auto-create user incase i want to handle this
-    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.associate_user',#this is the power that make social auth link email to account if that account already exist in its own db
     'social_core.pipeline.social_auth.load_extra_data',
     'social_core.pipeline.user.user_details',
 )
@@ -125,8 +128,13 @@ SOCIAL_AUTH_PIPELINE = (
 # Where to redirect when things go wrong
 SOCIAL_AUTH_LOGIN_ERROR_URL = 'v1/login/?error=auth_failed'
 SOCIAL_AUTH_NEW_USER_REDIRECT_URL = 'v1/onboarding/'
-SOCIAL_AUTH_LOGIN_REDIRECT_URL = 'v1/dashboard/'
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/v1/onboarding/'# my onboarding will handle the redirct to dashboard
 SOCIAL_AUTH_TIMEOUT = 15 # timeout for connection btwn django social and google or fb
 SOCIAL_AUTH_ALREADY_ASSOCIATED_URL = 'v1/login/?error=already_linked' #if user is have already linked with one socials
 
+
+
+
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8002').split(',')
+
+CSRF_FAILURE_VIEW  = 'origin.urls.csrf_failure' #for handling the boring forbidden that constantly show if used form is reused
