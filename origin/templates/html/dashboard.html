@@ -1,11 +1,604 @@
-A FIRST_TIME_LOAD_OPTIMIZED_LANDING_PAGE THAT INCLUDES
-    - NAV BAR (
-        wbesite_logo(when clicked opens up the setting aside)
-        ...
-        logout(when click make the background blurry and send a request to {% url "origin_logout" %}), 
-                )
-    - Greetings (username exist in {{request.user.username}})
-    - SETTNGS ASIDE (contain logout, my profile)
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — STREAK & DISCIPLINE</title>
+  <meta name="robots" content="noindex, nofollow">
 
+  {# Critical inline: background + spinner ONLY. Nothing else blocks first paint. #}
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--bg:#0a0e17;--surface:#111827;--text:#e2e8f0;--text-secondary:#94a3b8;--accent:#3b82f6;--border:#1e293b;--radius:12px;--font:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+    body{background:var(--bg);font-family:var(--font);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+    {% include "reusables/spinner.css" %}
+    .dashboard-app{display:none}
+    .dashboard-app.loaded{display:flex;min-height:100vh}
+  </style>
 
-FREE TIER LANDING PAGE, PREMIUM TIER LANDING PAGE AND GOLD TIER LANDING PAGE WILL ALL BE DIFFERENT SLIGHTLY
+  {# Light CSS: skeletons, typography, grid — blocks but tiny #}
+  <link rel="stylesheet" href="{% static 'css/dashboard_light.css' %}">
+
+  {# Heavy CSS: glass, physics, particles — async, non-blocking #}
+  <link rel="preload" href="{% static 'cdn/dashboard_advance.css' %}" as="style"
+        onload="this.onload=null;this.rel='stylesheet';document.documentElement.classList.add('engine-ready')"
+        id="heavy-css">
+  <noscript><link rel="stylesheet" href="{% static 'cdn/dashboard_advance.css' %}"></noscript>
+
+  {# Font Awesome (icons) #}
+  <link rel="preload" href="{{ font_awesome_all_min_css }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="{{ font_awesome_all_min_css }}"></noscript>
+</head>
+<body>
+
+  {# Spinner (visible until everything is ready) #}
+  {% include "reusables/spinner.html" %}
+
+  {# ========== DASHBOARD APP (hidden until JS boots) ========== #}
+  <div class="dashboard-app" id="dashboardApp">
+
+    {# Particle canvas (desktop) #}
+    <canvas id="particleCanvas"></canvas>
+
+    {# ========== SIDEBAR (desktop) / OFFCANVAS (mobile) ========== #}
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-scroll">
+
+        {# Profile area #}
+        <div class="sidebar-profile">
+          <div class="avatar-wrapper skeleton" id="sidebarAvatarWrapper">
+            <img src="" alt="Profile" id="sidebarAvatar" class="avatar-img"
+                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'56\' height=\'56\' viewBox=\'0 0 56 56\'%3E%3Ccircle cx=\'28\' cy=\'28\' r=\'28\' fill=\'%231e293b\'/%3E%3Ccircle cx=\'28\' cy=\'22\' r=\'10\' fill=\'%23475669\'/%3E%3Cellipse cx=\'28\' cy=\'52\' rx=\'18\' ry=\'12\' fill=\'%23475669\'/%3E%3C/svg%3E'">
+          </div>
+          <div class="sidebar-user-info">
+            <span class="sidebar-name skeleton-text" id="sidebarName">{{ display_name|default:request.user.username }}</span>
+            <span class="sidebar-tier badge-tier badge-{{ tier }}" id="sidebarTier">{{ tier }}</span>
+          </div>
+        </div>
+
+        {# Navigation #}
+        <nav class="sidebar-nav">
+          <a href="{% url 'origin_dashboard' %}" class="nav-item active"><i class="fas fa-th-large"></i> Dashboard</a>
+          <a href="/profile/" class="nav-item"><i class="fas fa-user"></i> Profile</a>
+          <a href="/v1/commitments/" class="nav-item"><i class="fas fa-fire"></i> My Commitments</a>
+          <a href="/groups/" class="nav-item"><i class="fas fa-user-group"></i> Groups</a>
+          <a href="/leaderboard/" class="nav-item"><i class="fas fa-trophy"></i> Leaderboard</a>
+          <a href="/blog/" class="nav-item"><i class="fas fa-newspaper"></i> Blog / Updates</a>
+          <a href="{% url 'origin_weekly_analysis' %}" class="nav-item"><i class="fas fa-chart-line"></i> Analytics & Reports</a>
+          {% if tier != 'gold' %}
+          <a href="/insights/" class="nav-item"><i class="fas fa-brain"></i> AI Insights</a>
+          {% endif %}
+          <div class="nav-divider"></div>
+        </nav>
+
+        {# Upgrade CTA (free tier only) #}
+        {% if tier == 'free' %}
+        <div class="upgrade-banner">
+          <i class="fas fa-gem"></i>
+          <span>Upgrade to Pro</span>
+          <p>Unlock 50 commitments, AI insights, and more.</p>
+          <a href="/pricing/" class="btn-upgrade">Upgrade</a>
+        </div>
+        {% endif %}
+
+        {# Support #}
+        <div class="sidebar-support">
+          <a href="https://wa.me/2347013687825" target="_blank" rel="noopener" class="nav-item"><i class="fab fa-whatsapp"></i> WhatsApp Support</a>
+          <a href="mailto:issaabdulsalamope11@gmail.com" class="nav-item"><i class="fas fa-envelope"></i> Email Support</a>
+        </div>
+
+        {# Logout #}
+        <div class="sidebar-logout">
+          <a href="#" id="logoutBtn" class="nav-item"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+
+      </div>
+    </aside>
+
+    {# ========== MAIN CONTENT ========== #}
+    <main class="main-content" id="mainContent">
+
+      {# Top Navbar (mobile toggle + user avatar) #}
+      <header class="topbar" id="topbar">
+        <button class="menu-toggle" id="menuToggle" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="topbar-right">
+          <div class="topbar-avatar skeleton" id="topbarAvatarWrapper">
+            <img src="" alt="Profile" id="topbarAvatar" class="avatar-img-small"
+                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\' viewBox=\'0 0 32 32\'%3E%3Ccircle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%231e293b\'/%3E%3Ccircle cx=\'16\' cy=\'13\' r=\'6\' fill=\'%23475669\'/%3E%3Cellipse cx=\'16\' cy=\'28\' rx=\'10\' ry=\'7\' fill=\'%23475669\'/%3E%3C/svg%3E'">
+          </div>
+        </div>
+      </header>
+
+      {# Dashboard Grid #}
+      <div class="dashboard-grid">
+
+        {# ---- Zeal Score ---- #}
+        <section class="card zeal-card" id="zealCard">
+          <div class="card-header">
+            <h3>Zeal Score</h3>
+            <button class="info-btn" id="zealInfoBtn" aria-label="What is Zeal?"><i class="fas fa-circle-info"></i></button>
+          </div>
+          <div class="zeal-ring-wrapper skeleton" id="zealRingWrapper">
+            <div class="zeal-ring" id="zealRing" style="--zeal:{{ zeal_score|default:0 }}">
+              <span class="zeal-value" id="zealValue">{{ zeal_score|default:0 }}</span>
+            </div>
+          </div>
+          <p class="zeal-label">Fire across all commitments</p>
+          <div class="zeal-tooltip" id="zealTooltip">
+            Zeal = (active commitments) × (average streak).<br>It measures your overall discipline intensity.
+          </div>
+        </section>
+
+        {# ---- Today's Status ---- #}
+        <section class="card status-card" id="statusCard">
+          <div class="card-header">
+            <h3>Today's Check‑ins</h3>
+          </div>
+          <div class="status-banner skeleton" id="statusBanner">
+            <span id="statusText">Loading...</span>
+          </div>
+          {% if upcoming_milestone %}
+          <div class="milestone-badge" id="milestoneBadge">
+            <i class="fas fa-flag-checkered"></i> {{ upcoming_milestone }} days until milestone
+          </div>
+          {% endif %}
+        </section>
+
+        {# ---- Commitments ---- #}
+        <section class="card commitments-card" id="commitmentsCard">
+          <div class="card-header">
+            <h3>Your Commitments</h3>
+            <a href="/v1/commitments/add/" class="btn-icon" title="Add new commitment"><i class="fas fa-plus"></i></a>
+          </div>
+          <div class="commitments-list" id="commitmentsList">
+            <div class="commitment-skeleton"></div>
+            <div class="commitment-skeleton"></div>
+            <div class="commitment-skeleton"></div>
+          </div>
+          <div class="retry-wrap" id="commitRetry" style="display:none">
+            <button class="btn btn-ghost btn-sm" id="retryCommitments"><i class="fas fa-redo"></i> Retry</button>
+            <span class="retry-msg" id="commitErrorMsg"></span>
+          </div>
+        </section>
+
+        {# ---- Heatmap ---- #}
+        <section class="card heatmap-card" id="heatmapCard">
+          <div class="card-header">
+            <h3>30‑Day Consistency</h3>
+          </div>
+          <div class="heatmap-grid skeleton" id="heatmapGrid"></div>
+          <div class="retry-wrap" id="heatmapRetry" style="display:none">
+            <button class="btn btn-ghost btn-sm" id="retryHeatmap"><i class="fas fa-redo"></i> Retry</button>
+            <span class="retry-msg" id="heatmapErrorMsg"></span>
+          </div>
+        </section>
+
+        {# ---- Partners ---- #}
+        <section class="card partners-card" id="partnersCard">
+          <div class="card-header">
+            <h3>Partners</h3>
+          </div>
+          <div class="partners-list skeleton" id="partnersList">
+            <p class="no-partners">No partners yet.</p>
+          </div>
+          <div class="retry-wrap" id="partnerRetry" style="display:none">
+            <button class="btn btn-ghost btn-sm" id="retryPartners"><i class="fas fa-redo"></i> Retry</button>
+            <span class="retry-msg" id="partnerErrorMsg"></span>
+          </div>
+        </section>
+
+        {# ---- Daily Quote ---- #}
+        <section class="card quote-card" id="quoteCard">
+          <p class="quote-text" id="quoteText"></p>
+          <span class="quote-attribution">— STREAK & DISCIPLINE</span>
+        </section>
+
+      </div>{# /dashboard-grid #}
+
+    </main>
+  </div>
+
+  {# ========== SCRIPTS ========== #}
+  <script>
+    {% include "reusables/spinner.js" %}
+  </script>
+
+  <script>
+  (function() {
+    'use strict';
+
+    /* ================================================================
+       CRITICAL BOOT — reveal app after heavy CSS, then fetch all data
+       ================================================================ */
+    var app = document.getElementById('dashboardApp');
+    var heavyCss = document.getElementById('heavy-css');
+
+    function bootApp() {
+      if (app.classList.contains('loaded')) return;
+      app.classList.add('loaded');
+      initDashboard();
+    }
+
+    if (heavyCss) {
+      if (heavyCss.rel === 'stylesheet') bootApp();
+      else heavyCss.addEventListener('load', bootApp);
+    }
+    setTimeout(bootApp, 8000);
+
+    /* ================================================================
+       GLOBALS & HELPERS
+       ================================================================ */
+    function getCookie(name) {
+      var v = document.cookie.match('(?:^|;) ?' + name + '=([^;]*)(;|$)');
+      return v ? decodeURIComponent(v[1]) : '';
+    }
+
+    function fetchJSON(url) {
+      return fetch(url, {
+        headers: { 'X-CSRFToken': getCookie('csrftoken') }
+      }).then(function(r) {
+        return r.json().then(function(data) {
+          return { ok: r.ok, status: r.status, data: data };
+        });
+      });
+    }
+
+    /* ================================================================
+       INIT — parallel data loading
+       ================================================================ */
+    function initDashboard() {
+      Promise.allSettled([
+        loadUserPicture(),
+        loadCommitments(),
+        loadHeatmap(),
+        loadPartners()
+      ]).then(function() {
+        // All done — spinner already handled by spinner.js
+      });
+
+      initZealTooltip();
+      initSidebar();
+      initQuote();
+      initLogout();
+      initParticles();
+      initMenuToggle();
+      initPrintShare();
+    }
+
+    /* ================================================================
+       USER PICTURE
+       ================================================================ */
+    function loadUserPicture() {
+      return fetchJSON("{% url 'origin_user_picture' %}").then(function(res) {
+        var url = (res.ok && res.data.url) ? res.data.url : '';
+        updateAvatar(url);
+      }).catch(function() {
+        updateAvatar('');
+      });
+    }
+
+    function updateAvatar(url) {
+      var imgs = [
+        document.getElementById('sidebarAvatar'),
+        document.getElementById('topbarAvatar')
+      ];
+      imgs.forEach(function(img) {
+        if (!img) return;
+        if (url) img.src = url;
+      });
+      var wrappers = [
+        document.getElementById('sidebarAvatarWrapper'),
+        document.getElementById('topbarAvatarWrapper')
+      ];
+      wrappers.forEach(function(w) { if(w) w.classList.remove('skeleton'); });
+    }
+
+    /* ================================================================
+       COMMITMENTS
+       ================================================================ */
+    function loadCommitments() {
+      var list = document.getElementById('commitmentsList');
+      var retryWrap = document.getElementById('commitRetry');
+      var errorMsg = document.getElementById('commitErrorMsg');
+
+      return fetchJSON("{% url 'origin_commitmnet_data' %}").then(function(res) {
+        if (!res.ok) throw new Error(res.data.message || 'Failed to load commitments');
+        var commitments = res.data.commitments || [];
+        renderCommitments(commitments);
+        updateStatusBanner(commitments);
+      }).catch(function(err) {
+        list.innerHTML = '';
+        retryWrap.style.display = 'flex';
+        errorMsg.textContent = err.message;
+      });
+    }
+
+    function renderCommitments(commitments) {
+      var list = document.getElementById('commitmentsList');
+      var retryWrap = document.getElementById('commitRetry');
+      list.innerHTML = '';
+      retryWrap.style.display = 'none';
+
+      if (!commitments.length || commitments[0].id === 0) {
+        list.innerHTML = '<p class="no-data">No commitments yet. <a href="/v1/commitments/add/">Create your first vow.</a></p>';
+        return;
+      }
+
+      commitments.forEach(function(c) {
+        var card = document.createElement('div');
+        card.className = 'commitment-card';
+        card.innerHTML = [
+          '<div class="commit-card-top">',
+            '<span class="commit-cat-icon"><i class="fas ' + getCategoryIcon(c.category) + '"></i></span>',
+            '<span class="commit-what">' + escapeHTML(c.what) + '</span>',
+          '</div>',
+          '<div class="commit-card-mid">',
+            '<div class="streak-badge"><i class="fas fa-fire"></i> ' + c.streak_count + '</div>',
+            '<div class="progress-ring" style="--progress:' + (c.days_since_start / Math.max(c.goal_days, 1) * 100) + '%"></div>',
+          '</div>',
+          '<div class="commit-card-bottom">',
+            '<span class="checkin-time"><i class="fas fa-clock"></i> ' + c.checkin_time + '</span>',
+            c.checked_in_today
+              ? '<span class="checked-badge"><i class="fas fa-check-circle"></i> Done</span>'
+              : '<a href="/v1/commitment/' + c.id + '/checkin/" class="btn btn-primary btn-sm">Check in</a>',
+          '</div>',
+          '<a href="/v1/commitment/' + c.id + '/" class="commit-link-overlay"></a>'
+        ].join('');
+        list.appendChild(card);
+      });
+
+      list.classList.remove('skeleton');
+    }
+
+    function getCategoryIcon(cat) {
+      var map = {
+        fitness: 'fa-dumbbell', study: 'fa-book-open', work: 'fa-briefcase',
+        health: 'fa-heart-pulse', mindset: 'fa-brain', growth: 'fa-seedling',
+        other: 'fa-ellipsis'
+      };
+      return map[cat] || 'fa-ellipsis';
+    }
+
+    function escapeHTML(str) {
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    /* ================================================================
+       TODAY'S STATUS BANNER
+       ================================================================ */
+    function updateStatusBanner(commitments) {
+      var banner = document.getElementById('statusBanner');
+      var text = document.getElementById('statusText');
+      if (!commitments.length || commitments[0].id === 0) {
+        text.textContent = 'No commitments to track today.';
+        banner.classList.remove('skeleton');
+        return;
+      }
+      var total = commitments.length;
+      var done = commitments.filter(function(c) { return c.checked_in_today; }).length;
+      text.textContent = done + ' of ' + total + ' commitments checked in today';
+      banner.classList.remove('skeleton');
+      banner.classList.toggle('all-done', done === total);
+    }
+
+    /* ================================================================
+       HEATMAP
+       ================================================================ */
+    function loadHeatmap() {
+      var grid = document.getElementById('heatmapGrid');
+      var retryWrap = document.getElementById('heatmapRetry');
+      var errorMsg = document.getElementById('heatmapErrorMsg');
+
+      return fetchJSON("{% url 'origin_user_HeatMap' %}").then(function(res) {
+        if (!res.ok) throw new Error(res.data.message || 'Failed to load heatmap');
+        var data = res.data.heatmap || [];
+        renderHeatmap(data);
+      }).catch(function(err) {
+        grid.innerHTML = '';
+        retryWrap.style.display = 'flex';
+        errorMsg.textContent = err.message;
+      });
+    }
+
+    function renderHeatmap(data) {
+      var grid = document.getElementById('heatmapGrid');
+      var retryWrap = document.getElementById('heatmapRetry');
+      grid.innerHTML = '';
+      retryWrap.style.display = 'none';
+      var max = Math.max.apply(null, data.concat([1]));
+
+      data.forEach(function(val) {
+        var cell = document.createElement('div');
+        cell.className = 'heatmap-cell';
+        var intensity = val / max;
+        cell.style.setProperty('--intensity', intensity);
+        cell.title = val + ' commitment(s)';
+        grid.appendChild(cell);
+      });
+      grid.classList.remove('skeleton');
+    }
+
+    /* ================================================================
+       PARTNERS
+       ================================================================ */
+    function loadPartners() {
+    var list = document.getElementById('partnersList');
+    var retryWrap = document.getElementById('partnerRetry');
+    var errorMsg = document.getElementById('partnerErrorMsg');
+
+    return fetchJSON("{% url 'origin_parner_widget' %}").then(function(res) {
+        if (!res.ok) throw new Error(res.data.message || 'Failed to load partners');
+        var partners = res.data.partners || [];
+        renderPartners(partners, res.data.message);  // ← pass message
+    }).catch(function(err) {
+        list.innerHTML = '';
+        retryWrap.style.display = 'flex';
+        errorMsg.textContent = err.message;
+    });
+    }
+
+    function renderPartners(partners, serverMessage) {
+    var list = document.getElementById('partnersList');
+    var retryWrap = document.getElementById('partnerRetry');
+    list.innerHTML = '';
+    retryWrap.style.display = 'none';
+
+    if (!partners.length) {
+        var msg = serverMessage || 'No partners yet. <a href="{% url "origin_dashboard" %}">Invite someone.</a>';
+        list.innerHTML = '<p class="no-partners">' + msg + '</p>';
+        list.classList.remove('skeleton');
+        return;
+    }
+
+    partners.forEach(function(p) {
+        var item = document.createElement('div');
+        item.className = 'partner-item';
+        item.innerHTML = [
+        '<span class="partner-id">@' + escapeHTML(p.public_searchable_username) + '</span>',
+        '<span class="partner-streak"><i class="fas fa-fire"></i> ' + p.streak_count + '</span>'
+        ].join('');
+        list.appendChild(item);
+    });
+    list.classList.remove('skeleton');
+    }
+
+    /* ================================================================
+       ZEAL TOOLTIP
+       ================================================================ */
+    function initZealTooltip() {
+      var btn = document.getElementById('zealInfoBtn');
+      var tooltip = document.getElementById('zealTooltip');
+      if (!btn || !tooltip) return;
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        tooltip.classList.toggle('visible');
+      });
+      document.addEventListener('click', function() {
+        tooltip.classList.remove('visible');
+      });
+    }
+
+    /* ================================================================
+       SIDEBAR & MOBILE MENU
+       ================================================================ */
+    function initSidebar() {
+      var sidebar = document.getElementById('sidebar');
+      var toggle = document.getElementById('menuToggle');
+      var overlay = document.createElement('div');
+      overlay.className = 'sidebar-overlay';
+      document.body.appendChild(overlay);
+
+      function open() {
+        sidebar.classList.add('open');
+        overlay.classList.add('visible');
+      }
+      function close() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('visible');
+      }
+
+      toggle.addEventListener('click', function() {
+        sidebar.classList.contains('open') ? close() : open();
+      });
+      overlay.addEventListener('click', close);
+
+      sidebar.querySelectorAll('.nav-item').forEach(function(link) {
+        link.addEventListener('click', function() {
+          if (window.innerWidth < 1024) close();
+        });
+      });
+    }
+
+    function initMenuToggle() {
+      // Already handled in initSidebar
+    }
+
+    /* ================================================================
+       DAILY QUOTE
+       ================================================================ */
+    function initQuote() {
+      var quotes = [
+        "He who conquers himself conquers all.",
+        "Small, consistent actions rewrite who you are.",
+        "Motivation fades. Discipline stays.",
+        "One honest sentence a day is all it takes.",
+        "You've lied to yourself long enough. Time to keep your word.",
+        "No audience. No applause. Just you keeping promises to yourself.",
+        "The streak doesn't care about your feelings. It just counts.",
+        "Winning the morning wins the day.",
+        "You can't think your way into discipline. You act your way into it.",
+        "Champions don't wait for the mood. They build the habit."
+      ];
+      var dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+      var quote = quotes[dayOfYear % quotes.length];
+      document.getElementById('quoteText').textContent = '"' + quote + '"';
+    }
+
+    /* ================================================================
+       LOGOUT
+       ================================================================ */
+    function initLogout() {
+      var btn = document.getElementById('logoutBtn');
+      if (!btn) return;
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        fetch("{% url 'origin_logout_active_user' %}", {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') }
+        }).then(function() {
+          window.location.href = "{% url 'origin_login' %}";
+        });
+      });
+    }
+
+    /* ================================================================
+       PARTICLE BACKGROUND
+       ================================================================ */
+    function initParticles() {
+      var canvas = document.getElementById('particleCanvas');
+      if (!canvas) return;
+      // Heavy CSS will style the canvas; expand later if needed.
+    }
+
+    /* ================================================================
+       PRINT / SHARE
+       ================================================================ */
+    function initPrintShare() {
+      document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.share-commit-btn');
+        if (btn) {
+          var url = btn.dataset.url;
+          if (navigator.share) {
+            navigator.share({ title: 'My Commitment', url: url });
+          } else {
+            navigator.clipboard.writeText(url).then(function() {
+              alert('Link copied!');
+            });
+          }
+        }
+        var printBtn = e.target.closest('.print-commit-btn');
+        if (printBtn) {
+          window.open(printBtn.dataset.url + '?print=1', '_blank');
+        }
+      });
+    }
+
+    /* ================================================================
+       RETRY BUTTONS
+       ================================================================ */
+    document.addEventListener('click', function(e) {
+      if (e.target.id === 'retryCommitments') loadCommitments();
+      if (e.target.id === 'retryHeatmap') loadHeatmap();
+      if (e.target.id === 'retryPartners') loadPartners();
+    });
+
+    // Zeal ring is pre-filled from server-rendered value; you can also update later.
+  })();
+  </script>
+</body>
+</html>

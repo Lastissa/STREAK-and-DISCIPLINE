@@ -30,7 +30,16 @@ urlpatterns = [
     path('message/', views.LogoutUI.as_view(), name = 'origin_logout'),
     
     path('debug/test-search/', views.TestSearch.as_view(), name='test_search'),
-     path('debug/logout/', views.Logout.as_view(), name = 'origin_logout_active_user'),
+    path('debug/logout/', views.Logout.as_view(), name = 'origin_logout_active_user'),
+    
+    path('user_commitment_data/', views.CommitmentData.as_view(), name = "origin_commitmnet_data"),
+    path('user_picture_data/', views.UserPicture.as_view(), name = "origin_user_picture"),
+    path('user_partner_widget/', views.PartnerWidget.as_view(), name = "origin_parner_widget"),
+    path('user_heat_map/', views.HeatMap.as_view(), name = "origin_user_HeatMap"),
+    path('user_commitment_data/', views.CommitmentData.as_view(), name = "get_commitment_data"),
+
+
+
 ]
 
 

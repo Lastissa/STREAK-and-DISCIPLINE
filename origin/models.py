@@ -86,8 +86,6 @@ class PasswordResetToken(models.Model):
     def __str__(self):
         return "PasswordResetToken"
     
-    
-
 
 
 #This hold the user profile as details that can be shared or does not depepnds on security
@@ -109,7 +107,7 @@ class Profile(models.Model):
     
     
     def __str__(self):
-        return "Profile"
+        return self.user.email
 
 
 

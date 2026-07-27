@@ -193,7 +193,7 @@ class DbSave(LoginRequiredMixin,View):
             if social_mode_settings.strip().lower() == "partner":
                 helper = helper_with_friendship_request_answer(request=request, to_user=social_friend_user_id.strip())
                 #so the issue can be returned succesdully
-                if helper is not None: return helper_with_friendship_request_answer
+                if helper is not None: return helper
                 
         return JsonResponse({'message' : 'success'}, status = 200)
 
@@ -286,12 +286,17 @@ class Dashboard(LoginRequiredMixin, View):
         # "mood_last": "motivated"
         # }
         
-        
+        user_profile = Profile.objects.filter(user = request.user).order_by('tier').first()
         data = {
             'commitment_list' :[{'name' : '', 'due_today': bool, 'streak' : int}],#list of commitment name and wether they are due
-            'tier' : '',                                                                 #Hold usr current tier
-            'Upcoming_milestone': int
+            'tier' : user_profile.tier,                                                                 #Hold usr current tier
+            'Upcoming_milestone': 7,
+            'display_name' : 'IA',
+            'public_searchable_username ' : user_profile.public_searchable_username,
+            'zeal_score' : user_profile.zeal_score
+            
         }
+        return render(request, 'html/dashboard.html', data)
 #         profile_istance = Profile.objects.filter(user = request.user).first()
 #         Commitment_istance = Commitment.objects.filter(user = request.user).all()
 #         partner_request_received = Friendship.objects.filter(to_user = request.user).all()
@@ -490,3 +495,60 @@ class LogoutUI(View):
     
     
 #PURE JSON
+class CommitmentData(LoginRequiredMixin, View):
+    def get(self, request):
+        commitment_istance = Commitment.objects.filter(user = request.user).all()
+        if not commitment_istance.exists(): data = [
+            {
+                'id' : 0,
+                "what": None,
+                "category": None,
+                "streak_count": 0,
+                "checkin_time": "21:00",
+                "checked_in_today": False,
+                "goal_days": 365,
+                "days_since_start": 0,
+            }
+        ]
+        else:data = [
+            {
+                'id' : i.pk,
+                "what": i.what,
+                "category": i.category,
+                "streak_count": i.streak_count,
+                "checkin_time": i.checkin_time,
+                "checked_in_today": (i.last_check_in is not None and i.last_check_in.date() == timezone.now().date()),
+                "goal_days": i.goal_days,
+                "days_since_start": (timezone.now().date() - i.created_at.date()).days,
+            }
+            for i in commitment_istance 
+            ]
+        return JsonResponse({'commitments' : data, 'message': 'ok'}, status = 200)
+
+class UserPicture(LoginRequiredMixin, View):
+    def get(self, request):
+        return JsonResponse({'message': "in p"}, status = 500)
+    
+class PartnerWidget(LoginRequiredMixin, View):
+    def get(self, request):
+        profile_istance = Profile.objects.filter(user = request.user).first()
+        if profile_istance.social_mode == 'solo':
+            return JsonResponse({'partners': [], 'message':  'You are in solo mode. Switch to partner mode in Settings to see your partners.'})
+        else:
+            partner_istance = Friendship.objects.filter(to_user = request.user, status = 'accepted')
+            data = [
+                {
+                    "public_searchable_username": "Fom user userid",
+                    "streak_count": "From user streak count"
+                }
+                for i in  partner_istance
+            ]
+            return JsonResponse({'partners': data})
+class HeatMap(LoginRequiredMixin, View):
+    def get(self, request):
+        data = {
+        "message": "ok",
+        "heatmap": [1, 0, 1, 1, 0, 0, 1, 5, 1, 5, 0, 1, 2, 4, 3, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1]
+        }
+        return JsonResponse({**data}, status = 200)
+        
