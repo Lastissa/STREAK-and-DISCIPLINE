@@ -345,7 +345,7 @@
         }).catch(function() {
           searchBtn.classList.remove('loading');
           searchBtn.disabled = false;
-          document.getElementById('stateErrMsg').textContent = 'Request timed out. Try again.';
+          document.getElementById('stateErrMsg').textContent = 'Request timed out. Are you logged in?';
           show('stateError');
         });
       });

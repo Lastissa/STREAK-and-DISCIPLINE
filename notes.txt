@@ -1,0 +1,91 @@
+you are a frontend enginner rn, 
+
+a dashboard
+this dashboard has to be very unique , since this is the dashboard(the most visited aspect of a website), its ideal not to bloat it with too much information but it also need have user interface that verybeutiful so i think(give a bettr alternative if you have) the page should be mostly blank on fist load anf only start getting filled up after spinner.html have finished, any data that is not available yet should be on high phsics skeleton, 
+
+what i will suggest at first is that the commitments should not be visible here(use skeletan physics to placehold this and then send  a get get request to an endpoint called get_commitment_data/, the endpoint will return a list with multiple dictionary, you can speficy exact data you need , i will provide them in the endpoint, nb; this is a quick overview, on pressing each commitment open them up in another url as per django if will be used to have passed their url right from page load,)
+
+also the nav bar should be synonymous to my normal regula nav bar that wont load at first too, the js is going to be doing a lot of heavy work cos most things wont load at first, also i should have two css, one that is lighweight and load initially so page can load fast and when page load finish, the heavier css contaiing our realsitic site physcis and well motionand layout with user captivating automatic motion movement should load up, 
+
+if the get_commitment_data/ fails to return a list of dictionary that match needed data, give user  a way to refresh that fetching the data, also dont leave user in the dark(bad UX, any endpoint that return a json, expect the endpoint to alwasy include a message key for hint on what happened),
+also the zeal score should show and use should be able to know what diff is zeal score from commitment streak score(zeal score is calculating user commitments for evaluation)
+also the page should have a share commitment and print(like the demo-weekly.html and rich css)
+no carton ui, all production level realistic user interface, also, after page load, user profile picture should be at the place app icon would have been, this picture too should send a request to "/get_user_pictire/" with lazy loading and on error, a default free very small sized publix url should b used
+
+
+NB: FIRST TIME LOAD SHOULD BE AS FAST AS POSSILBLE, AT LEAST THE BACKGROUND and THE SPINNER.html (the one in my reusables) SHOULD BE VERY FAST
+also, i will pass inside my django render currnet tier of user as 'tier' 
+an aisde should be available for setting(in mobile since the nav bar already in aside, the content of the desktop aside should be in mobile aside , )
+Aside content
+
+* profile(a link to /profile/)
+* group(a url for viewing and crearing group)
+* leaderboard and blog(our official page for something new and leaderboard)
+* leave space for me to add more items later incase i want to add 
+
+* customer support email and phone via whatsapp
+* logout at the very bottn
+
+the aside should be scrollable so it can contain lots of content 
+
+first tell me what other items / component can/should be added more as i am out of ideas but the group/ leaderboard and commitment real data and to commit data cannot stay here cos of latency
+
+extra component that will also speak to endpoint to get data
+* Today's status banner - the amount of commitment  done today(directly inside the html cos it need to show )
+* al progress arc	Per commitment: days_since_start / goal_days as a ring. Beautiful and motivating
+* Zeal score explainer	Users won't know what it is. Tap-to-expand tooltip: "Zeal = active commitments × average streak"
+* Zeal score explainer	Users won't know what it is. Tap-to-expand tooltip: "Zeal = active commitments × average streak"(hit the endpoint /heatmap/ for the data param u need , note data should not be too heavy)
+* Daily discipline quote	Array of quotes bundled in JS, zero network cost, rotates daily. Adds character and fills dead space while skeletons load
+* Component	Why	Load tier
+"Check in today" FAB	Most important action on the whole app — floating button, always visible	Instant (structure only)
+Today's status banner	"2 of 3 commitments checked in today" — high urgency, fast scan	Derived from Tier 1 data
+Goal progress arc	Per commitment: days_since_start / goal_days as a ring. Beautiful and motivating	Tier 1
+Zeal score explainer	Users won't know what it is. Tap-to-expand tooltip: "Zeal = active commitments × average streak"	Instant, pure JS
+Mini 30-day heat map	Aggregate across ALL commitments — one coloured grid showing consistency. Can be passed in Django context	Tier 0 or Tier 1
+Daily discipline quote	Array of quotes bundled in JS, zero network cost, rotates daily. Adds character and fills dead space while skeletons load	Instant
+Partner streak widget	If social_mode = partner, show partner's streak count (not entries). Small, non-intrusive(hit endpoint/partner-widget to get data , nb: since some tier can have more than one partner, be expecting a list of maps and loop through each to create the widget, )
+
+NB: USER PRIVACY IS KEY SO FOR ANYTHING REGARFING OTHERS SEEING USER STUFF, THE USERID(public_searchable_username) WILL BE THE NAME TO DISPLAY
+
+* Upgrade CTA	If tier = free, a subtle non-annoying persistent card. Revenue matters
+* Mini mood trend	Last 7 days' mood as a tiny sparkline – gives an emotional anchor without a full report.(i will pass emoji directly but if you feel they shoul move to commitment page then skip this since user can have lot of commitment open at once and last seven days emoji on dashboard is redundant cos it wont be accurate)
+* Upcoming milestone	"3 days until 100!" – builds anticipation.(added directly in django render view as 'Upcoming_milestone' mapped unto a int value)
+* Quick-add commitment	A subtle "+" button near the commitment list so users can start a new vow without diving into(this is a way for the user to open the note to commit directly, its not done by dasboard, istead it redirect to commitment page and auto opens the add note btn)
+* populate the aside more so user can have a more customizable dashboard feel but you know some thing can only be done inside here and others inside another page,
+* 
+OPTIMIZATION ACHITECURAL
+* Your "page blank until spinner done" approach is right but I'd refine it:
+
+Background + nav shell → paints in <50ms (critical CSS only, inline in <style>)
+
+the check in action should strickyl be done by the commitment page and not the dashboard page
+
+NB: Using cartoon or child like icons is not alloewed, this project is not a play project
+NB: ALMOST ALL THE COMPONENT YOU WILL USE SHOULD GET THEIR DATA VIA REQUESTS TO ENDPOINTS AND EACH TO ASK ABUNDANTLY FOR WHAT IT NEED, I WILL PROVIDE IT
+
+#aside page
+
+[ Avatar + name + tier badge ]      ← top of aside
+
+  ○ Profile                → /profile/
+  ○ My Commitments         → /commitments/
+  ○ Groups                 → /groups/
+  ○ Leaderboard            → /leaderboard/
+  ○ Analytics & Reports    → /reports/          ← your weekly report page
+  ○ AI Insights            → /insights/         ← if ai_insight_active
+  
+  — — — — — — — — — — — — —
+  
+  [ Upgrade to Pro ]                ← only if tier = free, styled as a banner not a button
+  
+  — — — — — — — — — — — — —
+  
+  ○ Blog / Updates         → /blog/
+  
+  [ SUPPORT ]
+  ○ WhatsApp               → wa.me/...
+  ○ Email support
+  
+  — — — — — — — — — — — — —
+
+  ○ Logout                            ← sticky bottom

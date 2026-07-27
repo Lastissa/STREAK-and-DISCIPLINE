@@ -7,33 +7,30 @@ import logging
 
 urlpatterns = [
     path('', views.OriginHome.as_view(),name='origin_home'),
+    
+    path('db_save', views.DbSave.as_view(), name = "origin_database"),
     path('redirect_url/<str:raw_url>/', views.RedirectHandler.as_view(), name='origin_redirect_handler'),
     path('in-progress/', views.InProgress.as_view(), name = 'in_progess'),
     
+    path('onboarding/', views.Onboarding.as_view(),name='origin_onboarding'),
     path('dashboard/', views.Dashboard.as_view(), name = 'origin_dashboard'),
     path('dashboard/settings/', views.Dashboard.as_view(), name = 'origin_settings'),
     path('dashboard/settings/', views.Dashboard.as_view(), name = 'origin_personal_data'),
-    
-    path('debug/test-search/', views.TestSearch.as_view(), name='test_search'),
         
     path('extra/', views.Extras.as_view(),name='origin_extra'),
+    path('weekly-analysis/', views.Reports.as_view(),name='origin_weekly_analysis'),
     path('login/', views.Login.as_view(),name='origin_login'),
     path('signup/', views.Signup.as_view(),name='origin_signup'),
-    
-    
     path('password-reset/', views.PasswordReset.as_view(),name='origin_password_reset'),
     path('password/<str:email>/<str:token>/',views.PasswordValidate.as_view(), name = 'origin_password_reset_validate' ),
-    
-    path('onboarding/', views.Onboarding.as_view(),name='origin_onboarding'),
-    path('db_save', views.DbSave.as_view(), name = "origin_database"),
 
     path('search_friend/', views.SearchFriend.as_view(), name = 'origin_search_friend'),
     path('add_friend/', views.AddFriend.as_view(), name = 'origin_add_friend'),
-
-    path('weekly-analysis/', views.Reports.as_view(),name='origin_weekly_analysis'),
+   
+    path('message/', views.LogoutUI.as_view(), name = 'origin_logout'),
     
-    path('debug/logout/', views.Logout.as_view(), name = 'origin_logout_active_user'),
-    path('message/', views.LogoutUI.as_view(), name = 'origin_logout')
+    path('debug/test-search/', views.TestSearch.as_view(), name='test_search'),
+     path('debug/logout/', views.Logout.as_view(), name = 'origin_logout_active_user'),
 ]
 
 

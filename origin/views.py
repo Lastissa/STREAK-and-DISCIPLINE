@@ -113,23 +113,15 @@ class OriginHome(View):
             'journal_created': get_journal_created_value(),
             'year': get_copyright_year()
         })
+
 #this handle save user data during onboarding 
 class DbSave(LoginRequiredMixin,View):
     def post(self, request):
         data = json.loads(request.body)
-        # for i in data.keys():
-        #     print({i : data[i]})
-        # print(" ")
-        # print(" ")
-
-            
         #first create a unique user id using customeUser username + pk
         user_id = f"{request.user.username}{request.user.id:02d}" 
-        
         #clean data format
-        
         public_searchable_username = user_id
-        
         #commitment
         commitment_data = data['commitment']
         commitment_what = commitment_data['what']                                       #name of the commitment
@@ -137,32 +129,23 @@ class DbSave(LoginRequiredMixin,View):
         commitment_why = commitment_data.get('why')                                     #why user want to make this commitment
         commitment_goal_days = commitment_data['goal_days']                             #total duration to which this commitment can last for ; 0 is forver
         commitment_minimum = commitment_data['minimum']                                 #this is used for analytics to compare user down days, up and normals days
-        
         #time concious
         schedule_data = data['schedule']
         schedule_checkin_time = schedule_data['checkin_time']                           #time user is expected to check in
         schedule_reminder_time = schedule_data['reminder_time']                         #time user schedules to be reminded for checking
         reminder_method = schedule_data['reminder_method']                              #mode of reminder, push , email or whatsapp
         whatsapp_number = schedule_data.get('whatsapp_number')              #incase user choose whatsapp, the number to which we will send reminder
-        
         #evaluating partner prefrences 
         social_data = data['social']
         social_mode_settings = social_data['mode']                                               #Wether user want to share their streak count with others or go solo; the streak core include commitment name(what) and their current streak in that commitment
         social_friend_user_id = social_data.get('friend_uuid', '').strip()                          #incase user choose partner else this should be ''
         leaderboard_opt_in = social_data.get('leaderboard_optin')                       #Wethet user show in weekly dashboard or not (if yes, only user_id and their zeal_score shows and maybe profile pic if they have)
-
-        
-        
         #user prefrence
         preferences_data = data['preferences']
         preferences_theme = preferences_data.get('theme', 'dark').lower().strip()           #to make sure user is alwasy in a particular mode when they login (little details matter)
         allow_preferences_allow_ai_insight = preferences_data.get('ai_insights')            #wether to allow us sened their data anonymously to AI to generate insight for their report prepartion
         allow_preferences_occasional_email = preferences_data['newsletter']                 #wether user want to receive occasional New features , tips, discipline contents
-        
-        
-        
-        
-        
+
         customVal = ChoicesValidatorInModels()
     
         #first; The profile model validation
@@ -181,9 +164,7 @@ class DbSave(LoginRequiredMixin,View):
             to_user_istance = Profile.objects.filter(public_searchable_username__iexact = social_friend_user_id).first()
             print(f'{to_user_istance}')
             if to_user_istance is None: return JsonResponse({'message' : f"user id:'{social_friend_user_id}' does not exist hence your request will be revoked, kindly recheck the userid or switch to solo"}, status = 404)
-        
-        
-        
+
         #if we get here and no issues; all data is valid , create
         with transaction.atomic():
             profile_istance = Profile.objects.create(
@@ -288,70 +269,91 @@ class Reports(View):
 class Dashboard(LoginRequiredMixin, View):
     login_url = '/v1/login/'
     def get(self, request):
-        profile_istance = Profile.objects.filter(user = request.user).first()
-        Commitment_istance = Commitment.objects.filter(user = request.user).all()
-        partner_request_received = Friendship.objects.filter(to_user = request.user).all()
-        friend_request_sent = Friendship.objects.filter(from_user = request.user).all()
-        if partner_request_received is None: partner_list_received = []
-        else: partner_list_received = [{
-                            'from_user': f.from_user.email,
-                            'to_user': f.to_user.email,
-                            'status': f.status,
-                            'created_at': f.created_at.isoformat(),
-                            'updated_at' : f.updated_at.isoformat()
-                        }
-                        for f in partner_request_received] 
-        if friend_request_sent is None: partner_list_sent = []
-        else: partner_list_sent = [{
-                                    'from_user': f.from_user.email,
-                                    'to_user': f.to_user.email,
-                                    'status': f.status,
-                                    'created_at': f.created_at.isoformat(),
-                                    'updated_at' : f.updated_at.isoformat()
-                                }
-                                for f in friend_request_sent] 
+        #COMMITMENT_LIST CLAUDE NEEDS
+        # {
+        # "id": 1,
+        # "url": "/commitment/1/",
+        # "what": "Read 20 pages",
+        # "category": "study",
+        # "streak_count": 14,
+        # "goal_days": 90,
+        # "days_since_start": 21,
+        # "checked_in_today": false,
+        # "last_check_in": "2025-07-26T21:00:00Z",
+        # "checkin_time": "21:00",
+        # "reminder_active": true,
+        # "is_active": true,
+        # "mood_last": "motivated"
+        # }
         
-        return JsonResponse({
-            'username' : request.user.username,
-            'email' : request.user.email,
-            'last_login' : request.user.last_login,
-            'join_date' : request.user.date_joined,
-            'user_id' : profile_istance.public_searchable_username,
-            'profile_istance' : {
-                        'tier': profile_istance.tier,
-                        'public_searchable_username': profile_istance.public_searchable_username,
-                        'leaderboard_optin': profile_istance.leaderboard_optin,
-                        'streak_count_is_public_visible': profile_istance.streak_count_is_public_visible,
-                        'ai_insight_active': profile_istance.ai_insight_active,
-                        'receive_newsletter': profile_istance.receive_newsletter,
-                        'theme': profile_istance.theme,
-                        'weekly_report_email_active': profile_istance.weekly_report_email_active,
-                        'custom_report_email_active': profile_istance.custom_report_email_active,
-                        'social_mode': profile_istance.social_mode,
-                        'zeal_score': profile_istance.zeal_score,
-},
-            'commitment' : [{
-                            'what': c.what,
-                            'category': c.category,
-                            'why': c.why,
-                            'goal_days': c.goal_days,
-                            'streak_count': c.streak_count,
-                            } for c in Commitment_istance],
-            'friend_request_received' : partner_list_received,
-            'friend_request_sent' : partner_list_sent
-            }, safe=False)
+        
+        data = {
+            'commitment_list' :[{'name' : '', 'due_today': bool, 'streak' : int}],#list of commitment name and wether they are due
+            'tier' : '',                                                                 #Hold usr current tier
+            'Upcoming_milestone': int
+        }
+#         profile_istance = Profile.objects.filter(user = request.user).first()
+#         Commitment_istance = Commitment.objects.filter(user = request.user).all()
+#         partner_request_received = Friendship.objects.filter(to_user = request.user).all()
+#         friend_request_sent = Friendship.objects.filter(from_user = request.user).all()
+#         if partner_request_received is None: partner_list_received = []
+#         else: partner_list_received = [{
+#                             'from_user': f.from_user.email,
+#                             'to_user': f.to_user.email,
+#                             'status': f.status,
+#                             'created_at': f.created_at.isoformat(),
+#                             'updated_at' : f.updated_at.isoformat()
+#                         }
+#                         for f in partner_request_received] 
+#         if friend_request_sent is None: partner_list_sent = []
+#         else: partner_list_sent = [{
+#                                     'from_user': f.from_user.email,
+#                                     'to_user': f.to_user.email,
+#                                     'status': f.status,
+#                                     'created_at': f.created_at.isoformat(),
+#                                     'updated_at' : f.updated_at.isoformat()
+#                                 }
+#                                 for f in friend_request_sent] 
+        
+#         return JsonResponse({
+#             'username' : request.user.username,
+#             'email' : request.user.email,
+#             'last_login' : request.user.last_login,
+#             'join_date' : request.user.date_joined,
+#             'user_id' : profile_istance.public_searchable_username,
+#             'profile_istance' : {
+#                         'tier': profile_istance.tier,
+#                         'public_searchable_username': profile_istance.public_searchable_username,
+#                         'leaderboard_optin': profile_istance.leaderboard_optin,
+#                         'streak_count_is_public_visible': profile_istance.streak_count_is_public_visible,
+#                         'ai_insight_active': profile_istance.ai_insight_active,
+#                         'receive_newsletter': profile_istance.receive_newsletter,
+#                         'theme': profile_istance.theme,
+#                         'weekly_report_email_active': profile_istance.weekly_report_email_active,
+#                         'custom_report_email_active': profile_istance.custom_report_email_active,
+#                         'social_mode': profile_istance.social_mode,
+#                         'zeal_score': profile_istance.zeal_score,
+# },
+#             'commitment' : [{
+#                             'what': c.what,
+#                             'category': c.category,
+#                             'why': c.why,
+#                             'goal_days': c.goal_days,
+#                             'streak_count': c.streak_count,
+#                             } for c in Commitment_istance],
+#             'friend_request_received' : partner_list_received,
+#             'friend_request_sent' : partner_list_sent
+#             }, safe=False)
 
 class Onboarding(LoginRequiredMixin, View):
     login_url = '/v1/login/'
     def get(self, request):
-        print(request.user.username)
         #check user tier, if it does not exist, redirect user to onboarding
         user_profile = Profile.objects.filter(user = request.user).first()
         print(user_profile)
         if user_profile is None: return render(request,'html/onboarding.html')
         else: return redirect('origin_dashboard')
 
-    
 class SearchFriend(LoginRequiredMixin,View):#This one is specifically only for logged in user
     login_url = '/v1/login/'
     def get(self, request): return self.post(request)
@@ -383,15 +385,12 @@ class AddFriend(LoginRequiredMixin, View):
         if req is None: return JsonResponse({'message': 'success, requst resend successfuly'}, status = 200)
         else: return req
 
-        
-        
+
 class TestSearch(View):
-    def get(self, request):
-        return render(request, 'html/test_friend_search.html')
+    def get(self, request):return render(request, 'html/test_friend_search.html')
     
 class InProgress(View):
-    def get(self, request):
-        return render(request, 'reusables/still_in_progress.html')
+    def get(self, request):return render(request, 'reusables/still_in_progress.html')
 
 
 class PasswordReset(View):
@@ -424,10 +423,9 @@ class PasswordReset(View):
         except Exception as e:
             logger.error(msg=f"user {fetched_email} tried to reset password and eperience error  : {e}")
             return JsonResponse({"message" : "Please refresh page and retry again but if message persiste, contact customer support as we might be experiencing internal issue"})
-            
-    def get(self, view):
-        """To show user the password reset link """
-        return render(self.request, 'html/password_reset.html')
+       
+    """To show user the password reset link """     
+    def get(self, view): return render(self.request, 'html/password_reset.html')
 
 class PasswordValidate(View):
     """after the user have click the link and input their new password and confirm the email on their account , password will be reset here"""
@@ -471,18 +469,6 @@ class PasswordValidate(View):
             return redirect('origin_login')
 
         return JsonResponse({'user': email, 'token' : token, 'still_valid' : token_still_valid_in_db is not None, 'token_have_not_expired': token_have_not_expired, 'password1' : request.POST['password1']}, safe=False)
-
-# class UserDashBoard(LoginRequiredMixin, View):
-#     login_url = "/v1/login/"
-#     def get(self, request):
-#         # logout(request)
-#         try:
-#             username_on_user = request.user.username
-#             return JsonResponse({
-#                 'username on account'  :username_on_user,
-#                 'user_type' : str(request.user)
-#             })
-#         except: return {'user type' : 'anonymous'}
         
 """debugging purpose"""
 class Logout(View):
@@ -499,3 +485,8 @@ class LogoutUI(View):
             messages.info('logout success')
         except: return messages.error(request=request, message="Unable to logout , please go back and try again. If error persist, please contact customer support")
         return render('html/full_screen_message.html')
+    
+    
+    
+    
+#PURE JSON
