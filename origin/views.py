@@ -53,6 +53,7 @@ class RedirectHandler(View):
                         
                     #user found, create a session and direct onboarding to handle wether it should direct user to dashboard or stay
                     login(request=request, user=user_istance, backend='django.contrib.auth.backends.ModelBackend')  #i currently have three login style set up, hence why i need to specify which i wan to use
+                    request.session.save() #i had a race condtioning issue bcos the next page(onboarding uses the seesion as soon as it comes) and the redirect url was not havig enough time to store the db and BOOM , site crash ----This fix cos it mean the request must be saved before user is allowto go
                     return redirect('origin_onboarding')
                 else:
                     logger.warning(msg=f"userexist : {user_exist} is false and also user_istance {user_istance} is false")
@@ -352,7 +353,9 @@ class Onboarding(LoginRequiredMixin, View):
         #check user tier, if it does not exist, redirect user to onboarding
         user_profile = Profile.objects.filter(user = request.user).first()
         print(user_profile)
-        if user_profile is None: return render(request,'html/onboarding.html')
+        if user_profile is None:
+            return render(request,'html/onboarding.html')
+            logger.error(msg="User is not suppose to have a profile , if user have a profile, redirect them to dashboard")
         else: return redirect('origin_dashboard')
 
 class SearchFriend(LoginRequiredMixin,View):#This one is specifically only for logged in user
