@@ -1,155 +1,500 @@
-/* ===== DASHBOARD ENGINE CSS =====
-   Heavy / async: glassmorphism, spring physics, 3D tilt,
-   particle canvas, micro‑animations, tooltip polish.
-   Loads AFTER the light CSS — everything here is pure enhancement. */
+/* ================================================================
+   DASHBOARD — ADVANCE CSS  (deferred, non-blocking)
+   Place at: origin/static/cdn/dashboard_advance.css
+   All animations, glassmorphism, spring physics, skeleton shimmer.
+   Loads async. Page is already readable before this arrives.
+   ================================================================ */
 
-/* ---- Spring easing catalogue ---- */
-:root {
-  --spring: cubic-bezier(0.34,1.56,0.64,1);
-  --spring-soft: cubic-bezier(0.22,1,0.36,1);
-  --elastic: cubic-bezier(0.68,-0.55,0.265,1.55);
+/* ---- Spring easing reference ---------------------------------
+   Overshoot spring:   cubic-bezier(0.34,1.56,0.64,1)
+   Fast decelerate:    cubic-bezier(0.22,1,0.36,1)
+   Elastic snap:       cubic-bezier(0.68,-0.55,0.265,1.55)
+   Heavy settle:       cubic-bezier(0.16,1,0.3,1)
+----------------------------------------------------------------- */
+
+/* ================================================================
+   SKELETON SHIMMER
+   ================================================================ */
+@keyframes skShimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
 }
 
-/* ---- Background atmosphere ---- */
-body {
+.sk {
+  background: linear-gradient(
+    90deg,
+    var(--surf)  0%,
+    var(--surf3) 40%,
+    var(--edgeL) 50%,
+    var(--surf3) 60%,
+    var(--surf)  100%
+  );
+  background-size: 800px 100%;
+  animation: skShimmer 1.6s ease-in-out infinite;
+}
+
+/* Skeleton card gets a border glow too */
+.sk-card .sk { animation: skShimmer 1.6s ease-in-out infinite; }
+
+/* ================================================================
+   BACKGROUND ATMOSPHERE
+   ================================================================ */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(ellipse 800px 500px at 20% 0%, rgba(59,130,246,0.06), transparent 60%),
-    radial-gradient(ellipse 600px 400px at 80% 100%, rgba(96,165,250,0.04), transparent 55%),
-    var(--bg);
+    radial-gradient(ellipse 900px 700px at 15% 85%, rgba(59,130,246,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 600px 500px at 85% 10%, rgba(129,140,248,0.04) 0%, transparent 55%),
+    radial-gradient(ellipse 400px 300px at 50% 50%, rgba(167,139,250,0.02) 0%, transparent 50%);
+  animation: bgBreath 20s ease-in-out infinite alternate;
+}
+@keyframes bgBreath {
+  0%   { opacity: 0.7; transform: scale(1); }
+  100% { opacity: 1;   transform: scale(1.05); }
 }
 
-/* ---- Particle canvas ---- */
-#particleCanvas {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
+body.sd-light::before { display: none; }
+
+/* ================================================================
+   GLASSMORPHISM  —  layered on top of light CSS base styles
+   ================================================================ */
+.db-aside {
+  background: rgba(13,20,33,0.9);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border-right: 1px solid rgba(42,61,86,0.6);
+  box-shadow: 4px 0 32px rgba(0,0,0,0.25);
+}
+body.sd-light .db-aside {
+  background: rgba(255,255,255,0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 4px 0 24px rgba(0,0,0,0.07);
+}
+
+.db-header {
+  background: rgba(6,11,20,0.88);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  box-shadow: 0 1px 0 rgba(42,61,86,0.5), 0 4px 24px rgba(0,0,0,0.2);
+}
+body.sd-light .db-header {
+  background: rgba(248,250,252,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 1px 0 rgba(203,213,225,0.8), 0 2px 12px rgba(0,0,0,0.04);
+}
+
+/* ================================================================
+   ASIDE SLIDE & NAV SPRING PHYSICS
+   ================================================================ */
+.db-aside {
+  transition: transform 0.4s cubic-bezier(0.22,1,0.36,1),
+              box-shadow 0.4s ease;
+}
+.db-aside.open {
+  box-shadow: 8px 0 48px rgba(0,0,0,0.45);
+}
+
+.aside-link {
+  transition: color 0.18s ease, background 0.18s ease,
+              border-color 0.18s ease, transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
+}
+.aside-link:hover { transform: translateX(3px); }
+
+/* Aside avatar reveal */
+@keyframes avatarReveal {
+  from { opacity:0; transform: scale(0.8); }
+  60%  { opacity:1; transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+.aside-avatar-wrap img.loaded { animation: avatarReveal 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ================================================================
+   HEADER
+   ================================================================ */
+@keyframes hdrSlideDown {
+  from { opacity:0; transform: translateY(-100%); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.db-header { animation: hdrSlideDown 0.45s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* Header avatar spring */
+.hdr-avatar {
+  transition: box-shadow 0.3s cubic-bezier(0.34,1.56,0.64,1),
+              transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.hdr-avatar:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 3px var(--acc);
+}
+
+/* Rotating quote ticker */
+@keyframes quoteTicker {
+  0%   { opacity:0; transform: translateY(8px); }
+  15%  { opacity:1; transform: translateY(0); }
+  85%  { opacity:1; transform: translateY(0); }
+  100% { opacity:0; transform: translateY(-8px); }
+}
+.hdr-quote.tick { animation: quoteTicker 6s ease-in-out forwards; }
+
+/* ================================================================
+   GREETING ENTRANCE
+   ================================================================ */
+@keyframes greetIn {
+  from { opacity:0; transform: translateY(20px); }
+  60%  { opacity:1; transform: translateY(-2px); }
+  100% { transform: translateY(0); }
+}
+.db-greeting-time { animation: greetIn 0.5s 0.1s cubic-bezier(0.22,1,0.36,1) both; }
+.db-greeting-text { animation: greetIn 0.6s 0.2s cubic-bezier(0.22,1,0.36,1) both; }
+.db-greeting-sub  { animation: greetIn 0.5s 0.34s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ================================================================
+   STAT CARDS  — spring entrance + hover 3D tilt
+   ================================================================ */
+@keyframes statCardIn {
+  from { opacity:0; transform: translateY(28px) scale(0.92); }
+  65%  { opacity:1; transform: translateY(-4px) scale(1.01); }
+  100% { transform: translateY(0) scale(1); }
+}
+.db-stats .stat-card:nth-child(1) { animation: statCardIn 0.55s 0.3s cubic-bezier(0.22,1,0.36,1) both; }
+.db-stats .stat-card:nth-child(2) { animation: statCardIn 0.55s 0.42s cubic-bezier(0.22,1,0.36,1) both; }
+.db-stats .stat-card:nth-child(3) { animation: statCardIn 0.55s 0.54s cubic-bezier(0.22,1,0.36,1) both; }
+
+.stat-card {
+  transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.32s cubic-bezier(0.22,1,0.36,1),
+              border-color 0.2s ease;
+}
+.stat-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.28);
+  border-color: var(--edgeL);
+}
+.stat-card.zeal:hover { box-shadow: 0 12px 32px var(--glow); border-color: rgba(59,130,246,0.4); }
+
+/* Accent bar on hover */
+.stat-card::before {
+  content: '';
+  position: absolute; top:0; left:0; right:0; height:2px;
+  background: var(--acc); transform: scaleX(0); transform-origin: left;
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  border-radius: 2px 2px 0 0;
+}
+.stat-card:hover::before { transform: scaleX(1); }
+
+/* Box shadow upgrade */
+.stat-card {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+
+/* ================================================================
+   STATUS BANNER ENTRANCE
+   ================================================================ */
+@keyframes bannerSlide {
+  from { opacity:0; transform: translateX(-16px); }
+  to   { opacity:1; transform: translateX(0); }
+}
+.db-status { animation: bannerSlide 0.4s 0.65s cubic-bezier(0.22,1,0.36,1) both; }
+.db-status {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+}
+.db-status:hover { border-color: var(--edgeL); box-shadow: 0 4px 18px rgba(0,0,0,0.18); }
+
+/* ================================================================
+   MILESTONE CARD
+   ================================================================ */
+@keyframes milestoneIn {
+  from { opacity:0; transform: translateX(-12px); }
+  to   { opacity:1; transform: translateX(0); }
+}
+.db-milestone { animation: milestoneIn 0.4s 0.75s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* Glowing left border pulse */
+.db-milestone::before {
+  content: '';
+  position: absolute; left: -1px; top:0; bottom:0; width: 3px;
+  background: var(--acc);
+  animation: milestonePulse 3s ease-in-out infinite;
+  border-radius: 3px 0 0 3px;
+}
+.db-milestone { position: relative; }
+@keyframes milestonePulse {
+  0%,100% { box-shadow: none; }
+  50%      { box-shadow: 0 0 12px var(--glow); }
+}
+
+/* ================================================================
+   HEATMAP
+   ================================================================ */
+@keyframes hmIn {
+  from { opacity:0; transform: translateY(16px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.db-heatmap-wrap { animation: hmIn 0.45s 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+
+.hm-cell {
+  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.2s ease;
+}
+.hm-cell:hover {
+  transform: scale(1.5);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  z-index: 1; position: relative;
+}
+.hm-cell.today { box-shadow: 0 0 0 2px var(--accL); }
+
+/* Cell entrance stagger via JS adding .hm-reveal class */
+@keyframes cellReveal {
+  from { opacity:0; transform: scale(0.5); }
+  to   { opacity:1; transform: scale(1); }
+}
+.hm-cell.hm-reveal { animation: cellReveal 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+/* ================================================================
+   COMMITMENT CARDS  — production-level
+   ================================================================ */
+@keyframes commitIn {
+  from { opacity:0; transform: translateY(32px) scale(0.93); }
+  60%  { opacity:1; transform: translateY(-4px) scale(1.01); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+.commit-card {
+  transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.32s cubic-bezier(0.22,1,0.36,1),
+              border-color 0.2s ease;
+  box-shadow: 0 2px 14px rgba(0,0,0,0.12);
+  will-change: transform;
+}
+.commit-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.28);
+  border-color: var(--edgeL);
+}
+.commit-card:active { transform: translateY(-2px) scale(0.99); transition-duration: 0.1s; }
+
+/* Checked-in shimmer on card */
+.commit-card.checked-today {
+  border-color: rgba(34,197,94,0.35);
+}
+.commit-card.checked-today::after {
+  content: '';
+  position: absolute; inset:0; border-radius: inherit;
+  background: linear-gradient(135deg, rgba(34,197,94,0.04) 0%, transparent 60%);
   pointer-events: none;
-  opacity: 0.6;
 }
 
-/* ---- Sidebar (glass) ---- */
-.sidebar {
-  background: rgba(10,14,23,0.85);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  box-shadow: 2px 0 40px rgba(0,0,0,0.4);
-  transition: transform 0.4s var(--spring-soft);
+/* Arrow reveal on hover */
+.commit-arrow {
+  position: absolute; right: 1rem; bottom: 1rem;
+  font-size: 0.75rem; color: var(--ink3);
+  opacity: 0; transform: translateX(-6px);
+  transition: opacity 0.2s ease, transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
+}
+.commit-card:hover .commit-arrow {
+  opacity: 1; transform: translateX(0);
 }
 
-/* ---- Topbar (glass) ---- */
-.topbar {
-  background: rgba(10,14,23,0.72);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+/* Category icon colours */
+.commit-cat-icon.fitness  { background:rgba(239,68,68,0.12);   color:#f87171 }
+.commit-cat-icon.study    { background:rgba(59,130,246,0.12);  color:var(--accL) }
+.commit-cat-icon.work     { background:rgba(245,158,11,0.12);  color:#fbbf24 }
+.commit-cat-icon.health   { background:rgba(34,197,94,0.12);   color:#4ade80 }
+.commit-cat-icon.mindset  { background:rgba(167,139,250,0.12); color:#c4b5fd }
+.commit-cat-icon.other    { background:rgba(148,163,184,0.12); color:var(--ink2) }
+
+/* Progress ring arc colours per category */
+.commit-card.fitness  .ring-arc { stroke: #f87171 }
+.commit-card.study    .ring-arc { stroke: var(--accL) }
+.commit-card.work     .ring-arc { stroke: #fbbf24 }
+.commit-card.health   .ring-arc { stroke: #4ade80 }
+.commit-card.mindset  .ring-arc { stroke: #c4b5fd }
+
+/* "No commitments" empty state */
+.commit-empty {
+  text-align:center; padding: 2.5rem 1rem;
+  border: 1px dashed var(--edgeL); border-radius: var(--rL);
+}
+.commit-empty i { font-size:2rem; color:var(--ink3); margin-bottom:0.75rem; display:block; }
+.commit-empty h4 { font-size:0.9rem; margin-bottom:0.4rem; }
+.commit-empty p  { font-size:0.78rem; color:var(--ink2); margin-bottom:1rem; line-height:1.6; }
+
+/* ================================================================
+   PARTNER WIDGET
+   ================================================================ */
+@keyframes partnerIn {
+  from { opacity:0; transform: translateX(-12px); }
+  to   { opacity:1; transform: translateX(0); }
 }
 
-/* ---- Cards (glass hover) ---- */
-.card {
-  transition: transform 0.35s var(--spring), box-shadow 0.35s var(--spring-soft), border-color 0.3s;
-  position: relative;
-  overflow: hidden;
+.partner-card {
+  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.28s ease, border-color 0.2s ease;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 0 1px rgba(59,130,246,0.15);
-  border-color: var(--accent);
-}
-
-/* ---- Commitment cards (3D tilt) ---- */
-.commitment-card {
-  transition: transform 0.4s var(--spring), box-shadow 0.4s var(--spring-soft), background 0.2s;
-  transform-style: preserve-3d;
-  perspective: 800px;
-}
-.commitment-card:hover {
-  transform: translateY(-6px) rotateX(2deg) rotateY(-2deg) scale(1.01);
-  box-shadow: 0 25px 60px rgba(0,0,0,0.45);
-  background: var(--surface);
-  border-color: rgba(59,130,246,0.3);
-}
-
-/* ---- Zeal ring (animated gradient) ---- */
-.zeal-ring {
-  transition: background 0.5s var(--spring-soft);
-  box-shadow: 0 0 20px rgba(59,130,246,0.2);
-}
-.zeal-ring:hover {
-  box-shadow: 0 0 35px rgba(59,130,246,0.4);
-}
-
-/* ---- Status banner (pulse when all done) ---- */
-.status-banner.all-done {
-  animation: statusGlow 2s ease-in-out infinite;
-}
-@keyframes statusGlow {
-  0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.15); }
-  50%     { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
-}
-
-/* ---- Heatmap (pop on hover) ---- */
-.heatmap-cell {
-  transition: transform 0.2s var(--spring), box-shadow 0.2s;
-}
-.heatmap-cell:hover {
-  transform: scale(1.3);
-  box-shadow: 0 0 8px rgba(59,130,246,0.5);
-  z-index: 1;
-}
-
-/* ---- Partner item (subtle hover) ---- */
-.partner-item {
-  transition: transform 0.3s var(--spring), background 0.2s;
-}
-.partner-item:hover {
+.partner-card:hover {
   transform: translateX(4px);
-  background: rgba(59,130,246,0.06);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  border-color: var(--edgeL);
 }
 
-/* ---- Sidebar avatar (ring gradient) ---- */
-.avatar-wrapper {
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px rgba(59,130,246,0.4);
+.partner-status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--ok); flex-shrink:0;
+  box-shadow: 0 0 6px rgba(34,197,94,0.5);
+  animation: partnerPulse 2s ease-in-out infinite;
+}
+.partner-status-dot.inactive { background:var(--ink3); box-shadow:none; animation:none; }
+@keyframes partnerPulse {
+  0%,100% { box-shadow: 0 0 4px rgba(34,197,94,0.3); }
+  50%      { box-shadow: 0 0 10px rgba(34,197,94,0.6); }
 }
 
-/* ---- Tooltip (spring entrance) ---- */
+/* ================================================================
+   UPGRADE CTA BANNER
+   ================================================================ */
+.aside-upgrade {
+  animation: upgradePulse 4s ease-in-out infinite;
+}
+@keyframes upgradePulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.08); }
+  50%      { box-shadow: 0 0 0 6px rgba(59,130,246,0); }
+}
+
+/* ================================================================
+   FAB  — floating action button spring
+   ================================================================ */
+.db-fab {
+  transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.32s cubic-bezier(0.22,1,0.36,1);
+  animation: fabReveal 0.6s 1.2s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes fabReveal {
+  from { opacity:0; transform: scale(0.5) rotate(-90deg); }
+  70%  { transform: scale(1.1) rotate(5deg); }
+  100% { opacity:1; transform: scale(1) rotate(0deg); }
+}
+.db-fab:hover {
+  transform: scale(1.12) rotate(8deg);
+  box-shadow: 0 8px 28px rgba(59,130,246,0.5);
+}
+.db-fab:active { transform: scale(0.92); transition-duration: 0.1s; }
+
+/* ================================================================
+   SHARE / PRINT MODAL
+   ================================================================ */
+.db-modal-overlay {
+  transition: opacity 0.3s ease;
+}
+@keyframes modalIn {
+  from { opacity:0; transform: scale(0.92) translateY(20px); }
+  60%  { opacity:1; transform: scale(1.01) translateY(-3px); }
+  100% { transform: scale(1) translateY(0); }
+}
+.db-modal-overlay.open .db-modal {
+  animation: modalIn 0.45s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+.db-modal {
+  box-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.04) inset;
+}
+body.sd-light .db-modal {
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+}
+
+.share-opt-btn {
+  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1),
+              opacity 0.18s ease, filter 0.18s ease;
+}
+.share-opt-btn:hover { transform: translateY(-2px); filter: brightness(1.12); }
+.share-opt-btn:active { transform: scale(0.94); }
+
+/* ================================================================
+   ZEAL TOOLTIP
+   ================================================================ */
 .zeal-tooltip {
-  animation: tooltipIn 0.3s var(--spring) both;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 @keyframes tooltipIn {
-  from { opacity: 0; transform: translateY(-6px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity:0; transform: scale(0.88) translateY(6px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+.zeal-tooltip.open { animation: tooltipIn 0.25s cubic-bezier(0.22,1,0.36,1) both; }
+
+.zeal-info {
+  transition: color 0.18s ease, transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.zeal-info:hover { color: var(--accL); transform: scale(1.2); }
+
+/* ================================================================
+   SECTION REVEAL  (JS adds .revealed when data arrives)
+   ================================================================ */
+@keyframes sectionReveal {
+  from { opacity:0; transform: translateY(24px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.db-section-reveal { animation: sectionReveal 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ================================================================
+   COMMITMENT CARD STAGGER  (JS sets --i CSS var per card)
+   ================================================================ */
+.commit-card.stagger {
+  animation: commitIn 0.55s cubic-bezier(0.22,1,0.36,1) both;
+  animation-delay: calc(var(--i, 0) * 0.08s);
 }
 
-/* ---- Skeleton shimmer polish ---- */
-.skeleton::after {
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+/* ================================================================
+   PARTNER CARD STAGGER
+   ================================================================ */
+.partner-card.stagger {
+  animation: partnerIn 0.4s cubic-bezier(0.22,1,0.36,1) both;
+  animation-delay: calc(var(--i, 0) * 0.07s);
 }
 
-/* ---- Buttons spring hover ---- */
-.btn-primary {
-  box-shadow: 0 4px 15px rgba(59,130,246,0.3);
-  transition: transform 0.3s var(--spring), box-shadow 0.3s var(--spring), background 0.2s;
+/* ================================================================
+   BUTTONS  — spring hover
+   ================================================================ */
+.btn {
+  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.28s cubic-bezier(0.22,1,0.36,1),
+              background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 .btn-primary:hover {
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 8px 25px rgba(59,130,246,0.45);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(59,130,246,0.4);
 }
-.btn-primary:active {
-  transform: scale(0.96);
-  transition-duration: 0.1s;
-}
+.btn-primary:active { transform: scale(0.96); transition-duration: 0.08s; }
+.btn-outline:hover  { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.18); }
 
-/* ---- Mobile sidebar (spring slide) ---- */
-@media (max-width: 1023px) {
-  .sidebar.open {
-    transition: transform 0.4s var(--spring-soft);
-  }
+/* ================================================================
+   LIGHT MODE OVERRIDES
+   ================================================================ */
+body.sd-light .stat-card {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
 }
+body.sd-light .commit-card {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+body.sd-light .commit-card:hover {
+  box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+}
+body.sd-light .db-modal {
+  background: rgba(255,255,255,0.97);
+}
+body.sd-light body::before { display: none; }
 
-/* ---- Reduced motion ---- */
+/* ================================================================
+   REDUCED MOTION
+   ================================================================ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-delay:    0ms !important;
     transition-duration: 0.1s !important;
   }
 }

@@ -4,601 +4,1157 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard — STREAK & DISCIPLINE</title>
   <meta name="robots" content="noindex, nofollow">
+  <title>Dashboard — STREAK &amp; DISCIPLINE</title>
 
-  {# Critical inline: background + spinner ONLY. Nothing else blocks first paint. #}
+  <!-- Font Awesome (local) -->
+  <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
+
+  <!--
+    CRITICAL INLINE STYLES — background + spinner.
+    Paints in <50ms. Nothing blocks the first pixel.
+  -->
   <style>
-    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    :root{--bg:#0a0e17;--surface:#111827;--text:#e2e8f0;--text-secondary:#94a3b8;--accent:#3b82f6;--border:#1e293b;--radius:12px;--font:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
-    body{background:var(--bg);font-family:var(--font);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
     {% include "reusables/spinner.css" %}
-    .dashboard-app{display:none}
-    .dashboard-app.loaded{display:flex;min-height:100vh}
+
+    /* Instant background so page is never white */
+    html, body { margin:0; padding:0; background:#060b14; }
+    body.sd-light { background:#f0f4fa; }
+
+    /* Hide app shell until JS reveals it */
+    .db-app { opacity:0; visibility:hidden; transition:opacity 0.6s ease, visibility 0.6s ease; }
+    .db-app.db-visible { opacity:1; visibility:visible; }
   </style>
 
-  {# Light CSS: skeletons, typography, grid — blocks but tiny #}
+  <!-- LIGHT CSS: blocking, critical layout only, tiny -->
   <link rel="stylesheet" href="{% static 'css/dashboard_light.css' %}">
 
-  {# Heavy CSS: glass, physics, particles — async, non-blocking #}
+  <!-- ADVANCE CSS: non-blocking, loads after paint -->
   <link rel="preload" href="{% static 'cdn/dashboard_advance.css' %}" as="style"
-        onload="this.onload=null;this.rel='stylesheet';document.documentElement.classList.add('engine-ready')"
-        id="heavy-css">
+        onload="this.onload=null;this.rel='stylesheet'" id="adv-css">
   <noscript><link rel="stylesheet" href="{% static 'cdn/dashboard_advance.css' %}"></noscript>
-
-  {# Font Awesome (icons) #}
-  <link rel="preload" href="{{ font_awesome_all_min_css }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="{{ font_awesome_all_min_css }}"></noscript>
 </head>
-<body>
+<body class="{% if request.COOKIES.sd_theme == 'light' %}sd-light{% endif %}">
 
-  {# Spinner (visible until everything is ready) #}
+  <!-- ====================================================
+       SPINNER — shows instantly, hides after window.load
+       ==================================================== -->
   {% include "reusables/spinner.html" %}
 
-  {# ========== DASHBOARD APP (hidden until JS boots) ========== #}
-  <div class="dashboard-app" id="dashboardApp">
+  <!-- ====================================================
+       APP SHELL — hidden until reveal()
+       ==================================================== -->
+  <div class="db-app" id="dbApp">
 
-    {# Particle canvas (desktop) #}
-    <canvas id="particleCanvas"></canvas>
+    <!-- ================================================
+         MOBILE ASIDE OVERLAY
+         ================================================ -->
+    <div class="aside-overlay" id="asideOverlay"></div>
 
-    {# ========== SIDEBAR (desktop) / OFFCANVAS (mobile) ========== #}
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-scroll">
+    <!-- ================================================
+         ASIDE (left sidebar)
+         ================================================ -->
+    <aside class="db-aside no-print" id="dbAside">
+      <div class="aside-scroll">
 
-        {# Profile area #}
-        <div class="sidebar-profile">
-          <div class="avatar-wrapper skeleton" id="sidebarAvatarWrapper">
-            <img src="" alt="Profile" id="sidebarAvatar" class="avatar-img"
-                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'56\' height=\'56\' viewBox=\'0 0 56 56\'%3E%3Ccircle cx=\'28\' cy=\'28\' r=\'28\' fill=\'%231e293b\'/%3E%3Ccircle cx=\'28\' cy=\'22\' r=\'10\' fill=\'%23475669\'/%3E%3Cellipse cx=\'28\' cy=\'52\' rx=\'18\' ry=\'12\' fill=\'%23475669\'/%3E%3C/svg%3E'">
+        <!-- Top: Avatar + name + tier -->
+        <div class="aside-top">
+          <div class="aside-avatar-wrap" id="asideAvatarWrap">
+            <!-- filled by JS after /get_user_picture/ responds -->
+            <div class="sk sk-circle" style="width:52px;height:52px" id="asideAvatarSk"></div>
           </div>
-          <div class="sidebar-user-info">
-            <span class="sidebar-name skeleton-text" id="sidebarName">{{ display_name|default:request.user.username }}</span>
-            <span class="sidebar-tier badge-tier badge-{{ tier }}" id="sidebarTier">{{ tier }}</span>
-          </div>
+          <div class="aside-username">{{ request.user.username }}</div>
+          <div class="aside-email">{{ request.user.email }}</div>
+          <span class="tier-badge tier-{{ tier|default:'free' }}">
+            {% if tier == 'gold' %}<i class="fas fa-crown"></i> Gold
+            {% elif tier == 'premium' %}<i class="fas fa-gem"></i> Premium
+            {% else %}<i class="fas fa-user"></i> Free{% endif %}
+          </span>
         </div>
 
-        {# Navigation #}
-        <nav class="sidebar-nav">
-          <a href="{% url 'origin_dashboard' %}" class="nav-item active"><i class="fas fa-th-large"></i> Dashboard</a>
-          <a href="/profile/" class="nav-item"><i class="fas fa-user"></i> Profile</a>
-          <a href="/v1/commitments/" class="nav-item"><i class="fas fa-fire"></i> My Commitments</a>
-          <a href="/groups/" class="nav-item"><i class="fas fa-user-group"></i> Groups</a>
-          <a href="/leaderboard/" class="nav-item"><i class="fas fa-trophy"></i> Leaderboard</a>
-          <a href="/blog/" class="nav-item"><i class="fas fa-newspaper"></i> Blog / Updates</a>
-          <a href="{% url 'origin_weekly_analysis' %}" class="nav-item"><i class="fas fa-chart-line"></i> Analytics & Reports</a>
-          {% if tier != 'gold' %}
-          <a href="/insights/" class="nav-item"><i class="fas fa-brain"></i> AI Insights</a>
+        <!-- Nav links -->
+        <nav class="aside-nav" aria-label="Dashboard navigation">
+          <div class="aside-section-lbl">Navigation</div>
+          <a href="/v1/dashboard/" class="aside-link active">
+            <i class="fas fa-gauge-high"></i> Dashboard
+          </a>
+          <a href="/v1/profile/" class="aside-link">
+            <i class="fas fa-circle-user"></i> Profile
+          </a>
+          <a href="/v1/commitments/" class="aside-link">
+            <i class="fas fa-fire-flame-curved"></i> My Commitments
+          </a>
+
+          <div class="aside-section-lbl" style="margin-top:0.5rem">Community</div>
+          <a href="/v1/groups/" class="aside-link">
+            <i class="fas fa-users"></i> Groups
+          </a>
+          <a href="/v1/leaderboard/" class="aside-link">
+            <i class="fas fa-ranking-star"></i> Leaderboard
+          </a>
+          <a href="/v1/blog/" class="aside-link">
+            <i class="fas fa-newspaper"></i> Blog &amp; Updates
+          </a>
+
+          <div class="aside-section-lbl" style="margin-top:0.5rem">Insights</div>
+          <a href="/v1/reports/" class="aside-link">
+            <i class="fas fa-chart-line"></i> Analytics &amp; Reports
+          </a>
+          {% if ai_insight_active %}
+          <a href="/v1/insights/" class="aside-link">
+            <i class="fas fa-microchip"></i> AI Insights
+          </a>
           {% endif %}
-          <div class="nav-divider"></div>
+
+          <!-- ↓ Placeholder for future aside items ↓ -->
+          <!-- Add new links here — they inherit all styles automatically -->
+
+          <hr class="aside-sep">
+
+          <!-- Support -->
+          <div class="aside-support-lbl">Support</div>
+          <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_blank"
+             rel="noopener" class="aside-link">
+            <i class="fab fa-whatsapp"></i> WhatsApp Support
+          </a>
+          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link">
+            <i class="fas fa-envelope"></i> Email Support
+          </a>
+          <a href="tel:{{ customer_care_phone_number }}" class="aside-link">
+            <i class="fas fa-phone"></i> {{ customer_care_phone_number }}
+          </a>
         </nav>
 
-        {# Upgrade CTA (free tier only) #}
-        {% if tier == 'free' %}
-        <div class="upgrade-banner">
-          <i class="fas fa-gem"></i>
-          <span>Upgrade to Pro</span>
-          <p>Unlock 50 commitments, AI insights, and more.</p>
-          <a href="/pricing/" class="btn-upgrade">Upgrade</a>
+        <!-- Upgrade CTA (free tier only) -->
+        {% if tier == 'free' or not tier %}
+        <div class="aside-upgrade">
+          <h4><i class="fas fa-gem"></i> Upgrade to Pro</h4>
+          <p>Unlock AI insights, 50 commitments, custom reports and WhatsApp reminders.</p>
+          <a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm btn-full">
+            Start 7-Day Trial
+          </a>
         </div>
         {% endif %}
 
-        {# Support #}
-        <div class="sidebar-support">
-          <a href="https://wa.me/2347013687825" target="_blank" rel="noopener" class="nav-item"><i class="fab fa-whatsapp"></i> WhatsApp Support</a>
-          <a href="mailto:issaabdulsalamope11@gmail.com" class="nav-item"><i class="fas fa-envelope"></i> Email Support</a>
-        </div>
+      </div><!-- /aside-scroll -->
 
-        {# Logout #}
-        <div class="sidebar-logout">
-          <a href="#" id="logoutBtn" class="nav-item"><i class="fas fa-sign-out-alt"></i> Logout</a>
-        </div>
-
-      </div>
-    </aside>
-
-    {# ========== MAIN CONTENT ========== #}
-    <main class="main-content" id="mainContent">
-
-      {# Top Navbar (mobile toggle + user avatar) #}
-      <header class="topbar" id="topbar">
-        <button class="menu-toggle" id="menuToggle" aria-label="Menu">
-          <span></span><span></span><span></span>
+      <!-- Logout — sticky bottom -->
+      <div class="aside-logout">
+        <button class="aside-logout-btn" id="logoutBtn">
+          <i class="fas fa-right-from-bracket"></i> Log Out
         </button>
-        <div class="topbar-right">
-          <div class="topbar-avatar skeleton" id="topbarAvatarWrapper">
-            <img src="" alt="Profile" id="topbarAvatar" class="avatar-img-small"
-                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\' viewBox=\'0 0 32 32\'%3E%3Ccircle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%231e293b\'/%3E%3Ccircle cx=\'16\' cy=\'13\' r=\'6\' fill=\'%23475669\'/%3E%3Cellipse cx=\'16\' cy=\'28\' rx=\'10\' ry=\'7\' fill=\'%23475669\'/%3E%3C/svg%3E'">
+      </div>
+
+    </aside><!-- /db-aside -->
+
+    <!-- ================================================
+         HEADER
+         ================================================ -->
+    <header class="db-header no-print">
+      <div class="hdr-left">
+        <!-- Profile pic replaces logo after /get_user_picture/ -->
+        <div class="hdr-avatar" id="hdrAvatarWrap" title="Open sidebar">
+          <div class="sk sk-circle" style="width:32px;height:32px" id="hdrAvatarSk"></div>
+        </div>
+        <span class="hdr-brand">STREAK &amp; DISCIPLINE</span>
+      </div>
+
+      <!-- Rotating daily quote -->
+      <div class="hdr-quote" id="hdrQuote" aria-live="polite"></div>
+
+      <div class="hdr-right">
+        <button class="hdr-btn" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
+          <i class="fas fa-moon" id="themeIcon"></i>
+        </button>
+        <button class="hdr-btn" id="shareBtnHdr" title="Share your streak" aria-label="Share">
+          <i class="fas fa-share-nodes"></i>
+        </button>
+        <!-- Mobile hamburger -->
+        <button class="hdr-btn hdr-hamburger" id="hamburgerBtn" aria-label="Open menu">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+    </header><!-- /db-header -->
+
+    <!-- ================================================
+         MAIN CONTENT
+         ================================================ -->
+    <div class="db-wrap">
+      <main class="db-main" id="dbMain">
+
+        <!-- 1. GREETING -->
+        <div class="db-greeting">
+          <div class="db-greeting-time" id="greetTime">—</div>
+          <h1 class="db-greeting-text">
+            <span id="greetWord">Good day</span>,
+            <span style="color:var(--accL)">{{ request.user.username }}</span>
+          </h1>
+          <p class="db-greeting-sub" id="greetSub">
+            {% if Upcoming_milestone %}
+              <i class="fas fa-flag-checkered" style="color:var(--warn)"></i>
+              <strong>{{ Upcoming_milestone }} day{{ Upcoming_milestone|pluralize }}</strong>
+              until your next milestone.
+            {% else %}
+              Every day is a chance to keep your word.
+            {% endif %}
+          </p>
+        </div>
+
+        <!-- 2. STATS ROW (from Django context — instant) -->
+        <div class="db-stats">
+          <!-- Zeal Score -->
+          <div class="stat-card zeal">
+            <span class="stat-icon"><i class="fas fa-bolt-lightning"></i></span>
+            <span class="stat-num" id="zealNum">{{ zeal_score|default:"0" }}</span>
+            <span class="stat-label">Zeal Score</span>
+            <span class="stat-sub">Your discipline index</span>
+            <i class="fas fa-circle-info zeal-info" id="zealInfoBtn" title="What is Zeal Score?"></i>
+          </div>
+          <!-- Consistency -->
+          <div class="stat-card">
+            <span class="stat-icon"><i class="fas fa-chart-pie"></i></span>
+            <span class="stat-num" id="consistNum">{{ consistency_pct|default:"—" }}%</span>
+            <span class="stat-label">Consistency</span>
+            <span class="stat-sub">All-time check-in rate</span>
+          </div>
+          <!-- Total Entries -->
+          <div class="stat-card">
+            <span class="stat-icon"><i class="fas fa-pen-to-square"></i></span>
+            <span class="stat-num" id="entriesNum">{{ total_entries|default:"0" }}</span>
+            <span class="stat-label">Entries</span>
+            <span class="stat-sub">{{ total_active_commitments|default:"0" }} active commitment{{ total_active_commitments|pluralize }}</span>
           </div>
         </div>
-      </header>
 
-      {# Dashboard Grid #}
-      <div class="dashboard-grid">
+        <!-- Zeal score tooltip -->
+        <div class="zeal-tooltip" id="zealTooltip" role="tooltip">
+          <strong>Zeal Score explained</strong>
+          This is your discipline index — calculated across all your active commitments,
+          Formula = Number of commitment * avergae streek
+          <br>e.g your current commitment = '{{total_active_commitments}}'<br>
+           multiplied by your average streak<br>gives  '{{zeal_score}}'<br><br>
+          It's different from a single streak: one commitment at 30 days gives a modest score;
+          three commitments all at 30 days gives a much higher one.
+          <br><br>
+          <em>Streak = per commitment. Zeal = your whole picture.</em>
+        </div>
 
-        {# ---- Zeal Score ---- #}
-        <section class="card zeal-card" id="zealCard">
-          <div class="card-header">
-            <h3>Zeal Score</h3>
-            <button class="info-btn" id="zealInfoBtn" aria-label="What is Zeal?"><i class="fas fa-circle-info"></i></button>
+        <!-- 3. STATUS BANNER (skeleton → real, derived from /heatmap/ response) -->
+        <div class="db-status" id="dbStatusBanner">
+          <div class="sk sk-circle" style="width:10px;height:10px;flex-shrink:0" id="statusSk"></div>
+          <div class="sk sk-text w70" style="height:0.75rem" id="statusTextSk"></div>
+        </div>
+
+        <!-- 4. MILESTONE (from Django context, instant) -->
+        {% if Upcoming_milestone %}
+        <div class="db-milestone">
+          <i class="fas fa-trophy"></i>
+          <span>
+            <strong style="color:var(--accL)">{{ Upcoming_milestone }} day{{ Upcoming_milestone|pluralize }} to go.</strong>
+            You're close to your next milestone — don't break now.
+          </span>
+        </div>
+        {% endif %}
+
+        <!-- 5. 30-DAY HEATMAP -->
+        <div class="db-heatmap-wrap">
+          <div class="db-section-label">
+            <i class="fas fa-calendar-days"></i> 30-Day Consistency
           </div>
-          <div class="zeal-ring-wrapper skeleton" id="zealRingWrapper">
-            <div class="zeal-ring" id="zealRing" style="--zeal:{{ zeal_score|default:0 }}">
-              <span class="zeal-value" id="zealValue">{{ zeal_score|default:0 }}</span>
+          <!-- Skeletons while loading -->
+          <div class="hm-grid" id="hmGrid">
+            {% for i in "1234567890123456789012345678901234" %}
+            <div class="sk hm-cell" style="aspect-ratio:1"></div>
+            {% endfor %}
+          </div>
+          <div class="hm-labels" id="hmLabels">
+            <span id="hmStart">30 days ago</span>
+            <span id="hmEnd">Today</span>
+          </div>
+          <div id="hmError" class="commit-error">
+            <i class="fas fa-exclamation-triangle" style="color:var(--warn);font-size:1.2rem;margin-bottom:0.5rem;display:block"></i>
+            <p id="hmErrorMsg" style="font-size:0.8rem;color:var(--ink2);margin-bottom:0.75rem">Could not load heatmap.</p>
+            <button class="btn btn-outline btn-sm" id="hmRetryBtn">
+              <i class="fas fa-rotate-right"></i> Retry
+            </button>
+          </div>
+        </div>
+
+        <!-- 6. COMMITMENT CARDS (skeleton → lazy fetch) -->
+        <div class="db-commitments">
+          <div class="db-section-label" style="justify-content:space-between">
+            <span><i class="fas fa-fire-flame-curved"></i> Your Commitments</span>
+            <a href="/v1/commitments/?add=true" class="btn btn-outline btn-sm"
+               style="font-size:0.72rem;padding:0.25rem 0.7rem">
+              <i class="fas fa-plus"></i> Add
+            </a>
+          </div>
+
+          <!-- Skeleton cards -->
+          <div class="commit-grid" id="commitGrid">
+            {% for i in "123" %}
+            <div class="sk-card">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
+                <div>
+                  <div class="sk sk-text w50" style="height:0.65rem;margin-bottom:0.4rem"></div>
+                  <div class="sk sk-text w70" style="height:0.9rem"></div>
+                </div>
+                <div class="sk sk-ring"></div>
+              </div>
+              <div class="sk sk-text w100" style="height:0.8rem;margin-bottom:0.35rem"></div>
+              <div class="sk sk-text w60" style="height:0.65rem"></div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <!-- Error / retry state -->
+          <div class="commit-error" id="commitError">
+            <i class="fas fa-circle-exclamation" style="color:var(--bad);font-size:1.5rem;margin-bottom:0.75rem;display:block"></i>
+            <p id="commitErrorMsg" style="font-size:0.82rem;color:var(--ink2);margin-bottom:1rem;line-height:1.5"></p>
+            <button class="btn btn-outline btn-sm" id="commitRetryBtn">
+              <i class="fas fa-rotate-right"></i> Retry loading commitments
+            </button>
+          </div>
+        </div>
+
+        <!-- 7. PARTNER STREAK WIDGET (conditional on social_mode, skeleton → fetch) -->
+        {% if social_mode == 'partner' %}
+        <div class="db-partners" id="dbPartners">
+          <div class="db-section-label">
+            <i class="fas fa-user-group"></i> Accountability Partners
+          </div>
+          <div class="partner-list" id="partnerList">
+            <!-- Skeleton -->
+            <div class="sk-card" style="display:flex;align-items:center;gap:0.75rem">
+              <div class="sk sk-circle" style="width:32px;height:32px"></div>
+              <div style="flex:1">
+                <div class="sk sk-text w40" style="height:0.75rem;margin-bottom:0.3rem"></div>
+                <div class="sk sk-text w25" style="height:0.65rem"></div>
+              </div>
             </div>
           </div>
-          <p class="zeal-label">Fire across all commitments</p>
-          <div class="zeal-tooltip" id="zealTooltip">
-            Zeal = (active commitments) × (average streak).<br>It measures your overall discipline intensity.
+          <div class="commit-error" id="partnerError">
+            <p id="partnerErrorMsg" style="font-size:0.8rem;color:var(--ink2);margin-bottom:0.5rem"></p>
+            <button class="btn btn-outline btn-sm" id="partnerRetryBtn">
+              <i class="fas fa-rotate-right"></i> Retry
+            </button>
           </div>
-        </section>
+        </div>
+        {% endif %}
 
-        {# ---- Today's Status ---- #}
-        <section class="card status-card" id="statusCard">
-          <div class="card-header">
-            <h3>Today's Check‑ins</h3>
-          </div>
-          <div class="status-banner skeleton" id="statusBanner">
-            <span id="statusText">Loading...</span>
-          </div>
-          {% if upcoming_milestone %}
-          <div class="milestone-badge" id="milestoneBadge">
-            <i class="fas fa-flag-checkered"></i> {{ upcoming_milestone }} days until milestone
-          </div>
-          {% endif %}
-        </section>
+        <!-- 8. SHARE / PRINT CONTROLS (small, bottom of content) -->
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--edge)">
+          <button class="btn btn-outline btn-sm" id="shareBtn">
+            <i class="fas fa-share-nodes"></i> Share My Progress
+          </button>
+          <button class="btn btn-ghost btn-sm" id="printBtn">
+            <i class="fas fa-print"></i> Print Report
+          </button>
+        </div>
 
-        {# ---- Commitments ---- #}
-        <section class="card commitments-card" id="commitmentsCard">
-          <div class="card-header">
-            <h3>Your Commitments</h3>
-            <a href="/v1/commitments/add/" class="btn-icon" title="Add new commitment"><i class="fas fa-plus"></i></a>
-          </div>
-          <div class="commitments-list" id="commitmentsList">
-            <div class="commitment-skeleton"></div>
-            <div class="commitment-skeleton"></div>
-            <div class="commitment-skeleton"></div>
-          </div>
-          <div class="retry-wrap" id="commitRetry" style="display:none">
-            <button class="btn btn-ghost btn-sm" id="retryCommitments"><i class="fas fa-redo"></i> Retry</button>
-            <span class="retry-msg" id="commitErrorMsg"></span>
-          </div>
-        </section>
+      </main>
+    </div><!-- /db-wrap -->
 
-        {# ---- Heatmap ---- #}
-        <section class="card heatmap-card" id="heatmapCard">
-          <div class="card-header">
-            <h3>30‑Day Consistency</h3>
+    <!-- ================================================
+         FAB — quick-add commitment (goes to commitments page)
+         ================================================ -->
+    <a href="/v1/commitments/?add=true" class="db-fab no-print"
+       title="Add new commitment" aria-label="Add new commitment">
+      <i class="fas fa-plus"></i>
+    </a>
+
+    <!-- ================================================
+         SHARE MODAL
+         ================================================ -->
+    <div class="db-modal-overlay" id="shareModal" role="dialog" aria-modal="true" aria-label="Share your progress">
+      <div class="db-modal">
+        <div class="db-modal-header">
+          <h3><i class="fas fa-share-nodes" style="color:var(--accL)"></i> Share Your Progress</h3>
+          <button class="hdr-btn" id="closeShareModal" aria-label="Close">
+            <i class="fas fa-xmark"></i>
+          </button>
+        </div>
+        <div class="db-modal-body">
+          <!-- Live share card preview -->
+          <div class="share-preview" id="sharePreviewCard">
+            <div class="share-preview-brand">STREAK &amp; DISCIPLINE</div>
+            <div class="share-preview-name" id="spName">@{{ request.user.username }}</div>
+            <div class="share-preview-commit" id="spCommit">Loading commitment…</div>
+            <div class="share-stat-row">
+              <div class="share-stat-item">
+                <span class="share-stat-n" id="spStreak">—</span>
+                <span class="share-stat-l">Streak</span>
+              </div>
+              <div class="share-stat-item">
+                <span class="share-stat-n">{{ zeal_score|default:"0" }}</span>
+                <span class="share-stat-l">Zeal</span>
+              </div>
+              <div class="share-stat-item">
+                <span class="share-stat-n">{{ consistency_pct|default:"—" }}%</span>
+                <span class="share-stat-l">Consistency</span>
+              </div>
+            </div>
+            <div class="share-quote" id="spQuote"></div>
           </div>
-          <div class="heatmap-grid skeleton" id="heatmapGrid"></div>
-          <div class="retry-wrap" id="heatmapRetry" style="display:none">
-            <button class="btn btn-ghost btn-sm" id="retryHeatmap"><i class="fas fa-redo"></i> Retry</button>
-            <span class="retry-msg" id="heatmapErrorMsg"></span>
+
+          <!-- Commitment selector (if multiple commitments) -->
+          <div id="spCommitSelector" style="margin-bottom:0.75rem;display:none">
+            <label style="font-size:0.72rem;color:var(--ink2);display:block;margin-bottom:0.3rem">Sharing commitment:</label>
+            <select class="btn btn-outline btn-sm" style="width:100%;padding:0.5rem 0.75rem;border-radius:8px"
+                    id="spSelector"></select>
           </div>
-        </section>
 
-        {# ---- Partners ---- #}
-        <section class="card partners-card" id="partnersCard">
-          <div class="card-header">
-            <h3>Partners</h3>
+          <!-- Share options -->
+          <div class="share-options">
+            <button class="share-opt-btn share-copy" id="copyShareBtn">
+              <i class="fas fa-copy"></i> Copy Text
+            </button>
+            <button class="share-opt-btn share-wa" id="waShareBtn">
+              <i class="fab fa-whatsapp"></i> WhatsApp
+            </button>
+            <button class="share-opt-btn share-x" id="xShareBtn">
+              <i class="fab fa-x-twitter"></i> Post
+            </button>
           </div>
-          <div class="partners-list skeleton" id="partnersList">
-            <p class="no-partners">No partners yet.</p>
+
+          <p style="font-size:0.7rem;color:var(--ink3)">
+            <i class="fas fa-lock"></i>
+            Only your username is shared — never your entries or personal details.
+          </p>
+        </div>
+        <div class="db-modal-footer">
+          <button class="btn btn-ghost btn-sm" id="closeShareModal2">Close</button>
+          <button class="btn btn-outline btn-sm" id="printFromModal">
+            <i class="fas fa-print"></i> Print instead
+          </button>
+        </div>
+      </div>
+    </div><!-- /shareModal -->
+
+    <!-- ================================================
+         PRINT CARD (hidden on screen, prints cleanly)
+         ================================================ -->
+    <div class="print-only">
+      <div class="print-card" id="printCard">
+        <div class="print-brand">STREAK &amp; DISCIPLINE — Progress Report</div>
+        <div class="print-title">@{{ request.user.username }}</div>
+        <div class="print-commit" id="printCommitText">—</div>
+        <div class="print-stats">
+          <div class="print-stat-item">
+            <span class="print-stat-n" id="printStreakN">—</span>
+            <span class="print-stat-l">Day Streak</span>
           </div>
-          <div class="retry-wrap" id="partnerRetry" style="display:none">
-            <button class="btn btn-ghost btn-sm" id="retryPartners"><i class="fas fa-redo"></i> Retry</button>
-            <span class="retry-msg" id="partnerErrorMsg"></span>
+          <div class="print-stat-item">
+            <span class="print-stat-n">{{ zeal_score|default:"0" }}</span>
+            <span class="print-stat-l">Zeal Score</span>
           </div>
-        </section>
+          <div class="print-stat-item">
+            <span class="print-stat-n">{{ consistency_pct|default:"—" }}%</span>
+            <span class="print-stat-l">Consistency</span>
+          </div>
+          <div class="print-stat-item">
+            <span class="print-stat-n">{{ total_entries|default:"0" }}</span>
+            <span class="print-stat-l">Total Entries</span>
+          </div>
+        </div>
+        <div class="print-footer" id="printFooter">
+          Printed from STREAK &amp; DISCIPLINE · streakdiscipline.com
+        </div>
+      </div>
+    </div>
 
-        {# ---- Daily Quote ---- #}
-        <section class="card quote-card" id="quoteCard">
-          <p class="quote-text" id="quoteText"></p>
-          <span class="quote-attribution">— STREAK & DISCIPLINE</span>
-        </section>
+  </div><!-- /db-app -->
 
-      </div>{# /dashboard-grid #}
+  <!-- ====================================================
+       LOGOUT FORM (hidden, submitted by JS)
+       ==================================================== -->
+  <form method="POST" action="{% url 'origin_logout' %}" id="logoutForm" style="display:none">
+    {% csrf_token %}
+  </form>
 
-    </main>
-  </div>
-
-  {# ========== SCRIPTS ========== #}
-  <script>
-    {% include "reusables/spinner.js" %}
-  </script>
-
+  <!-- ====================================================
+       FULL APP JAVASCRIPT
+       At bottom of body — no defer needed
+       ==================================================== -->
   <script>
   (function() {
     'use strict';
 
-    /* ================================================================
-       CRITICAL BOOT — reveal app after heavy CSS, then fetch all data
-       ================================================================ */
-    var app = document.getElementById('dashboardApp');
-    var heavyCss = document.getElementById('heavy-css');
-
-    function bootApp() {
-      if (app.classList.contains('loaded')) return;
-      app.classList.add('loaded');
-      initDashboard();
-    }
-
-    if (heavyCss) {
-      if (heavyCss.rel === 'stylesheet') bootApp();
-      else heavyCss.addEventListener('load', bootApp);
-    }
-    setTimeout(bootApp, 8000);
-
-    /* ================================================================
-       GLOBALS & HELPERS
-       ================================================================ */
+    /* ============================================================
+       HELPERS
+       ============================================================ */
     function getCookie(name) {
       var v = document.cookie.match('(?:^|;) ?' + name + '=([^;]*)(;|$)');
       return v ? decodeURIComponent(v[1]) : '';
     }
+    function setCookie(name, value, days) {
+      var d = new Date(); d.setDate(d.getDate() + (days || 1));
+      document.cookie = name + '=' + encodeURIComponent(value) + ';path=/;expires=' + d.toUTCString();
+    }
+    function qs(sel, ctx) { return (ctx || document).querySelector(sel); }
+    function qsa(sel, ctx) { return (ctx || document).querySelectorAll(sel); }
+    function el(tag, cls, html) {
+      var e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (html) e.innerHTML = html;
+      return e;
+    }
+    function show(el) { if (el) { el.style.display = ''; el.classList.remove('hidden'); } }
+    function hide(el) { if (el) { el.classList.add('hidden'); } }
 
-    function fetchJSON(url) {
-      return fetch(url, {
-        headers: { 'X-CSRFToken': getCookie('csrftoken') }
-      }).then(function(r) {
-        return r.json().then(function(data) {
-          return { ok: r.ok, status: r.status, data: data };
+    /* ============================================================
+       DAILY DISCIPLINE QUOTES  (zero network cost)
+       ============================================================ */
+    var QUOTES = [
+      'Motivation fades. Discipline stays.',
+      'One honest sentence a day is all it takes.',
+      'The person you want to be is built on days like today.',
+      'No audience. No applause. Just you keeping promises to yourself.',
+      "Tomorrow's pride is paid for with today's discipline.",
+      "You're one decision away from a completely different life.",
+      "The streak doesn't care about your feelings. It just counts.",
+      "You can't think your way into discipline. You act your way into it.",
+      'One day or day one. You decide.',
+      "Champions don't wait for the mood. They build the habit.",
+      "Don't break the chain. Not today.",
+      'Small, consistent actions rewrite who you are.',
+      "Your future self is begging you to start today.",
+      "Excuses are lies you tell yourself. Discipline is the truth.",
+      "He who conquers himself conquers all.",
+      "Winning the morning wins the day.",
+      "The sky is far but not for someone who is disciplined enough.",
+      "If 'they' can do it, you can do it too.",
+      "You've lied to yourself long enough. Time to keep your word."
+    ];
+
+    function getDailyQuote() {
+      var day = new Date().getDate() + new Date().getMonth() * 31;
+      return QUOTES[day % QUOTES.length];
+    }
+
+    function startQuoteTicker(el) {
+      if (!el) return;
+      el.textContent = getDailyQuote();
+      el.style.fontStyle = 'italic';
+    }
+
+    /* ============================================================
+       GREETING
+       ============================================================ */
+    function setGreeting() {
+      var h = new Date().getHours();
+      var word = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+      var greetWord = document.getElementById('greetWord');
+      var greetTime = document.getElementById('greetTime');
+      if (greetWord) greetWord.textContent = word;
+      if (greetTime) {
+        var now = new Date();
+        var opts = { weekday:'long', month:'long', day:'numeric' };
+        greetTime.textContent = now.toLocaleDateString(undefined, opts);
+      }
+    }
+
+    /* ============================================================
+       STAT COUNTER ANIMATION
+       ============================================================ */
+    function countUp(el, to, suffix, delay) {
+      if (!el || isNaN(to)) return;
+      var orig = el.textContent;
+      setTimeout(function() {
+        var start = performance.now();
+        var dur = 900;
+        (function step(now) {
+          var t = Math.min((now - start) / dur, 1);
+          var ease = 1 - Math.pow(1 - t, 3);
+          el.textContent = Math.round(to * ease) + (suffix || '');
+          if (t < 1) requestAnimationFrame(step);
+        })(start);
+      }, delay || 0);
+    }
+
+    /* ============================================================
+       PROFILE PICTURE — /get_user_picture/
+       ============================================================ */
+    var DEFAULT_AVATAR = 'https://api.dicebear.com/7.x/initials/svg?seed=' +
+                         encodeURIComponent('{{ request.user.username }}') +
+                         '&backgroundColor=1e293b&textColor=60a5fa&size=64';
+
+    function loadProfilePicture() {
+      var hdrSk   = document.getElementById('hdrAvatarSk');
+      var asideSk = document.getElementById('asideAvatarSk');
+      var hdrWrap  = document.getElementById('hdrAvatarWrap');
+      var asideWrap = document.getElementById('asideAvatarWrap');
+
+      function applyAvatar(url) {
+        [
+          { wrap: hdrWrap,   sk: hdrSk,   size: '32px' },
+          { wrap: asideWrap, sk: asideSk,  size: '52px' }
+        ].forEach(function(cfg) {
+          if (!cfg.wrap) return;
+          var img = document.createElement('img');
+          img.alt = '{{ request.user.username }}';
+          img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
+          img.onerror = function() { img.src = DEFAULT_AVATAR; };
+          img.onload  = function() {
+            if (cfg.sk && cfg.sk.parentNode) cfg.sk.remove();
+            img.classList.add('loaded');
+            cfg.wrap.appendChild(img);
+          };
+          img.src = url;
         });
+      }
+
+      fetch('{% url "origin_user_picture" %}', { credentials: 'include' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) { applyAvatar(d.url || DEFAULT_AVATAR); })
+        .catch(function()  { applyAvatar(DEFAULT_AVATAR); });
+    }
+
+    /* ============================================================
+       HEATMAP — /heatmap/
+       ============================================================ */
+    var heatmapData = null;
+
+    function loadHeatmap() {
+      fetch('{% url "origin_user_HeatMap" %}', { credentials: 'include' })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, d: d }; }); })
+        .then(function(res) {
+          if (!res.ok || !res.d.cells) {
+            showHeatmapError(res.d.message || 'Could not load heatmap data.');
+            return;
+          }
+          heatmapData = res.d;
+          renderHeatmap(res.d.cells);
+          updateStatusBanner(res.d.checked_in_today, res.d.total_active);
+        })
+        .catch(function() {
+          showHeatmapError('Network error. Check your connection and retry.');
+        });
+    }
+
+    function renderHeatmap(cells) {
+      var grid = document.getElementById('hmGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+      var today = new Date().toISOString().slice(0, 10);
+      cells.forEach(function(c, i) {
+        var div = document.createElement('div');
+        var lv = c.count === 0 ? '' : c.count === 1 ? 'lv1' : c.count === 2 ? 'lv2' : 'lv3';
+        div.className = 'hm-cell ' + lv + (c.date === today ? ' today' : '');
+        div.title = c.date + ': ' + c.count + ' check-in' + (c.count !== 1 ? 's' : '');
+        div.style.animationDelay = (i * 0.015) + 's';
+        div.classList.add('hm-reveal');
+        grid.appendChild(div);
       });
     }
 
-    /* ================================================================
-       INIT — parallel data loading
-       ================================================================ */
-    function initDashboard() {
-      Promise.allSettled([
-        loadUserPicture(),
-        loadCommitments(),
-        loadHeatmap(),
-        loadPartners()
-      ]).then(function() {
-        // All done — spinner already handled by spinner.js
-      });
+    function showHeatmapError(msg) {
+      var err = document.getElementById('hmError');
+      var errMsg = document.getElementById('hmErrorMsg');
+      var grid = document.getElementById('hmGrid');
+      var banner = document.getElementById('dbStatusBanner');
 
-      initZealTooltip();
-      initSidebar();
-      initQuote();
-      initLogout();
-      initParticles();
-      initMenuToggle();
-      initPrintShare();
+      if (grid) hide(grid);
+     if (banner) banner.innerHTML = '<p style="font-size:0.8rem;color:var(--ink3)">Status unavailable</p>';
+      if (errMsg) errMsg.textContent = msg;
+      if (err) err.classList.add('show');
     }
 
-    /* ================================================================
-       USER PICTURE
-       ================================================================ */
-    function loadUserPicture() {
-      return fetchJSON("{% url 'origin_user_picture' %}").then(function(res) {
-        var url = (res.ok && res.data.url) ? res.data.url : '';
-        updateAvatar(url);
-      }).catch(function() {
-        updateAvatar('');
-      });
+    document.getElementById('hmRetryBtn') && document.getElementById('hmRetryBtn').addEventListener('click', function() {
+      var err = document.getElementById('hmError');
+      var grid = document.getElementById('hmGrid');
+      if (err) err.classList.remove('show');
+      if (grid) { grid.innerHTML = ''; grid.removeAttribute('style'); }
+      loadHeatmap();
+    });
+
+    /* ============================================================
+       STATUS BANNER — updates from heatmap response
+       ============================================================ */
+    function updateStatusBanner(doneToday, total) {
+      var banner = document.getElementById('dbStatusBanner');
+      if (!banner) return;
+      var sk1 = document.getElementById('statusSk');
+      var sk2 = document.getElementById('statusTextSk');
+      if (sk1) sk1.remove();
+      if (sk2) sk2.remove();
+
+      var dot = el('div', 'db-status-dot');
+      var txt = el('div', 'db-status-text');
+      var det = el('div', 'db-status-detail');
+
+      if (total === 0) {
+        dot.classList.add('none');
+        txt.textContent = 'No active commitments yet.';
+        det.textContent = 'Add your first commitment to get started.';
+      } else if (doneToday === total) {
+        dot.classList.add('all-done');
+        txt.innerHTML = '<strong>All ' + total + ' commitment' + (total > 1 ? 's' : '') + ' checked in today.</strong> You\'re done. Solid.';
+        det.textContent = 'Come back tomorrow.';
+      } else if (doneToday === 0) {
+        dot.classList.add('none');
+        txt.innerHTML = '<strong>0 of ' + total + '</strong> commitments checked in today.';
+        det.textContent = 'Your streak is at risk. Open a commitment and check in now.';
+      } else {
+        dot.classList.add('partial');
+        txt.innerHTML = '<strong>' + doneToday + ' of ' + total + '</strong> commitments checked in today.';
+        det.textContent = (total - doneToday) + ' still pending.';
+      }
+
+      banner.innerHTML = '';
+      banner.appendChild(dot);
+      var textGroup = el('div', '');
+      textGroup.appendChild(txt);
+      textGroup.appendChild(det);
+      banner.appendChild(textGroup);
     }
 
-    function updateAvatar(url) {
-      var imgs = [
-        document.getElementById('sidebarAvatar'),
-        document.getElementById('topbarAvatar')
-      ];
-      imgs.forEach(function(img) {
-        if (!img) return;
-        if (url) img.src = url;
-      });
-      var wrappers = [
-        document.getElementById('sidebarAvatarWrapper'),
-        document.getElementById('topbarAvatarWrapper')
-      ];
-      wrappers.forEach(function(w) { if(w) w.classList.remove('skeleton'); });
-    }
+    /* ============================================================
+       COMMITMENT CARDS — /get_commitment_data/
+       ============================================================ */
+    var commitmentData = [];
 
-    /* ================================================================
-       COMMITMENTS
-       ================================================================ */
+    var CAT_ICONS = {
+      fitness: 'fa-dumbbell',   study:   'fa-book-open',
+      work:    'fa-briefcase',  health:  'fa-heart-pulse',
+      mindset: 'fa-brain',      other:   'fa-ellipsis'
+    };
+
     function loadCommitments() {
-      var list = document.getElementById('commitmentsList');
-      var retryWrap = document.getElementById('commitRetry');
-      var errorMsg = document.getElementById('commitErrorMsg');
+      fetch('{% url "get_commitment_data" %}', { credentials: 'include' })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, d: d }; }); })
+        .then(function(res) {
+          if (!res.ok) {
+            showCommitError(res.d.message || 'Could not load your commitments.');
+            return;
+          }
+          if (!Array.isArray(res.d.commitments)) {
+            showCommitError(res.d.message || 'Unexpected response from server.');
+            return;
+          }
+          commitmentData = res.d.commitments;
+          renderCommitments(commitmentData);
+          buildShareSelector(commitmentData);
+        })
+        .catch(function() {
+          showCommitError('Network error. Please check your connection and retry.');
+        });
+    }
 
-      return fetchJSON("{% url 'origin_commitmnet_data' %}").then(function(res) {
-        if (!res.ok) throw new Error(res.data.message || 'Failed to load commitments');
-        var commitments = res.data.commitments || [];
-        renderCommitments(commitments);
-        updateStatusBanner(commitments);
-      }).catch(function(err) {
-        list.innerHTML = '';
-        retryWrap.style.display = 'flex';
-        errorMsg.textContent = err.message;
+    function renderCommitments(data) {
+      var grid = document.getElementById('commitGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+
+      if (data.length === 0 || (data.length === 1 && data[0].id === 0)) {
+            var empty = el('div', 'commit-empty');
+            empty.innerHTML =
+            '<i class="fas fa-fire-flame-curved"></i>' +
+            '<h4>No commitments yet</h4>' +
+            '<p>Make your first vow. Define what you will do every day without exception.</p>' +
+            '<a href="/v1/commitments/?add=true" class="btn btn-primary btn-sm">' +
+            '<i class="fas fa-plus"></i> Add First Commitment</a>';
+            grid.appendChild(empty);
+            return;
+        }
+
+      data.forEach(function(c, i) {
+        var pct = c.goal_days > 0
+          ? Math.min(Math.round((c.days_since_start / c.goal_days) * 100), 100)
+          : 0;
+        var cat = (c.category || 'other').toLowerCase();
+        var icon = CAT_ICONS[cat] || 'fa-ellipsis';
+        var checkedClass = c.checked_in_today ? 'checked-today' : '';
+
+        var card = el('a', 'commit-card ' + cat + ' ' + checkedClass + ' stagger');
+        card.href = c.url || '/v1/commitments/' + c.id + '/';
+        card.style.setProperty('--i', i);
+
+        card.innerHTML =
+          '<div class="commit-card-top">' +
+            '<div class="commit-meta">' +
+              '<div class="commit-cat-icon ' + cat + '"><i class="fas ' + icon + '"></i></div>' +
+              '<span class="commit-cat-name">' + (c.category || 'Other') + '</span>' +
+            '</div>' +
+            '<div class="commit-ring-wrap">' +
+              '<svg class="prog-ring" viewBox="0 0 36 36" aria-hidden="true">' +
+                '<circle class="ring-bg" cx="18" cy="18" r="15.9"/>' +
+                '<circle class="ring-arc" cx="18" cy="18" r="15.9"' +
+                '  stroke-dasharray="0 100" stroke-linecap="round"/>' +
+              '</svg>' +
+              '<span class="ring-pct">' + pct + '%</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="commit-what">' + sanitize(c.what) + '</div>' +
+          '<div class="commit-bottom">' +
+            '<div class="commit-streak">' +
+              '<span class="commit-streak-n">' + (c.streak_count || 0) + '</span>' +
+              '<span> day streak</span>' +
+            '</div>' +
+            '<div class="commit-checkin ' + (c.checked_in_today ? 'checkin-done' : 'checkin-pending') + '">' +
+              (c.checked_in_today
+                ? '<i class="fas fa-circle-check"></i> Done today'
+                : '<i class="fas fa-clock"></i> Pending · ' + (c.checkin_time || '')) +
+            '</div>' +
+          '</div>' +
+          '<i class="fas fa-arrow-right commit-arrow"></i>';
+
+        // Set ring arc after append
+        setTimeout(function(card, pct) {
+          var arc = card.querySelector('.ring-arc');
+          if (arc) arc.setAttribute('stroke-dasharray', pct + ' ' + (100 - pct));
+        }, 100 + i * 80, card, pct);
+
+        grid.appendChild(card);
       });
     }
 
-    function renderCommitments(commitments) {
-      var list = document.getElementById('commitmentsList');
-      var retryWrap = document.getElementById('commitRetry');
-      list.innerHTML = '';
-      retryWrap.style.display = 'none';
+    function showCommitError(msg) {
+      var grid = document.getElementById('commitGrid');
+      var err  = document.getElementById('commitError');
+      var errMsg = document.getElementById('commitErrorMsg');
+      if (grid) grid.innerHTML = '';
+      if (errMsg) errMsg.textContent = msg;
+      if (err) err.classList.add('show');
+    }
 
-      if (!commitments.length || commitments[0].id === 0) {
-        list.innerHTML = '<p class="no-data">No commitments yet. <a href="/v1/commitments/add/">Create your first vow.</a></p>';
+    document.getElementById('commitRetryBtn') && document.getElementById('commitRetryBtn').addEventListener('click', function() {
+      var err = document.getElementById('commitError');
+      if (err) err.classList.remove('show');
+      loadCommitments();
+    });
+
+    function sanitize(str) {
+      var d = document.createElement('div');
+      d.textContent = str || '';
+      return d.innerHTML;
+    }
+
+    /* ============================================================
+       PARTNER WIDGET — /partner-widget/
+       ============================================================ */
+    function loadPartners() {
+      var section = document.getElementById('dbPartners');
+      if (!section) return; // social_mode !== 'partner'
+
+      fetch('{% url "origin_parner_widget" %}', { credentials: 'include' })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, d: d }; }); })
+        .then(function(res) {
+          if (!res.ok || !Array.isArray(res.d.partners)) {
+            showPartnerError(res.d.message || 'Could not load partners.');
+            return;
+          }
+          renderPartners(res.d.partners);
+        })
+        .catch(function() {
+          showPartnerError('Network error loading partner data.');
+        });
+    }
+
+    function renderPartners(partners) {
+      var list = document.getElementById('partnerList');
+      if (!list) return;
+      list.innerHTML = '';
+
+      if (partners.length === 0) {
+        list.innerHTML = '<p style="font-size:0.8rem;color:var(--ink3);padding:0.5rem 0">No partners added yet. Search by User ID from your profile.</p>';
         return;
       }
 
-      commitments.forEach(function(c) {
-        var card = document.createElement('div');
-        card.className = 'commitment-card';
-        card.innerHTML = [
-          '<div class="commit-card-top">',
-            '<span class="commit-cat-icon"><i class="fas ' + getCategoryIcon(c.category) + '"></i></span>',
-            '<span class="commit-what">' + escapeHTML(c.what) + '</span>',
-          '</div>',
-          '<div class="commit-card-mid">',
-            '<div class="streak-badge"><i class="fas fa-fire"></i> ' + c.streak_count + '</div>',
-            '<div class="progress-ring" style="--progress:' + (c.days_since_start / Math.max(c.goal_days, 1) * 100) + '%"></div>',
-          '</div>',
-          '<div class="commit-card-bottom">',
-            '<span class="checkin-time"><i class="fas fa-clock"></i> ' + c.checkin_time + '</span>',
-            c.checked_in_today
-              ? '<span class="checked-badge"><i class="fas fa-check-circle"></i> Done</span>'
-              : '<a href="/v1/commitment/' + c.id + '/checkin/" class="btn btn-primary btn-sm">Check in</a>',
-          '</div>',
-          '<a href="/v1/commitment/' + c.id + '/" class="commit-link-overlay"></a>'
-        ].join('');
+      partners.forEach(function(p, i) {
+        var isRecent = p.last_active && ((Date.now() - new Date(p.last_active).getTime()) < 86400000 * 2);
+        var card = el('div', 'partner-card stagger');
+        card.style.setProperty('--i', i);
+        card.innerHTML =
+          '<div class="partner-status-dot ' + (isRecent ? '' : 'inactive') + '"></div>' +
+          '<div style="flex:1">' +
+            '<div class="partner-id">@' + sanitize(p.public_id) + '</div>' +
+            '<div class="partner-last">' + (p.last_active ? 'Last active ' + timeAgo(p.last_active) : 'No activity yet') + '</div>' +
+          '</div>' +
+          '<div class="partner-streak"><i class="fas fa-fire"></i> ' + (p.streak_count || 0) + ' days</div>';
         list.appendChild(card);
       });
-
-      list.classList.remove('skeleton');
     }
 
-    function getCategoryIcon(cat) {
-      var map = {
-        fitness: 'fa-dumbbell', study: 'fa-book-open', work: 'fa-briefcase',
-        health: 'fa-heart-pulse', mindset: 'fa-brain', growth: 'fa-seedling',
-        other: 'fa-ellipsis'
-      };
-      return map[cat] || 'fa-ellipsis';
+    function showPartnerError(msg) {
+      var list = document.getElementById('partnerList');
+      var err  = document.getElementById('partnerError');
+      var errMsg = document.getElementById('partnerErrorMsg');
+      if (list) list.innerHTML = '';
+      if (errMsg) errMsg.textContent = msg;
+      if (err) err.classList.add('show');
     }
 
-    function escapeHTML(str) {
-      var div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
-    }
-
-    /* ================================================================
-       TODAY'S STATUS BANNER
-       ================================================================ */
-    function updateStatusBanner(commitments) {
-      var banner = document.getElementById('statusBanner');
-      var text = document.getElementById('statusText');
-      if (!commitments.length || commitments[0].id === 0) {
-        text.textContent = 'No commitments to track today.';
-        banner.classList.remove('skeleton');
-        return;
-      }
-      var total = commitments.length;
-      var done = commitments.filter(function(c) { return c.checked_in_today; }).length;
-      text.textContent = done + ' of ' + total + ' commitments checked in today';
-      banner.classList.remove('skeleton');
-      banner.classList.toggle('all-done', done === total);
-    }
-
-    /* ================================================================
-       HEATMAP
-       ================================================================ */
-    function loadHeatmap() {
-      var grid = document.getElementById('heatmapGrid');
-      var retryWrap = document.getElementById('heatmapRetry');
-      var errorMsg = document.getElementById('heatmapErrorMsg');
-
-      return fetchJSON("{% url 'origin_user_HeatMap' %}").then(function(res) {
-        if (!res.ok) throw new Error(res.data.message || 'Failed to load heatmap');
-        var data = res.data.heatmap || [];
-        renderHeatmap(data);
-      }).catch(function(err) {
-        grid.innerHTML = '';
-        retryWrap.style.display = 'flex';
-        errorMsg.textContent = err.message;
-      });
-    }
-
-    function renderHeatmap(data) {
-      var grid = document.getElementById('heatmapGrid');
-      var retryWrap = document.getElementById('heatmapRetry');
-      grid.innerHTML = '';
-      retryWrap.style.display = 'none';
-      var max = Math.max.apply(null, data.concat([1]));
-
-      data.forEach(function(val) {
-        var cell = document.createElement('div');
-        cell.className = 'heatmap-cell';
-        var intensity = val / max;
-        cell.style.setProperty('--intensity', intensity);
-        cell.title = val + ' commitment(s)';
-        grid.appendChild(cell);
-      });
-      grid.classList.remove('skeleton');
-    }
-
-    /* ================================================================
-       PARTNERS
-       ================================================================ */
-    function loadPartners() {
-    var list = document.getElementById('partnersList');
-    var retryWrap = document.getElementById('partnerRetry');
-    var errorMsg = document.getElementById('partnerErrorMsg');
-
-    return fetchJSON("{% url 'origin_parner_widget' %}").then(function(res) {
-        if (!res.ok) throw new Error(res.data.message || 'Failed to load partners');
-        var partners = res.data.partners || [];
-        renderPartners(partners, res.data.message);  // ← pass message
-    }).catch(function(err) {
-        list.innerHTML = '';
-        retryWrap.style.display = 'flex';
-        errorMsg.textContent = err.message;
+    document.getElementById('partnerRetryBtn') && document.getElementById('partnerRetryBtn').addEventListener('click', function() {
+      var err = document.getElementById('partnerError');
+      if (err) err.classList.remove('show');
+      loadPartners();
     });
+
+    function timeAgo(dateStr) {
+      var ms = Date.now() - new Date(dateStr).getTime();
+      var m = Math.floor(ms / 60000);
+      if (m < 60)  return m + 'm ago';
+      var h = Math.floor(m / 60);
+      if (h < 24)  return h + 'h ago';
+      var d = Math.floor(h / 24);
+      return d + ' day' + (d > 1 ? 's' : '') + ' ago';
     }
 
-    function renderPartners(partners, serverMessage) {
-    var list = document.getElementById('partnersList');
-    var retryWrap = document.getElementById('partnerRetry');
-    list.innerHTML = '';
-    retryWrap.style.display = 'none';
+    /* ============================================================
+       ASIDE TOGGLE
+       ============================================================ */
+    var aside    = document.getElementById('dbAside');
+    var overlay  = document.getElementById('asideOverlay');
+    var hamburger = document.getElementById('hamburgerBtn');
+    var hdrAvatar = document.getElementById('hdrAvatarWrap');
 
-    if (!partners.length) {
-        var msg = serverMessage || 'No partners yet. <a href="{% url "origin_dashboard" %}">Invite someone.</a>';
-        list.innerHTML = '<p class="no-partners">' + msg + '</p>';
-        list.classList.remove('skeleton');
-        return;
-    }
+    function openAside()  { aside && aside.classList.add('open'); overlay && overlay.classList.add('show'); }
+    function closeAside() { aside && aside.classList.remove('open'); overlay && overlay.classList.remove('show'); }
 
-    partners.forEach(function(p) {
-        var item = document.createElement('div');
-        item.className = 'partner-item';
-        item.innerHTML = [
-        '<span class="partner-id">@' + escapeHTML(p.public_searchable_username) + '</span>',
-        '<span class="partner-streak"><i class="fas fa-fire"></i> ' + p.streak_count + '</span>'
-        ].join('');
-        list.appendChild(item);
+    hamburger && hamburger.addEventListener('click', openAside);
+    hdrAvatar && hdrAvatar.addEventListener('click', function() {
+      if (window.innerWidth < 900) openAside();
+      else window.location.href = '/v1/profile/';
     });
-    list.classList.remove('skeleton');
+    overlay   && overlay.addEventListener('click', closeAside);
+
+    // Close aside on link click (mobile)
+    aside && aside.querySelectorAll('.aside-link').forEach(function(a) {
+      a.addEventListener('click', function() {
+        if (window.innerWidth < 900) closeAside();
+      });
+    });
+
+    /* ============================================================
+       THEME TOGGLE
+       ============================================================ */
+    var themeBtn  = document.getElementById('themeToggleBtn');
+    var themeIcon = document.getElementById('themeIcon');
+
+    function setTheme(dark) {
+      document.body.classList.toggle('sd-light', !dark);
+      if (themeIcon) themeIcon.className = dark ? 'fas fa-moon' : 'fas fa-sun';
+      setCookie('sd-theme', dark ? 'dark' : 'light', 365);
     }
 
-    /* ================================================================
-       ZEAL TOOLTIP
-       ================================================================ */
-    function initZealTooltip() {
-      var btn = document.getElementById('zealInfoBtn');
-      var tooltip = document.getElementById('zealTooltip');
-      if (!btn || !tooltip) return;
-      btn.addEventListener('click', function(e) {
+    themeBtn && themeBtn.addEventListener('click', function() {
+      setTheme(document.body.classList.contains('sd-light'));
+    });
+
+    /* ============================================================
+       ZEAL SCORE TOOLTIP
+       ============================================================ */
+    var zealBtn     = document.getElementById('zealInfoBtn');
+    var zealTooltip = document.getElementById('zealTooltip');
+    var zealStat    = zealTooltip && zealTooltip.parentElement;
+
+    if (zealBtn && zealTooltip) {
+      zealBtn.addEventListener('click', function(e) {
         e.stopPropagation();
-        tooltip.classList.toggle('visible');
+        var rect = zealBtn.getBoundingClientRect();
+        zealTooltip.style.top  = (rect.bottom + window.scrollY + 6) + 'px';
+        zealTooltip.style.left = Math.min(rect.left, window.innerWidth - 240) + 'px';
+        zealTooltip.style.position = 'fixed';
+        zealTooltip.style.top  = (rect.bottom + 6) + 'px';
+        zealTooltip.classList.toggle('open');
       });
-      document.addEventListener('click', function() {
-        tooltip.classList.remove('visible');
-      });
+      document.addEventListener('click', function() { zealTooltip.classList.remove('open'); });
     }
 
-    /* ================================================================
-       SIDEBAR & MOBILE MENU
-       ================================================================ */
-    function initSidebar() {
-      var sidebar = document.getElementById('sidebar');
-      var toggle = document.getElementById('menuToggle');
-      var overlay = document.createElement('div');
-      overlay.className = 'sidebar-overlay';
-      document.body.appendChild(overlay);
-
-      function open() {
-        sidebar.classList.add('open');
-        overlay.classList.add('visible');
-      }
-      function close() {
-        sidebar.classList.remove('open');
-        overlay.classList.remove('visible');
-      }
-
-      toggle.addEventListener('click', function() {
-        sidebar.classList.contains('open') ? close() : open();
-      });
-      overlay.addEventListener('click', close);
-
-      sidebar.querySelectorAll('.nav-item').forEach(function(link) {
-        link.addEventListener('click', function() {
-          if (window.innerWidth < 1024) close();
-        });
-      });
+    /* ============================================================
+       SHARE MODAL
+       ============================================================ */
+    function openShareModal() {
+      var modal = document.getElementById('shareModal');
+      if (modal) modal.classList.add('open');
+      updateSharePreview(0);
+    }
+    function closeShareModal() {
+      var modal = document.getElementById('shareModal');
+      if (modal) modal.classList.remove('open');
     }
 
-    function initMenuToggle() {
-      // Already handled in initSidebar
-    }
-
-    /* ================================================================
-       DAILY QUOTE
-       ================================================================ */
-    function initQuote() {
-      var quotes = [
-        "He who conquers himself conquers all.",
-        "Small, consistent actions rewrite who you are.",
-        "Motivation fades. Discipline stays.",
-        "One honest sentence a day is all it takes.",
-        "You've lied to yourself long enough. Time to keep your word.",
-        "No audience. No applause. Just you keeping promises to yourself.",
-        "The streak doesn't care about your feelings. It just counts.",
-        "Winning the morning wins the day.",
-        "You can't think your way into discipline. You act your way into it.",
-        "Champions don't wait for the mood. They build the habit."
-      ];
-      var dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
-      var quote = quotes[dayOfYear % quotes.length];
-      document.getElementById('quoteText').textContent = '"' + quote + '"';
-    }
-
-    /* ================================================================
-       LOGOUT
-       ================================================================ */
-    function initLogout() {
-      var btn = document.getElementById('logoutBtn');
-      if (!btn) return;
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        fetch("{% url 'origin_logout_active_user' %}", {
-          method: 'POST',
-          headers: { 'X-CSRFToken': getCookie('csrftoken') }
-        }).then(function() {
-          window.location.href = "{% url 'origin_login' %}";
-        });
-      });
-    }
-
-    /* ================================================================
-       PARTICLE BACKGROUND
-       ================================================================ */
-    function initParticles() {
-      var canvas = document.getElementById('particleCanvas');
-      if (!canvas) return;
-      // Heavy CSS will style the canvas; expand later if needed.
-    }
-
-    /* ================================================================
-       PRINT / SHARE
-       ================================================================ */
-    function initPrintShare() {
-      document.addEventListener('click', function(e) {
-        var btn = e.target.closest('.share-commit-btn');
-        if (btn) {
-          var url = btn.dataset.url;
-          if (navigator.share) {
-            navigator.share({ title: 'My Commitment', url: url });
-          } else {
-            navigator.clipboard.writeText(url).then(function() {
-              alert('Link copied!');
-            });
-          }
-        }
-        var printBtn = e.target.closest('.print-commit-btn');
-        if (printBtn) {
-          window.open(printBtn.dataset.url + '?print=1', '_blank');
-        }
-      });
-    }
-
-    /* ================================================================
-       RETRY BUTTONS
-       ================================================================ */
-    document.addEventListener('click', function(e) {
-      if (e.target.id === 'retryCommitments') loadCommitments();
-      if (e.target.id === 'retryHeatmap') loadHeatmap();
-      if (e.target.id === 'retryPartners') loadPartners();
+    document.getElementById('shareBtn')     && document.getElementById('shareBtn').addEventListener('click', openShareModal);
+    document.getElementById('shareBtnHdr')  && document.getElementById('shareBtnHdr').addEventListener('click', openShareModal);
+    document.getElementById('closeShareModal')  && document.getElementById('closeShareModal').addEventListener('click', closeShareModal);
+    document.getElementById('closeShareModal2') && document.getElementById('closeShareModal2').addEventListener('click', closeShareModal);
+    document.getElementById('shareModal')   && document.getElementById('shareModal').addEventListener('click', function(e) {
+      if (e.target === this) closeShareModal();
     });
 
-    // Zeal ring is pre-filled from server-rendered value; you can also update later.
+    function buildShareSelector(data) {
+      var sel = document.getElementById('spSelector');
+      var wrap = document.getElementById('spCommitSelector');
+      if (!sel || data.length <= 1) return;
+      data.forEach(function(c, i) {
+        var opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = c.what.slice(0, 60);
+        sel.appendChild(opt);
+      });
+      if (wrap) wrap.style.display = '';
+      sel.addEventListener('change', function() { updateSharePreview(parseInt(this.value)); });
+    }
+
+    function updateSharePreview(idx) {
+      var c = commitmentData[idx];
+      if (!c) {
+        qs('#spCommit') && (qs('#spCommit').textContent = 'No commitments loaded yet.');
+        qs('#spStreak') && (qs('#spStreak').textContent = '—');
+        return;
+      }
+      qs('#spCommit') && (qs('#spCommit').textContent = '"' + c.what + '"');
+      qs('#spStreak') && (qs('#spStreak').textContent = (c.streak_count || 0) + ' days');
+      qs('#spQuote') && (qs('#spQuote').textContent = getDailyQuote());
+      qs('#printCommitText') && (qs('#printCommitText').textContent = '"' + c.what + '"');
+      qs('#printStreakN') && (qs('#printStreakN').textContent = (c.streak_count || 0));
+    }
+
+    function buildShareText(idx) {
+      var c = commitmentData[idx || 0];
+      var streak = c ? c.streak_count || 0 : 0;
+      var what   = c ? c.what : 'my commitment';
+      return [
+        streak + '-day streak on STREAK & DISCIPLINE',
+        '',
+        '"' + what + '"',
+        '',
+        'Zeal Score: {{ zeal_score|default:"0" }} · {{ consistency_pct|default:"0" }}% consistency',
+        '',
+        getDailyQuote(),
+        '',
+        'streakdiscipline.com'
+      ].join('\n');
+    }
+
+    // Copy
+    var copyBtn = document.getElementById('copyShareBtn');
+    copyBtn && copyBtn.addEventListener('click', function() {
+      var idx = parseInt(qs('#spSelector') ? qs('#spSelector').value : 0) || 0;
+      navigator.clipboard && navigator.clipboard.writeText(buildShareText(idx)).then(function() {
+        copyBtn.className = 'share-opt-btn share-copied';
+        copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        setTimeout(function() {
+          copyBtn.className = 'share-opt-btn share-copy';
+          copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy Text';
+        }, 2000);
+      });
+    });
+
+    // WhatsApp
+    document.getElementById('waShareBtn') && document.getElementById('waShareBtn').addEventListener('click', function() {
+      var idx = parseInt(qs('#spSelector') ? qs('#spSelector').value : 0) || 0;
+      window.open('https://wa.me/?text=' + encodeURIComponent(buildShareText(idx)), '_blank', 'noopener');
+    });
+
+    // X / Twitter
+    document.getElementById('xShareBtn') && document.getElementById('xShareBtn').addEventListener('click', function() {
+      var c = commitmentData[0];
+      var streak = c ? c.streak_count || 0 : 0;
+      var tweet = streak + '-day streak on "' + (c ? c.what : 'my commitment') + '"\n\n' +
+                  getDailyQuote() + '\n\nstreakdiscipline.com';
+      window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(tweet), '_blank', 'noopener');
+    });
+
+    /* ============================================================
+       PRINT
+       ============================================================ */
+    function triggerPrint() {
+      updateSharePreview(0); // ensure print card is filled
+      window.print();
+    }
+    document.getElementById('printBtn')       && document.getElementById('printBtn').addEventListener('click', triggerPrint);
+    document.getElementById('printFromModal') && document.getElementById('printFromModal').addEventListener('click', function() {
+      closeShareModal(); setTimeout(triggerPrint, 300);
+    });
+
+    /* ============================================================
+       LOGOUT
+       ============================================================ */
+    var logoutBtn  = document.getElementById('logoutBtn');
+    var logoutForm = document.getElementById('logoutForm');
+    logoutBtn && logoutBtn.addEventListener('click', function() {
+      if (confirm('Log out of STREAK & DISCIPLINE?')) {
+        if (logoutForm) logoutForm.submit();
+        else window.location.href = '{% url "origin_logout" %}';
+      }
+    });
+
+    /* ============================================================
+       PARTICLE BURST on FAB  (desktop cosmetic)
+       ============================================================ */
+    var fab = qs('.db-fab');
+    fab && fab.addEventListener('click', function(e) {
+      var colors = ['#60a5fa','#818cf8','#a78bfa'];
+      for (var i = 0; i < 12; i++) {
+        (function(i) {
+          var d = document.createElement('div');
+          var angle = (i / 12) * Math.PI * 2;
+          var speed = 40 + Math.random() * 60;
+          d.style.cssText = 'position:fixed;width:5px;height:5px;border-radius:50%;pointer-events:none;z-index:9999;' +
+            'background:' + colors[i % 3] + ';left:' + (e.clientX - 2) + 'px;top:' + (e.clientY - 2) + 'px';
+          document.body.appendChild(d);
+          if (d.animate) {
+            d.animate([
+              { transform:'translate(0,0)', opacity:1 },
+              { transform:'translate(' + (Math.cos(angle)*speed) + 'px,' + (Math.sin(angle)*speed) + 'px) scale(0)', opacity:0 }
+            ], { duration: 400 + Math.random()*200, easing:'cubic-bezier(0.22,1,0.36,1)', fill:'forwards' })
+            .onfinish = function() { d.remove(); };
+          } else { setTimeout(function() { d.remove(); }, 600); }
+        })(i);
+      }
+    });
+
+    /* ============================================================
+       INIT SEQUENCE
+       The spinner already handles window.load hide timing.
+       We reveal the app shell and fire all fetches in parallel.
+       ============================================================ */
+    function reveal() {
+      var app = document.getElementById('dbApp');
+      if (app) app.classList.add('db-visible');
+    }
+
+    function init() {
+      setGreeting();
+      startQuoteTicker(document.getElementById('hdrQuote'));
+
+      // Stat number animations
+      var zealEl    = document.getElementById('zealNum');
+      var consistEl = document.getElementById('consistNum');
+      var entriesEl = document.getElementById('entriesNum');
+      var zealVal   = parseInt(zealEl && zealEl.textContent) || 0;
+      var conVal    = parseInt(consistEl && consistEl.textContent) || 0;
+      var entVal    = parseInt(entriesEl && entriesEl.textContent) || 0;
+      countUp(zealEl, zealVal, '', 400);
+      countUp(consistEl, conVal, '%', 500);
+      countUp(entriesEl, entVal, '', 600);
+
+      // Fire all lazy fetches in parallel
+      loadProfilePicture();
+      loadHeatmap();
+      loadCommitments();
+      loadPartners(); // no-op if social_mode != partner (section doesn't exist)
+    }
+
+    // Reveal app shell once spinner clears (spinner.js fires on window.load)
+    // We piggyback window.load too for the app reveal
+    if (document.readyState === 'complete') {
+      reveal(); init();
+    } else {
+      window.addEventListener('load', function() {
+        reveal(); init();
+      });
+      // 8-second safety net
+      setTimeout(function() { reveal(); init(); }, 8000);
+    }
+
   })();
   </script>
+
+  <!-- Spinner JS (handles its own hide on window.load + 8s fallback) -->
+  <script>{% include "reusables/spinner.js" %}</script>
+
 </body>
 </html>

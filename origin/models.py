@@ -94,7 +94,7 @@ class Profile(models.Model):
     tier = models.CharField(max_length=20, default= custom_val.tier[0])
     # profile_img_url = models.URLField(max_length=500, blank=True, null=True)
     public_searchable_username = models.CharField(max_length=50, blank=True, unique=True) # this is user unique id and can be changed by user anytime, it contain their username from base user and their database CustomeUser pk which is alwasy unique e.g opeyemi01, its used incase the user want to share info other user and to avoid leaking credentials, i adeed unique true cos ope01 to yemi01(yemi01 might already exist)
-    leaderboard_optin = models.BooleanField(default=False) #This hides the user from appearing in the public leaderboard analysis
+    leaderboard_optin = models.BooleanField(default=False) #This hides the user from appearing in the public leaderboard analysis -though the streak will still be visible to their partner
     streak_count_is_public_visible = models.BooleanField(default=False) #This hides the streak from showing to the public leaderboard if leaderboard optin is enabled
     ai_insight_active = models.BooleanField(default=True) #this let me know if i can send user data to AI to generate inference
     receive_newsletter = models.BooleanField(default=False) #wether the user want to be receiving random news and tip 
@@ -115,7 +115,7 @@ class Profile(models.Model):
 class Commitment(models.Model):
     user = models.ForeignKey(CustomeUser, on_delete=models.CASCADE) # a user can have more than one commitment
     is_active =  models.BooleanField(default=True) #This tell the current state of a commitment wether its active or not
-    streak_count = models.IntegerField(null=False,default=0)#this tell the consequtive rows in a day user have showed up, reset on each day miss
+    streak_count = models.IntegerField(null=False,default=1)#this tell the consequtive rows in a day user have showed up, reset on each day miss
     checkin_time = models.TimeField(blank=False, null=False,default='21:00') #time user is expected to have checked in for that day -send email if they have not check in at that time
     what = models.CharField(blank= False, null= False,max_length=120) #what this commitment is about?
     category = models.CharField(max_length=20, default = custom_val.commitment_category[0]) #under which category does this commitment fall under?
@@ -133,7 +133,7 @@ class Commitment(models.Model):
     whatsapp_number = models.CharField(max_length=20, blank=True) #if the user chooses whtsap so i can save their phone number
     
     def __str__(self):
-        return "Commitment"
+        return f"{self.user.email} Commitments -- what_name: {self.what}"
     
 
 
@@ -151,7 +151,14 @@ class Entries(models.Model):
     
     class Meta:
         unique_together = ('commitment_id', 'commit_at') #this make sure this is treated as unique and no duplicate ,
-
+    
+    #overide rhe default save so automatically, work count get saved
+    def save(self, *args, **kwargs):
+        """Custom save to auto dectect the word count of the content"""
+        if self.content: self.word_count = len(self.content.split())
+        else: self.word_count = 0
+        super().save(*args, **kwargs)
+        
     def __str__(self):
         return f"latest commit for {self.commitment_id.user.email} is {self.commit_at}"
 

@@ -16,6 +16,7 @@ urlpatterns = [
     path('dashboard/', views.Dashboard.as_view(), name = 'origin_dashboard'),
     path('dashboard/settings/', views.Dashboard.as_view(), name = 'origin_settings'),
     path('dashboard/settings/', views.Dashboard.as_view(), name = 'origin_personal_data'),
+    path('dashboard/commitment/<str:commitment_id>/', views.EachCommitmentView.as_view(), name = 'origin_each_commitment_view'),
         
     path('extra/', views.Extras.as_view(),name='origin_extra'),
     path('weekly-analysis/', views.Reports.as_view(),name='origin_weekly_analysis'),

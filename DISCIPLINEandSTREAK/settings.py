@@ -9,8 +9,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('django_key')
 
-# DEBUG = False
-DEBUG = True
+DEBUG = False
+# DEBUG = True
 
 SOCIAL_AUTH_RAISE_EXCEPTIONS = False # for django_social to not debug, it should be close to up so its easily reached
 
@@ -88,7 +88,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Lagos'
 
 USE_I18N = True
 

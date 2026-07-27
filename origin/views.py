@@ -18,8 +18,9 @@ from origin.models import Profile,Commitment, Entries, Friendship, ChoicesValida
 import json, random, uuid
 from utility.config import *
 from utility.email_sending import send_password_reset_email, send_password_reset_successful_email
-import logging
 
+import logging
+from datetime import timedelta
 logger = logging.getLogger(__name__)
 
 class RedirectHandler(View):
@@ -259,7 +260,12 @@ class Signup(View):
     
 class Login(View):
     """login dashbaord"""
-    def get(self, request): return render(request, 'html/login.html', {'url_for_form' : reverse('origin_redirect_handler', kwargs={'raw_url' : 'origin_login'})})
+    def get(self, request): 
+        #skip login if user is logged in
+        try:
+            x = request.user.username
+            return redirect('origin_onboarding')
+        except: return render(request, 'html/login.html', {'url_for_form' : reverse('origin_redirect_handler', kwargs={'raw_url' : 'origin_login'})})
     
     def post(self,request): return JsonResponse({'user_email' : str(request.user)}, safe=False)
 
@@ -269,29 +275,19 @@ class Reports(View):
 class Dashboard(LoginRequiredMixin, View):
     login_url = '/v1/login/'
     def get(self, request):
-        #COMMITMENT_LIST CLAUDE NEEDS
-        # {
-        # "id": 1,
-        # "url": "/commitment/1/",
-        # "what": "Read 20 pages",
-        # "category": "study",
-        # "streak_count": 14,
-        # "goal_days": 90,
-        # "days_since_start": 21,
-        # "checked_in_today": false,
-        # "last_check_in": "2025-07-26T21:00:00Z",
-        # "checkin_time": "21:00",
-        # "reminder_active": true,
-        # "is_active": true,
-        # "mood_last": "motivated"
-        # }
-        
         user_profile = Profile.objects.filter(user = request.user).order_by('tier').first()
+        commitment_istance = Commitment.objects.filter(user=request.user, is_active=True)
+        consistency_pct = [i.streak_count for i in  commitment_istance] #different from zeal score --- loop through streak; sum them all and divide by all
+        c_pct = sum(consistency_pct) / (len(consistency_pct)+1) #i added one to curb the issue of division by zero
         data = {
-            'commitment_list' :[{'name' : '', 'due_today': bool, 'streak' : int}],#list of commitment name and wether they are due
-            'tier' : user_profile.tier,                                                                 #Hold usr current tier
-            'Upcoming_milestone': 7,
-            'display_name' : 'IA',
+            'tier' : user_profile.tier,
+            'Upcoming_milestone': 6 - timezone.now().weekday(),
+            'ai_insight_active' : user_profile.ai_insight_active,
+            'social_mode' : user_profile.social_mode,
+            'total_active_commitments': commitment_istance.count(),
+            'consistency_pct': c_pct,  
+             'total_entries': Entries.objects.filter(commitment_id__user = request.user).count(),                                                                            #Hold usr current tier
+            
             'public_searchable_username ' : user_profile.public_searchable_username,
             'zeal_score' : user_profile.zeal_score
             
@@ -490,8 +486,12 @@ class LogoutUI(View):
             messages.info('logout success')
         except: return messages.error(request=request, message="Unable to logout , please go back and try again. If error persist, please contact customer support")
         return render('html/full_screen_message.html')
-    
-    
+
+
+class EachCommitmentView(LoginRequiredMixin, View):
+    def post(self, request, commitment_id):
+        messages.info(request, message=f"This page for {request.user.username} with commitment id: {commitment_id} is still being built, Check back later")
+        return render(request, 'html/full_screen_message.html')
     
     
 #PURE JSON
@@ -500,55 +500,257 @@ class CommitmentData(LoginRequiredMixin, View):
         commitment_istance = Commitment.objects.filter(user = request.user).all()
         if not commitment_istance.exists(): data = [
             {
-                'id' : 0,
-                "what": None,
-                "category": None,
-                "streak_count": 0,
-                "checkin_time": "21:00",
-                "checked_in_today": False,
-                "goal_days": 365,
-                "days_since_start": 0,
+                'id' : 0,                               #datakey is very important as without it , the current ui wont load
+                'url' : '',                             #datakey is very important as without it , the current ui wont load
+                "what": "No commitment",                #datakey is very important as without it , the current ui wont load
+                "category": 'other',                    #datakey is very important as without it , the current ui wont load
+                "streak_count": 0,                      #datakey is very important as without it , the current ui wont load
+                "goal_days": 0,                         #datakey is very important as without it , the current ui wont load
+                "days_since_start": 0,                  #datakey is very important as without it , the current ui wont load 
+                "checkin_time": "00:00",                #datakey is very important as without it , the current ui wont load
+                'is_active': False,                     #datakey is very important as without it , the current ui wont load
+                "checked_in_today": False,              #datakey is very important as without it , the current ui wont load
+                'message' : 'no commitment yet'         #datakey is very important as without it , the current ui wont load
             }
         ]
-        else:data = [
+        else:
+            data = [
             {
                 'id' : i.pk,
+                'url' : reverse('origin_each_commitment_view', kwargs={'commitment_id' : i.pk}),
                 "what": i.what,
                 "category": i.category,
                 "streak_count": i.streak_count,
-                "checkin_time": i.checkin_time,
-                "checked_in_today": (i.last_check_in is not None and i.last_check_in.date() == timezone.now().date()),
                 "goal_days": i.goal_days,
                 "days_since_start": (timezone.now().date() - i.created_at.date()).days,
+                "checkin_time": i.checkin_time,
+                'is_active': i.is_active,
+                "checked_in_today": (i.last_check_in is not None and i.last_check_in.date() == timezone.now().date()),                
             }
             for i in commitment_istance 
             ]
-        return JsonResponse({'commitments' : data, 'message': 'ok'}, status = 200)
+            status = 'all good'
+
+        return JsonResponse({'commitments' : data}, status = 200)
 
 class UserPicture(LoginRequiredMixin, View):
     def get(self, request):
-        return JsonResponse({'message': "in p"}, status = 500)
+        return JsonResponse({'message': "in progress", 'url' :Static.logo_url()}, status = 200)
     
-class PartnerWidget(LoginRequiredMixin, View):
-    def get(self, request):
-        profile_istance = Profile.objects.filter(user = request.user).first()
-        if profile_istance.social_mode == 'solo':
-            return JsonResponse({'partners': [], 'message':  'You are in solo mode. Switch to partner mode in Settings to see your partners.'})
-        else:
-            partner_istance = Friendship.objects.filter(to_user = request.user, status = 'accepted')
-            data = [
-                {
-                    "public_searchable_username": "Fom user userid",
-                    "streak_count": "From user streak count"
-                }
-                for i in  partner_istance
-            ]
-            return JsonResponse({'partners': data})
+
 class HeatMap(LoginRequiredMixin, View):
+    # WHAT THE UI EXPECTS
+    #     {
+    #   "message": "ok",
+    #   "cells": [
+    #     { "date": "2025-06-28", "count": 0 },
+    #     { "date": "2025-06-29", "count": 1 },
+    #     { "date": "2025-06-30", "count": 2 },
+    #     { "date": "2025-07-01", "count": 3 }
+    #   ],
+    #   "checked_in_today": 2,
+    #   "total_active": 3
+# }
     def get(self, request):
-        data = {
-        "message": "ok",
-        "heatmap": [1, 0, 1, 1, 0, 0, 1, 5, 1, 5, 0, 1, 2, 4, 3, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1]
-        }
-        return JsonResponse({**data}, status = 200)
+        today = timezone.now().date()
+        start_date = today - timedelta(days=29)  # 30 days including today
+         # Get all entries for the user's commitments in the last 30 days
+        entries = Entries.objects.filter(
+                    commitment_id__user=request.user,
+                    commit_at__gte=start_date,
+                    commit_at__lte=today
+                    ).order_by('commit_at')
+        
+        #check if the entries is empty
+        if not entries.exists(): return JsonResponse({
+            'message' : 'user does not have any entries, create commitment and check in to view entries'.upper(),
+            'cells' : []},status = 403)
+        #if entries are NOT empty
+        total_active = Commitment.objects.filter(user=request.user, is_active=True).count()     #total amount of active commitments
+        checked_in_today = 0                                                                    #This keep track of totak check in today
+        cells_ui_need = []                                                                      #My current daskboard need this
+        
+        for entry in entries:
+            cells_ui_need.append({
+                'date': str(entry.commit_at),
+                'count': 1,  # one entry = one cell
+            })
+            if entry.commit_at == today:
+                checked_in_today += 1
+        # Pad cells to always be 30
+        padded_cells = []
+        for i in range(30):
+            day = start_date + timedelta(days=i)
+            # Check if we have an entry for this day
+            count = 0
+            for cell in cells_ui_need:
+                if cell['date'] == str(day):
+                    count += 1
+            padded_cells.append({
+                'date': str(day),
+                'count': count,
+            })
+        return JsonResponse({
+            'message' : 'success',
+            'cells' : padded_cells,
+            'total_active': total_active,
+            'checked_in_today' : checked_in_today,
+            })
+#this handles a situation where a user wan to call up his friends and view them  --ONLY WORK IF USER social_mode IS PARTNER NOT SOLO       
+class PartnerWidget(LoginRequiredMixin, View):
+    # EXPECTED DATA UI WANTS
+#     {
+#   "message": "ok",
+#   "partners": [
+#     {
+#       "public_id": "chidi007",
+#       "streak_count": 14,
+#       "last_active": "2025-07-26T21:00:00Z"
+#     },
+#     {
+#       "public_id": "opeyemi01",
+#       "streak_count": 29,
+#       "last_active": "2025-07-25T09:00:00Z"
+#     }
+#   ]
+# }
+    def get(self, request):
+        # Check social mode
+        profile_istance = Profile.objects.filter(user=request.user).first()
+        if profile_istance.social_mode == ChoicesValidatorInModels().social_mode[0]:
+            return JsonResponse({
+                'message': 'You are currently in solo mode. Only partner mode users can access this.',
+            }, status=403)
+
+        # Get accepted partnerships where user is the receiver
+        partner_istance = Friendship.objects.filter(
+            to_user=request.user,
+            status='accepted'
+        ).all()
+
+        #Collect all partner user IDs
+        partner_users = []
+        for f in partner_istance:
+            partner_users.append(f.from_user_id)
+
+        #Get all active commitments for ALL partners in one query
+        all_commitments = Commitment.objects.filter(
+            user_id__in=partner_users,
+            is_active=True
+        ).all()
+
+        #Get all entries for ALL partners in one query
+        all_entries = Entries.objects.filter(
+            commitment_id__user_id__in=partner_users
+        ).order_by('commit_at').all()
+
+        #Group commitments by user
+        commitments_by_user = {}
+        for c in all_commitments:
+            uid = c.user_id
+            if uid in commitments_by_user:
+                commitments_by_user[uid].append(c.streak_count)
+            else:
+                commitments_by_user[uid] = [c.streak_count]
+
+        #Group last active by user
+        last_active_by_user = {}
+        for e in all_entries:
+            uid = e.commitment.user_id
+            if uid not in last_active_by_user:
+                last_active_by_user[uid] = e.commit_at
+
+        #Build the partner list
+        partners = []
+        for f in partner_istance:
+            partner_uid = f.from_user_id
+            partner_profile = Profile.objects.filter(user_id=partner_uid).first()
+            public_id = partner_profile.public_searchable_username if partner_profile else 'unknown'
+
+            partners.append({
+                'public_id': public_id,
+                'streak_count': commitments_by_user.get(partner_uid, []),
+                'last_active': str(last_active_by_user.get(partner_uid, '')),
+            })
+
+        return JsonResponse({
+            'message': 'success',
+            'partners': partners,
+        })
+        
+#deepseek need this ---i am still edtiting it too
+
+#PURE JSON
+# class CommitmentData(LoginRequiredMixin, View):
+#      #COMMITMENT_LIST CLAUDE NEEDS
+#             # {
+#             # "id": 1,
+#             # "url": "/commitment/1/",
+#             # "what": "Read 20 pages",
+#             # "category": "study",
+#             # "streak_count": 14,
+#             # "goal_days": 90,
+#             # "days_since_start": 21,
+#             # "checked_in_today": false,
+#             # "last_check_in": "2025-07-26T21:00:00Z",
+#             # "checkin_time": "21:00",
+#             # "reminder_active": true,
+#             # "is_active": true,
+#             # "mood_last": "motivated"
+#             # }
+#     def get(self, request):
+#         commitment_istance = Commitment.objects.filter(user = request.user).all()
+#         if not commitment_istance.exists(): data = [
+#             {
+#                 'id' : 0,
+#                 "what": None,
+#                 "category": None,
+#                 "streak_count": 0,
+#                 "checkin_time": "21:00",
+#                 "checked_in_today": False,
+#                 "goal_days": 365,
+#                 "days_since_start": 0,
+#             }
+#         ]
+#         else:data = [
+#             {
+#                 'id' : i.pk,
+#                 "what": i.what,
+#                 "category": i.category,
+#                 "streak_count": i.streak_count,
+#                 "checkin_time": i.checkin_time,
+#                 "checked_in_today": (i.last_check_in is not None and i.last_check_in.date() == timezone.now().date()),
+#                 "goal_days": i.goal_days,
+#                 "days_since_start": (timezone.now().date() - i.created_at.date()).days,
+#             }
+#             for i in commitment_istance 
+#             ]
+#         return JsonResponse({'commitments' : data, 'message': 'ok'}, status = 200)
+
+# class UserPicture(LoginRequiredMixin, View):
+#     def get(self, request):
+#         return JsonResponse({'message': "in p"}, status = 500)
+    
+# class PartnerWidget(LoginRequiredMixin, View):
+#     def get(self, request):
+#         profile_istance = Profile.objects.filter(user = request.user).first()
+#         if profile_istance.social_mode == 'solo':
+#             return JsonResponse({'partners': [], 'message':  'You are in solo mode. Switch to partner mode in Settings to see your partners.'})
+#         else:
+#             partner_istance = Friendship.objects.filter(to_user = request.user, status = 'accepted')
+#             data = [
+#                 {
+#                     "public_searchable_username": "Fom user userid",
+#                     "streak_count": "From user streak count"
+#                 }
+#                 for i in  partner_istance
+#             ]
+#             return JsonResponse({'partners': data})
+# class HeatMap(LoginRequiredMixin, View):
+#     def get(self, request):
+#         data = {
+#         "message": "ok",
+#         "heatmap": [1, 0, 1, 1, 0, 0, 1, 5, 1, 5, 0, 1, 2, 4, 3, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1]
+#         }
+#         return JsonResponse({**data}, status = 200)
         

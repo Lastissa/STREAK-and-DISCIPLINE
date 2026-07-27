@@ -29,8 +29,8 @@ def get_journal_created_value()->str:
 def get_copyright_year():
     return (timezone.now().year)
 
-def intro_word(list_lenght = 2) -> list:
-    """for intro word i will use to show message to user using the message.info()"""
+def intro_word(list_lenght = 2, max = False) -> list:
+    """for intro word i will use to show message to user using the message.info() with max saying return all data"""
     words = [
             'He who conquers himself conquers all" - Opeyemi',
             "if 'THEY' can do it, you can do it too",
@@ -53,6 +53,7 @@ def intro_word(list_lenght = 2) -> list:
             "One day or day one. You decide.",
             "Champions don't wait for the mood. They build the habit."
                        ]
+    if max is True: return words
     return random.sample(words, list_lenght)
     
 def template_based_reusables(request):
@@ -89,7 +90,8 @@ def template_based_reusables(request):
         'customer_support_4': static('img/user_support/customer_support_4.jpg'),      
         'free_tier_member' : Static.tier(0),
         'premium_tier_member' : Static.tier(1),
-        'gold_tier_member' : Static.tier(2)
+        'gold_tier_member' : Static.tier(2),
+        'intro_words': intro_word(max=True)
     }
     
     
