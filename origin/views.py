@@ -30,7 +30,7 @@ class RedirectHandler(View):
             """Proceed to login user and create session"""
             try:
                 user_exist = get_user_model().objects.filter(email__iexact = request.POST["email"]).first() is not None
-                user_istance = authenticate(request=request, email = request.POST["email"], password = request.POST["password"])
+                user_istance = authenticate(request=request, email = request.POST["email"].upper(), password = request.POST["password"])
                 logger.info(msg= user_istance)
                 if user_istance or user_exist:
                     #set a key in cache to rate limit after 3 attempt
@@ -39,7 +39,7 @@ class RedirectHandler(View):
                         messages.info( request=request,message= f"Incorrect password or Email.")
                         cache.set(f"attemp_login_{request.POST["email"]}", rate_limit+"x", timeout=120)
                     elif len(rate_limit) == 3:
-                        messages.warn( request=request,message= f"Incorrect password or Email., one more fail attempt will lock you out. ")
+                        messages.warning( request=request,message= f"Incorrect password or Email., one more fail attempt will lock you out. ")
                         cache.set(f"attemp_login_{request.POST["email"]}", rate_limit+"x", timeout=120)
                     else:
                         messages.info( request=request,message=f"Too many attempts. Please wait 2 minutes before trying again. If you try again before the time is up, the wait period will reset.---{rate_limit}")
@@ -85,7 +85,7 @@ class RedirectHandler(View):
                     })
             
             except IntegrityError as e:
-                """create user fail, switch to login istead"""
+                """create user fail, switch to login istead,"""
                 logger.warning(msg="integrgtity error; user with this account exist")
                 return render(request, 'reusables/redirect_url.html', {
                     'redirect_path': reverse(raw_url),
@@ -244,14 +244,17 @@ class Signup(View):
         if username == 'integrity_error' or email == 'integrity_error':
             messages.info(request=request, message= 'Existing account found with your email and you have been redirected to login istead')
             return redirect('origin_login')
-        #else, just create account with the provided data, check for validity first
-        user_is_not_new = authenticate(request=request, email = email, password = password)
+        #else, just create account with the provided data, ----- check for validity first
+        user_is_not_new = authenticate(request=request, email = email.upper(), password = password)
+        print(user_is_not_new)
+        for i in range(10000): x = 0
         if user_is_not_new:
             #user is not new, redirect them to login page
             messages.info(request=request, message="Account Created, Login.")
             return redirect('origin_login')
         else:
-            #user is new, create their account and redirect them to on login
+            logger.error(msg="If you see this , omo, we are cooked bro!!! cos its not suposed to run, check the authenticate, issue is nost likelty come from there, worst case, comot this else")
+            #user is new, create their account and redirect them to on login --rare to un
             get_user_model().objects.create_user(email=email, username=username, password=password)
             messages.info(message="Accoutn Creation success, Login to access your onbaording.")
             return redirect('origin_login')
@@ -262,11 +265,11 @@ class Signup(View):
 class Login(View):
     """login dashbaord"""
     def get(self, request): 
-        #skip login if user is logged in
-        try:
-            x = request.user.username
-            return redirect('origin_onboarding')
-        except: return render(request, 'html/login.html', {'url_for_form' : reverse('origin_redirect_handler', kwargs={'raw_url' : 'origin_login'})})
+        #try to check if user is signed in
+        if request.user.is_authenticated:
+                return redirect('origin_onboarding')
+        #user is not signed in , redirect them to the login page
+        return render(request, 'html/login.html', {'url_for_form': reverse('origin_redirect_handler', kwargs={'raw_url': 'origin_login'})})
     
     def post(self,request): return JsonResponse({'user_email' : str(request.user)}, safe=False)
 
@@ -483,12 +486,14 @@ class Logout(View):
     
 """user inteface when user logout from their account"""
 class LogoutUI(View):
+    def post(self, request):return self.post(request)
     def get(self, request):
         try: 
             logout(request)
             messages.info('logout success')
-        except: return messages.error(request=request, message="Unable to logout , please go back and try again. If error persist, please contact customer support")
-        return render('html/full_screen_message.html')
+        except: 
+            messages.error(request=request, message="Unable to logout , please go back and try again. If error persist, please contact customer support")
+        return render(request, 'html/full_screen_message.html')
 
 
 class EachCommitmentView(LoginRequiredMixin, View):

@@ -34,7 +34,7 @@
         onload="this.onload=null;this.rel='stylesheet'" id="adv-css">
   <noscript><link rel="stylesheet" href="{% static 'cdn/dashboard_advance.css' %}"></noscript>
 </head>
-<body class="{% if request.COOKIES.sd_theme == 'light' %}sd-light{% endif %}">
+{% comment %} <body class="{% if request.COOKIES.sd_theme == 'light' %}sd-light{% endif %}"> {% endcomment %}
 
   <!-- ====================================================
        SPINNER — shows instantly, hides after window.load

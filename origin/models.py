@@ -41,7 +41,7 @@ custom_val = ChoicesValidatorInModels()
 class CustomManager(BaseUserManager):
     def create_user(self, email, password = None, **kwargs):
         if not email : raise ValueError("Email is required, basic mean of authentication")
-        email = self.normalize_email(email)
+        email = email.upper()
         user = self.model(email=email, **kwargs)
         user.set_password(password)
         if 'is_staff' not in kwargs.keys():user.save()#added the if to avoid multiple db saves
@@ -75,6 +75,7 @@ class CustomeUser(AbstractBaseUser, PermissionsMixin):
     def staff_superuser_active(self):
         """Return true if user is staff, superuser and also active"""
         if self.is_superuser and self.is_active and self.is_staff: return True
+        
     
     
 #saving credentials for when password reset password so i can verify and delete once they have been used
