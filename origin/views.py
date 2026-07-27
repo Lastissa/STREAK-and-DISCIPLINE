@@ -7,11 +7,13 @@ from django.core.cache import cache
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
+from django.db import transaction
 from django.core.validators import validate_email
 from resend.exceptions import ResendError
 from origin.models import PasswordResetToken
 
-from origin.models import Profile
+
+from origin.models import Profile,Commitment, Entries, Friendship, ChoicesValidatorInModels
 
 import json, random, uuid
 from utility.config import *
@@ -111,12 +113,136 @@ class OriginHome(View):
             'journal_created': get_journal_created_value(),
             'year': get_copyright_year()
         })
-
+#this handle save user data during onboarding 
 class DbSave(LoginRequiredMixin,View):
     def post(self, request):
         data = json.loads(request.body)
-        print(data)
-        return JsonResponse({**data})
+        # for i in data.keys():
+        #     print({i : data[i]})
+        # print(" ")
+        # print(" ")
+
+            
+        #first create a unique user id using customeUser username + pk
+        user_id = f"{request.user.username}{request.user.id:02d}" 
+        
+        #clean data format
+        
+        public_searchable_username = user_id
+        
+        #commitment
+        commitment_data = data['commitment']
+        commitment_what = commitment_data['what']                                       #name of the commitment
+        commitment_category = commitment_data['category']                               #category to which commitment belong
+        commitment_why = commitment_data.get('why')                                     #why user want to make this commitment
+        commitment_goal_days = commitment_data['goal_days']                             #total duration to which this commitment can last for ; 0 is forver
+        commitment_minimum = commitment_data['minimum']                                 #this is used for analytics to compare user down days, up and normals days
+        
+        #time concious
+        schedule_data = data['schedule']
+        schedule_checkin_time = schedule_data['checkin_time']                           #time user is expected to check in
+        schedule_reminder_time = schedule_data['reminder_time']                         #time user schedules to be reminded for checking
+        reminder_method = schedule_data['reminder_method']                              #mode of reminder, push , email or whatsapp
+        whatsapp_number = schedule_data.get('whatsapp_number')              #incase user choose whatsapp, the number to which we will send reminder
+        
+        #evaluating partner prefrences 
+        social_data = data['social']
+        social_mode_settings = social_data['mode']                                               #Wether user want to share their streak count with others or go solo; the streak core include commitment name(what) and their current streak in that commitment
+        social_friend_user_id = social_data.get('friend_uuid', '').strip()                          #incase user choose partner else this should be ''
+        leaderboard_opt_in = social_data.get('leaderboard_optin')                       #Wethet user show in weekly dashboard or not (if yes, only user_id and their zeal_score shows and maybe profile pic if they have)
+
+        
+        
+        #user prefrence
+        preferences_data = data['preferences']
+        preferences_theme = preferences_data.get('theme', 'dark').lower().strip()           #to make sure user is alwasy in a particular mode when they login (little details matter)
+        allow_preferences_allow_ai_insight = preferences_data.get('ai_insights')            #wether to allow us sened their data anonymously to AI to generate insight for their report prepartion
+        allow_preferences_occasional_email = preferences_data['newsletter']                 #wether user want to receive occasional New features , tips, discipline contents
+        
+        
+        
+        
+        
+        customVal = ChoicesValidatorInModels()
+    
+        #first; The profile model validation
+        if preferences_theme not in customVal.theme: return JsonResponse({'message': f'theme : {preferences_theme} not in available options'}, status = 404)
+        elif social_mode_settings not in customVal.social_mode: return JsonResponse({'message': f'social mode : {social_mode_settings} not in available options'}, status = 404)
+       
+        #second; the Commitment model validation
+        if commitment_category not in customVal.commitment_category: return JsonResponse({'message': f'commitment_category : \'{commitment_category}\' not in available options'}, status = 404)
+        elif reminder_method not in customVal.report_delivery_mode: return JsonResponse({'message': f'reminder_method : {reminder_method} not in available options'}, status = 404) 
+        elif reminder_method.lower().strip() == "whatsapp" and len(whatsapp_number) == 0: return JsonResponse({'message' : 'whatsapp selected as reminder but whatsapp number was not provided.'}, status = 404)
+        elif reminder_method.lower().strip() == "whatsapp"  and str(whatsapp_number[1:]).isdigit() == False:  return JsonResponse({'message' : f'whatsapp number({whatsapp_number}) is not a valid mobile number'}, status = 404)
+        
+        #third; the Friendship -- i need to verify tbat user exist, that is if they are PARTNER mode
+        if social_mode_settings.strip().lower() == customVal.social_mode[1]:
+            from_user_istance = request.user
+            to_user_istance = Profile.objects.filter(public_searchable_username__iexact = social_friend_user_id).first()
+            print(f'{to_user_istance}')
+            if to_user_istance is None: return JsonResponse({'message' : f"user id:'{social_friend_user_id}' does not exist hence your request will be revoked, kindly recheck the userid or switch to solo"}, status = 404)
+        
+        
+        
+        #if we get here and no issues; all data is valid , create
+        with transaction.atomic():
+            profile_istance = Profile.objects.create(
+                user = request.user,
+                public_searchable_username = public_searchable_username,
+                leaderboard_optin = leaderboard_opt_in,
+                ai_insight_active = allow_preferences_allow_ai_insight,
+                receive_newsletter = allow_preferences_occasional_email,
+                theme = preferences_theme,
+                social_mode = social_mode_settings
+            )
+            
+            commitment_istance = Commitment.objects.create(
+                user = request.user,
+                checkin_time = schedule_checkin_time,
+                category = commitment_category,
+                what = commitment_what,
+                why = commitment_why,
+                minimum_effort = commitment_minimum,
+                goal_days = commitment_goal_days,
+                mode_of_delivery = reminder_method,
+                whatsapp_number = whatsapp_number,
+                user_selected_reminder_time = schedule_reminder_time,
+                
+            )
+            if social_mode_settings.strip().lower() == "partner":
+                helper = helper_with_friendship_request_answer(request=request, to_user=social_friend_user_id.strip())
+                #so the issue can be returned succesdully
+                if helper is not None: return helper_with_friendship_request_answer
+                
+        return JsonResponse({'message' : 'success'}, status = 200)
+
+def helper_with_friendship_request_answer(request, to_user : str):
+    """Since this code have to be repeated in both add friend and dbsaver, to avoid duplicate, i created this file which i will use in both class"""
+    from_user = request.user
+    to_user = Profile.objects.filter(public_searchable_username__iexact = to_user.upper().strip()).first()
+    
+    if to_user is None:return JsonResponse({'message': f"potential partner '{social_friend_user_id}' does nt exist , please ask the user to share you their current username as they might have updated it." })
+                    
+    #check if user is trying to send request to theirself
+    if to_user.user.email == request.user.email: return JsonResponse({'message': 'request to oneself is not allowed'}, status = 403)
+    
+    #check their status, if its pending -- request already sent at TIME, accepted -- you are already friends with this user since TIME
+    relationship = Friendship.objects.filter(from_user = from_user, to_user = to_user.user).first()
+    if relationship is None:
+        #send request --brb send email to notify to user also
+        istance = Friendship.objects.create(
+            from_user = from_user,
+            to_user = to_user.user,
+            status = ChoicesValidatorInModels().friendship_status[0], #pending
+        )
+    elif relationship.status == ChoicesValidatorInModels().friendship_status[0]: return JsonResponse({'message' : f'request already sent since {custom_date_formatter(datetime_data = relationship.updated_at)} --pending'}, status = 200)
+    elif relationship.status == ChoicesValidatorInModels().friendship_status[1]: return JsonResponse({'message' : f'you are already friend with this person since {custom_date_formatter(datetime_data = relationship.updated_at)}'}, status = 200)
+    else:
+        # status was 'rejected' — allow resending
+        relationship.status = 'pending'
+        relationship.save()
+        return None
+    
 
 class Extras(View):
     """for privacy policy, term of use etc"""
@@ -145,7 +271,7 @@ class Signup(View):
             #user is new, create their account and redirect them to on login
             get_user_model().objects.create_user(email=email, username=username, password=password)
             messages.info(message="Accoutn Creation success, Login to access your onbaording.")
-            redirect('origin_login')
+            return redirect('origin_login')
         #fallback almost impossible to reach
         return JsonResponse({'user' : str(request.user), **request.POST}, safe=False)
 
@@ -162,12 +288,58 @@ class Reports(View):
 class Dashboard(LoginRequiredMixin, View):
     login_url = '/v1/login/'
     def get(self, request):
+        profile_istance = Profile.objects.filter(user = request.user).first()
+        Commitment_istance = Commitment.objects.filter(user = request.user).all()
+        partner_request_received = Friendship.objects.filter(to_user = request.user).all()
+        friend_request_sent = Friendship.objects.filter(from_user = request.user).all()
+        if partner_request_received is None: partner_list_received = []
+        else: partner_list_received = [{
+                            'from_user': f.from_user.email,
+                            'to_user': f.to_user.email,
+                            'status': f.status,
+                            'created_at': f.created_at.isoformat(),
+                            'updated_at' : f.updated_at.isoformat()
+                        }
+                        for f in partner_request_received] 
+        if friend_request_sent is None: partner_list_sent = []
+        else: partner_list_sent = [{
+                                    'from_user': f.from_user.email,
+                                    'to_user': f.to_user.email,
+                                    'status': f.status,
+                                    'created_at': f.created_at.isoformat(),
+                                    'updated_at' : f.updated_at.isoformat()
+                                }
+                                for f in friend_request_sent] 
+        
         return JsonResponse({
             'username' : request.user.username,
             'email' : request.user.email,
             'last_login' : request.user.last_login,
-            'join_date' : request.user.date_joined
-        })
+            'join_date' : request.user.date_joined,
+            'user_id' : profile_istance.public_searchable_username,
+            'profile_istance' : {
+                        'tier': profile_istance.tier,
+                        'public_searchable_username': profile_istance.public_searchable_username,
+                        'leaderboard_optin': profile_istance.leaderboard_optin,
+                        'streak_count_is_public_visible': profile_istance.streak_count_is_public_visible,
+                        'ai_insight_active': profile_istance.ai_insight_active,
+                        'receive_newsletter': profile_istance.receive_newsletter,
+                        'theme': profile_istance.theme,
+                        'weekly_report_email_active': profile_istance.weekly_report_email_active,
+                        'custom_report_email_active': profile_istance.custom_report_email_active,
+                        'social_mode': profile_istance.social_mode,
+                        'zeal_score': profile_istance.zeal_score,
+},
+            'commitment' : [{
+                            'what': c.what,
+                            'category': c.category,
+                            'why': c.why,
+                            'goal_days': c.goal_days,
+                            'streak_count': c.streak_count,
+                            } for c in Commitment_istance],
+            'friend_request_received' : partner_list_received,
+            'friend_request_sent' : partner_list_sent
+            }, safe=False)
 
 class Onboarding(LoginRequiredMixin, View):
     login_url = '/v1/login/'
@@ -183,20 +355,40 @@ class Onboarding(LoginRequiredMixin, View):
 class SearchFriend(LoginRequiredMixin,View):#This one is specifically only for logged in user
     login_url = '/v1/login/'
     def get(self, request): return self.post(request)
-    def post(self, request): 
+    def post(self, request):
+        data = request.POST['uuid']
+        friend_search = Profile.objects.filter(public_searchable_username__iexact = data).last()
+        if friend_search:
+            userid = friend_search.public_searchable_username
+            username = friend_search.user.username
+            profile_image = ''# friend_search.profile_img_url
+            status_code = 200
+        else:
+            userid, username, profile_image = None, None, ''
+            status_code = 404
         return JsonResponse({
-            'userid' : 'test-username01', #use username + dabatase pk to make it unique
-            'username' : 'test-username',
-            'profile_image' : Static.logo_url()
-        })
+            'userid' : userid,                        #use username + dabatase pk to make it unique
+            'username' : username,
+            'profile_image' : profile_image,
+        }, status = status_code)
         
-class AddFriend(View):
+class AddFriend(LoginRequiredMixin, View):
+    login_url = '/v1/login'
     def get(self, request):return self.post(request)
-    def post(self, request): 
-        print({**request.POST})
-        return JsonResponse({**request.POST})
-        
+    def post(self, request):
+        incoming_user_id = request.POST['userid']
+        print(incoming_user_id)
+        req = helper_with_friendship_request_answer(request=request, to_user = incoming_user_id.strip())
+        print(req)
+        if req is None: return JsonResponse({'message': 'success, requst resend successfuly'}, status = 200)
+        else: return req
 
+        
+        
+class TestSearch(View):
+    def get(self, request):
+        return render(request, 'html/test_friend_search.html')
+    
 class InProgress(View):
     def get(self, request):
         return render(request, 'reusables/still_in_progress.html')
@@ -292,9 +484,18 @@ class PasswordValidate(View):
 #             })
 #         except: return {'user type' : 'anonymous'}
         
-
+"""debugging purpose"""
 class Logout(View):
     def get(self, request): return self.post(request)
     def post(self, request):
         logout(request)
         return JsonResponse({'message' : 'All active members  have been logged out on this device'}, status = 200)
+    
+"""user inteface when user logout from their account"""
+class LogoutUI(View):
+    def get(self, request):
+        try: 
+            logout(request)
+            messages.info('logout success')
+        except: return messages.error(request=request, message="Unable to logout , please go back and try again. If error persist, please contact customer support")
+        return render('html/full_screen_message.html')

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Friend Search — STREAK & DISCIPLINE</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --bg: #0a0e17;
+      --surface: #111827;
+      --text: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --accent: #3b82f6;
+      --accent-light: #60a5fa;
+      --border: #1e293b;
+      --border-light: #334155;
+      --good: #22c55e;
+      --bad: #ef4444;
+      --radius: 12px;
+      --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 460px;
+    }
+
+    .card h2 {
+      font-size: 1.3rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .card .hint {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+
+    .label {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.35rem;
+      font-weight: 500;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .search-row input {
+      flex: 1;
+      padding: 0.72rem 1rem;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: var(--font);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-row input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.65rem 1.3rem;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 0.84rem;
+      cursor: pointer;
+      border: 2px solid transparent;
+      font-family: var(--font);
+      white-space: nowrap;
+      transition: background 0.2s, border-color 0.2s, opacity 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-light);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-sm {
+      padding: 0.4rem 1rem;
+      font-size: 0.78rem;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      border: none;
+    }
+
+    .btn-ghost:hover {
+      color: var(--accent-light);
+    }
+
+    /* Loading spinner */
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .btn.loading .spinner { display: inline-block; }
+    .btn.loading .btn-txt { display: none; }
+
+    /* State messages */
+    .state-msg {
+      padding: 0.6rem 0.8rem;
+      border-radius: var(--radius);
+      font-size: 0.82rem;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .state-msg.show { display: flex; }
+
+    .state-loading { color: var(--accent-light); }
+    .state-error { color: var(--bad); background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
+    .state-success { color: var(--good); background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); }
+    .state-notfound { color: #f59e0b; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+
+    /* Found user result */
+    .friend-result {
+      display: none;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.8rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+    }
+
+    .friend-result.show { display: flex; }
+
+    .friend-result img {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .friend-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .friend-info strong {
+      display: block;
+      font-size: 0.88rem;
+    }
+
+    .friend-info span {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    /* Skip button */
+    .skip-row {
+      text-align: center;
+      margin-top: 0.5rem;
+    }
+
+    /* Mobile */
+    @media (max-width: 480px) {
+      .card {
+        padding: 1.5rem 1.2rem;
+        border-radius: 14px;
+      }
+      .search-row {
+        flex-direction: column;
+      }
+      .search-row .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>Find Your Partner</h2>
+    <p class="hint">Enter their User ID to send an accountability partner request.</p>
+
+    <label class="label" for="friendCode">User ID</label>
+    <div class="search-row">
+      <input type="text" id="friendCode" placeholder="e.g., opeyemi01" autocomplete="off">
+      <button class="btn btn-primary" id="searchBtn">
+        <span class="btn-txt"><i class="fas fa-search"></i> Search</span>
+        <span class="spinner"></span>
+      </button>
+    </div>
+
+    <!-- States -->
+    <div class="state-msg state-loading" id="stateLoading">
+      <span class="spinner" style="display:inline-block;border-top-color:var(--accent-light);border-color:rgba(59,130,246,0.2);"></span> Searching...
+    </div>
+
+    <div class="state-msg state-notfound" id="stateNone">
+      <i class="fas fa-user-slash"></i> No user found with that ID.
+    </div>
+
+    <div class="state-msg state-error" id="stateError">
+      <i class="fas fa-exclamation-circle"></i> <span id="stateErrMsg">Something went wrong.</span>
+    </div>
+
+    <div class="state-msg state-success" id="stateSent">
+      <i class="fas fa-check-circle"></i>  <span id="stateSentMsg">Request sent successfully!</span>
+    </div>
+
+    <!-- Found user result -->
+    <div class="friend-result" id="friendResult">
+      <img src="" alt="" id="friendAvatar">
+      <div class="friend-info">
+        <strong id="friendName"></strong>
+        <span id="friendId"></span>
+      </div>
+      <button class="btn btn-primary btn-sm" id="addBtn">
+        <span class="btn-txt">Add</span>
+        <span class="spinner"></span>
+      </button>
+    </div>
+
+    <div class="skip-row">
+      <button class="btn btn-ghost btn-sm" id="skipBtn">Skip for now</button>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // CSRF token helper
+      function getCookie(name) {
+        var v = document.cookie.match('(?:^|;) ?' + name + '=([^;]*)(;|$)');
+        return v ? decodeURIComponent(v[1]) : '';
+      }
+
+      function hideAll() {
+        ['stateLoading','stateNone','stateError','stateSent','friendResult'].forEach(function(id) {
+          var el = document.getElementById(id);
+          if (el) {
+            el.classList.remove('show');
+            if (id === 'friendResult') el.style.display = 'none';
+            else el.style.display = 'none';
+          }
+        });
+      }
+
+      function show(id) {
+        hideAll();
+        var el = document.getElementById(id);
+        if (el) {
+          if (id === 'friendResult') el.style.display = 'flex';
+          else el.style.display = 'flex';
+          if (id === 'friendResult') el.classList.add('show');
+          else el.classList.add('show');
+        }
+      }
+
+      // Search button
+      var searchBtn = document.getElementById('searchBtn');
+      var searchCode = document.getElementById('friendCode');
+
+      searchBtn.addEventListener('click', function() {
+        var code = searchCode.value.trim();
+        if (!code) return;
+
+        show('stateLoading');
+        searchBtn.classList.add('loading');
+        searchBtn.disabled = true;
+
+        var fd = new FormData();
+        fd.append('uuid', code);
+
+        fetch('/v1/search_friend/', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+          body: fd,
+          signal: AbortSignal.timeout(6000)
+        }).then(function(r) {
+          return r.json().then(function(d) { return { status: r.status, data: d }; });
+        }).then(function(res) {
+          searchBtn.classList.remove('loading');
+          searchBtn.disabled = false;
+
+          if (res.status >= 200 && res.status < 400) {
+            document.getElementById('friendName').textContent = res.data.username || '—';
+            document.getElementById('friendId').textContent = '@' + (res.data.userid || 'unknown');
+            document.getElementById('friendAvatar').src = res.data.profile_image || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%231e293b\'/%3E%3Ccircle cx=\'50\' cy=\'38\' r=\'16\' fill=\'%23475669\'/%3E%3Cellipse cx=\'50\' cy=\'80\' rx=\'28\' ry=\'18\' fill=\'%23475669\'/%3E%3C/svg%3E';
+            show('friendResult');
+          } else if (res.status === 404) {
+            show('stateNone');
+          } else {
+            document.getElementById('stateErrMsg').textContent = res.data.message || 'Something went wrong.';
+            show('stateError');
+          }
+        }).catch(function() {
+          searchBtn.classList.remove('loading');
+          searchBtn.disabled = false;
+          document.getElementById('stateErrMsg').textContent = 'Request timed out. Try again.';
+          show('stateError');
+        });
+      });
+
+      // Enter key triggers search
+      searchCode.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') searchBtn.click();
+      });
+
+      // Add button
+      var addBtn = document.getElementById('addBtn');
+      addBtn.addEventListener('click', function() {
+        var uid = document.getElementById('friendId').textContent.replace('@', '');
+        addBtn.classList.add('loading');
+        addBtn.disabled = true;
+
+        var fd = new FormData();
+        fd.append('userid', uid);
+
+        fetch('/v1/add_friend/', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+          body: fd
+        }).then(function(r) {
+          return r.json().then(function(d) { return { status: r.status, data: d }; });
+        }).then(function(res) {
+          addBtn.classList.remove('loading');
+          addBtn.disabled = false;
+
+          if (res.status === 200) {
+            document.getElementById('stateSentMsg').textContent = res.data.message || 'Request sent successfully!';
+            show('stateSent');
+          } else {
+            document.getElementById('stateErrMsg').textContent = res.data.message || 'Could not send request.';
+            show('stateError');
+          }
+        }).catch(function() {
+          addBtn.classList.remove('loading');
+          addBtn.disabled = false;
+          document.getElementById('stateErrMsg').textContent = 'Something went wrong.';
+          show('stateError');
+        });
+      });
+
+      // Skip button
+      document.getElementById('skipBtn').addEventListener('click', function() {
+        alert('Skipped — add friends from your dashboard anytime.');
+      });
+    })();
+  </script>
+
+</body>
+</html>

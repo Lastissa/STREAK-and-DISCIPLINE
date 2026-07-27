@@ -157,8 +157,219 @@ def send_password_reset_successful_email(to_email: str, username: str) -> None:
         "html": html,
     })
     
-    
-    
-def login_alert(to_email: str):
-    """Send alert for logins Optional if user signed in"""
 
+
+def send_welcome_email(to_email: str, username: str) -> None:
+    """Send a welcome email after successful onboarding."""
+    
+    logo = Static.logo_url()
+    dashboard_link = Static.custom_base_url() + "/v1/dashboard/"
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin:0;padding:0;background:#f1f5f9;font-family:system-ui,-apple-system,sans-serif">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:30px 0">
+            <tr>
+                <td align="center">
+                    <table width="480" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0">
+                        
+                        <!-- Header -->
+                        <tr>
+                            <td style="padding:20px 24px;border-bottom:1px solid #f1f5f9">
+                                <table cellpadding="0" cellspacing="0">
+                                    <tr>
+                                        <td style="padding-right:12px">
+                                            <img src="{logo}" alt="S&D" width="40" height="40" style="border-radius:8px;display:block">
+                                        </td>
+                                        <td>
+                                            <p style="margin:0;font-weight:700;font-size:16px;color:#0f172a">STREAK & DISCIPLINE</p>
+                                            <p style="margin:4px 0 0;font-size:13px;color:#64748b">Welcome to the journey</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        
+                        <!-- Main content -->
+                        <tr>
+                            <td style="padding:24px">
+                                <h2 style="margin:0 0 12px;font-size:20px;color:#0f172a;font-weight:700">
+                                    Day 1 starts now, {username}
+                                </h2>
+                                
+                                <p style="margin:0 0 16px;font-size:14px;color:#334155;line-height:1.6">
+                                    Your commitment has been set, and your dashboard is ready. 
+                                    Here's what to do next:
+                                </p>
+                                
+                                <table cellpadding="0" cellspacing="0" style="margin-bottom:20px">
+                                    <tr>
+                                        <td style="padding:0 0 10px 0;font-size:14px;color:#334155">
+                                            <span style="display:inline-block;width:24px;height:24px;background:#dbeafe;border-radius:50%;text-align:center;line-height:24px;font-size:12px;color:#2563eb;margin-right:8px">1</span>
+                                            Bookmark your <a href="{dashboard_link}" style="color:#2563eb;text-decoration:none;font-weight:600">dashboard</a>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:0 0 10px 0;font-size:14px;color:#334155">
+                                            <span style="display:inline-block;width:24px;height:24px;background:#dbeafe;border-radius:50%;text-align:center;line-height:24px;font-size:12px;color:#2563eb;margin-right:8px">2</span>
+                                            Do your first check-in tonight — answer one question honestly
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:0 0 10px 0;font-size:14px;color:#334155">
+                                            <span style="display:inline-block;width:24px;height:24px;background:#dbeafe;border-radius:50%;text-align:center;line-height:24px;font-size:12px;color:#2563eb;margin-right:8px">3</span>
+                                            Watch your streak grow — one day at a time
+                                        </td>
+                                    </tr>
+                                </table>
+                                
+                                <table cellpadding="0" cellspacing="0" style="margin-bottom:20px">
+                                    <tr>
+                                        <td align="center" style="background:#2563eb;border-radius:8px">
+                                            <a href="{dashboard_link}" style="display:inline-block;padding:12px 28px;color:#fff;text-decoration:none;font-weight:600;font-size:14px">Go to Your Dashboard</a>
+                                        </td>
+                                    </tr>
+                                </table>
+                                
+                                <div style="background:#fff7ed;border:1px solid #fed7aa;padding:10px 12px;border-radius:6px;margin-bottom:0">
+                                    <p style="margin:0;font-size:12px;color:#9a3412;line-height:1.5">
+                                        <strong>Pro tip:</strong> Your first week is free with all Pro features unlocked. 
+                                        Set up reminders from your dashboard settings to never miss a check-in.
+                                    </p>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- Footer -->
+                        <tr>
+                            <td style="background:#f8fafc;padding:14px 24px;border-top:1px solid #e2e8f0;text-align:center">
+                                <p style="margin:0;font-size:11px;color:#94a3b8">
+                                    Need help? 
+                                    <a href="mailto:issaabdulsalamope11@gmail.com" style="color:#2563eb;text-decoration:none">support@streakanddiscipline.com</a>
+                                    &nbsp;·&nbsp;
+                                    <a href="https://wa.me/2347013687825" style="color:#2563eb;text-decoration:none">WhatsApp</a>
+                                </p>
+                            </td>
+                        </tr>
+                        
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+    """
+    
+    resend.Emails.send({
+        "from": Static.official_email(),
+        "to": [to_email],
+        "subject": "Welcome to STREAK & DISCIPLINE — Day 1 starts now",
+        "html": html,
+    })
+
+
+def send_partner_request_notification(to_email: str, from_username: str, from_userid: str) -> None:
+    """Notify a user that someone wants to be their accountability partner."""
+    
+    logo = Static.logo_url()
+    dashboard_link = Static.custom_base_url() + "/v1/dashboard/"
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin:0;padding:0;background:#f1f5f9;font-family:system-ui,-apple-system,sans-serif">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:30px 0">
+            <tr>
+                <td align="center">
+                    <table width="480" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0">
+                        
+                        <!-- Header -->
+                        <tr>
+                            <td style="padding:20px 24px;border-bottom:1px solid #f1f5f9">
+                                <table cellpadding="0" cellspacing="0">
+                                    <tr>
+                                        <td style="padding-right:12px">
+                                            <img src="{logo}" alt="S&D" width="40" height="40" style="border-radius:8px;display:block">
+                                        </td>
+                                        <td>
+                                            <p style="margin:0;font-weight:700;font-size:16px;color:#0f172a">STREAK & DISCIPLINE</p>
+                                            <p style="margin:4px 0 0;font-size:13px;color:#64748b">Partner Request</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        
+                        <!-- Main content -->
+                        <tr>
+                            <td style="padding:24px">
+                                <h2 style="margin:0 0 12px;font-size:18px;color:#0f172a;font-weight:700">
+                                    {from_username} wants to be your accountability partner
+                                </h2>
+                                
+                                <p style="margin:0 0 16px;font-size:14px;color:#334155;line-height:1.6">
+                                    <strong>@{from_userid}</strong> has sent you a partner request. 
+                                    If you accept, they'll be able to see your consistency score — 
+                                    <strong>never your private entries</strong>.
+                                </p>
+                                
+                                <div style="background:#f0f9ff;border:1px solid #bae6fd;padding:12px 14px;border-radius:8px;margin-bottom:20px">
+                                    <p style="margin:0;font-size:13px;color:#0c4a6e;line-height:1.5">
+                                        <strong>What they'll see:</strong> Your streak count, consistency percentage, 
+                                        and commitment name — nothing more. Your journal entries and reasons stay private.
+                                    </p>
+                                </div>
+                                
+                                <table cellpadding="0" cellspacing="0" style="margin-bottom:20px">
+                                    <tr>
+                                        <td align="center" style="background:#2563eb;border-radius:8px">
+                                            <a href="{dashboard_link}" style="display:inline-block;padding:12px 28px;color:#fff;text-decoration:none;font-weight:600;font-size:14px">View Request on Dashboard</a>
+                                        </td>
+                                    </tr>
+                                </table>
+                                
+                                <p style="margin:0;font-size:12px;color:#64748b;line-height:1.5">
+                                    You can accept or decline this request from your dashboard. 
+                                    If you change your mind later, you can remove partners anytime from Settings.
+                                </p>
+                            </td>
+                        </tr>
+                        
+                        <!-- Footer -->
+                        <tr>
+                            <td style="background:#f8fafc;padding:14px 24px;border-top:1px solid #e2e8f0;text-align:center">
+                                <p style="margin:0;font-size:11px;color:#94a3b8">
+                                    This is an automated notification from STREAK & DISCIPLINE.
+                                </p>
+                                <p style="margin:4px 0 0;font-size:11px;color:#94a3b8">
+                                    Need help? 
+                                    <a href="mailto:issaabdulsalamope11@gmail.com" style="color:#2563eb;text-decoration:none">support@streakanddiscipline.com</a>
+                                    &nbsp;·&nbsp;
+                                    <a href="https://wa.me/2347013687825" style="color:#2563eb;text-decoration:none">WhatsApp</a>
+                                </p>
+                            </td>
+                        </tr>
+                        
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+    """
+    
+    resend.Emails.send({
+        "from": Static.official_email(),
+        "to": [to_email],
+        "subject": f"{from_username} wants to be your accountability partner",
+        "html": html,
+    })

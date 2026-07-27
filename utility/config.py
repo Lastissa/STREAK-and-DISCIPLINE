@@ -124,8 +124,8 @@ class Static:
     def tier(self, tier : int) -> list:
         """returns the features shown in a tier"""
         if tier == 0: return ['5 active commitment','Daily check-in reminder via email','Weekly report summary']
-        elif tier == 1: return ['50 active commitments', 'Daily check-in reminder via whatsapp or email and push', 'Advance weekly report summary', 'Custom periodical summary','Personalized coach','1 partner']
-        elif tier == 2: return ['unlimited commitments', 'Daily check-in reminder via whatsapp or email and push + offline reminders','Custom periodical summary','Personalized coach', '4 partners' , 'Advance analytics includes what you should do istead of just data visualization']
+        elif tier == 1: return ['50 active commitments', 'Daily check-in reminder via whatsapp or email and push', 'Advance weekly report summary','Personalized coach','1 partner']
+        elif tier == 2: return ['unlimited commitments', 'Daily check-in reminder via whatsapp or email and push + offline reminders','Custom periodical summary','Personalized coach', '4 partners' , 'Advance analytics includes what you should do istead of just data visualization','create Groups']
         
     @classmethod
     def emoji_translator(self):
@@ -234,4 +234,21 @@ class Static:
         'humbled': '🙇',
         }
         return MOOD_EMOJI
+
+
+import datetime
+def custom_date_formatter(datetime_data: datetime.datetime, include_year_m_d = True, include_hour = True, include_min = True):
+    """
+RETURNS A CLEANED FORMAT OF THE DATETIME FOR DISPLAY
+
+include_year_m_d : to use the Datetime. ... .date() -yyyy-mm-dd
+include_hour : to include hour : datetime. ... .hour -hh
+include min: to include min : datetime. ... minutes -mm
+    """
+    to_return = ""
+    if include_year_m_d == True: to_return = datetime_data.date()
+    if include_hour == True: to_return = f"{to_return} {datetime_data.hour}"
+    if include_min == True: to_return = f"{to_return}:{datetime_data.minute}"
+    
+    return to_return
     

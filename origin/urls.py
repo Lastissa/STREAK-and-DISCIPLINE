@@ -9,9 +9,13 @@ urlpatterns = [
     path('', views.OriginHome.as_view(),name='origin_home'),
     path('redirect_url/<str:raw_url>/', views.RedirectHandler.as_view(), name='origin_redirect_handler'),
     path('in-progress/', views.InProgress.as_view(), name = 'in_progess'),
+    
     path('dashboard/', views.Dashboard.as_view(), name = 'origin_dashboard'),
     path('dashboard/settings/', views.Dashboard.as_view(), name = 'origin_settings'),
+    path('dashboard/settings/', views.Dashboard.as_view(), name = 'origin_personal_data'),
     
+    path('debug/test-search/', views.TestSearch.as_view(), name='test_search'),
+        
     path('extra/', views.Extras.as_view(),name='origin_extra'),
     path('login/', views.Login.as_view(),name='origin_login'),
     path('signup/', views.Signup.as_view(),name='origin_signup'),
@@ -28,7 +32,8 @@ urlpatterns = [
 
     path('weekly-analysis/', views.Reports.as_view(),name='origin_weekly_analysis'),
     
-    path('logout/', views.Logout.as_view(), name = 'origin_logout_active_user'),
+    path('debug/logout/', views.Logout.as_view(), name = 'origin_logout_active_user'),
+    path('message/', views.LogoutUI.as_view(), name = 'origin_logout')
 ]
 
 
@@ -62,7 +67,7 @@ KWARGS: {kwargs}
 def handler404(request, *args, **kwargs):
     """Custom 404 error page."""
     messages.info(request,message='it seem the page you are trying to access does not exist')
-    logger.error(f"""Method: {request.method}
+    logger.warning(f"""Method: {request.method}
 status code: 404
 GET params: {[(i + " : " + request.GET[i], ) for i in request.GET]}
 POST data: {[i for i in request.POST]}
@@ -76,7 +81,7 @@ ARGS: {args}
 def handler400(request, *args, **kwargs):
     """Custom 400 error page."""
     # messages.info(request,message='Deau user, if this page is consistent, it mean we are undergoing mantainance, bear with us please')
-    logger.error(f"""Method: {request.method}
+    logger.warning(f"""Method: {request.method}
 status code: 400
 GET params: {[(i + " : " + request.GET[i], ) for i in request.GET]}
 POST data: {[i for i in request.POST]}

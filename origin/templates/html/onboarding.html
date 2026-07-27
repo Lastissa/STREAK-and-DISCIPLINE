@@ -11,7 +11,10 @@
   <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
 
   <!-- Inline spinner CSS — critical, must render before anything else -->
-  <style>{% include "reusables/spinner.css" %}</style>
+  <style>
+    {% include "reusables/spinner.css" %}
+    {% comment %} {% include "reusables/custom_message.css" %} {% endcomment %}
+  </style>
 
   <!-- LIGHT CSS: blocking, but tiny — keeps first paint stable & unstyled-flash-free -->
   <link rel="stylesheet" href="{% static 'css/onboarding_light.css' %}">
@@ -28,7 +31,7 @@
        LOADER — waits for heavy CSS (max 8 s)
        ====================================================== -->
   {% include "reusables/spinner.html" %}
-
+  {% comment %} {% include "reusables/custom_message.html" %} {% endcomment %}
   <!-- ======================================================
        APP ROOT — hidden until CSS ready
        ====================================================== -->
@@ -220,10 +223,11 @@
               <div class="cat-grid" id="catGrid">
                 <div class="cat-card" data-cat="fitness"><i class="fas fa-dumbbell"></i>Fitness</div>
                 <div class="cat-card" data-cat="study"><i class="fas fa-book-open"></i>Study</div>
-                <div class="cat-card" data-cat="work"><i class="fas fa-briefcase"></i>Work</div>
+                {% comment %} <div class="cat-card" data-cat="work"><i class="fas fa-briefcase"></i>Work</div> {% endcomment %}
                 <div class="cat-card" data-cat="health"><i class="fas fa-heart-pulse"></i>Health</div>
                 <div class="cat-card" data-cat="mindset"><i class="fas fa-brain"></i>Mindset</div>
-                <div class="cat-card" data-cat="other"><i class="fas fa-ellipsis"></i>Other</div>
+                <div class="cat-card" data-cat="growth"><i class="fas fa-seedling"></i>Growth</div>
+                <div class="cat-card on" data-cat="other"><i class="fas fa-ellipsis"></i>Other</div>
               </div>
 
               <div class="btn-row">
@@ -407,7 +411,7 @@
                   <h4>Solo</h4>
                   <p>Just me. Total privacy. My word, my rules.</p>
                 </div>
-                <div class="social-card" data-mode="friend">
+                <div class="social-card" data-mode="partner">
                   <i class="fas fa-user-group"></i>
                   <h4>With Partner</h4>
                   <p>Someone sees my consistency score. Not my entries.</p>
@@ -652,6 +656,10 @@
                   <button class="btn btn-ghost btn-sm" id="restartBtn">
                     <i class="fas fa-rotate-left"></i> Start over
                   </button>
+
+                  <button class="btn btn-ghost btn-sm" data-prev="10">
+                  <i class="fas fa-arrow-left"></i> Tweak something
+                </button>
                 </div>
               </div>
             </div>
@@ -741,6 +749,7 @@
        ============================================================== -->
   <script>
   (function() {
+    {% comment %} {% include "reusables/custom_message.js" %} {% endcomment %}
     'use strict';
 
     /* ============================================================
@@ -917,9 +926,9 @@
        ============================================================ */
     var STATE = {
       phase: 1,
-      name: '',
+      name: '{{request.user.username}}',
       what: '',
-      category: '',
+      category: 'other',
       why: '',
       minimum: '',
       goalDays: 365,
@@ -1240,7 +1249,7 @@
       if (waField) waField.classList.toggle('show', STATE.reminderMethod === 'whatsapp');
       // Friend section
       var fs = document.getElementById('friendSection');
-      if (fs) fs.style.display = STATE.socialMode === 'friend' ? 'block' : 'none';
+      if (fs) fs.style.display = STATE.socialMode === 'partner' ? 'block' : 'none';
     }
 
     /* ============================================================
@@ -1258,9 +1267,9 @@
         ? (STATE.reminderTime + ' via ' + STATE.reminderMethod)
         : 'Off';
       var md = document.getElementById('sumMode');
-      if(md) md.textContent = STATE.socialMode === 'friend' && STATE.friendName
+      if(md) md.textContent = STATE.socialMode === 'partner' && STATE.friendName
         ? 'With ' + STATE.friendName
-        : STATE.socialMode === 'friend' ? 'With partner' : 'Solo';
+        : STATE.socialMode === 'partner' ? 'With partner' : 'Solo';
     }
 
     /* ============================================================
@@ -1448,7 +1457,7 @@
         sc.classList.add('on');
         STATE.socialMode = sc.dataset.mode;
         var fs = document.getElementById('friendSection');
-        if(fs) fs.style.display = STATE.socialMode === 'friend' ? 'block' : 'none';
+        if(fs) fs.style.display = STATE.socialMode === 'partner' ? 'block' : 'none';
         save();
       });
     });
@@ -1525,8 +1534,8 @@
         }).then(function(res) {
           searchBtn.disabled = false;
           if (res.status >= 200 && res.status < 400) {
-            document.getElementById('frName').textContent = res.data.userid;
-            document.getElementById('frId').textContent   = '@' + (res.data.username || 'empty');
+            document.getElementById('frName').textContent = res.data.username || '-';
+            document.getElementById('frId').textContent   = '@' + (res.data.userid || 'empty');
             document.getElementById('frAvatar').src       = res.data.profile_image || '';
             STATE.friendName = res.data.userid;
             STATE.friendUUID = code;
@@ -1627,27 +1636,35 @@
         };
 
         fetch('{% url "origin_database" %}', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-          },
-          body: JSON.stringify(payload)
-        }).then(function(r) {
-          return r.json();
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+                  },
+                 body: JSON.stringify(payload)
+                }).then(function(r) {
+          return r.json().then(function(data) {
+            return { ok: r.ok, data: data };
+          });
         }).then(function(d) {
-          localStorage.removeItem(STATE.STORAGE_KEY);
-          var dest = d.redirect || '{{ where_to_go_full_url }}?';
-          console.log(payload)
-          window.location.href = dest;
+          if (d.ok) {
+            localStorage.removeItem(STATE.STORAGE_KEY);
+            window.location.href = d.data.redirect || '{{ where_to_go_full_url }}';
+          } else {
+            submitBtn.classList.remove('ob-loading');
+            submitBtn.disabled = false;
+            alert(d.data.message || 'Please recheck your entries, some data are not accurately filled or missing');
+          }
         }).catch(function() {
           submitBtn.classList.remove('ob-loading');
           submitBtn.disabled = false;
-          // Even on network error, clear and redirect if we have a URL
-          localStorage.removeItem(STATE.STORAGE_KEY);
-          window.location.href = '{{ where_to_go_full_url }}';
+          alert('We are sorry, system was busy. Please try again.');
+
+           // Even on network error, clear and redirect if we have a URL - thast if i have something to handle the errror in my backend
+          //localStorage.removeItem(STATE.STORAGE_KEY);
+          //window.location.href = '{{ where_to_go_full_url }}';
         });
-      });
+    });
     }
 
     /* ============================================================
