@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  {% include "reusables/web_icon.html" %}
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
@@ -34,7 +35,7 @@
         onload="this.onload=null;this.rel='stylesheet'" id="adv-css">
   <noscript><link rel="stylesheet" href="{% static 'cdn/dashboard_advance.css' %}"></noscript>
 </head>
-{% comment %} <body class="{% if request.COOKIES.sd_theme == 'light' %}sd-light{% endif %}"> {% endcomment %}
+<body class="sd-{{theme_mode}}">
 
   <!-- ====================================================
        SPINNER — shows instantly, hides after window.load
@@ -106,14 +107,17 @@
           </a>
           {% endif %}
 
-          <!-- ↓ Placeholder for future aside items ↓ -->
-          <!-- Add new links here — they inherit all styles automatically -->
+          <div class="aside-section-lbl" style="margin-top:0.5rem">Others</div>
+          <a href="{% url "origin_extra" %}#help" class="aside-link"></i> Help</a>
+          <a href="{% url "origin_blog" %}" class="aside-link"></i> Blog and Update</a>
+            <a href="{% url "origin_extra" %}#policy" class="aside-link"></i> Private Policy</a>
+            <a href="{% url "origin_extra" %}#terms" class="aside-link"></i> Term of use</a>
 
           <hr class="aside-sep">
 
           <!-- Support -->
           <div class="aside-support-lbl">Support</div>
-          <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_blank"
+          <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_self"
              rel="noopener" class="aside-link">
             <i class="fab fa-whatsapp"></i> WhatsApp Support
           </a>
@@ -477,9 +481,9 @@
        At bottom of body — no defer needed
        ==================================================== -->
   <script>
-  (function() {
+    (function() {
     'use strict';
-
+  
     /* ============================================================
        HELPERS
        ============================================================ */
@@ -932,6 +936,15 @@
     var themeBtn  = document.getElementById('themeToggleBtn');
     var themeIcon = document.getElementById('themeIcon');
 
+  // Set initial icon on page load
+    (function() {
+      var saved = getCookie('sd-theme');
+      if (saved === 'light' && themeIcon) {
+        themeIcon.className = 'fas fa-sun';
+      }
+    })();
+    
+
     function setTheme(dark) {
       document.body.classList.toggle('sd-light', !dark);
       if (themeIcon) themeIcon.className = dark ? 'fas fa-moon' : 'fas fa-sun';
@@ -1045,7 +1058,7 @@
     // WhatsApp
     document.getElementById('waShareBtn') && document.getElementById('waShareBtn').addEventListener('click', function() {
       var idx = parseInt(qs('#spSelector') ? qs('#spSelector').value : 0) || 0;
-      window.open('https://wa.me/?text=' + encodeURIComponent(buildShareText(idx)), '_blank', 'noopener');
+      window.open('https://wa.me/?text=' + encodeURIComponent(buildShareText(idx)), '_self', 'noopener');
     });
 
     // X / Twitter
@@ -1054,7 +1067,7 @@
       var streak = c ? c.streak_count || 0 : 0;
       var tweet = streak + '-day streak on "' + (c ? c.what : 'my commitment') + '"\n\n' +
                   getDailyQuote() + '\n\nstreakdiscipline.com';
-      window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(tweet), '_blank', 'noopener');
+      window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(tweet), '_self', 'noopener');
     });
 
     /* ============================================================

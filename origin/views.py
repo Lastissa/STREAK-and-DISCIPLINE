@@ -290,65 +290,15 @@ class Dashboard(LoginRequiredMixin, View):
             'social_mode' : user_profile.social_mode,
             'total_active_commitments': commitment_istance.count(),
             'consistency_pct': c_pct,  
-             'total_entries': Entries.objects.filter(commitment_id__user = request.user).count(),                                                                            #Hold usr current tier
+             'total_entries': Entries.objects.filter(commitment_id__user = request.user).count(),       #Hold usr current tier
+             'theme_mode': request.COOKIES.get("sd-theme", user_profile.theme.lower()),
             
             'public_searchable_username ' : user_profile.public_searchable_username,
             'zeal_score' : user_profile.zeal_score
             
         }
         return render(request, 'html/dashboard.html', data)
-#         profile_istance = Profile.objects.filter(user = request.user).first()
-#         Commitment_istance = Commitment.objects.filter(user = request.user).all()
-#         partner_request_received = Friendship.objects.filter(to_user = request.user).all()
-#         friend_request_sent = Friendship.objects.filter(from_user = request.user).all()
-#         if partner_request_received is None: partner_list_received = []
-#         else: partner_list_received = [{
-#                             'from_user': f.from_user.email,
-#                             'to_user': f.to_user.email,
-#                             'status': f.status,
-#                             'created_at': f.created_at.isoformat(),
-#                             'updated_at' : f.updated_at.isoformat()
-#                         }
-#                         for f in partner_request_received] 
-#         if friend_request_sent is None: partner_list_sent = []
-#         else: partner_list_sent = [{
-#                                     'from_user': f.from_user.email,
-#                                     'to_user': f.to_user.email,
-#                                     'status': f.status,
-#                                     'created_at': f.created_at.isoformat(),
-#                                     'updated_at' : f.updated_at.isoformat()
-#                                 }
-#                                 for f in friend_request_sent] 
-        
-#         return JsonResponse({
-#             'username' : request.user.username,
-#             'email' : request.user.email,
-#             'last_login' : request.user.last_login,
-#             'join_date' : request.user.date_joined,
-#             'user_id' : profile_istance.public_searchable_username,
-#             'profile_istance' : {
-#                         'tier': profile_istance.tier,
-#                         'public_searchable_username': profile_istance.public_searchable_username,
-#                         'leaderboard_optin': profile_istance.leaderboard_optin,
-#                         'streak_count_is_public_visible': profile_istance.streak_count_is_public_visible,
-#                         'ai_insight_active': profile_istance.ai_insight_active,
-#                         'receive_newsletter': profile_istance.receive_newsletter,
-#                         'theme': profile_istance.theme,
-#                         'weekly_report_email_active': profile_istance.weekly_report_email_active,
-#                         'custom_report_email_active': profile_istance.custom_report_email_active,
-#                         'social_mode': profile_istance.social_mode,
-#                         'zeal_score': profile_istance.zeal_score,
-# },
-#             'commitment' : [{
-#                             'what': c.what,
-#                             'category': c.category,
-#                             'why': c.why,
-#                             'goal_days': c.goal_days,
-#                             'streak_count': c.streak_count,
-#                             } for c in Commitment_istance],
-#             'friend_request_received' : partner_list_received,
-#             'friend_request_sent' : partner_list_sent
-#             }, safe=False)
+
 
 class Onboarding(LoginRequiredMixin, View):
     login_url = '/v1/login/'
@@ -486,13 +436,14 @@ class Logout(View):
     
 """user inteface when user logout from their account"""
 class LogoutUI(View):
-    def post(self, request):return self.post(request)
+    def post(self, request):return self.get(request)
     def get(self, request):
         try: 
             logout(request)
-            messages.info('logout success')
+            # messages.info(request,'Logout successfully done.')
+            return redirect('origin_home')
         except: 
-            messages.error(request=request, message="Unable to logout , please go back and try again. If error persist, please contact customer support")
+            messages.error(request=request, message="Unable to logout. Were You log in before? please go back and try again. If error persist, please contact customer support. Quick Fix")
         return render(request, 'html/full_screen_message.html')
 
 
@@ -501,7 +452,9 @@ class EachCommitmentView(LoginRequiredMixin, View):
         messages.info(request, message=f"This page for {request.user.username} with commitment id: {commitment_id} is still being built, Check back later")
         return render(request, 'html/full_screen_message.html')
     
-    
+class Leaderboard(View):
+    def get(self, request): return render(request, 'html/leaderboard.html')
+
 #PURE JSON
 class CommitmentData(LoginRequiredMixin, View):
     def get(self, request):
@@ -686,6 +639,155 @@ class PartnerWidget(LoginRequiredMixin, View):
             'partners': partners,
         })
         
+        
+class DashboardJson(LoginRequiredMixin, View):
+    def get(self, request):
+        profile_istance = Profile.objects.filter(user = request.user).first()
+        Commitment_istance = Commitment.objects.filter(user = request.user).all()
+        partner_request_received = Friendship.objects.filter(to_user = request.user).all()
+        friend_request_sent = Friendship.objects.filter(from_user = request.user).all()
+        if partner_request_received is None: partner_list_received = []
+        else: partner_list_received = [{
+                            'from_user': f.from_user.email,
+                            'to_user': f.to_user.email,
+                            'status': f.status,
+                            'created_at': f.created_at.isoformat(),
+                            'updated_at' : f.updated_at.isoformat()
+                        }
+                        for f in partner_request_received] 
+        if friend_request_sent is None: partner_list_sent = []
+        else: partner_list_sent = [{
+                                    'from_user': f.from_user.email,
+                                    'to_user': f.to_user.email,
+                                    'status': f.status,
+                                    'created_at': f.created_at.isoformat(),
+                                    'updated_at' : f.updated_at.isoformat()
+                                }
+                                for f in friend_request_sent] 
+        
+        return JsonResponse({
+            'username' : request.user.username,
+            'email' : request.user.email,
+            'last_login' : request.user.last_login,
+            'join_date' : request.user.date_joined,
+            'user_id' : profile_istance.public_searchable_username,
+            'profile_istance' : {
+                        'tier': profile_istance.tier,
+                        'public_searchable_username': profile_istance.public_searchable_username,
+                        'leaderboard_optin': profile_istance.leaderboard_optin,
+                        'streak_count_is_public_visible': profile_istance.streak_count_is_public_visible,
+                        'ai_insight_active': profile_istance.ai_insight_active,
+                        'receive_newsletter': profile_istance.receive_newsletter,
+                        'theme': profile_istance.theme,
+                        'weekly_report_email_active': profile_istance.weekly_report_email_active,
+                        'custom_report_email_active': profile_istance.custom_report_email_active,
+                        'social_mode': profile_istance.social_mode,
+                        'zeal_score': profile_istance.zeal_score,
+},
+            'commitment' : [{
+                            'what': c.what,
+                            'category': c.category,
+                            'why': c.why,
+                            'goal_days': c.goal_days,
+                            'streak_count': c.streak_count,
+                            } for c in Commitment_istance],
+            'friend_request_received' : partner_list_received,
+            'friend_request_sent' : partner_list_sent
+            }, safe=False)
+
+class BlogView(View):
+    login_url = '/v1/login/'
+    
+    def get(self, request):        
+        posts = [
+            {
+                'tag': 'Update',
+                'title': 'New Feature: Weekly Leaderboard is Live',
+                'excerpt': 'See how you rank against other disciplined minds every Sunday. Opt in from your profile settings to appear on the board.',
+                'date': 'Jul 28, 2026',
+                'read_time': '2 min read',
+                'url': '/v1/blog/weekly-leaderboard-launch/',
+                'image_url': '',  # leave empty if no image
+                'featured': True,  # this one spans full width
+            },
+            {
+                'tag': 'Tip',
+                'title': 'The 2-Minute Rule: How to Never Miss a Check-In',
+                'excerpt': 'On your worst days, your minimum effort is your secret weapon. Here is how to set one that actually works.',
+                'date': 'Jul 25, 2026',
+                'read_time': '3 min read',
+                'image_url': '',
+                'featured': False,
+            },
+            {
+                'tag': 'Guide',
+                'title': 'Why Your Streak Reset Is a Gift, Not a Failure',
+                'excerpt': 'The number does not define you. How you respond to the reset does. A different way to think about breaking the chain.',
+                'date': 'Jul 20, 2026',
+                'read_time': '4 min read',
+                'url': '/v1/blog/streak-reset-gift/',
+                'image_url': '',
+                'featured': False,
+            },
+            {
+                'tag': 'Story',
+                'title': 'How Opeyemi Went From Zero to 217 Days',
+                'excerpt': 'A community member shares how one honest sentence a day rebuilt their confidence and changed their mornings.',
+                'date': 'Jul 15, 2026',
+                'read_time': '5 min read',
+                'url': '/v1/blog/opeyemi-217-days/',
+                'image_url': '',
+                'featured': False,
+            },
+            {
+                'tag': 'Update',
+                'title': 'Accountability Partners Are Here',
+                'excerpt': 'You can now invite someone to see your consistency score. Not your entries — just your commitment to showing up.',
+                'date': 'Jul 10, 2026',
+                'read_time': '2 min read',
+                'url': '/v1/blog/accountability-partners/',
+                'image_url': '',
+                'featured': False,
+            },
+            {
+                'tag': 'Tip',
+                'title': 'Morning vs Evening Check-Ins: What the Data Says',
+                'excerpt': 'Our analytics show morning check-ins average 52 words. Evening ones? 24. What your timing reveals about your mindset.',
+                'date': 'Jul 5, 2026',
+                'read_time': '3 min read',
+                'url': '/v1/blog/morning-vs-evening/',
+                'image_url': '',
+                'featured': False,
+            },
+            
+            #to show image
+            {
+                'tag': 'Update',
+                'title': 'New Feature: Weekly Leaderboard is Live',
+                'excerpt': '...',
+                'date': 'Jul 28, 2026',
+                'read_time': '2 min read',
+                'url': '/v1/blog/weekly-leaderboard-launch/',
+                'image_url': Static.logo_url(),
+                'featured': True,
+            }
+        ]
+        
+        context = {
+            'tier': 'gold',
+            'posts': posts,
+             'categories': ['Update', 'TIP', 'Guide', 'Story'],  # unique tags
+        }
+
+        return render(request, 'html/blog_and_update.html', context)
+    
+class BlogViewExpanded(View):
+    def get(self, request):
+        """When usr click on that blog and they want to see the content, colect the blog id from user as extra sub endpoint"""
+        pass
+
+
+
 #deepseek need this ---i am still edtiting it too
 
 #PURE JSON

@@ -1,0 +1,395 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Leaderboard — STREAK &amp; DISCIPLINE</title>
+
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--bg:#0a0e17;--surface:#111827;--text:#e2e8f0;--text-secondary:#94a3b8;--accent:#3b82f6;--border:#1e293b;--radius:12px;--font:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+    body{background:var(--bg);font-family:var(--font);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+    {% include "reusables/spinner.css" %}
+    .lb-app{display:none}
+    .lb-app.loaded{display:flex;min-height:100vh}
+  </style>
+
+  <link rel="stylesheet" href="{% static 'css/leaderboard_light.css' %}">
+  <link rel="preload" href="{% static 'cdn/leaderboard_advance.css' %}" as="style"
+        onload="this.onload=null;this.rel='stylesheet';document.documentElement.classList.add('engine-ready')"
+        id="heavy-css">
+  <noscript><link rel="stylesheet" href="{% static 'cdn/leaderboard_advance.css' %}"></noscript>
+  <link rel="preload" href="{{ font_awesome_all_min_css }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="{{ font_awesome_all_min_css }}"></noscript>
+</head>
+<body class="{% if request.COOKIES.sd_theme == 'light' %}sd-light{% endif %}">
+
+  {% include "reusables/spinner.html" %}
+
+  <div class="lb-app" id="lbApp">
+    <canvas id="particleCanvas"></canvas>
+    <div class="aside-overlay" id="asideOverlay"></div>
+
+    <aside class="lb-aside" id="lbAside">
+      <div class="aside-scroll">
+        <div class="aside-top">
+          <div class="aside-avatar-wrap" id="asideAvatarWrap">
+            <div class="sk sk-circle" style="width:48px;height:48px" id="asideAvatarSk"></div>
+          </div>
+          <div class="aside-username">{{ request.user.username }}</div>
+          <span class="tier-badge tier-{{ tier|default:'free' }}">
+            {% if tier == 'gold' %}<i class="fas fa-crown"></i> Gold
+            {% elif tier == 'premium' %}<i class="fas fa-gem"></i> Premium
+            {% else %}<i class="fas fa-user"></i> Free{% endif %}
+          </span>
+        </div>
+        <nav class="aside-nav">
+          <div class="aside-section-lbl">Navigation</div>
+          <a href="{% url 'origin_dashboard' %}" class="aside-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
+          <a href="/v1/profile/" class="aside-link"><i class="fas fa-circle-user"></i> Profile</a>
+          <a href="/v1/commitments/" class="aside-link"><i class="fas fa-fire-flame-curved"></i> My Commitments</a>
+          <a href="/v1/leaderboard/" class="aside-link active"><i class="fas fa-ranking-star"></i> Leaderboard</a>
+          <a href="/v1/groups/" class="aside-link"><i class="fas fa-users"></i> Groups</a>
+          <a href="/v1/blog/" class="aside-link"><i class="fas fa-newspaper"></i> Blog</a>
+          <a href="/v1/reports/" class="aside-link"><i class="fas fa-chart-line"></i> Analytics</a>
+          <div class="aside-section-lbl">Support</div>
+          <a href="https://wa.me/2347013687825" target="_blank" rel="noopener" class="aside-link"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link"><i class="fas fa-envelope"></i> Email</a>
+        </nav>
+        {% if tier == 'free' %}
+        <div class="aside-upgrade">
+          <h4><i class="fas fa-gem"></i> Upgrade to Pro</h4>
+          <p>Unlock AI insights, 50 commitments, and more.</p>
+          <a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm btn-full">Start 7-Day Trial</a>
+        </div>
+        {% endif %}
+      </div>
+      <div class="aside-logout">
+        <button class="aside-logout-btn" id="logoutBtn"><i class="fas fa-right-from-bracket"></i> Log Out</button>
+      </div>
+    </aside>
+
+    <div class="lb-wrap">
+      <header class="lb-header">
+        <button class="menu-toggle" id="menuToggle" aria-label="Menu"><span></span><span></span><span></span></button>
+        <h1 class="lb-title">Weekly Leaderboard</h1>
+        <div class="lb-header-right">
+          <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
+        </div>
+      </header>
+
+      <main class="lb-main">
+        <section class="lb-hero">
+          <div class="lb-hero-content">
+            <h2>Top 10 Disciplined Minds</h2>
+            <p class="lb-hero-sub">Every Sunday, a new ranking is calculated from total streak power across all active commitments. Only users who opt in appear here. Your journal entries are never shown.</p>
+            <div class="week-picker">
+              <button class="week-nav" id="prevWeekBtn"><i class="fas fa-chevron-left"></i></button>
+              <span class="current-week" id="currentWeekLabel">This Week</span>
+              <button class="week-nav" id="nextWeekBtn" disabled><i class="fas fa-chevron-right"></i></button>
+            </div>
+          </div>
+          <div class="lb-hero-visual">
+            <div class="hero-ring">
+              <div class="hero-ring-inner"><span class="hero-ring-icon"><i class="fas fa-trophy"></i></span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="reveal-stage">
+          <div class="card-3d" id="card3d">
+            <div class="card-face card-front">
+              <div class="front-content">
+                <div class="lock-icon"><i class="fas fa-lock"></i></div>
+                <h3>Weekly Leaderboard</h3>
+                <p>Tap to reveal this week's top 10</p>
+                <button class="btn btn-primary btn-xl reveal-btn" id="revealBtn">
+                  <span class="btn-text">Reveal</span>
+                  <span class="btn-spinner"></span>
+                </button>
+                <div class="loading-state" id="loadingState" style="display:none">
+                  <div class="spinner-large"></div>
+                  <span>Almost there…</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-face card-back">
+              <div class="back-content">
+                <div class="lb-list-header"><span>#</span><span>User</span><span>Streak</span></div>
+                <ol class="lb-list" id="leaderboardList"></ol>
+                <div class="error-state" id="errorState" style="display:none">
+                  <p id="errorMessage"></p>
+                  <button class="btn btn-outline btn-sm" id="retryBtn">Retry</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="podium-section">
+          <h3 class="section-title">Podium</h3>
+          <div class="podium" id="podium">
+            <div class="podium-item second"><div class="podium-bar"></div><span class="podium-name">—</span><span class="podium-medal">🥈</span></div>
+            <div class="podium-item first"><div class="podium-bar"></div><span class="podium-name">—</span><span class="podium-medal">🥇</span></div>
+            <div class="podium-item third"><div class="podium-bar"></div><span class="podium-name">—</span><span class="podium-medal">🥉</span></div>
+          </div>
+        </section>
+
+        <section class="lb-stats-section">
+          <h3 class="section-title">This Week's Stats</h3>
+          <div class="stat-grid">
+            <div class="stat-card"><i class="fas fa-users"></i><span class="stat-num" id="totalParticipants">—</span><span class="stat-label">Participants</span></div>
+            <div class="stat-card"><i class="fas fa-fire"></i><span class="stat-num" id="highestStreak">—</span><span class="stat-label">Highest Streak</span></div>
+            <div class="stat-card"><i class="fas fa-eye-slash"></i><span class="stat-num" id="privateCount">—</span><span class="stat-label">Private Scores</span></div>
+            <div class="stat-card"><i class="fas fa-clock"></i><span class="stat-label">Next Update</span><span class="stat-num">Sunday</span></div>
+          </div>
+        </section>
+
+        <section class="lb-info-section">
+          <div class="info-grid">
+            <div class="info-card">
+              <i class="fas fa-calculator"></i>
+              <h4>How Ranking Works</h4>
+              <p>Your rank is based on your <strong>total streak sum</strong> across all active commitments. The higher your combined streaks, the higher you climb. You must opt in via profile settings to appear.</p>
+            </div>
+            <div class="info-card">
+              <i class="fas fa-shield-halved"></i>
+              <h4>Private Scores</h4>
+              <p>If a user's streak shows <span class="private-badge"><i class="fas fa-eye-slash"></i></span>, they chose to hide their count. Their rank still counts — the number is simply not displayed.</p>
+            </div>
+            <div class="info-card">
+              <i class="fas fa-bolt"></i>
+              <h4>Zeal vs Streak</h4>
+              <p>This leaderboard ranks by <strong>total streak sum</strong>. Your personal Zeal Score weighs commitment count × average streak — a different metric that measures overall discipline intensity.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="lb-faq-section">
+          <h3 class="section-title">Frequently Asked Questions</h3>
+          <div class="faq-list">
+            <div class="faq-item">
+              <button class="faq-question">How often does the leaderboard update? <i class="fas fa-chevron-down"></i></button>
+              <div class="faq-answer"><p>Every Sunday at midnight UTC. The ranking reflects the previous week's streak data. You can view last week's results using the navigation above.</p></div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-question">Why can't I see myself on the leaderboard? <i class="fas fa-chevron-down"></i></button>
+              <div class="faq-answer"><p>You need to opt in via <strong>Profile Settings → Leaderboard Opt-in</strong>. If you've opted in but don't appear, your total streak may not be high enough to rank in the top 10 this week. Keep building those streaks!</p></div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-question">What does "private" mean next to a score? <i class="fas fa-chevron-down"></i></button>
+              <div class="faq-answer"><p>The user chose to hide their exact streak count. They still participate in the ranking — their position is real — but the number is not shown publicly. You can set this in your profile settings.</p></div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-question">Can I see leaderboards from previous weeks? <i class="fas fa-chevron-down"></i></button>
+              <div class="faq-answer"><p>Yes. Use the week navigation at the top of the page to switch between this week and last week. Historical data beyond last week is not currently available but is planned for a future update.</p></div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-question">Do groups have separate leaderboards? <i class="fas fa-chevron-down"></i></button>
+              <div class="faq-answer"><p>Not yet. Currently, the leaderboard is global across all opted-in users. Group-specific leaderboards are planned for the Team tier. Stay tuned!</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="lb-quote-section">
+          <div class="quote-card">
+            <p class="quote-text" id="quoteText"></p>
+            <span class="quote-attribution">— STREAK &amp; DISCIPLINE</span>
+          </div>
+        </section>
+
+        <footer class="lb-footer">
+          <div class="footer-grid">
+            <div class="footer-brand">
+              <span class="footer-logo">STREAK &amp; DISCIPLINE</span>
+              <p>A private discipline journal for those serious about keeping promises to themselves. No badges. No leaderboards you didn't choose. Just you vs your word.</p>
+            </div>
+            <div class="footer-links">
+              <h4>Leaderboard</h4>
+              <a href="#" id="footerThisWeek">This Week</a>
+              <a href="#" id="footerPrevWeek">Last Week</a>
+            </div>
+            <div class="footer-links">
+              <h4>Support</h4>
+              <a href="mailto:issaabdulsalamope11@gmail.com"><i class="fas fa-envelope"></i> Email Support</a>
+              <a href="https://wa.me/2347013687825"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+            </div>
+            <div class="footer-links">
+              <h4>Legal</h4>
+              <a href="{% url 'origin_extra' %}#privacy">Privacy Policy</a>
+              <a href="{% url 'origin_extra' %}#terms">Terms of Service</a>
+            </div>
+          </div>
+          <div class="footer-bottom">
+            <p>&copy; {{ footer_copyright_note }}</p>
+          </div>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <form method="POST" action="{% url 'origin_logout' %}" id="logoutForm" style="display:none">{% csrf_token %}</form>
+
+  <script>{% include "reusables/spinner.js" %}</script>
+  <script>
+  (function() {
+    'use strict';
+    const app = document.getElementById('lbApp');
+    const heavyCss = document.getElementById('heavy-css');
+    function boot() { if (!app.classList.contains('loaded')) { app.classList.add('loaded'); init(); } }
+    if (heavyCss) { if (heavyCss.rel === 'stylesheet') boot(); else heavyCss.addEventListener('load', boot); }
+    setTimeout(boot, 8000);
+
+    const $ = (s,c) => (c||document).querySelector(s);
+    const $$ = (s,c) => (c||document).querySelectorAll(s);
+    function getCookie(n) { let v = document.cookie.match('(?:^|;) ?'+n+'=([^;]*)'); return v ? decodeURIComponent(v[1]) : ''; }
+    function setCookie(n,v,d) { let t=new Date(); t.setDate(t.getDate()+(d||1)); document.cookie=n+'='+encodeURIComponent(v)+';path=/;expires='+t.toUTCString(); }
+    function fetchJSON(url) { return fetch(url,{headers:{'X-CSRFToken':getCookie('csrftoken')}}).then(r=>r.json().then(d=>({ok:r.ok,status:r.status,data:d}))); }
+
+    let currentWeek = 0, leaderboardCache = {};
+
+    function init() {
+      initTheme(); initSidebar(); initParticles(); initLogout(); initQuote(); initFAQ();
+      $('#prevWeekBtn').addEventListener('click',()=>changeWeek(-1));
+      $('#nextWeekBtn').addEventListener('click',()=>changeWeek(1));
+      $('#revealBtn').addEventListener('click',()=>{ burst($('#revealBtn'),20); loadLeaderboard(); });
+      $('#retryBtn').addEventListener('click',loadLeaderboard);
+      $('#footerThisWeek').addEventListener('click',(e)=>{e.preventDefault(); changeWeek(0);});
+      $('#footerPrevWeek').addEventListener('click',(e)=>{e.preventDefault(); changeWeek(-1);});
+      loadUserPicture();
+    }
+
+    function initTheme() {
+      const btn = $('#themeToggle'), icon = btn.querySelector('i');
+      function set(dark) { document.body.classList.toggle('sd-light',!dark); icon.className=dark?'fas fa-moon':'fas fa-sun'; setCookie('sd-theme',dark?'dark':'light',365); }
+      btn.addEventListener('click',()=>set(document.body.classList.contains('sd-light')));
+      if (getCookie('sd-theme')==='light') set(false);
+    }
+
+    function initSidebar() {
+      const sidebar=$('#lbAside'),toggle=$('#menuToggle'),overlay=$('#asideOverlay');
+      function open(){sidebar.classList.add('open');overlay.classList.add('show')}
+      function close(){sidebar.classList.remove('open');overlay.classList.remove('show')}
+      toggle.addEventListener('click',()=>sidebar.classList.contains('open')?close():open());
+      overlay.addEventListener('click',close);
+      sidebar.querySelectorAll('.aside-link').forEach(l=>l.addEventListener('click',()=>{if(window.innerWidth<1024)close()}));
+    }
+
+    function initParticles() {
+      const canvas=$('#particleCanvas'); if(!canvas)return;
+      const ctx=canvas.getContext('2d'); let pts=[],mouse={x:-1000,y:-1000};
+      function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight} resize();
+      window.addEventListener('resize',resize);
+      for(let i=0;i<60;i++) pts.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-0.5)*0.25,vy:(Math.random()-0.5)*0.25,r:Math.random()*2+1});
+      window.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
+      function draw(){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        pts.forEach(p=>{
+          let dx=mouse.x-p.x,dy=mouse.y-p.y,dist=Math.sqrt(dx*dx+dy*dy);
+          if(dist<150){p.vx+=dx/dist*0.018;p.vy+=dy/dist*0.018}
+          p.vx*=0.99;p.vy*=0.99;p.x+=p.vx;p.y+=p.vy;
+          if(p.x<0||p.x>canvas.width)p.vx*=-1; if(p.y<0||p.y>canvas.height)p.vy*=-1;
+          ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba(59,130,246,0.22)';ctx.fill();
+        });
+        for(let i=0;i<pts.length;i++){
+          for(let j=i+1;j<pts.length;j++){
+            let a=pts[i],b=pts[j],d=Math.hypot(a.x-b.x,a.y-b.y);
+            if(d<90){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='rgba(59,130,246,'+(0.08*(1-d/90))+')';ctx.lineWidth=0.4;ctx.stroke()}
+          }
+        }
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    function burst(el,count){
+      count=count||16; let rect=el.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2,colors=['#60a5fa','#818cf8','#a78bfa','#3b82f6','#93c5fd'];
+      for(let i=0;i<count;i++){(function(i){
+        let dot=document.createElement('div'),angle=(i/count)*Math.PI*2,speed=50+Math.random()*80,tx=Math.cos(angle)*speed,ty=Math.sin(angle)*speed,size=3+Math.random()*3;
+        dot.style.cssText='position:fixed;border-radius:50%;pointer-events:none;z-index:9999;width:'+size+'px;height:'+size+'px;left:'+(cx-size/2)+'px;top:'+(cy-size/2)+'px;background:'+colors[i%colors.length];
+        document.body.appendChild(dot);
+        if(dot.animate){dot.animate([{transform:'translate(0,0)',opacity:1},{transform:'translate('+tx+'px,'+ty+'px) scale(0)',opacity:0}],{duration:400+Math.random()*200,easing:'cubic-bezier(0.22,1,0.36,1)',fill:'forwards'}).onfinish=()=>dot.remove()}else setTimeout(()=>dot.remove(),600);
+      })(i)}
+    }
+
+    function loadUserPicture(){
+      fetchJSON("{% url 'origin_user_picture' %}").then(res=>{
+        let url=(res.ok&&res.data.url)?res.data.url:'';
+        let wrap=$('#asideAvatarWrap'); if(!wrap)return;
+        let img=document.createElement('img');img.alt='{{request.user.username}}';img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%';
+        img.onerror=()=>{img.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\' viewBox=\'0 0 48 48\'%3E%3Ccircle cx=\'24\' cy=\'24\' r=\'24\' fill=\'%231e293b\'/%3E%3Ccircle cx=\'24\' cy=\'19\' r=\'9\' fill=\'%23475669\'/%3E%3Cellipse cx=\'24\' cy=\'46\' rx=\'16\' ry=\'10\' fill=\'%23475669\'/%3E%3C/svg%3E'};
+        img.onload=()=>{let sk=$('#asideAvatarSk');if(sk)sk.remove();wrap.appendChild(img)};
+        img.src=url||'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\' viewBox=\'0 0 48 48\'%3E%3Ccircle cx=\'24\' cy=\'24\' r=\'24\' fill=\'%231e293b\'/%3E%3Ccircle cx=\'24\' cy=\'19\' r=\'9\' fill=\'%23475669\'/%3E%3Cellipse cx=\'24\' cy=\'46\' rx=\'16\' ry=\'10\' fill=\'%23475669\'/%3E%3C/svg%3E';
+      }).catch(()=>{});
+    }
+
+    function initLogout(){
+      let btn=$('#logoutBtn'),form=$('#logoutForm');
+      btn&&btn.addEventListener('click',()=>{if(confirm('Log out?'))form?form.submit():window.location.href="{% url 'origin_logout' %}"});
+    }
+
+    function initQuote(){
+      let quotes=["He who conquers himself conquers all.","Small consistent actions rewrite who you are.","Motivation fades. Discipline stays.","One honest sentence a day is all it takes.","No audience. No applause. Just you keeping promises to yourself.","The streak doesn't care about your feelings. It just counts.","Champions don't wait for the mood. They build the habit."];
+      let day=Math.floor((Date.now()-new Date(new Date().getFullYear(),0,0))/86400000);
+      $('#quoteText').textContent='"'+quotes[day%quotes.length]+'"';
+    }
+
+    function initFAQ() {
+      $$('.faq-question').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const item = this.parentElement;
+          const isOpen = item.classList.contains('open');
+          document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+          if (!isOpen) item.classList.add('open');
+        });
+      });
+    }
+
+    function changeWeek(delta){
+      let nv=currentWeek+delta; if(nv>0||nv<-1)return;
+      currentWeek=nv;$('#currentWeekLabel').textContent=currentWeek===0?'This Week':'Last Week';
+      $('#prevWeekBtn').disabled=currentWeek===-1;$('#nextWeekBtn').disabled=currentWeek===0;
+      $('#card3d').classList.remove('flipped');$('#loadingState').style.display='none';
+      $('#revealBtn').style.display='';$('#leaderboardList').innerHTML='';$('#errorState').style.display='none';
+      if(leaderboardCache[currentWeek]){renderLeaderboard(leaderboardCache[currentWeek].leaderboard);$('#card3d').classList.add('flipped');updatePodium(leaderboardCache[currentWeek].leaderboard);updateStats(leaderboardCache[currentWeek])}
+    }
+
+    function loadLeaderboard(){
+      let btn=$('#revealBtn'),loading=$('#loadingState');btn.style.display='none';loading.style.display='flex';
+      let params=currentWeek===-1?'?last_week=true':'';
+      fetchJSON('/v1/get_weekly_leaderboard/'+params).then(res=>{
+        loading.style.display='none';btn.style.display='';
+        if(!res.ok)throw new Error(res.data.message||'Failed to load');
+        leaderboardCache[currentWeek]=res.data;
+        renderLeaderboard(res.data.leaderboard);$('#card3d').classList.add('flipped');
+        updatePodium(res.data.leaderboard);updateStats(res.data);
+      }).catch(err=>{loading.style.display='none';btn.style.display='';$('#errorMessage').textContent=err.message;$('#errorState').style.display='block'});
+    }
+
+    function renderLeaderboard(list){
+      let ol=$('#leaderboardList');ol.innerHTML='';
+      list.forEach((e,i)=>{
+        let li=document.createElement('li');li.className='lb-item';
+        let streakHtml=e.is_private?'<span class="private-streak"><i class="fas fa-eye-slash"></i><span class="private-tooltip">User made their score private</span></span>':'<span class="streak-val">'+(e.streak_sum||0)+'</span>';
+        li.innerHTML='<span class="rank">'+(i+1)+'</span><span class="user-id">@'+(e.public_id||'unknown')+'</span>'+streakHtml;
+        ol.appendChild(li);
+      });
+      $('#errorState').style.display='none';
+    }
+
+    function updatePodium(list){
+      let names=$$('.podium-name'); for(let i=0;i<3&&i<list.length;i++)if(names[i])names[i].textContent='@'+list[i].public_id;
+    }
+
+    function updateStats(data){
+      let t=$('#totalParticipants'),h=$('#highestStreak'),p=$('#privateCount');
+      if(t&&data.total_participants)t.textContent=data.total_participants;
+      if(h&&data.leaderboard&&data.leaderboard.length){let max=Math.max(...data.leaderboard.filter(e=>!e.is_private).map(e=>e.streak_sum||0));h.textContent=max||'—'}
+      if(p&&data.leaderboard){let priv=data.leaderboard.filter(e=>e.is_private).length;p.textContent=priv}
+    }
+  })();
+  </script>
+</body>
+</html>

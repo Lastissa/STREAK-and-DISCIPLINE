@@ -1,8 +1,5 @@
 {% if messages %}
 <div class="messages-container" id="messagesContainer">
-    <button class="msg-copy-all" id="msgCopyAll" title="Copy all messages">
-        <i class="fas fa-copy"></i> <span>Copy</span>
-    </button>
     {% for message in messages %}
     <div class="msg msg-{{ message.tags }}" role="alert">
         <span class="msg-icon">
@@ -14,8 +11,18 @@
             {% endif %}
         </span>
         <span class="msg-text">{{ message }}</span>
-        <button class="msg-close" aria-label="Dismiss message">&times;</button>
+        <div class="msg-actions">
+            <button class="msg-copy-single" title="Copy this message">
+                <i class="fas fa-copy"></i>
+            </button>
+            <button class="msg-close" aria-label="Dismiss message">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
     </div>
     {% endfor %}
+    <button class="msg-copy-all" id="msgCopyAll" title="Copy all messages">
+        <i class="fas fa-copy"></i> <span>Copy all</span>
+    </button>
 </div>
 {% endif %}

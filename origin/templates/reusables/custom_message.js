@@ -2,17 +2,19 @@
     var container = document.getElementById('messagesContainer');
     if (!container) return;
 
-    // Copy all
-    var copyBtn = document.getElementById('msgCopyAll');
-    if (copyBtn) {
-        copyBtn.addEventListener('click', function() {
+    // Copy all button
+    var copyAllBtn = document.getElementById('msgCopyAll');
+    if (copyAllBtn) {
+        copyAllBtn.addEventListener('click', function() {
             var texts = [];
             container.querySelectorAll('.msg-text').forEach(function(el) {
                 texts.push(el.textContent.trim());
             });
             var allText = texts.join('\n');
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(allText).then(showCopied);
+                navigator.clipboard.writeText(allText).then(function() {
+                    showCopied(copyAllBtn);
+                });
             } else {
                 var ta = document.createElement('textarea');
                 ta.value = allText;
@@ -22,28 +24,42 @@
                 ta.select();
                 document.execCommand('copy');
                 document.body.removeChild(ta);
-                showCopied();
+                showCopied(copyAllBtn);
             }
         });
     }
 
-    function showCopied() {
-        if (!copyBtn) return;
-        var span = copyBtn.querySelector('span');
-        var icon = copyBtn.querySelector('i');
+    function showCopied(btn) {
+        if (!btn) return;
+        var span = btn.querySelector('span');
+        var icon = btn.querySelector('i');
         var origText = span.textContent;
         var origIcon = icon.className;
-        copyBtn.classList.add('copied');
+        btn.classList.add('copied');
         span.textContent = 'Copied!';
         icon.className = 'fas fa-check';
         setTimeout(function() {
-            copyBtn.classList.remove('copied');
+            btn.classList.remove('copied');
             span.textContent = origText;
             icon.className = origIcon;
         }, 1800);
     }
 
-    // Close buttons only — no auto-dismiss
+    // Per-message copy buttons
+    container.querySelectorAll('.msg-copy-single').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var msgText = this.closest('.msg').querySelector('.msg-text').textContent.trim();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(msgText).then(function() {
+                    btn.classList.add('copied');
+                    setTimeout(function() { btn.classList.remove('copied'); }, 1500);
+                });
+            }
+        });
+    });
+
+    // Close buttons with physics animation
     var msgs = container.querySelectorAll('.msg');
     msgs.forEach(function(msg) {
         var closeBtn = msg.querySelector('.msg-close');
@@ -57,9 +73,25 @@
     function dismiss(msg) {
         if (msg.classList.contains('removing')) return;
         msg.classList.add('removing');
-        msg.addEventListener('transitionend', function() {
+        
+        // Remove after animation completes
+        var onTransitionEnd = function() {
             msg.remove();
-            if (!container.querySelector('.msg')) container.remove();
-        }, { once: true });
+            if (!container.querySelector('.msg')) {
+                container.remove();
+            }
+        };
+        
+        msg.addEventListener('transitionend', onTransitionEnd, { once: true });
+        
+        // Safety timeout in case transitionend doesn't fire
+        setTimeout(function() {
+            if (msg.parentNode) {
+                msg.remove();
+                if (!container.querySelector('.msg')) {
+                    container.remove();
+                }
+            }
+        }, 500);
     }
 })();

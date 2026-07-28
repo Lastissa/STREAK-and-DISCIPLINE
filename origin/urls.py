@@ -14,11 +14,17 @@ urlpatterns = [
     
     path('onboarding/', views.Onboarding.as_view(),name='origin_onboarding'),
     path('dashboard/', views.Dashboard.as_view(), name = 'origin_dashboard'),
+    path('dashboard/json/', views.DashboardJson.as_view(), name = 'origin_dashboard_json'),
     path('dashboard/settings/', views.Dashboard.as_view(), name = 'origin_settings'),
     path('dashboard/settings/', views.Dashboard.as_view(), name = 'origin_personal_data'),
     path('dashboard/commitment/<str:commitment_id>/', views.EachCommitmentView.as_view(), name = 'origin_each_commitment_view'),
+    
+    path('leaderboard/', views.Leaderboard.as_view(), name= "origin_leaderboard"),
+    path('blog/', views.BlogView.as_view(), name= "origin_blog"),
+    
         
     path('extra/', views.Extras.as_view(),name='origin_extra'),
+    path('navigation/', views.Extras.as_view(),name='origin_navigation'),
     path('weekly-analysis/', views.Reports.as_view(),name='origin_weekly_analysis'),
     path('login/', views.Login.as_view(),name='origin_login'),
     path('signup/', views.Signup.as_view(),name='origin_signup'),

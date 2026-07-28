@@ -14,44 +14,6 @@
     pointer-events: none;
 }
 
-/* ===== COPY ALL BUTTON ===== */
-.msg-copy-all {
-    align-self: flex-end;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.4rem 0.8rem;
-    background: rgba(10,14,23,0.7);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 8px;
-    color: #cbd5e1;
-    font-size: 0.72rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    pointer-events: auto;
-    font-family: system-ui, sans-serif;
-}
-.msg-copy-all:hover {
-    border-color: var(--accent, #3b82f6);
-    color: #fff;
-    background: rgba(59,130,246,0.2);
-}
-.msg-copy-all.copied {
-    border-color: #22c55e;
-    color: #bbf7d0;
-    background: rgba(34,197,94,0.15);
-}
-.msg-copy-all.copied i {
-    animation: copyPop 0.3s ease;
-}
-@keyframes copyPop {
-    0%,100% { transform: scale(1); }
-    50%     { transform: scale(1.4); }
-}
-
 /* ===== INDIVIDUAL MESSAGE ===== */
 .msg {
     display: flex;
@@ -61,27 +23,50 @@
     border-radius: 12px;
     font-size: 0.85rem;
     line-height: 1.5;
-    font-weight: 700;
+    font-weight: 600;
     border: 1px solid;
     pointer-events: auto;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    animation: msgSlideIn 0.35s cubic-bezier(0.23,1,0.32,1) both;
+    animation: msgSlideIn 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
     flex-shrink: 0;
-    opacity: 1;
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    transition: opacity 0.3s cubic-bezier(0.4,0,0.2,1), 
+                transform 0.4s cubic-bezier(0.4,0,0.2,1),
+                max-height 0.4s cubic-bezier(0.4,0,0.2,1),
+                margin 0.3s cubic-bezier(0.4,0,0.2,1),
+                padding 0.3s cubic-bezier(0.4,0,0.2,1);
+    overflow: hidden;
+    max-height: 200px;
 }
 
 .msg.removing {
     opacity: 0;
-    transform: scale(0.95);
+    transform: translateX(40px) scale(0.9) rotate(2deg);
+    max-height: 0;
+    margin: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-width: 0;
     pointer-events: none;
 }
 
 @keyframes msgSlideIn {
-    from { opacity: 0; transform: translateY(-16px) scale(0.95); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
+    from { 
+        opacity: 0; 
+        transform: translateY(-20px) scale(0.92) rotateX(10deg); 
+    }
+    60% {
+        opacity: 1;
+        transform: translateY(3px) scale(1.02) rotateX(-2deg);
+    }
+    80% {
+        transform: translateY(-2px) scale(0.99);
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0) scale(1) rotateX(0); 
+    }
 }
 
 .msg-icon {
@@ -94,26 +79,116 @@
     flex: 1;
     min-width: 0;
     word-wrap: break-word;
-    max-height: 100px;
+    max-height: 80px;
     overflow-y: auto;
     color: inherit;
+    font-size: 0.83rem;
+    line-height: 1.5;
 }
 
+/* ===== MESSAGE ACTIONS (per message) ===== */
+.msg-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    flex-shrink: 0;
+    opacity: 0;
+    transform: translateX(8px);
+    transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.msg:hover .msg-actions,
+.msg:focus-within .msg-actions {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.msg-copy-single,
 .msg-close {
     background: none;
     border: none;
-    font-size: 1.3rem;
     cursor: pointer;
-    padding: 0 0 0 0.3rem;
-    line-height: 1;
-    opacity: 0.5;
-    transition: opacity 0.15s, transform 0.15s;
-    flex-shrink: 0;
+    padding: 0.3rem;
+    border-radius: 6px;
     color: inherit;
+    opacity: 0.5;
+    transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    line-height: 1;
 }
+
+.msg-copy-single:hover,
 .msg-close:hover {
     opacity: 1;
-    transform: scale(1.2);
+    background: rgba(255,255,255,0.1);
+    transform: scale(1.15);
+}
+
+.msg-copy-single:active,
+.msg-close:active {
+    transform: scale(0.9);
+}
+
+.msg-copy-single.copied {
+    color: #4ade80;
+    opacity: 1;
+}
+
+/* ===== COPY ALL BUTTON (bottom of container) ===== */
+.msg-copy-all {
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.9rem;
+    background: rgba(10,14,23,0.7);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 50px;
+    color: #cbd5e1;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    pointer-events: auto;
+    font-family: system-ui, sans-serif;
+    margin-top: 0.3rem;
+    opacity: 0;
+    transform: translateY(8px);
+    animation: fadeUpIn 0.4s cubic-bezier(0.34,1.56,0.64,1) 0.5s forwards;
+}
+
+@keyframes fadeUpIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.msg-copy-all:hover {
+    border-color: var(--accent, #3b82f6);
+    color: #fff;
+    background: rgba(59,130,246,0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(59,130,246,0.25);
+}
+
+.msg-copy-all.copied {
+    border-color: #22c55e;
+    color: #bbf7d0;
+    background: rgba(34,197,94,0.15);
+    animation: copyPulse 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+@keyframes copyPulse {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.08); }
+    70%  { transform: scale(0.96); }
+    100% { transform: scale(1); }
 }
 
 /* ===== SUCCESS ===== */
@@ -178,25 +253,19 @@ body.light-mode .msg-copy-all {
 /* ===== MOBILE ===== */
 @media (max-width: 767px) {
     .messages-container {
-        top: 12px;
+        top: 60px;
         width: calc(100% - 20px);
         padding: 10px 10px 0;
         gap: 0.4rem;
-        display: flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
     }
     .msg {
         padding: 0.75rem 0.85rem;
         font-size: 0.8rem;
         border-radius: 10px;
         gap: 0.5rem;
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        display: flex !important;
     }
     .msg-icon { font-size: 1rem; }
-    .msg-text { font-size: 0.78rem; max-height: 80px; }
-    .msg-close { font-size: 1.1rem; }
-    .msg-copy-all { font-size: 0.68rem; padding: 0.3rem 0.6rem; }
+    .msg-text { font-size: 0.78rem; max-height: 60px; }
+    .msg-actions { opacity: 1; transform: translateX(0); }
+    .msg-copy-all { font-size: 0.65rem; padding: 0.3rem 0.7rem; }
 }

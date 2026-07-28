@@ -1,0 +1,306 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include "reusables/web_icon.html" %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Blog & Updates — STREAK &amp; DISCIPLINE</title>
+
+  <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
+
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--bg:#0a0e17;--surface:#111827;--text:#e2e8f0;--text-secondary:#94a3b8;--accent:#3b82f6;--border:#1e293b;--radius:14px;--font:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+    html,body{background:var(--bg)}
+    body{font-family:var(--font);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+    body.sd-light{--bg:#f1f5f9;--surface:#ffffff;--text:#0f172a;--text-secondary:#475569;--border:#e2e8f0}
+    {% include "reusables/spinner.css" %}
+    .blog-app{opacity:0;visibility:hidden;transition:opacity 0.4s ease,visibility 0.4s ease}
+    .blog-app.loaded{opacity:1;visibility:visible;display:flex;min-height:100vh}
+
+    .js-loading-indicator {
+      position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:10002;
+      background:rgba(10,14,23,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+      border:1px solid rgba(255,255,255,0.08);border-radius:50px;padding:0.5rem 1.2rem;
+      display:flex;align-items:center;gap:0.6rem;font-size:0.78rem;color:var(--text-secondary);
+      opacity:1;transition:opacity 0.4s ease,transform 0.4s ease;
+    }
+    .js-loading-indicator.hidden{opacity:0;transform:translateX(-50%) translateY(-20px);pointer-events:none}
+    .js-loading-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:loadingPulse 1.2s ease-in-out infinite}
+    @keyframes loadingPulse{0%,100%{opacity:0.3;transform:scale(0.8)}50%{opacity:1;transform:scale(1.2)}}
+  </style>
+
+  <link rel="stylesheet" href="{% static 'css/blog_and_update.css' %}">
+  <link rel="preload" href="{% static 'cdn/advance_blog_and_update.css' %}" as="style"
+        onload="this.onload=null;this.rel='stylesheet';document.documentElement.classList.add('engine-ready')"
+        id="heavy-css">
+  <noscript><link rel="stylesheet" href="{% static 'cdn/advance_blog_and_update.css' %}"></noscript>
+</head>
+<body class="{% if request.COOKIES.sd_theme != 'dark' %}sd-light{% endif %}">
+
+  {% include "reusables/spinner.html" %}
+
+  <div class="js-loading-indicator" id="jsLoadingIndicator">
+    <span class="js-loading-dot"></span>
+    <span>Loading interface…</span>
+  </div>
+
+  <div class="blog-app" id="blogApp">
+    <canvas id="particleCanvas"></canvas>
+    <div class="aside-overlay" id="asideOverlay"></div>
+
+    <aside class="blog-aside" id="blogAside">
+      <div class="aside-scroll">
+        <div class="aside-top">
+          <div class="aside-avatar-wrap" id="asideAvatarWrap">
+            {% if request.user.is_authenticated %}
+            <div class="sk sk-circle" style="width:48px;height:48px" id="asideAvatarSk"></div>
+            {% else %}
+            <img src="{{ logo_url }}" alt="S&D" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+            {% endif %}
+          </div>
+          <div class="aside-username">{% if request.user.is_authenticated %}{{ request.user.username }}{% else %}DISCIPLINE &amp; STREAK{% endif %}</div>
+          {% if request.user.is_authenticated %}
+          <span class="tier-badge tier-{{ tier|default:'free' }}">
+            {% if tier == 'gold' %}<i class="fas fa-crown"></i> Gold
+            {% elif tier == 'premium' %}<i class="fas fa-gem"></i> Premium
+            {% else %}<i class="fas fa-user"></i> Free{% endif %}
+          </span>
+          {% endif %}
+        </div>
+
+        <div class="aside-section-lbl">Filter by Category</div>
+        <div class="category-filter" id="categoryFilter">
+          <button class="cat-filter-btn active" data-cat="all">All</button>
+          {% for cat in categories %}
+          <button class="cat-filter-btn" data-cat="{{ cat|lower }}">{{ cat }}</button>
+          {% endfor %}
+        </div>
+
+        <nav class="aside-nav">
+          <div class="aside-section-lbl">Navigation</div>
+          {% if request.user.is_authenticated %}
+          <a href="{% url 'origin_dashboard' %}" class="aside-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
+          <a href="/v1/profile/" class="aside-link"><i class="fas fa-circle-user"></i> Profile</a>
+          <a href="/v1/commitments/" class="aside-link"><i class="fas fa-fire-flame-curved"></i> My Commitments</a>
+          <a href="/v1/leaderboard/" class="aside-link"><i class="fas fa-ranking-star"></i> Leaderboard</a>
+          <a href="/v1/groups/" class="aside-link"><i class="fas fa-users"></i> Groups</a>
+          <a href="/v1/blog/" class="aside-link active"><i class="fas fa-newspaper"></i> Blog & Updates</a>
+          <a href="/v1/reports/" class="aside-link"><i class="fas fa-chart-line"></i> Analytics</a>
+          {% else %}
+          <a href="/v1/" class="aside-link"><i class="fas fa-home"></i> Home</a>
+          <a href="/v1/blog/" class="aside-link active"><i class="fas fa-newspaper"></i> Blog & Updates</a>
+          <a href="/v1/weekly-analysis/" class="aside-link"><i class="fas fa-chart-line"></i> Sample Report</a>
+          <a href="/v1/extra/#pricing" class="aside-link"><i class="fas fa-tag"></i> Pricing</a>
+          <a href="{% url 'origin_login' %}" class="aside-link"><i class="fas fa-sign-in"></i> Sign In</a>
+          <a href="{% url 'origin_signup' %}" class="aside-link"><i class="fas fa-user-plus"></i> Start Free</a>
+          {% endif %}
+          <div class="aside-section-lbl">Support</div>
+          <a href="https://wa.me/2347013687825" target="_blank" rel="noopener" class="aside-link"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link"><i class="fas fa-envelope"></i> Email</a>
+        </nav>
+        {% if request.user.is_authenticated and tier == 'free' %}
+        <div class="aside-upgrade">
+          <h4><i class="fas fa-gem"></i> Upgrade to Pro</h4>
+          <p>Unlock AI insights, 50 commitments, and more.</p>
+          <a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm btn-full">Start 7-Day Trial</a>
+        </div>
+        {% endif %}
+      </div>
+      {% if request.user.is_authenticated %}
+      <div class="aside-logout">
+        <button class="aside-logout-btn" id="logoutBtn"><i class="fas fa-right-from-bracket"></i> Log Out</button>
+      </div>
+      {% endif %}
+    </aside>
+
+    <div class="blog-wrap">
+      <header class="blog-header">
+        <button class="menu-toggle" id="menuToggle" aria-label="Menu"><span></span><span></span><span></span></button>
+        <h1 class="blog-title">Blog & Updates</h1>
+        <div class="blog-header-right">
+          <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
+        </div>
+      </header>
+
+      <main class="blog-main">
+        <section class="blog-hero">
+          <h2>Discipline, Unpacked</h2>
+          <p>Articles, tips, and product updates to help you keep your word — every single day.</p>
+        </section>
+
+        <div class="blog-layout" id="blogLayout">
+          {% for post in posts %}
+          <article class="blog-card {% if post.featured %}blog-card-featured{% endif %}" data-category="{{ post.tag|lower }}">
+            {% if post.image_url %}
+            <div class="blog-card-image">
+              <img src="{{ post.image_url }}" alt="{{ post.title }}" loading="lazy">
+            </div>
+            {% endif %}
+            <div class="blog-card-body">
+              <div class="blog-card-tag">{{ post.tag }}</div>
+              <h3>{{ post.title }}</h3>
+              <p class="blog-card-excerpt">{{ post.excerpt }}</p>
+              <div class="blog-card-meta">
+                <span><i class="fas fa-calendar"></i> {{ post.date }}</span>
+                <span><i class="fas fa-clock"></i> {{ post.read_time }}</span>
+              </div>
+              {% if post.url %}
+              <a href="{{ post.url }}" class="blog-card-link">Read More <i class="fas fa-arrow-right"></i></a>
+              {% endif %}
+            </div>
+          </article>
+          {% empty %}
+          <div class="blog-empty">
+            <i class="fas fa-newspaper"></i>
+            <h3>No posts yet</h3>
+            <p>Check back soon for discipline tips, product updates, and community stories.</p>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="end-of-content" id="endOfContent">
+          <div class="end-line"></div>
+          <span>You've reached the end</span>
+          <p>Check back later for more updates</p>
+        </div>
+
+        <footer class="blog-footer">
+          <div class="footer-grid">
+            <div class="footer-brand">
+              <span class="footer-logo">STREAK &amp; DISCIPLINE</span>
+              <p>A private discipline journal for those serious about keeping promises to themselves. No badges. No noise. Just you vs your word.</p>
+              <div class="footer-socials">
+                <a href="https://x.com/lastissa" target="_blank" rel="noopener" aria-label="X"><i class="fab fa-x-twitter"></i></a>
+                <a href="https://github.com/lastissa" target="_blank" rel="noopener" aria-label="GitHub"><i class="fab fa-github"></i></a>
+                <a href="https://wa.me/2347013687825" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+              </div>
+            </div>
+            <div class="footer-links">
+              <h4>Explore</h4>
+              <a href="/v1/">Home</a>
+              <a href="/v1/blog/">Blog</a>
+              <a href="/v1/weekly-analysis/">Sample Report</a>
+              <a href="/v1/extra/#pricing">Pricing</a>
+            </div>
+            <div class="footer-links">
+              <h4>Support</h4>
+              <a href="mailto:issaabdulsalamope11@gmail.com"><i class="fas fa-envelope"></i> Email Support</a>
+              <a href="https://wa.me/2347013687825"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+              <a href="tel:+2347013687825"><i class="fas fa-phone"></i> +234 701 368 7825</a>
+            </div>
+            <div class="footer-links">
+              <h4>Legal</h4>
+              <a href="{% url 'origin_extra' %}#privacy">Privacy Policy</a>
+              <a href="{% url 'origin_extra' %}#terms">Terms of Service</a>
+              <a href="{% url 'origin_extra' %}#contact">Contact Us</a>
+            </div>
+          </div>
+          <div class="footer-bottom">
+            <p>&copy; {{ footer_copyright_note }} &middot; Built with discipline in Lagos, Nigeria.</p>
+          </div>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  {% if request.user.is_authenticated %}
+  <form method="POST" action="{% url 'origin_logout' %}" id="logoutForm" style="display:none">{% csrf_token %}</form>
+  {% endif %}
+
+  <script>{% include "reusables/spinner.js" %}</script>
+  <script>
+  (function() {
+    'use strict';
+    const app = document.getElementById('blogApp');
+    const heavyCss = document.getElementById('heavy-css');
+
+    function boot() {
+      if (!app.classList.contains('loaded')) {
+        app.classList.add('loaded');
+        const indicator = document.getElementById('jsLoadingIndicator');
+        if (indicator) {
+          indicator.classList.add('hidden');
+          setTimeout(function() { if (indicator.parentNode) indicator.remove(); }, 500);
+        }
+        init();
+      }
+    }
+
+    if (heavyCss) {
+      if (heavyCss.rel === 'stylesheet') boot();
+      else heavyCss.addEventListener('load', boot);
+    }
+    setTimeout(boot, 8000);
+
+    const $ = function(s,c) { return (c||document).querySelector(s); };
+    const $$ = function(s,c) { return (c||document).querySelectorAll(s); };
+    function getCookie(n) { var v = document.cookie.match('(?:^|;) ?'+n+'=([^;]*)'); return v ? decodeURIComponent(v[1]) : ''; }
+    function setCookie(n,v,d) { var t=new Date(); t.setDate(t.getDate()+(d||1)); document.cookie=n+'='+encodeURIComponent(v)+';path=/;expires='+t.toUTCString(); }
+
+    function init() {
+      initTheme();
+      initSidebar();
+      initLogout();
+      initCategoryFilter();
+      {% if request.user.is_authenticated %}loadUserPicture();{% endif %}
+    }
+
+    function initTheme() {
+      var btn = $('#themeToggle'), icon = btn.querySelector('i');
+      function set(dark) { document.body.classList.toggle('sd-light',!dark); icon.className=dark?'fas fa-moon':'fas fa-sun'; setCookie('sd-theme',dark?'dark':'light',365); }
+      btn.addEventListener('click',function(){ set(document.body.classList.contains('sd-light')); });
+      if (getCookie('sd-theme')==='dark') { document.body.classList.remove('sd-light'); icon.className='fas fa-moon'; }
+    }
+
+    function initSidebar() {
+      var sidebar=$('#blogAside'),toggle=$('#menuToggle'),overlay=$('#asideOverlay');
+      function open(){sidebar.classList.add('open');overlay.classList.add('show');}
+      function close(){sidebar.classList.remove('open');overlay.classList.remove('show');}
+      toggle.addEventListener('click',function(){ sidebar.classList.contains('open')?close():open(); });
+      overlay.addEventListener('click',close);
+      sidebar.querySelectorAll('.aside-link').forEach(function(l){ l.addEventListener('click',function(){ if(window.innerWidth<1024)close(); }); });
+    }
+
+    function initCategoryFilter() {
+      var buttons = $$('.cat-filter-btn');
+      var cards = $$('.blog-card');
+      buttons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          buttons.forEach(function(b) { b.classList.remove('active'); });
+          this.classList.add('active');
+          var cat = this.dataset.cat;
+          cards.forEach(function(card) {
+            card.style.display = (cat === 'all' || card.dataset.category === cat) ? '' : 'none';
+          });
+        });
+      });
+    }
+
+    {% if request.user.is_authenticated %}
+    function loadUserPicture(){
+      fetch("{% url 'origin_user_picture' %}",{headers:{'X-CSRFToken':getCookie('csrftoken')}})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          var url=d.url||'';
+          var wrap=$('#asideAvatarWrap'); if(!wrap)return;
+          var img=document.createElement('img');img.alt='{{request.user.username}}';img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%';
+          img.onerror=function(){img.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\' viewBox=\'0 0 48 48\'%3E%3Ccircle cx=\'24\' cy=\'24\' r=\'24\' fill=\'%231e293b\'/%3E%3Ccircle cx=\'24\' cy=\'19\' r=\'9\' fill=\'%23475669\'/%3E%3Cellipse cx=\'24\' cy=\'46\' rx=\'16\' ry=\'10\' fill=\'%23475669\'/%3E%3C/svg%3E';};
+          img.onload=function(){var sk=$('#asideAvatarSk');if(sk)sk.remove();wrap.appendChild(img);};
+          img.src=url||'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\' viewBox=\'0 0 48 48\'%3E%3Ccircle cx=\'24\' cy=\'24\' r=\'24\' fill=\'%231e293b\'/%3E%3Ccircle cx=\'24\' cy=\'19\' r=\'9\' fill=\'%23475669\'/%3E%3Cellipse cx=\'24\' cy=\'46\' rx=\'16\' ry=\'10\' fill=\'%23475669\'/%3E%3C/svg%3E';
+        }).catch(function(){});
+    }
+    {% endif %}
+
+    function initLogout(){
+      {% if request.user.is_authenticated %}
+      var btn=$('#logoutBtn'),form=$('#logoutForm');
+      btn&&btn.addEventListener('click',function(){if(confirm('Log out?'))form?form.submit():window.location.href="{% url 'origin_logout' %}";});
+      {% endif %}
+    }
+  })();
+  </script>
+</body>
+</html>

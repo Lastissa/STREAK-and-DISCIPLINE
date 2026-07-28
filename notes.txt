@@ -1,91 +1,2226 @@
-you are a frontend enginner rn, 
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include 'reusables/web_icon.html' %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Dashboard — STREAK &amp; DISCIPLINE</title>
 
-a dashboard
-this dashboard has to be very unique , since this is the dashboard(the most visited aspect of a website), its ideal not to bloat it with too much information but it also need have user interface that verybeutiful so i think(give a bettr alternative if you have) the page should be mostly blank on fist load anf only start getting filled up after spinner.html have finished, any data that is not available yet should be on high phsics skeleton, 
+  <!-- Font Awesome (local) -->
+  <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
 
-what i will suggest at first is that the commitments should not be visible here(use skeletan physics to placehold this and then send  a get get request to an endpoint called get_commitment_data/, the endpoint will return a list with multiple dictionary, you can speficy exact data you need , i will provide them in the endpoint, nb; this is a quick overview, on pressing each commitment open them up in another url as per django if will be used to have passed their url right from page load,)
+  <!--
+    CRITICAL INLINE STYLES — background + spinner.
+    Paints in <50ms. Nothing blocks the first pixel.
+  -->
+  <style>
+    {% include "reusables/spinner.css" %}
 
-also the nav bar should be synonymous to my normal regula nav bar that wont load at first too, the js is going to be doing a lot of heavy work cos most things wont load at first, also i should have two css, one that is lighweight and load initially so page can load fast and when page load finish, the heavier css contaiing our realsitic site physcis and well motionand layout with user captivating automatic motion movement should load up, 
+    /* Instant background so page is never white */
+    html, body { margin:0; padding:0; background:#060b14; }
+    body.sd-light { background:#f0f4fa; }
 
-if the get_commitment_data/ fails to return a list of dictionary that match needed data, give user  a way to refresh that fetching the data, also dont leave user in the dark(bad UX, any endpoint that return a json, expect the endpoint to alwasy include a message key for hint on what happened),
-also the zeal score should show and use should be able to know what diff is zeal score from commitment streak score(zeal score is calculating user commitments for evaluation)
-also the page should have a share commitment and print(like the demo-weekly.html and rich css)
-no carton ui, all production level realistic user interface, also, after page load, user profile picture should be at the place app icon would have been, this picture too should send a request to "/get_user_pictire/" with lazy loading and on error, a default free very small sized publix url should b used
+    /* Hide app shell until JS reveals it */
+    .db-app { opacity:0; visibility:hidden; transition:opacity 0.6s ease, visibility 0.6s ease; }
+    .db-app.db-visible { opacity:1; visibility:visible; }
+  </style>
+
+  <!-- LIGHT CSS: blocking, critical layout only, tiny -->
+  <link rel="stylesheet" href="{% static 'css/dashboard_light.css' %}">
+
+  <!-- ADVANCE CSS: non-blocking, loads after paint -->
+  <link rel="preload" href="{% static 'cdn/dashboard_advance.css' %}" as="style"
+        onload="this.onload=null;this.rel='stylesheet'" id="adv-css">
+  <noscript><link rel="stylesheet" href="{% static 'cdn/dashboard_advance.css' %}"></noscript>
+</head>
+{% comment %} <body class="{% if request.COOKIES.sd_theme == 'light' %}sd-light{% endif %}"> {% endcomment %}
+
+  <!-- ====================================================
+       SPINNER — shows instantly, hides after window.load
+       ==================================================== -->
+  {% include "reusables/spinner.html" %}
+
+  <!-- ====================================================
+       APP SHELL — hidden until reveal()
+       ==================================================== -->
+  <div class="db-app" id="dbApp">
+
+    <!-- ================================================
+         MOBILE ASIDE OVERLAY
+         ================================================ -->
+    <div class="aside-overlay" id="asideOverlay"></div>
+
+    <!-- ================================================
+         ASIDE (left sidebar)
+         ================================================ -->
+    <aside class="db-aside no-print" id="dbAside">
+      <div class="aside-scroll">
+
+        <!-- Top: Avatar + name + tier -->
+        <div class="aside-top">
+          <div class="aside-avatar-wrap" id="asideAvatarWrap">
+            <!-- filled by JS after /get_user_picture/ responds -->
+            <div class="sk sk-circle" style="width:52px;height:52px" id="asideAvatarSk"></div>
+          </div>
+          <div class="aside-username">{{ request.user.username }}</div>
+          <div class="aside-email">{{ request.user.email }}</div>
+          <span class="tier-badge tier-{{ tier|default:'free' }}">
+            {% if tier == 'gold' %}<i class="fas fa-crown"></i> Gold
+            {% elif tier == 'premium' %}<i class="fas fa-gem"></i> Premium
+            {% else %}<i class="fas fa-user"></i> Free{% endif %}
+          </span>
+        </div>
+
+        <!-- Nav links -->
+        <nav class="aside-nav" aria-label="Dashboard navigation">
+          <div class="aside-section-lbl">Navigation</div>
+          <a href="/v1/dashboard/" class="aside-link active">
+            <i class="fas fa-gauge-high"></i> Dashboard
+          </a>
+          <a href="/v1/profile/" class="aside-link">
+            <i class="fas fa-circle-user"></i> Profile
+          </a>
+          <a href="/v1/commitments/" class="aside-link">
+            <i class="fas fa-fire-flame-curved"></i> My Commitments
+          </a>
+
+          <div class="aside-section-lbl" style="margin-top:0.5rem">Community</div>
+          <a href="/v1/groups/" class="aside-link">
+            <i class="fas fa-users"></i> Groups
+          </a>
+          <a href="/v1/leaderboard/" class="aside-link">
+            <i class="fas fa-ranking-star"></i> Leaderboard
+          </a>
+          <a href="/v1/blog/" class="aside-link">
+            <i class="fas fa-newspaper"></i> Blog &amp; Updates
+          </a>
+
+          <div class="aside-section-lbl" style="margin-top:0.5rem">Insights</div>
+          <a href="/v1/reports/" class="aside-link">
+            <i class="fas fa-chart-line"></i> Analytics &amp; Reports
+          </a>
+          {% if ai_insight_active %}
+          <a href="/v1/insights/" class="aside-link">
+            <i class="fas fa-microchip"></i> AI Insights
+          </a>
+          {% endif %}
+         <div class="aside-section-lbl">Data</div>
+         <a href="{% url 'origin_dashboard_json' %}" class="aside-link">
+            <i class="fas fa-microchip"></i> View json data
+          </a>
+         <a href="{% url 'origin_navigation' %}" class="aside-link">
+            <i class="fas fa-microchip"></i> Take Tour
+          </a>
+          <!-- ↓ Placeholder for future aside items ↓ -->
+          <!-- Add new links here — they inherit all styles automatically -->
+
+          <hr class="aside-sep">
+
+          <!-- Support -->
+          <div class="aside-support-lbl">Support</div>
+          <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_self"
+             rel="noopener" class="aside-link">
+            <i class="fab fa-whatsapp"></i> WhatsApp Support
+          </a>
+          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link">
+            <i class="fas fa-envelope"></i> Email Support
+          </a>
+          <a href="tel:{{ customer_care_phone_number }}" class="aside-link">
+            <i class="fas fa-phone"></i> {{ customer_care_phone_number }}
+          </a>
+        </nav>
+
+        <!-- Upgrade CTA (free tier only) -->
+        {% if tier == 'free' or not tier %}
+        <div class="aside-upgrade">
+          <h4><i class="fas fa-gem"></i> Upgrade to Pro</h4>
+          <p>Unlock AI insights, 50 commitments, custom reports and WhatsApp reminders.</p>
+          <a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm btn-full">
+            Start 7-Day Trial
+          </a>
+        </div>
+        {% endif %}
+
+      </div><!-- /aside-scroll -->
+
+      <!-- Logout — sticky bottom -->
+      <div class="aside-logout">
+        <button class="aside-logout-btn" id="logoutBtn">
+          <i class="fas fa-right-from-bracket"></i> Log Out
+        </button>
+      </div>
+
+    </aside><!-- /db-aside -->
+
+    <!-- ================================================
+         HEADER
+         ================================================ -->
+    <header class="db-header no-print">
+      <div class="hdr-left">
+        <!-- Profile pic replaces logo after /get_user_picture/ -->
+        <div class="hdr-avatar" id="hdrAvatarWrap" title="Open sidebar">
+          <div class="sk sk-circle" style="width:32px;height:32px" id="hdrAvatarSk"></div>
+        </div>
+        <span class="hdr-brand">STREAK &amp; DISCIPLINE</span>
+      </div>
+
+      <!-- Rotating daily quote -->
+      <div class="hdr-quote" id="hdrQuote" aria-live="polite"></div>
+
+      <div class="hdr-right">
+        <button class="hdr-btn" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
+          <i class="fas fa-moon" id="themeIcon"></i>
+        </button>
+        <button class="hdr-btn" id="shareBtnHdr" title="Share your streak" aria-label="Share">
+          <i class="fas fa-share-nodes"></i>
+        </button>
+        <!-- Mobile hamburger -->
+        <button class="hdr-btn hdr-hamburger" id="hamburgerBtn" aria-label="Open menu">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+    </header><!-- /db-header -->
+
+    <!-- ================================================
+         MAIN CONTENT
+         ================================================ -->
+    <div class="db-wrap">
+      <main class="db-main" id="dbMain">
+
+        <!-- 1. GREETING -->
+        <div class="db-greeting">
+          <div class="db-greeting-time" id="greetTime">—</div>
+          <h1 class="db-greeting-text">
+            <span id="greetWord">Good day</span>,
+            <span style="color:var(--accL)">{{ request.user.username }}</span>
+          </h1>
+          <p class="db-greeting-sub" id="greetSub">
+            {% if Upcoming_milestone %}
+              <i class="fas fa-flag-checkered" style="color:var(--warn)"></i>
+              <strong>{{ Upcoming_milestone }} day{{ Upcoming_milestone|pluralize }}</strong>
+              until your next milestone.
+            {% else %}
+              Every day is a chance to keep your word.
+            {% endif %}
+          </p>
+        </div>
+
+        <!-- 2. STATS ROW (from Django context — instant) -->
+        <div class="db-stats">
+          <!-- Zeal Score -->
+          <div class="stat-card zeal">
+            <span class="stat-icon"><i class="fas fa-bolt-lightning"></i></span>
+            <span class="stat-num" id="zealNum">{{ zeal_score|default:"0" }}</span>
+            <span class="stat-label">Zeal Score</span>
+            <span class="stat-sub">Your discipline index</span>
+            <i class="fas fa-circle-info zeal-info" id="zealInfoBtn" title="What is Zeal Score?"></i>
+          </div>
+          <!-- Consistency -->
+          <div class="stat-card">
+            <span class="stat-icon"><i class="fas fa-chart-pie"></i></span>
+            <span class="stat-num" id="consistNum">{{ consistency_pct|default:"—" }}%</span>
+            <span class="stat-label">Consistency</span>
+            <span class="stat-sub">All-time check-in rate</span>
+          </div>
+          <!-- Total Entries -->
+          <div class="stat-card">
+            <span class="stat-icon"><i class="fas fa-pen-to-square"></i></span>
+            <span class="stat-num" id="entriesNum">{{ total_entries|default:"0" }}</span>
+            <span class="stat-label">Entries</span>
+            <span class="stat-sub">{{ total_active_commitments|default:"0" }} active commitment{{ total_active_commitments|pluralize }}</span>
+          </div>
+        </div>
+
+        <!-- Zeal score tooltip -->
+        <div class="zeal-tooltip" id="zealTooltip" role="tooltip">
+          <strong>Zeal Score explained</strong>
+          This is your discipline index — calculated across all your active commitments,
+          Formula = Number of commitment * avergae streek
+          <br>e.g your current commitment = '{{total_active_commitments}}'<br>
+           multiplied by your average streak<br>gives  '{{zeal_score}}'<br><br>
+          It's different from a single streak: one commitment at 30 days gives a modest score;
+          three commitments all at 30 days gives a much higher one.
+          <br><br>
+          <em>Streak = per commitment. Zeal = your whole picture.</em>
+        </div>
+
+        <!-- 3. STATUS BANNER (skeleton → real, derived from /heatmap/ response) -->
+        <div class="db-status" id="dbStatusBanner">
+          <div class="sk sk-circle" style="width:10px;height:10px;flex-shrink:0" id="statusSk"></div>
+          <div class="sk sk-text w70" style="height:0.75rem" id="statusTextSk"></div>
+        </div>
+
+        <!-- 4. MILESTONE (from Django context, instant) -->
+        {% if Upcoming_milestone %}
+        <div class="db-milestone">
+          <i class="fas fa-trophy"></i>
+          <span>
+            <strong style="color:var(--accL)">{{ Upcoming_milestone }} day{{ Upcoming_milestone|pluralize }} to go.</strong>
+            You're close to your next milestone — don't break now.
+          </span>
+        </div>
+        {% endif %}
+
+        <!-- 5. 30-DAY HEATMAP -->
+        <div class="db-heatmap-wrap">
+          <div class="db-section-label">
+            <i class="fas fa-calendar-days"></i> 30-Day Consistency
+          </div>
+          <!-- Skeletons while loading -->
+          <div class="hm-grid" id="hmGrid">
+            {% for i in "1234567890123456789012345678901234" %}
+            <div class="sk hm-cell" style="aspect-ratio:1"></div>
+            {% endfor %}
+          </div>
+          <div class="hm-labels" id="hmLabels">
+            <span id="hmStart">30 days ago</span>
+            <span id="hmEnd">Today</span>
+          </div>
+          <div id="hmError" class="commit-error">
+            <i class="fas fa-exclamation-triangle" style="color:var(--warn);font-size:1.2rem;margin-bottom:0.5rem;display:block"></i>
+            <p id="hmErrorMsg" style="font-size:0.8rem;color:var(--ink2);margin-bottom:0.75rem">Could not load heatmap.</p>
+            <button class="btn btn-outline btn-sm" id="hmRetryBtn">
+              <i class="fas fa-rotate-right"></i> Retry
+            </button>
+          </div>
+        </div>
+
+        <!-- 6. COMMITMENT CARDS (skeleton → lazy fetch) -->
+        <div class="db-commitments">
+          <div class="db-section-label" style="justify-content:space-between">
+            <span><i class="fas fa-fire-flame-curved"></i> Your Commitments</span>
+            <a href="/v1/commitments/?add=true" class="btn btn-outline btn-sm"
+               style="font-size:0.72rem;padding:0.25rem 0.7rem">
+              <i class="fas fa-plus"></i> Add
+            </a>
+          </div>
+
+          <!-- Skeleton cards -->
+          <div class="commit-grid" id="commitGrid">
+            {% for i in "123" %}
+            <div class="sk-card">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
+                <div>
+                  <div class="sk sk-text w50" style="height:0.65rem;margin-bottom:0.4rem"></div>
+                  <div class="sk sk-text w70" style="height:0.9rem"></div>
+                </div>
+                <div class="sk sk-ring"></div>
+              </div>
+              <div class="sk sk-text w100" style="height:0.8rem;margin-bottom:0.35rem"></div>
+              <div class="sk sk-text w60" style="height:0.65rem"></div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <!-- Error / retry state -->
+          <div class="commit-error" id="commitError">
+            <i class="fas fa-circle-exclamation" style="color:var(--bad);font-size:1.5rem;margin-bottom:0.75rem;display:block"></i>
+            <p id="commitErrorMsg" style="font-size:0.82rem;color:var(--ink2);margin-bottom:1rem;line-height:1.5"></p>
+            <button class="btn btn-outline btn-sm" id="commitRetryBtn">
+              <i class="fas fa-rotate-right"></i> Retry loading commitments
+            </button>
+          </div>
+        </div>
+
+        <!-- 7. PARTNER STREAK WIDGET (conditional on social_mode, skeleton → fetch) -->
+        {% if social_mode == 'partner' %}
+        <div class="db-partners" id="dbPartners">
+          <div class="db-section-label">
+            <i class="fas fa-user-group"></i> Accountability Partners
+          </div>
+          <div class="partner-list" id="partnerList">
+            <!-- Skeleton -->
+            <div class="sk-card" style="display:flex;align-items:center;gap:0.75rem">
+              <div class="sk sk-circle" style="width:32px;height:32px"></div>
+              <div style="flex:1">
+                <div class="sk sk-text w40" style="height:0.75rem;margin-bottom:0.3rem"></div>
+                <div class="sk sk-text w25" style="height:0.65rem"></div>
+              </div>
+            </div>
+          </div>
+          <div class="commit-error" id="partnerError">
+            <p id="partnerErrorMsg" style="font-size:0.8rem;color:var(--ink2);margin-bottom:0.5rem"></p>
+            <button class="btn btn-outline btn-sm" id="partnerRetryBtn">
+              <i class="fas fa-rotate-right"></i> Retry
+            </button>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- 8. SHARE / PRINT CONTROLS (small, bottom of content) -->
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--edge)">
+          <button class="btn btn-outline btn-sm" id="shareBtn">
+            <i class="fas fa-share-nodes"></i> Share My Progress
+          </button>
+          <button class="btn btn-ghost btn-sm" id="printBtn">
+            <i class="fas fa-print"></i> Print Report
+          </button>
+        </div>
+
+      </main>
+    </div><!-- /db-wrap -->
+
+    <!-- ================================================
+         FAB — quick-add commitment (goes to commitments page)
+         ================================================ -->
+    <a href="/v1/commitments/?add=true" class="db-fab no-print"
+       title="Add new commitment" aria-label="Add new commitment">
+      <i class="fas fa-plus"></i>
+    </a>
+
+    <!-- ================================================
+         SHARE MODAL
+         ================================================ -->
+    <div class="db-modal-overlay" id="shareModal" role="dialog" aria-modal="true" aria-label="Share your progress">
+      <div class="db-modal">
+        <div class="db-modal-header">
+          <h3><i class="fas fa-share-nodes" style="color:var(--accL)"></i> Share Your Progress</h3>
+          <button class="hdr-btn" id="closeShareModal" aria-label="Close">
+            <i class="fas fa-xmark"></i>
+          </button>
+        </div>
+        <div class="db-modal-body">
+          <!-- Live share card preview -->
+          <div class="share-preview" id="sharePreviewCard">
+            <div class="share-preview-brand">STREAK &amp; DISCIPLINE</div>
+            <div class="share-preview-name" id="spName">@{{ request.user.username }}</div>
+            <div class="share-preview-commit" id="spCommit">Loading commitment…</div>
+            <div class="share-stat-row">
+              <div class="share-stat-item">
+                <span class="share-stat-n" id="spStreak">—</span>
+                <span class="share-stat-l">Streak</span>
+              </div>
+              <div class="share-stat-item">
+                <span class="share-stat-n">{{ zeal_score|default:"0" }}</span>
+                <span class="share-stat-l">Zeal</span>
+              </div>
+              <div class="share-stat-item">
+                <span class="share-stat-n">{{ consistency_pct|default:"—" }}%</span>
+                <span class="share-stat-l">Consistency</span>
+              </div>
+            </div>
+            <div class="share-quote" id="spQuote"></div>
+          </div>
+
+          <!-- Commitment selector (if multiple commitments) -->
+          <div id="spCommitSelector" style="margin-bottom:0.75rem;display:none">
+            <label style="font-size:0.72rem;color:var(--ink2);display:block;margin-bottom:0.3rem">Sharing commitment:</label>
+            <select class="btn btn-outline btn-sm" style="width:100%;padding:0.5rem 0.75rem;border-radius:8px"
+                    id="spSelector"></select>
+          </div>
+
+          <!-- Share options -->
+          <div class="share-options">
+            <button class="share-opt-btn share-copy" id="copyShareBtn">
+              <i class="fas fa-copy"></i> Copy Text
+            </button>
+            <button class="share-opt-btn share-wa" id="waShareBtn">
+              <i class="fab fa-whatsapp"></i> WhatsApp
+            </button>
+            <button class="share-opt-btn share-x" id="xShareBtn">
+              <i class="fab fa-x-twitter"></i> Post
+            </button>
+          </div>
+
+          <p style="font-size:0.7rem;color:var(--ink3)">
+            <i class="fas fa-lock"></i>
+            Only your username is shared — never your entries or personal details.
+          </p>
+        </div>
+        <div class="db-modal-footer">
+          <button class="btn btn-ghost btn-sm" id="closeShareModal2">Close</button>
+          <button class="btn btn-outline btn-sm" id="printFromModal">
+            <i class="fas fa-print"></i> Print instead
+          </button>
+        </div>
+      </div>
+    </div><!-- /shareModal -->
+
+    <!-- ================================================
+         PRINT CARD (hidden on screen, prints cleanly)
+         ================================================ -->
+    <div class="print-only">
+      <div class="print-card" id="printCard">
+        <div class="print-brand">STREAK &amp; DISCIPLINE — Progress Report</div>
+        <div class="print-title">@{{ request.user.username }}</div>
+        <div class="print-commit" id="printCommitText">—</div>
+        <div class="print-stats">
+          <div class="print-stat-item">
+            <span class="print-stat-n" id="printStreakN">—</span>
+            <span class="print-stat-l">Day Streak</span>
+          </div>
+          <div class="print-stat-item">
+            <span class="print-stat-n">{{ zeal_score|default:"0" }}</span>
+            <span class="print-stat-l">Zeal Score</span>
+          </div>
+          <div class="print-stat-item">
+            <span class="print-stat-n">{{ consistency_pct|default:"—" }}%</span>
+            <span class="print-stat-l">Consistency</span>
+          </div>
+          <div class="print-stat-item">
+            <span class="print-stat-n">{{ total_entries|default:"0" }}</span>
+            <span class="print-stat-l">Total Entries</span>
+          </div>
+        </div>
+        <div class="print-footer" id="printFooter">
+          Printed from STREAK &amp; DISCIPLINE · streakdiscipline.com
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /db-app -->
+
+  <!-- ====================================================
+       LOGOUT FORM (hidden, submitted by JS)
+       ==================================================== -->
+  <form method="POST" action="{% url 'origin_logout' %}" id="logoutForm" style="display:none">
+    {% csrf_token %}
+  </form>
+
+  <!-- ====================================================
+       FULL APP JAVASCRIPT
+       At bottom of body — no defer needed
+       ==================================================== -->
+  <script>
+  (function() {
+    'use strict';
+
+    /* ============================================================
+       HELPERS
+       ============================================================ */
+    function getCookie(name) {
+      var v = document.cookie.match('(?:^|;) ?' + name + '=([^;]*)(;|$)');
+      return v ? decodeURIComponent(v[1]) : '';
+    }
+    function setCookie(name, value, days) {
+      var d = new Date(); d.setDate(d.getDate() + (days || 1));
+      document.cookie = name + '=' + encodeURIComponent(value) + ';path=/;expires=' + d.toUTCString();
+    }
+    function qs(sel, ctx) { return (ctx || document).querySelector(sel); }
+    function qsa(sel, ctx) { return (ctx || document).querySelectorAll(sel); }
+    function el(tag, cls, html) {
+      var e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (html) e.innerHTML = html;
+      return e;
+    }
+    function show(el) { if (el) { el.style.display = ''; el.classList.remove('hidden'); } }
+    function hide(el) { if (el) { el.classList.add('hidden'); } }
+
+    /* ============================================================
+       DAILY DISCIPLINE QUOTES  (zero network cost)
+       ============================================================ */
+    var QUOTES = [
+      'Motivation fades. Discipline stays.',
+      'One honest sentence a day is all it takes.',
+      'The person you want to be is built on days like today.',
+      'No audience. No applause. Just you keeping promises to yourself.',
+      "Tomorrow's pride is paid for with today's discipline.",
+      "You're one decision away from a completely different life.",
+      "The streak doesn't care about your feelings. It just counts.",
+      "You can't think your way into discipline. You act your way into it.",
+      'One day or day one. You decide.',
+      "Champions don't wait for the mood. They build the habit.",
+      "Don't break the chain. Not today.",
+      'Small, consistent actions rewrite who you are.',
+      "Your future self is begging you to start today.",
+      "Excuses are lies you tell yourself. Discipline is the truth.",
+      "He who conquers himself conquers all.",
+      "Winning the morning wins the day.",
+      "The sky is far but not for someone who is disciplined enough.",
+      "If 'they' can do it, you can do it too.",
+      "You've lied to yourself long enough. Time to keep your word."
+    ];
+
+    function getDailyQuote() {
+      var day = new Date().getDate() + new Date().getMonth() * 31;
+      return QUOTES[day % QUOTES.length];
+    }
+
+    function startQuoteTicker(el) {
+      if (!el) return;
+      el.textContent = getDailyQuote();
+      el.style.fontStyle = 'italic';
+    }
+
+    /* ============================================================
+       GREETING
+       ============================================================ */
+    function setGreeting() {
+      var h = new Date().getHours();
+      var word = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+      var greetWord = document.getElementById('greetWord');
+      var greetTime = document.getElementById('greetTime');
+      if (greetWord) greetWord.textContent = word;
+      if (greetTime) {
+        var now = new Date();
+        var opts = { weekday:'long', month:'long', day:'numeric' };
+        greetTime.textContent = now.toLocaleDateString(undefined, opts);
+      }
+    }
+
+    /* ============================================================
+       STAT COUNTER ANIMATION
+       ============================================================ */
+    function countUp(el, to, suffix, delay) {
+      if (!el || isNaN(to)) return;
+      var orig = el.textContent;
+      setTimeout(function() {
+        var start = performance.now();
+        var dur = 900;
+        (function step(now) {
+          var t = Math.min((now - start) / dur, 1);
+          var ease = 1 - Math.pow(1 - t, 3);
+          el.textContent = Math.round(to * ease) + (suffix || '');
+          if (t < 1) requestAnimationFrame(step);
+        })(start);
+      }, delay || 0);
+    }
+
+    /* ============================================================
+       PROFILE PICTURE — /get_user_picture/
+       ============================================================ */
+    var DEFAULT_AVATAR = 'https://api.dicebear.com/7.x/initials/svg?seed=' +
+                         encodeURIComponent('{{ request.user.username }}') +
+                         '&backgroundColor=1e293b&textColor=60a5fa&size=64';
+
+    function loadProfilePicture() {
+      var hdrSk   = document.getElementById('hdrAvatarSk');
+      var asideSk = document.getElementById('asideAvatarSk');
+      var hdrWrap  = document.getElementById('hdrAvatarWrap');
+      var asideWrap = document.getElementById('asideAvatarWrap');
+
+      function applyAvatar(url) {
+        [
+          { wrap: hdrWrap,   sk: hdrSk,   size: '32px' },
+          { wrap: asideWrap, sk: asideSk,  size: '52px' }
+        ].forEach(function(cfg) {
+          if (!cfg.wrap) return;
+          var img = document.createElement('img');
+          img.alt = '{{ request.user.username }}';
+          img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
+          img.onerror = function() { img.src = DEFAULT_AVATAR; };
+          img.onload  = function() {
+            if (cfg.sk && cfg.sk.parentNode) cfg.sk.remove();
+            img.classList.add('loaded');
+            cfg.wrap.appendChild(img);
+          };
+          img.src = url;
+        });
+      }
+
+      fetch('{% url "origin_user_picture" %}', { credentials: 'include' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) { applyAvatar(d.url || DEFAULT_AVATAR); })
+        .catch(function()  { applyAvatar(DEFAULT_AVATAR); });
+    }
+
+    /* ============================================================
+       HEATMAP — /heatmap/
+       ============================================================ */
+    var heatmapData = null;
+
+    function loadHeatmap() {
+      fetch('{% url "origin_user_HeatMap" %}', { credentials: 'include' })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, d: d }; }); })
+        .then(function(res) {
+          if (!res.ok || !res.d.cells) {
+            showHeatmapError(res.d.message || 'Could not load heatmap data.');
+            return;
+          }
+          heatmapData = res.d;
+          renderHeatmap(res.d.cells);
+          updateStatusBanner(res.d.checked_in_today, res.d.total_active);
+        })
+        .catch(function() {
+          showHeatmapError('Network error. Check your connection and retry.');
+        });
+    }
+
+    function renderHeatmap(cells) {
+      var grid = document.getElementById('hmGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+      var today = new Date().toISOString().slice(0, 10);
+      cells.forEach(function(c, i) {
+        var div = document.createElement('div');
+        var lv = c.count === 0 ? '' : c.count === 1 ? 'lv1' : c.count === 2 ? 'lv2' : 'lv3';
+        div.className = 'hm-cell ' + lv + (c.date === today ? ' today' : '');
+        div.title = c.date + ': ' + c.count + ' check-in' + (c.count !== 1 ? 's' : '');
+        div.style.animationDelay = (i * 0.015) + 's';
+        div.classList.add('hm-reveal');
+        grid.appendChild(div);
+      });
+    }
+
+    function showHeatmapError(msg) {
+      var err = document.getElementById('hmError');
+      var errMsg = document.getElementById('hmErrorMsg');
+      var grid = document.getElementById('hmGrid');
+      var banner = document.getElementById('dbStatusBanner');
+
+      if (grid) hide(grid);
+     if (banner) banner.innerHTML = '<p style="font-size:0.8rem;color:var(--ink3)">Status unavailable</p>';
+      if (errMsg) errMsg.textContent = msg;
+      if (err) err.classList.add('show');
+    }
+
+    document.getElementById('hmRetryBtn') && document.getElementById('hmRetryBtn').addEventListener('click', function() {
+      var err = document.getElementById('hmError');
+      var grid = document.getElementById('hmGrid');
+      if (err) err.classList.remove('show');
+      if (grid) { grid.innerHTML = ''; grid.removeAttribute('style'); }
+      loadHeatmap();
+    });
+
+    /* ============================================================
+       STATUS BANNER — updates from heatmap response
+       ============================================================ */
+    function updateStatusBanner(doneToday, total) {
+      var banner = document.getElementById('dbStatusBanner');
+      if (!banner) return;
+      var sk1 = document.getElementById('statusSk');
+      var sk2 = document.getElementById('statusTextSk');
+      if (sk1) sk1.remove();
+      if (sk2) sk2.remove();
+
+      var dot = el('div', 'db-status-dot');
+      var txt = el('div', 'db-status-text');
+      var det = el('div', 'db-status-detail');
+
+      if (total === 0) {
+        dot.classList.add('none');
+        txt.textContent = 'No active commitments yet.';
+        det.textContent = 'Add your first commitment to get started.';
+      } else if (doneToday === total) {
+        dot.classList.add('all-done');
+        txt.innerHTML = '<strong>All ' + total + ' commitment' + (total > 1 ? 's' : '') + ' checked in today.</strong> You\'re done. Solid.';
+        det.textContent = 'Come back tomorrow.';
+      } else if (doneToday === 0) {
+        dot.classList.add('none');
+        txt.innerHTML = '<strong>0 of ' + total + '</strong> commitments checked in today.';
+        det.textContent = 'Your streak is at risk. Open a commitment and check in now.';
+      } else {
+        dot.classList.add('partial');
+        txt.innerHTML = '<strong>' + doneToday + ' of ' + total + '</strong> commitments checked in today.';
+        det.textContent = (total - doneToday) + ' still pending.';
+      }
+
+      banner.innerHTML = '';
+      banner.appendChild(dot);
+      var textGroup = el('div', '');
+      textGroup.appendChild(txt);
+      textGroup.appendChild(det);
+      banner.appendChild(textGroup);
+    }
+
+    /* ============================================================
+       COMMITMENT CARDS — /get_commitment_data/
+       ============================================================ */
+    var commitmentData = [];
+
+    var CAT_ICONS = {
+      fitness: 'fa-dumbbell',   study:   'fa-book-open',
+      work:    'fa-briefcase',  health:  'fa-heart-pulse',
+      mindset: 'fa-brain',      other:   'fa-ellipsis'
+    };
+
+    function loadCommitments() {
+      fetch('{% url "get_commitment_data" %}', { credentials: 'include' })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, d: d }; }); })
+        .then(function(res) {
+          if (!res.ok) {
+            showCommitError(res.d.message || 'Could not load your commitments.');
+            return;
+          }
+          if (!Array.isArray(res.d.commitments)) {
+            showCommitError(res.d.message || 'Unexpected response from server.');
+            return;
+          }
+          commitmentData = res.d.commitments;
+          renderCommitments(commitmentData);
+          buildShareSelector(commitmentData);
+        })
+        .catch(function() {
+          showCommitError('Network error. Please check your connection and retry.');
+        });
+    }
+
+    function renderCommitments(data) {
+      var grid = document.getElementById('commitGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+
+      if (data.length === 0 || (data.length === 1 && data[0].id === 0)) {
+            var empty = el('div', 'commit-empty');
+            empty.innerHTML =
+            '<i class="fas fa-fire-flame-curved"></i>' +
+            '<h4>No commitments yet</h4>' +
+            '<p>Make your first vow. Define what you will do every day without exception.</p>' +
+            '<a href="/v1/commitments/?add=true" class="btn btn-primary btn-sm">' +
+            '<i class="fas fa-plus"></i> Add First Commitment</a>';
+            grid.appendChild(empty);
+            return;
+        }
+
+      data.forEach(function(c, i) {
+        var pct = c.goal_days > 0
+          ? Math.min(Math.round((c.days_since_start / c.goal_days) * 100), 100)
+          : 0;
+        var cat = (c.category || 'other').toLowerCase();
+        var icon = CAT_ICONS[cat] || 'fa-ellipsis';
+        var checkedClass = c.checked_in_today ? 'checked-today' : '';
+
+        var card = el('a', 'commit-card ' + cat + ' ' + checkedClass + ' stagger');
+        card.href = c.url || '/v1/commitments/' + c.id + '/';
+        card.style.setProperty('--i', i);
+
+        card.innerHTML =
+          '<div class="commit-card-top">' +
+            '<div class="commit-meta">' +
+              '<div class="commit-cat-icon ' + cat + '"><i class="fas ' + icon + '"></i></div>' +
+              '<span class="commit-cat-name">' + (c.category || 'Other') + '</span>' +
+            '</div>' +
+            '<div class="commit-ring-wrap">' +
+              '<svg class="prog-ring" viewBox="0 0 36 36" aria-hidden="true">' +
+                '<circle class="ring-bg" cx="18" cy="18" r="15.9"/>' +
+                '<circle class="ring-arc" cx="18" cy="18" r="15.9"' +
+                '  stroke-dasharray="0 100" stroke-linecap="round"/>' +
+              '</svg>' +
+              '<span class="ring-pct">' + pct + '%</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="commit-what">' + sanitize(c.what) + '</div>' +
+          '<div class="commit-bottom">' +
+            '<div class="commit-streak">' +
+              '<span class="commit-streak-n">' + (c.streak_count || 0) + '</span>' +
+              '<span> day streak</span>' +
+            '</div>' +
+            '<div class="commit-checkin ' + (c.checked_in_today ? 'checkin-done' : 'checkin-pending') + '">' +
+              (c.checked_in_today
+                ? '<i class="fas fa-circle-check"></i> Done today'
+                : '<i class="fas fa-clock"></i> Pending · ' + (c.checkin_time || '')) +
+            '</div>' +
+          '</div>' +
+          '<i class="fas fa-arrow-right commit-arrow"></i>';
+
+        // Set ring arc after append
+        setTimeout(function(card, pct) {
+          var arc = card.querySelector('.ring-arc');
+          if (arc) arc.setAttribute('stroke-dasharray', pct + ' ' + (100 - pct));
+        }, 100 + i * 80, card, pct);
+
+        grid.appendChild(card);
+      });
+    }
+
+    function showCommitError(msg) {
+      var grid = document.getElementById('commitGrid');
+      var err  = document.getElementById('commitError');
+      var errMsg = document.getElementById('commitErrorMsg');
+      if (grid) grid.innerHTML = '';
+      if (errMsg) errMsg.textContent = msg;
+      if (err) err.classList.add('show');
+    }
+
+    document.getElementById('commitRetryBtn') && document.getElementById('commitRetryBtn').addEventListener('click', function() {
+      var err = document.getElementById('commitError');
+      if (err) err.classList.remove('show');
+      loadCommitments();
+    });
+
+    function sanitize(str) {
+      var d = document.createElement('div');
+      d.textContent = str || '';
+      return d.innerHTML;
+    }
+
+    /* ============================================================
+       PARTNER WIDGET — /partner-widget/
+       ============================================================ */
+    function loadPartners() {
+      var section = document.getElementById('dbPartners');
+      if (!section) return; // social_mode !== 'partner'
+
+      fetch('{% url "origin_parner_widget" %}', { credentials: 'include' })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, d: d }; }); })
+        .then(function(res) {
+          if (!res.ok || !Array.isArray(res.d.partners)) {
+            showPartnerError(res.d.message || 'Could not load partners.');
+            return;
+          }
+          renderPartners(res.d.partners);
+        })
+        .catch(function() {
+          showPartnerError('Network error loading partner data.');
+        });
+    }
+
+    function renderPartners(partners) {
+      var list = document.getElementById('partnerList');
+      if (!list) return;
+      list.innerHTML = '';
+
+      if (partners.length === 0) {
+        list.innerHTML = '<p style="font-size:0.8rem;color:var(--ink3);padding:0.5rem 0">No partners added yet. Search by User ID from your profile.</p>';
+        return;
+      }
+
+      partners.forEach(function(p, i) {
+        var isRecent = p.last_active && ((Date.now() - new Date(p.last_active).getTime()) < 86400000 * 2);
+        var card = el('div', 'partner-card stagger');
+        card.style.setProperty('--i', i);
+        card.innerHTML =
+          '<div class="partner-status-dot ' + (isRecent ? '' : 'inactive') + '"></div>' +
+          '<div style="flex:1">' +
+            '<div class="partner-id">@' + sanitize(p.public_id) + '</div>' +
+            '<div class="partner-last">' + (p.last_active ? 'Last active ' + timeAgo(p.last_active) : 'No activity yet') + '</div>' +
+          '</div>' +
+          '<div class="partner-streak"><i class="fas fa-fire"></i> ' + (p.streak_count || 0) + ' days</div>';
+        list.appendChild(card);
+      });
+    }
+
+    function showPartnerError(msg) {
+      var list = document.getElementById('partnerList');
+      var err  = document.getElementById('partnerError');
+      var errMsg = document.getElementById('partnerErrorMsg');
+      if (list) list.innerHTML = '';
+      if (errMsg) errMsg.textContent = msg;
+      if (err) err.classList.add('show');
+    }
+
+    document.getElementById('partnerRetryBtn') && document.getElementById('partnerRetryBtn').addEventListener('click', function() {
+      var err = document.getElementById('partnerError');
+      if (err) err.classList.remove('show');
+      loadPartners();
+    });
+
+    function timeAgo(dateStr) {
+      var ms = Date.now() - new Date(dateStr).getTime();
+      var m = Math.floor(ms / 60000);
+      if (m < 60)  return m + 'm ago';
+      var h = Math.floor(m / 60);
+      if (h < 24)  return h + 'h ago';
+      var d = Math.floor(h / 24);
+      return d + ' day' + (d > 1 ? 's' : '') + ' ago';
+    }
+
+    /* ============================================================
+       ASIDE TOGGLE
+       ============================================================ */
+    var aside    = document.getElementById('dbAside');
+    var overlay  = document.getElementById('asideOverlay');
+    var hamburger = document.getElementById('hamburgerBtn');
+    var hdrAvatar = document.getElementById('hdrAvatarWrap');
+
+    function openAside()  { aside && aside.classList.add('open'); overlay && overlay.classList.add('show'); }
+    function closeAside() { aside && aside.classList.remove('open'); overlay && overlay.classList.remove('show'); }
+
+    hamburger && hamburger.addEventListener('click', openAside);
+    hdrAvatar && hdrAvatar.addEventListener('click', function() {
+      if (window.innerWidth < 900) openAside();
+      else window.location.href = '/v1/profile/';
+    });
+    overlay   && overlay.addEventListener('click', closeAside);
+
+    // Close aside on link click (mobile)
+    aside && aside.querySelectorAll('.aside-link').forEach(function(a) {
+      a.addEventListener('click', function() {
+        if (window.innerWidth < 900) closeAside();
+      });
+    });
+
+    /* ============================================================
+       THEME TOGGLE
+       ============================================================ */
+    var themeBtn  = document.getElementById('themeToggleBtn');
+    var themeIcon = document.getElementById('themeIcon');
+
+    function setTheme(dark) {
+      document.body.classList.toggle('sd-light', !dark);
+      if (themeIcon) themeIcon.className = dark ? 'fas fa-moon' : 'fas fa-sun';
+      setCookie('sd-theme', dark ? 'dark' : 'light', 365);
+    }
+
+    themeBtn && themeBtn.addEventListener('click', function() {
+      setTheme(document.body.classList.contains('sd-light'));
+    });
+
+    /* ============================================================
+       ZEAL SCORE TOOLTIP
+       ============================================================ */
+    var zealBtn     = document.getElementById('zealInfoBtn');
+    var zealTooltip = document.getElementById('zealTooltip');
+    var zealStat    = zealTooltip && zealTooltip.parentElement;
+
+    if (zealBtn && zealTooltip) {
+      zealBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var rect = zealBtn.getBoundingClientRect();
+        zealTooltip.style.top  = (rect.bottom + window.scrollY + 6) + 'px';
+        zealTooltip.style.left = Math.min(rect.left, window.innerWidth - 240) + 'px';
+        zealTooltip.style.position = 'fixed';
+        zealTooltip.style.top  = (rect.bottom + 6) + 'px';
+        zealTooltip.classList.toggle('open');
+      });
+      document.addEventListener('click', function() { zealTooltip.classList.remove('open'); });
+    }
+
+    /* ============================================================
+       SHARE MODAL
+       ============================================================ */
+    function openShareModal() {
+      var modal = document.getElementById('shareModal');
+      if (modal) modal.classList.add('open');
+      updateSharePreview(0);
+    }
+    function closeShareModal() {
+      var modal = document.getElementById('shareModal');
+      if (modal) modal.classList.remove('open');
+    }
+
+    document.getElementById('shareBtn')     && document.getElementById('shareBtn').addEventListener('click', openShareModal);
+    document.getElementById('shareBtnHdr')  && document.getElementById('shareBtnHdr').addEventListener('click', openShareModal);
+    document.getElementById('closeShareModal')  && document.getElementById('closeShareModal').addEventListener('click', closeShareModal);
+    document.getElementById('closeShareModal2') && document.getElementById('closeShareModal2').addEventListener('click', closeShareModal);
+    document.getElementById('shareModal')   && document.getElementById('shareModal').addEventListener('click', function(e) {
+      if (e.target === this) closeShareModal();
+    });
+
+    function buildShareSelector(data) {
+      var sel = document.getElementById('spSelector');
+      var wrap = document.getElementById('spCommitSelector');
+      if (!sel || data.length <= 1) return;
+      data.forEach(function(c, i) {
+        var opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = c.what.slice(0, 60);
+        sel.appendChild(opt);
+      });
+      if (wrap) wrap.style.display = '';
+      sel.addEventListener('change', function() { updateSharePreview(parseInt(this.value)); });
+    }
+
+    function updateSharePreview(idx) {
+      var c = commitmentData[idx];
+      if (!c) {
+        qs('#spCommit') && (qs('#spCommit').textContent = 'No commitments loaded yet.');
+        qs('#spStreak') && (qs('#spStreak').textContent = '—');
+        return;
+      }
+      qs('#spCommit') && (qs('#spCommit').textContent = '"' + c.what + '"');
+      qs('#spStreak') && (qs('#spStreak').textContent = (c.streak_count || 0) + ' days');
+      qs('#spQuote') && (qs('#spQuote').textContent = getDailyQuote());
+      qs('#printCommitText') && (qs('#printCommitText').textContent = '"' + c.what + '"');
+      qs('#printStreakN') && (qs('#printStreakN').textContent = (c.streak_count || 0));
+    }
+
+    function buildShareText(idx) {
+      var c = commitmentData[idx || 0];
+      var streak = c ? c.streak_count || 0 : 0;
+      var what   = c ? c.what : 'my commitment';
+      return [
+        streak + '-day streak on STREAK & DISCIPLINE',
+        '',
+        '"' + what + '"',
+        '',
+        'Zeal Score: {{ zeal_score|default:"0" }} · {{ consistency_pct|default:"0" }}% consistency',
+        '',
+        getDailyQuote(),
+        '',
+        'streakdiscipline.com'
+      ].join('\n');
+    }
+
+    // Copy
+    var copyBtn = document.getElementById('copyShareBtn');
+    copyBtn && copyBtn.addEventListener('click', function() {
+      var idx = parseInt(qs('#spSelector') ? qs('#spSelector').value : 0) || 0;
+      navigator.clipboard && navigator.clipboard.writeText(buildShareText(idx)).then(function() {
+        copyBtn.className = 'share-opt-btn share-copied';
+        copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        setTimeout(function() {
+          copyBtn.className = 'share-opt-btn share-copy';
+          copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy Text';
+        }, 2000);
+      });
+    });
+
+    // WhatsApp
+    document.getElementById('waShareBtn') && document.getElementById('waShareBtn').addEventListener('click', function() {
+      var idx = parseInt(qs('#spSelector') ? qs('#spSelector').value : 0) || 0;
+      window.open('https://wa.me/?text=' + encodeURIComponent(buildShareText(idx)), '_self', 'noopener');
+    });
+
+    // X / Twitter
+    document.getElementById('xShareBtn') && document.getElementById('xShareBtn').addEventListener('click', function() {
+      var c = commitmentData[0];
+      var streak = c ? c.streak_count || 0 : 0;
+      var tweet = streak + '-day streak on "' + (c ? c.what : 'my commitment') + '"\n\n' +
+                  getDailyQuote() + '\n\nstreakdiscipline.com';
+      window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(tweet), '_self', 'noopener');
+    });
+
+    /* ============================================================
+       PRINT
+       ============================================================ */
+    function triggerPrint() {
+      updateSharePreview(0); // ensure print card is filled
+      window.print();
+    }
+    document.getElementById('printBtn')       && document.getElementById('printBtn').addEventListener('click', triggerPrint);
+    document.getElementById('printFromModal') && document.getElementById('printFromModal').addEventListener('click', function() {
+      closeShareModal(); setTimeout(triggerPrint, 300);
+    });
+
+    /* ============================================================
+       LOGOUT
+       ============================================================ */
+    var logoutBtn  = document.getElementById('logoutBtn');
+    var logoutForm = document.getElementById('logoutForm');
+    logoutBtn && logoutBtn.addEventListener('click', function() {
+      if (confirm('Log out of STREAK & DISCIPLINE?')) {
+        if (logoutForm) logoutForm.submit();
+        else window.location.href = '{% url "origin_logout" %}';
+      }
+    });
+
+    /* ============================================================
+       PARTICLE BURST on FAB  (desktop cosmetic)
+       ============================================================ */
+    var fab = qs('.db-fab');
+    fab && fab.addEventListener('click', function(e) {
+      var colors = ['#60a5fa','#818cf8','#a78bfa'];
+      for (var i = 0; i < 12; i++) {
+        (function(i) {
+          var d = document.createElement('div');
+          var angle = (i / 12) * Math.PI * 2;
+          var speed = 40 + Math.random() * 60;
+          d.style.cssText = 'position:fixed;width:5px;height:5px;border-radius:50%;pointer-events:none;z-index:9999;' +
+            'background:' + colors[i % 3] + ';left:' + (e.clientX - 2) + 'px;top:' + (e.clientY - 2) + 'px';
+          document.body.appendChild(d);
+          if (d.animate) {
+            d.animate([
+              { transform:'translate(0,0)', opacity:1 },
+              { transform:'translate(' + (Math.cos(angle)*speed) + 'px,' + (Math.sin(angle)*speed) + 'px) scale(0)', opacity:0 }
+            ], { duration: 400 + Math.random()*200, easing:'cubic-bezier(0.22,1,0.36,1)', fill:'forwards' })
+            .onfinish = function() { d.remove(); };
+          } else { setTimeout(function() { d.remove(); }, 600); }
+        })(i);
+      }
+    });
+
+    /* ============================================================
+       INIT SEQUENCE
+       The spinner already handles window.load hide timing.
+       We reveal the app shell and fire all fetches in parallel.
+       ============================================================ */
+    function reveal() {
+      var app = document.getElementById('dbApp');
+      if (app) app.classList.add('db-visible');
+    }
+
+    function init() {
+      setGreeting();
+      startQuoteTicker(document.getElementById('hdrQuote'));
+
+      // Stat number animations
+      var zealEl    = document.getElementById('zealNum');
+      var consistEl = document.getElementById('consistNum');
+      var entriesEl = document.getElementById('entriesNum');
+      var zealVal   = parseInt(zealEl && zealEl.textContent) || 0;
+      var conVal    = parseInt(consistEl && consistEl.textContent) || 0;
+      var entVal    = parseInt(entriesEl && entriesEl.textContent) || 0;
+      countUp(zealEl, zealVal, '', 400);
+      countUp(consistEl, conVal, '%', 500);
+      countUp(entriesEl, entVal, '', 600);
+
+      // Fire all lazy fetches in parallel
+      loadProfilePicture();
+      loadHeatmap();
+      loadCommitments();
+      loadPartners(); // no-op if social_mode != partner (section doesn't exist)
+    }
+
+    // Reveal app shell once spinner clears (spinner.js fires on window.load)
+    // We piggyback window.load too for the app reveal
+    if (document.readyState === 'complete') {
+      reveal(); init();
+    } else {
+      window.addEventListener('load', function() {
+        reveal(); init();
+      });
+      // 8-second safety net
+      setTimeout(function() { reveal(); init(); }, 8000);
+    }
+
+  })();
+  </script>
+
+  <!-- Spinner JS (handles its own hide on window.load + 8s fallback) -->
+  <script>{% include "reusables/spinner.js" %}</script>
+
+</body>
+</html>
+
+based on this format, nav bar style phsycis , data fetching and optimization but rendering very good ui
+
+Css()cdn/advance
+/* ================================================================
+   DASHBOARD — ADVANCE CSS  (deferred, non-blocking)
+   Place at: origin/static/cdn/dashboard_advance.css
+   All animations, glassmorphism, spring physics, skeleton shimmer.
+   Loads async. Page is already readable before this arrives.
+   ================================================================ */
+
+/* ---- Spring easing reference ---------------------------------
+   Overshoot spring:   cubic-bezier(0.34,1.56,0.64,1)
+   Fast decelerate:    cubic-bezier(0.22,1,0.36,1)
+   Elastic snap:       cubic-bezier(0.68,-0.55,0.265,1.55)
+   Heavy settle:       cubic-bezier(0.16,1,0.3,1)
+----------------------------------------------------------------- */
+
+/* ================================================================
+   SKELETON SHIMMER
+   ================================================================ */
+@keyframes skShimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.sk {
+  background: linear-gradient(
+    90deg,
+    var(--surf)  0%,
+    var(--surf3) 40%,
+    var(--edgeL) 50%,
+    var(--surf3) 60%,
+    var(--surf)  100%
+  );
+  background-size: 800px 100%;
+  animation: skShimmer 1.6s ease-in-out infinite;
+}
+
+/* Skeleton card gets a border glow too */
+.sk-card .sk { animation: skShimmer 1.6s ease-in-out infinite; }
+
+/* ================================================================
+   BACKGROUND ATMOSPHERE
+   ================================================================ */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 900px 700px at 15% 85%, rgba(59,130,246,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 600px 500px at 85% 10%, rgba(129,140,248,0.04) 0%, transparent 55%),
+    radial-gradient(ellipse 400px 300px at 50% 50%, rgba(167,139,250,0.02) 0%, transparent 50%);
+  animation: bgBreath 20s ease-in-out infinite alternate;
+}
+@keyframes bgBreath {
+  0%   { opacity: 0.7; transform: scale(1); }
+  100% { opacity: 1;   transform: scale(1.05); }
+}
+
+body.sd-light::before { display: none; }
+
+/* ================================================================
+   GLASSMORPHISM  —  layered on top of light CSS base styles
+   ================================================================ */
+.db-aside {
+  background: rgba(13,20,33,0.9);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border-right: 1px solid rgba(42,61,86,0.6);
+  box-shadow: 4px 0 32px rgba(0,0,0,0.25);
+}
+body.sd-light .db-aside {
+  background: rgba(255,255,255,0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 4px 0 24px rgba(0,0,0,0.07);
+}
+
+.db-header {
+  background: rgba(6,11,20,0.88);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  box-shadow: 0 1px 0 rgba(42,61,86,0.5), 0 4px 24px rgba(0,0,0,0.2);
+}
+body.sd-light .db-header {
+  background: rgba(248,250,252,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 1px 0 rgba(203,213,225,0.8), 0 2px 12px rgba(0,0,0,0.04);
+}
+
+/* ================================================================
+   ASIDE SLIDE & NAV SPRING PHYSICS
+   ================================================================ */
+.db-aside {
+  transition: transform 0.4s cubic-bezier(0.22,1,0.36,1),
+              box-shadow 0.4s ease;
+}
+.db-aside.open {
+  box-shadow: 8px 0 48px rgba(0,0,0,0.45);
+}
+
+.aside-link {
+  transition: color 0.18s ease, background 0.18s ease,
+              border-color 0.18s ease, transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
+}
+.aside-link:hover { transform: translateX(3px); }
+
+/* Aside avatar reveal */
+@keyframes avatarReveal {
+  from { opacity:0; transform: scale(0.8); }
+  60%  { opacity:1; transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+.aside-avatar-wrap img.loaded { animation: avatarReveal 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ================================================================
+   HEADER
+   ================================================================ */
+@keyframes hdrSlideDown {
+  from { opacity:0; transform: translateY(-100%); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.db-header { animation: hdrSlideDown 0.45s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* Header avatar spring */
+.hdr-avatar {
+  transition: box-shadow 0.3s cubic-bezier(0.34,1.56,0.64,1),
+              transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.hdr-avatar:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 3px var(--acc);
+}
+
+/* Rotating quote ticker */
+@keyframes quoteTicker {
+  0%   { opacity:0; transform: translateY(8px); }
+  15%  { opacity:1; transform: translateY(0); }
+  85%  { opacity:1; transform: translateY(0); }
+  100% { opacity:0; transform: translateY(-8px); }
+}
+.hdr-quote.tick { animation: quoteTicker 6s ease-in-out forwards; }
+
+/* ================================================================
+   GREETING ENTRANCE
+   ================================================================ */
+@keyframes greetIn {
+  from { opacity:0; transform: translateY(20px); }
+  60%  { opacity:1; transform: translateY(-2px); }
+  100% { transform: translateY(0); }
+}
+.db-greeting-time { animation: greetIn 0.5s 0.1s cubic-bezier(0.22,1,0.36,1) both; }
+.db-greeting-text { animation: greetIn 0.6s 0.2s cubic-bezier(0.22,1,0.36,1) both; }
+.db-greeting-sub  { animation: greetIn 0.5s 0.34s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ================================================================
+   STAT CARDS  — spring entrance + hover 3D tilt
+   ================================================================ */
+@keyframes statCardIn {
+  from { opacity:0; transform: translateY(28px) scale(0.92); }
+  65%  { opacity:1; transform: translateY(-4px) scale(1.01); }
+  100% { transform: translateY(0) scale(1); }
+}
+.db-stats .stat-card:nth-child(1) { animation: statCardIn 0.55s 0.3s cubic-bezier(0.22,1,0.36,1) both; }
+.db-stats .stat-card:nth-child(2) { animation: statCardIn 0.55s 0.42s cubic-bezier(0.22,1,0.36,1) both; }
+.db-stats .stat-card:nth-child(3) { animation: statCardIn 0.55s 0.54s cubic-bezier(0.22,1,0.36,1) both; }
+
+.stat-card {
+  transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.32s cubic-bezier(0.22,1,0.36,1),
+              border-color 0.2s ease;
+}
+.stat-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.28);
+  border-color: var(--edgeL);
+}
+.stat-card.zeal:hover { box-shadow: 0 12px 32px var(--glow); border-color: rgba(59,130,246,0.4); }
+
+/* Accent bar on hover */
+.stat-card::before {
+  content: '';
+  position: absolute; top:0; left:0; right:0; height:2px;
+  background: var(--acc); transform: scaleX(0); transform-origin: left;
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  border-radius: 2px 2px 0 0;
+}
+.stat-card:hover::before { transform: scaleX(1); }
+
+/* Box shadow upgrade */
+.stat-card {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+
+/* ================================================================
+   STATUS BANNER ENTRANCE
+   ================================================================ */
+@keyframes bannerSlide {
+  from { opacity:0; transform: translateX(-16px); }
+  to   { opacity:1; transform: translateX(0); }
+}
+.db-status { animation: bannerSlide 0.4s 0.65s cubic-bezier(0.22,1,0.36,1) both; }
+.db-status {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+}
+.db-status:hover { border-color: var(--edgeL); box-shadow: 0 4px 18px rgba(0,0,0,0.18); }
+
+/* ================================================================
+   MILESTONE CARD
+   ================================================================ */
+@keyframes milestoneIn {
+  from { opacity:0; transform: translateX(-12px); }
+  to   { opacity:1; transform: translateX(0); }
+}
+.db-milestone { animation: milestoneIn 0.4s 0.75s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* Glowing left border pulse */
+.db-milestone::before {
+  content: '';
+  position: absolute; left: -1px; top:0; bottom:0; width: 3px;
+  background: var(--acc);
+  animation: milestonePulse 3s ease-in-out infinite;
+  border-radius: 3px 0 0 3px;
+}
+.db-milestone { position: relative; }
+@keyframes milestonePulse {
+  0%,100% { box-shadow: none; }
+  50%      { box-shadow: 0 0 12px var(--glow); }
+}
+
+/* ================================================================
+   HEATMAP
+   ================================================================ */
+@keyframes hmIn {
+  from { opacity:0; transform: translateY(16px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.db-heatmap-wrap { animation: hmIn 0.45s 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+
+.hm-cell {
+  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.2s ease;
+}
+.hm-cell:hover {
+  transform: scale(1.5);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  z-index: 1; position: relative;
+}
+.hm-cell.today { box-shadow: 0 0 0 2px var(--accL); }
+
+/* Cell entrance stagger via JS adding .hm-reveal class */
+@keyframes cellReveal {
+  from { opacity:0; transform: scale(0.5); }
+  to   { opacity:1; transform: scale(1); }
+}
+.hm-cell.hm-reveal { animation: cellReveal 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+/* ================================================================
+   COMMITMENT CARDS  — production-level
+   ================================================================ */
+@keyframes commitIn {
+  from { opacity:0; transform: translateY(32px) scale(0.93); }
+  60%  { opacity:1; transform: translateY(-4px) scale(1.01); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+.commit-card {
+  transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.32s cubic-bezier(0.22,1,0.36,1),
+              border-color 0.2s ease;
+  box-shadow: 0 2px 14px rgba(0,0,0,0.12);
+  will-change: transform;
+}
+.commit-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.28);
+  border-color: var(--edgeL);
+}
+.commit-card:active { transform: translateY(-2px) scale(0.99); transition-duration: 0.1s; }
+
+/* Checked-in shimmer on card */
+.commit-card.checked-today {
+  border-color: rgba(34,197,94,0.35);
+}
+.commit-card.checked-today::after {
+  content: '';
+  position: absolute; inset:0; border-radius: inherit;
+  background: linear-gradient(135deg, rgba(34,197,94,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* Arrow reveal on hover */
+.commit-arrow {
+  position: absolute; right: 1rem; bottom: 1rem;
+  font-size: 0.75rem; color: var(--ink3);
+  opacity: 0; transform: translateX(-6px);
+  transition: opacity 0.2s ease, transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
+}
+.commit-card:hover .commit-arrow {
+  opacity: 1; transform: translateX(0);
+}
+
+/* Category icon colours */
+.commit-cat-icon.fitness  { background:rgba(239,68,68,0.12);   color:#f87171 }
+.commit-cat-icon.study    { background:rgba(59,130,246,0.12);  color:var(--accL) }
+.commit-cat-icon.work     { background:rgba(245,158,11,0.12);  color:#fbbf24 }
+.commit-cat-icon.health   { background:rgba(34,197,94,0.12);   color:#4ade80 }
+.commit-cat-icon.mindset  { background:rgba(167,139,250,0.12); color:#c4b5fd }
+.commit-cat-icon.other    { background:rgba(148,163,184,0.12); color:var(--ink2) }
+
+/* Progress ring arc colours per category */
+.commit-card.fitness  .ring-arc { stroke: #f87171 }
+.commit-card.study    .ring-arc { stroke: var(--accL) }
+.commit-card.work     .ring-arc { stroke: #fbbf24 }
+.commit-card.health   .ring-arc { stroke: #4ade80 }
+.commit-card.mindset  .ring-arc { stroke: #c4b5fd }
+
+/* "No commitments" empty state */
+.commit-empty {
+  text-align:center; padding: 2.5rem 1rem;
+  border: 1px dashed var(--edgeL); border-radius: var(--rL);
+}
+.commit-empty i { font-size:2rem; color:var(--ink3); margin-bottom:0.75rem; display:block; }
+.commit-empty h4 { font-size:0.9rem; margin-bottom:0.4rem; }
+.commit-empty p  { font-size:0.78rem; color:var(--ink2); margin-bottom:1rem; line-height:1.6; }
+
+/* ================================================================
+   PARTNER WIDGET
+   ================================================================ */
+@keyframes partnerIn {
+  from { opacity:0; transform: translateX(-12px); }
+  to   { opacity:1; transform: translateX(0); }
+}
+
+.partner-card {
+  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.28s ease, border-color 0.2s ease;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.partner-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  border-color: var(--edgeL);
+}
+
+.partner-status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--ok); flex-shrink:0;
+  box-shadow: 0 0 6px rgba(34,197,94,0.5);
+  animation: partnerPulse 2s ease-in-out infinite;
+}
+.partner-status-dot.inactive { background:var(--ink3); box-shadow:none; animation:none; }
+@keyframes partnerPulse {
+  0%,100% { box-shadow: 0 0 4px rgba(34,197,94,0.3); }
+  50%      { box-shadow: 0 0 10px rgba(34,197,94,0.6); }
+}
+
+/* ================================================================
+   UPGRADE CTA BANNER
+   ================================================================ */
+.aside-upgrade {
+  animation: upgradePulse 4s ease-in-out infinite;
+}
+@keyframes upgradePulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.08); }
+  50%      { box-shadow: 0 0 0 6px rgba(59,130,246,0); }
+}
+
+/* ================================================================
+   FAB  — floating action button spring
+   ================================================================ */
+.db-fab {
+  transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.32s cubic-bezier(0.22,1,0.36,1);
+  animation: fabReveal 0.6s 1.2s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes fabReveal {
+  from { opacity:0; transform: scale(0.5) rotate(-90deg); }
+  70%  { transform: scale(1.1) rotate(5deg); }
+  100% { opacity:1; transform: scale(1) rotate(0deg); }
+}
+.db-fab:hover {
+  transform: scale(1.12) rotate(8deg);
+  box-shadow: 0 8px 28px rgba(59,130,246,0.5);
+}
+.db-fab:active { transform: scale(0.92); transition-duration: 0.1s; }
+
+/* ================================================================
+   SHARE / PRINT MODAL
+   ================================================================ */
+.db-modal-overlay {
+  transition: opacity 0.3s ease;
+}
+@keyframes modalIn {
+  from { opacity:0; transform: scale(0.92) translateY(20px); }
+  60%  { opacity:1; transform: scale(1.01) translateY(-3px); }
+  100% { transform: scale(1) translateY(0); }
+}
+.db-modal-overlay.open .db-modal {
+  animation: modalIn 0.45s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+.db-modal {
+  box-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.04) inset;
+}
+body.sd-light .db-modal {
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+}
+
+.share-opt-btn {
+  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1),
+              opacity 0.18s ease, filter 0.18s ease;
+}
+.share-opt-btn:hover { transform: translateY(-2px); filter: brightness(1.12); }
+.share-opt-btn:active { transform: scale(0.94); }
+
+/* ================================================================
+   ZEAL TOOLTIP
+   ================================================================ */
+.zeal-tooltip {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+@keyframes tooltipIn {
+  from { opacity:0; transform: scale(0.88) translateY(6px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+.zeal-tooltip.open { animation: tooltipIn 0.25s cubic-bezier(0.22,1,0.36,1) both; }
+
+.zeal-info {
+  transition: color 0.18s ease, transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.zeal-info:hover { color: var(--accL); transform: scale(1.2); }
+
+/* ================================================================
+   SECTION REVEAL  (JS adds .revealed when data arrives)
+   ================================================================ */
+@keyframes sectionReveal {
+  from { opacity:0; transform: translateY(24px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.db-section-reveal { animation: sectionReveal 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ================================================================
+   COMMITMENT CARD STAGGER  (JS sets --i CSS var per card)
+   ================================================================ */
+.commit-card.stagger {
+  animation: commitIn 0.55s cubic-bezier(0.22,1,0.36,1) both;
+  animation-delay: calc(var(--i, 0) * 0.08s);
+}
+
+/* ================================================================
+   PARTNER CARD STAGGER
+   ================================================================ */
+.partner-card.stagger {
+  animation: partnerIn 0.4s cubic-bezier(0.22,1,0.36,1) both;
+  animation-delay: calc(var(--i, 0) * 0.07s);
+}
+
+/* ================================================================
+   BUTTONS  — spring hover
+   ================================================================ */
+.btn {
+  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.28s cubic-bezier(0.22,1,0.36,1),
+              background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+.btn-primary:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(59,130,246,0.4);
+}
+.btn-primary:active { transform: scale(0.96); transition-duration: 0.08s; }
+.btn-outline:hover  { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.18); }
+
+/* ================================================================
+   LIGHT MODE OVERRIDES
+   ================================================================ */
+body.sd-light .stat-card {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+body.sd-light .commit-card {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+body.sd-light .commit-card:hover {
+  box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+}
+body.sd-light .db-modal {
+  background: rgba(255,255,255,0.97);
+}
+body.sd-light body::before { display: none; }
+
+/* ================================================================
+   REDUCED MOTION
+   ================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay:    0ms !important;
+    transition-duration: 0.1s !important;
+  }
+}
 
 
-NB: FIRST TIME LOAD SHOULD BE AS FAST AS POSSILBLE, AT LEAST THE BACKGROUND and THE SPINNER.html (the one in my reusables) SHOULD BE VERY FAST
-also, i will pass inside my django render currnet tier of user as 'tier' 
-an aisde should be available for setting(in mobile since the nav bar already in aside, the content of the desktop aside should be in mobile aside , )
-Aside content
+css ligth
+/* ================================================================
+   DASHBOARD — LIGHT CSS  (critical path, render-blocking)
+   Place at: origin/static/css/dashboard.css
+   Loads synchronously. Zero animations. Zero backdrop-filter.
+   Everything here paints before the first byte of JS runs.
+   ================================================================ */
 
-* profile(a link to /profile/)
-* group(a url for viewing and crearing group)
-* leaderboard and blog(our official page for something new and leaderboard)
-* leave space for me to add more items later incase i want to add 
+/* ---- Variables ------------------------------------------------ */
+:root {
+  --bg:        #060b14;
+  --surf:      #0d1421;
+  --surf2:     #111d2e;
+  --surf3:     #16253a;
+  --ink:       #e4ecf7;
+  --ink2:      #8da5c0;
+  --ink3:      #4a6075;
+  --acc:       #3b82f6;
+  --accL:      #60a5fa;
+  --accXL:     #93c5fd;
+  --glow:      rgba(59,130,246,0.2);
+  --ok:        #22c55e;
+  --warn:      #f59e0b;
+  --bad:       #ef4444;
+  --gold:      #f59e0b;
+  --edge:      #1c2a3d;
+  --edgeL:     #2a3d56;
 
-* customer support email and phone via whatsapp
-* logout at the very bottn
+  --aside-w:   248px;
+  --header-h:  56px;
+  --r:         10px;
+  --rL:        16px;
+  --rXL:       22px;
+  --font:      system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --ease:      0.2s ease;
+}
 
-the aside should be scrollable so it can contain lots of content 
+body.sd-light {
+  --bg:    #f0f4fa; --surf: #fff; --surf2: #f8fafc; --surf3: #f1f5fb;
+  --ink:   #0f172a; --ink2: #475569; --ink3: #94a3b8;
+  --edge:  #e2e8f0; --edgeL: #cbd5e1;
+}
 
-first tell me what other items / component can/should be added more as i am out of ideas but the group/ leaderboard and commitment real data and to commit data cannot stay here cos of latency
+/* ---- Reset ---------------------------------------------------- */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{height:100%;scroll-behavior:smooth}
+body{
+  font-family:var(--font);background:var(--bg);color:var(--ink);
+  min-height:100%;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+a{color:inherit;text-decoration:none}
+img,svg{display:block;max-width:100%}
+button,select,input,textarea{font-family:inherit}
 
-extra component that will also speak to endpoint to get data
-* Today's status banner - the amount of commitment  done today(directly inside the html cos it need to show )
-* al progress arc	Per commitment: days_since_start / goal_days as a ring. Beautiful and motivating
-* Zeal score explainer	Users won't know what it is. Tap-to-expand tooltip: "Zeal = active commitments × average streak"
-* Zeal score explainer	Users won't know what it is. Tap-to-expand tooltip: "Zeal = active commitments × average streak"(hit the endpoint /heatmap/ for the data param u need , note data should not be too heavy)
-* Daily discipline quote	Array of quotes bundled in JS, zero network cost, rotates daily. Adds character and fills dead space while skeletons load
-* Component	Why	Load tier
-"Check in today" FAB	Most important action on the whole app — floating button, always visible	Instant (structure only)
-Today's status banner	"2 of 3 commitments checked in today" — high urgency, fast scan	Derived from Tier 1 data
-Goal progress arc	Per commitment: days_since_start / goal_days as a ring. Beautiful and motivating	Tier 1
-Zeal score explainer	Users won't know what it is. Tap-to-expand tooltip: "Zeal = active commitments × average streak"	Instant, pure JS
-Mini 30-day heat map	Aggregate across ALL commitments — one coloured grid showing consistency. Can be passed in Django context	Tier 0 or Tier 1
-Daily discipline quote	Array of quotes bundled in JS, zero network cost, rotates daily. Adds character and fills dead space while skeletons load	Instant
-Partner streak widget	If social_mode = partner, show partner's streak count (not entries). Small, non-intrusive(hit endpoint/partner-widget to get data , nb: since some tier can have more than one partner, be expecting a list of maps and loop through each to create the widget, )
+/* ---- Outer layout --------------------------------------------- */
+.db-wrap{display:flex;min-height:100vh;padding-top:var(--header-h)}
 
-NB: USER PRIVACY IS KEY SO FOR ANYTHING REGARFING OTHERS SEEING USER STUFF, THE USERID(public_searchable_username) WILL BE THE NAME TO DISPLAY
+/* ---- ASIDE ---------------------------------------------------- */
+.db-aside{
+  width:var(--aside-w);flex-shrink:0;
+  position:fixed;top:0;left:0;bottom:0;
+  background:var(--surf);border-right:1px solid var(--edge);
+  display:flex;flex-direction:column;z-index:300;
+  overflow:hidden;
+}
+/* Mobile: hidden off-screen until toggled */
+@media(max-width:899px){
+  .db-aside{
+    width:min(var(--aside-w),80vw);
+    transform:translateX(-100%);
+    transition:transform 0.35s ease;
+    top:0;z-index:400;
+    box-shadow:none;
+  }
+  .db-aside.open{transform:translateX(0)}
+}
 
-* Upgrade CTA	If tier = free, a subtle non-annoying persistent card. Revenue matters
-* Mini mood trend	Last 7 days' mood as a tiny sparkline – gives an emotional anchor without a full report.(i will pass emoji directly but if you feel they shoul move to commitment page then skip this since user can have lot of commitment open at once and last seven days emoji on dashboard is redundant cos it wont be accurate)
-* Upcoming milestone	"3 days until 100!" – builds anticipation.(added directly in django render view as 'Upcoming_milestone' mapped unto a int value)
-* Quick-add commitment	A subtle "+" button near the commitment list so users can start a new vow without diving into(this is a way for the user to open the note to commit directly, its not done by dasboard, istead it redirect to commitment page and auto opens the add note btn)
-* populate the aside more so user can have a more customizable dashboard feel but you know some thing can only be done inside here and others inside another page,
-* 
-OPTIMIZATION ACHITECURAL
-* Your "page blank until spinner done" approach is right but I'd refine it:
+.aside-scroll{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  display:flex;flex-direction:column;
+  scrollbar-width:thin;scrollbar-color:var(--edgeL) transparent;
+}
+.aside-scroll::-webkit-scrollbar{width:4px}
+.aside-scroll::-webkit-scrollbar-track{background:transparent}
+.aside-scroll::-webkit-scrollbar-thumb{background:var(--edgeL);border-radius:2px}
 
-Background + nav shell → paints in <50ms (critical CSS only, inline in <style>)
+/* Aside top: avatar + name + tier */
+.aside-top{
+  padding:1.25rem 1rem 1rem;
+  border-bottom:1px solid var(--edge);flex-shrink:0;
+}
+.aside-avatar-wrap{
+  width:52px;height:52px;border-radius:50%;
+  background:var(--surf2);border:2px solid var(--edgeL);
+  overflow:hidden;margin-bottom:0.65rem;position:relative;
+}
+.aside-avatar-wrap img{width:100%;height:100%;object-fit:cover}
+.aside-username{font-size:0.88rem;font-weight:700;margin-bottom:0.2rem;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aside-email{font-size:0.68rem;color:var(--ink3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:0.5rem}
+.tier-badge{
+  display:inline-flex;align-items:center;gap:0.3rem;
+  font-size:0.65rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+  padding:0.2rem 0.55rem;border-radius:50px;
+}
+.tier-free   {background:rgba(148,163,184,0.12);color:var(--ink2);border:1px solid var(--edgeL)}
+.tier-premium{background:rgba(59,130,246,0.12);color:var(--accL);border:1px solid rgba(59,130,246,0.3)}
+.tier-gold   {background:rgba(245,158,11,0.12);color:var(--gold);border:1px solid rgba(245,158,11,0.3)}
 
-the check in action should strickyl be done by the commitment page and not the dashboard page
+/* Aside nav */
+.aside-nav{padding:0.75rem 0}
+.aside-section-lbl{
+  font-size:0.58rem;text-transform:uppercase;letter-spacing:0.12em;
+  color:var(--ink3);padding:0.5rem 1rem 0.25rem;
+}
+.aside-link{
+  display:flex;align-items:center;gap:0.65rem;
+  padding:0.6rem 1rem;font-size:0.83rem;color:var(--ink2);
+  border-left:2px solid transparent;
+  transition:color var(--ease),background var(--ease),border-color var(--ease);
+}
+.aside-link i{width:16px;text-align:center;color:var(--ink3);font-size:0.88rem;flex-shrink:0}
+.aside-link:hover{color:var(--ink);background:var(--surf2);border-left-color:var(--acc)}
+.aside-link:hover i{color:var(--accL)}
+.aside-link.active{color:var(--accL);background:var(--surf2);border-left-color:var(--acc)}
+.aside-link.active i{color:var(--accL)}
+.aside-sep{border:none;border-top:1px solid var(--edge);margin:0.6rem 1rem}
 
-NB: Using cartoon or child like icons is not alloewed, this project is not a play project
-NB: ALMOST ALL THE COMPONENT YOU WILL USE SHOULD GET THEIR DATA VIA REQUESTS TO ENDPOINTS AND EACH TO ASK ABUNDANTLY FOR WHAT IT NEED, I WILL PROVIDE IT
+/* Aside upgrade banner (free tier only) */
+.aside-upgrade{
+  margin:0.75rem;border-radius:var(--r);
+  background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.2);
+  padding:0.85rem 0.9rem;
+}
+.aside-upgrade h4{font-size:0.8rem;color:var(--accL);margin-bottom:0.3rem}
+.aside-upgrade p{font-size:0.7rem;color:var(--ink2);line-height:1.5;margin-bottom:0.65rem}
 
-#aside page
+/* Aside support block */
+.aside-support{padding:0 0 0.5rem}
+.aside-support-lbl{
+  font-size:0.58rem;text-transform:uppercase;letter-spacing:0.12em;
+  color:var(--ink3);padding:0.5rem 1rem 0.25rem;
+}
 
-[ Avatar + name + tier badge ]      ← top of aside
+/* Aside logout — sticky bottom */
+.aside-logout{
+  flex-shrink:0;border-top:1px solid var(--edge);
+  padding:0.5rem 0;
+}
+.aside-logout-btn{
+  display:flex;align-items:center;gap:0.65rem;
+  width:100%;padding:0.65rem 1rem;
+  background:none;border:none;cursor:pointer;
+  font-size:0.83rem;color:var(--bad);
+  transition:background var(--ease);
+}
+.aside-logout-btn:hover{background:rgba(239,68,68,0.06)}
+.aside-logout-btn i{width:16px;text-align:center}
 
-  ○ Profile                → /profile/
-  ○ My Commitments         → /commitments/
-  ○ Groups                 → /groups/
-  ○ Leaderboard            → /leaderboard/
-  ○ Analytics & Reports    → /reports/          ← your weekly report page
-  ○ AI Insights            → /insights/         ← if ai_insight_active
-  
-  — — — — — — — — — — — — —
-  
-  [ Upgrade to Pro ]                ← only if tier = free, styled as a banner not a button
-  
-  — — — — — — — — — — — — —
-  
-  ○ Blog / Updates         → /blog/
-  
-  [ SUPPORT ]
-  ○ WhatsApp               → wa.me/...
-  ○ Email support
-  
-  — — — — — — — — — — — — —
+/* Mobile overlay */
+.aside-overlay{
+  display:none;position:fixed;inset:0;z-index:399;
+  background:rgba(0,0,0,0.55);
+}
+.aside-overlay.show{display:block}
 
-  ○ Logout                            ← sticky bottom
+/* ---- HEADER --------------------------------------------------- */
+.db-header{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  height:var(--header-h);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 1.25rem 0 1.1rem;
+  background:rgba(6,11,20,0.85);border-bottom:1px solid var(--edge);
+}
+body.sd-light .db-header{background:rgba(240,244,250,0.9)}
+
+@media(min-width:900px){
+  .db-header{padding-left:calc(var(--aside-w) + 1.25rem)}
+}
+
+.hdr-left{display:flex;align-items:center;gap:0.75rem}
+.hdr-avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--surf2);border:1.5px solid var(--edgeL);
+  overflow:hidden;flex-shrink:0;cursor:pointer;
+}
+.hdr-avatar img{width:100%;height:100%;object-fit:cover}
+.hdr-brand{
+  font-size:0.78rem;font-weight:700;letter-spacing:0.04em;
+  color:var(--accL);display:none;
+}
+@media(min-width:600px){.hdr-brand{display:block}}
+
+.hdr-quote{
+  flex:1;font-size:0.72rem;color:var(--ink3);
+  font-style:italic;
+  padding:0 1rem;text-align:center;
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+  display:none;
+}
+@media(min-width:700px){.hdr-quote{display:block}}
+
+.hdr-right{display:flex;align-items:center;gap:0.5rem}
+.hdr-btn{
+  background:none;border:none;cursor:pointer;
+  color:var(--ink2);font-size:1rem;
+  padding:0.35rem;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;
+  transition:color var(--ease);
+}
+.hdr-btn:hover{color:var(--accL)}
+
+/* Hamburger (mobile only) */
+.hdr-hamburger{display:flex}
+@media(min-width:900px){.hdr-hamburger{display:none}}
+
+/* ---- MAIN CONTENT AREA --------------------------------------- */
+.db-main{
+  flex:1;min-width:0;
+  padding:1.5rem 1.25rem 4rem;
+}
+@media(min-width:900px){
+  .db-main{margin-left:var(--aside-w);padding:1.75rem 2rem 4rem}
+}
+@media(max-width:479px){.db-main{padding:1rem 0.9rem 4rem}}
+
+/* ---- Section labels ------------------------------------------ */
+.db-section-label{
+  font-size:0.6rem;text-transform:uppercase;letter-spacing:0.12em;
+  color:var(--ink3);margin-bottom:0.75rem;display:flex;align-items:center;gap:0.4rem;
+}
+.db-section-label::after{
+  content:'';flex:1;height:1px;background:var(--edge);
+}
+
+/* ---- Greeting ------------------------------------------------ */
+.db-greeting{margin-bottom:1.75rem}
+.db-greeting-time{
+  font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;
+  color:var(--ink3);margin-bottom:0.35rem;
+}
+.db-greeting-text{font-size:1.7rem;font-weight:700;line-height:1.2}
+.db-greeting-sub{font-size:0.82rem;color:var(--ink2);margin-top:0.35rem}
+@media(max-width:479px){.db-greeting-text{font-size:1.35rem}}
+
+/* ---- Stats row ----------------------------------------------- */
+.db-stats{
+  display:grid;gap:0.65rem;margin-bottom:1.5rem;
+  grid-template-columns:repeat(3,1fr);
+}
+@media(max-width:479px){.db-stats{grid-template-columns:repeat(3,1fr);gap:0.45rem}}
+
+.stat-card{
+  background:var(--surf);border:1px solid var(--edge);
+  border-radius:var(--rL);padding:1rem 0.85rem;
+  position:relative;overflow:hidden;
+}
+.stat-icon{
+  font-size:1.1rem;color:var(--ink3);margin-bottom:0.5rem;display:block;
+}
+.stat-num{
+  font-size:1.6rem;font-weight:700;color:var(--ink);
+  display:block;line-height:1;margin-bottom:0.25rem;
+}
+.stat-label{font-size:0.65rem;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em}
+.stat-sub{font-size:0.7rem;color:var(--ink3);margin-top:0.35rem}
+@media(max-width:479px){
+  .stat-card{padding:0.75rem 0.6rem}
+  .stat-num{font-size:1.25rem}
+  .stat-icon{font-size:0.95rem;margin-bottom:0.3rem}
+}
+
+/* Zeal score: accent colour */
+.stat-card.zeal .stat-num{color:var(--accL)}
+.stat-card.zeal .stat-icon{color:var(--acc)}
+
+/* Zeal tooltip trigger */
+.zeal-info{
+  position:absolute;top:0.6rem;right:0.7rem;
+  font-size:0.7rem;color:var(--ink3);cursor:pointer;
+}
+
+/* ---- Status banner ------------------------------------------- */
+.db-status{
+  background:var(--surf);border:1px solid var(--edge);
+  border-radius:var(--rL);padding:0.85rem 1.1rem;
+  display:flex;align-items:center;gap:0.75rem;
+  margin-bottom:1.5rem;
+}
+.db-status-dot{
+  width:10px;height:10px;border-radius:50%;
+  flex-shrink:0;
+}
+.db-status-dot.all-done{background:var(--ok)}
+.db-status-dot.partial{background:var(--warn);animation:statusBlink 2s ease-in-out infinite}
+.db-status-dot.none{background:var(--bad);animation:statusBlink 1.5s ease-in-out infinite}
+@keyframes statusBlink{0%,100%{opacity:1}50%{opacity:0.3}}
+.db-status-text{font-size:0.83rem;color:var(--ink);flex:1}
+.db-status-detail{font-size:0.7rem;color:var(--ink2)}
+
+/* ---- Milestone ----------------------------------------------- */
+.db-milestone{
+  background:var(--surf2);border:1px solid var(--edge);
+  border-left:3px solid var(--acc);
+  border-radius:0 var(--rL) var(--rL) 0;
+  padding:0.75rem 1rem;margin-bottom:1.5rem;
+  display:flex;align-items:center;gap:0.75rem;font-size:0.82rem;
+}
+.db-milestone i{color:var(--accL);flex-shrink:0}
+
+/* ---- Heatmap ------------------------------------------------- */
+.db-heatmap-wrap{margin-bottom:1.75rem}
+.hm-grid{
+  display:grid;grid-template-columns:repeat(7,1fr);
+  gap:3px;
+}
+.hm-cell{
+  aspect-ratio:1;border-radius:3px;
+  background:var(--edge);
+  transition:background var(--ease);
+}
+.hm-cell.lv1{background:rgba(59,130,246,0.25)}
+.hm-cell.lv2{background:rgba(59,130,246,0.5)}
+.hm-cell.lv3{background:var(--acc)}
+.hm-cell.today{outline:2px solid var(--accL);outline-offset:1px}
+.hm-labels{
+  display:flex;justify-content:space-between;
+  margin-top:0.4rem;font-size:0.58rem;color:var(--ink3);
+}
+
+/* ---- Commitment grid ----------------------------------------- */
+.db-commitments{margin-bottom:1.75rem}
+.commit-grid{
+  display:grid;gap:0.75rem;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+}
+
+/* Commitment card */
+.commit-card{
+  background:var(--surf);border:1px solid var(--edge);
+  border-radius:var(--rL);padding:1.1rem;
+  cursor:pointer;position:relative;overflow:hidden;
+  display:flex;flex-direction:column;gap:0.55rem;
+  text-decoration:none;color:inherit;
+}
+.commit-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem}
+.commit-meta{display:flex;align-items:center;gap:0.4rem}
+.commit-cat-icon{
+  width:28px;height:28px;border-radius:7px;
+  background:var(--surf2);display:flex;align-items:center;justify-content:center;
+  font-size:0.8rem;color:var(--accL);flex-shrink:0;
+}
+.commit-cat-name{font-size:0.65rem;color:var(--ink3);text-transform:uppercase;letter-spacing:0.07em}
+.commit-ring-wrap{position:relative;width:44px;height:44px;flex-shrink:0}
+.prog-ring{width:44px;height:44px;transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:var(--edge);stroke-width:3}
+.ring-arc{fill:none;stroke:var(--accL);stroke-width:3;stroke-linecap:round;
+  stroke-dasharray:0 100;transition:stroke-dasharray 1.2s cubic-bezier(0.34,1.56,0.64,1)}
+.ring-pct{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:0.55rem;font-weight:700;color:var(--ink2);
+}
+
+.commit-what{font-size:0.9rem;font-weight:600;line-height:1.35;color:var(--ink)}
+.commit-bottom{display:flex;align-items:center;justify-content:space-between;gap:0.5rem}
+.commit-streak{
+  display:flex;align-items:center;gap:0.3rem;
+  font-size:0.78rem;font-weight:700;color:var(--ink);
+}
+.commit-streak-n{font-size:1.1rem;color:var(--accL)}
+.commit-checkin{
+  font-size:0.68rem;color:var(--ink3);
+  display:flex;align-items:center;gap:0.3rem;
+}
+.checkin-done{color:var(--ok)}
+.checkin-pending{color:var(--warn)}
+
+/* Commitment error / retry state */
+.commit-error{
+  padding:1.5rem;text-align:center;
+  border:1px dashed var(--edgeL);border-radius:var(--rL);
+  display:none;
+}
+.commit-error.show{display:block}
+
+/* ---- Partner widget ------------------------------------------ */
+.db-partners{margin-bottom:1.75rem}
+.partner-list{display:flex;flex-direction:column;gap:0.5rem}
+.partner-card{
+  background:var(--surf);border:1px solid var(--edge);
+  border-radius:var(--r);padding:0.75rem 1rem;
+  display:flex;align-items:center;gap:0.75rem;
+}
+.partner-id{font-size:0.82rem;font-weight:600;flex:1}
+.partner-streak{font-size:0.78rem;color:var(--accL);font-weight:700}
+.partner-last{font-size:0.65rem;color:var(--ink3)}
+
+/* ---- Skeleton base ------------------------------------------- */
+.sk{
+  background:var(--surf2);border-radius:var(--r);
+  /* shimmer added in advance CSS */
+}
+.sk-text{height:0.8rem;border-radius:4px;margin-bottom:0.4rem}
+.sk-text.w30{width:30%} .sk-text.w50{width:50%}
+.sk-text.w70{width:70%} .sk-text.w100{width:100%}
+.sk-circle{border-radius:50%}
+.sk-card{
+  background:var(--surf);border:1px solid var(--edge);
+  border-radius:var(--rL);padding:1.1rem;
+}
+.sk-ring{width:44px;height:44px;border-radius:50%;background:var(--surf2);flex-shrink:0}
+
+/* ---- Buttons ------------------------------------------------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:0.4rem;
+  padding:0.55rem 1.2rem;border-radius:var(--r);
+  font-family:var(--font);font-size:0.82rem;font-weight:600;
+  cursor:pointer;border:2px solid transparent;
+  transition:background var(--ease),border-color var(--ease),color var(--ease);
+  text-decoration:none;white-space:nowrap;
+  position:relative;overflow:hidden;
+}
+.btn:active{opacity:0.88}
+.btn-primary{background:var(--acc);color:#fff}
+.btn-primary:hover{background:var(--accL)}
+.btn-outline{background:transparent;border-color:var(--edgeL);color:var(--ink2)}
+.btn-outline:hover{border-color:var(--acc);color:var(--accL)}
+.btn-ghost{background:transparent;color:var(--ink2);border-color:transparent}
+.btn-ghost:hover{color:var(--accL)}
+.btn-sm{padding:0.35rem 0.85rem;font-size:0.74rem}
+.btn-full{width:100%;justify-content:center}
+.btn-danger{background:var(--bad);color:#fff;border-color:transparent}
+
+/* mini spinner in button */
+.btn-spin{
+  width:13px;height:13px;border:2px solid rgba(255,255,255,0.3);
+  border-top-color:#fff;border-radius:50%;
+  animation:dbSpin 0.65s linear infinite;display:none;
+}
+.btn.ob-loading .btn-spin{display:inline-block}
+.btn.ob-loading .btn-txt{display:none}
+@keyframes dbSpin{to{transform:rotate(360deg)}}
+
+/* ---- Share / Print modal ------------------------------------- */
+.db-modal-overlay{
+  display:none;position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,0.6);align-items:center;justify-content:center;
+  padding:1rem;
+}
+.db-modal-overlay.open{display:flex}
+.db-modal{
+  background:var(--surf);border:1px solid var(--edge);
+  border-radius:var(--rXL);width:100%;max-width:480px;
+  max-height:90vh;overflow-y:auto;
+  display:flex;flex-direction:column;
+}
+.db-modal-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.1rem 1.25rem;border-bottom:1px solid var(--edge);
+  flex-shrink:0;
+}
+.db-modal-header h3{font-size:0.95rem;font-weight:700}
+.db-modal-body{padding:1.25rem;flex:1}
+.db-modal-footer{
+  padding:1rem 1.25rem;border-top:1px solid var(--edge);
+  display:flex;gap:0.5rem;justify-content:flex-end;flex-shrink:0;
+}
+
+/* Share card preview */
+.share-preview{
+  background:var(--bg);border:1px solid var(--edge);
+  border-radius:var(--rL);padding:1.25rem;margin-bottom:1rem;
+  font-size:0.82rem;
+}
+.share-preview-brand{
+  font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--ink3);margin-bottom:0.75rem;
+}
+.share-preview-name{font-size:1rem;font-weight:700;color:var(--accL);margin-bottom:0.4rem}
+.share-preview-commit{font-size:0.85rem;color:var(--ink);margin-bottom:0.6rem;font-style:italic}
+.share-stat-row{display:flex;gap:1rem;margin-top:0.5rem}
+.share-stat-item{text-align:center}
+.share-stat-n{font-size:1.1rem;font-weight:700;color:var(--accL);display:block}
+.share-stat-l{font-size:0.6rem;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em}
+.share-quote{
+  font-size:0.72rem;color:var(--ink3);font-style:italic;
+  margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--edge);
+}
+
+.share-options{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem}
+.share-opt-btn{
+  display:flex;align-items:center;gap:0.35rem;
+  padding:0.45rem 0.9rem;border-radius:var(--r);
+  font-size:0.75rem;font-weight:600;cursor:pointer;border:none;
+}
+.share-copy  {background:var(--surf2);color:var(--ink);border:1px solid var(--edgeL)}
+.share-wa    {background:#25d366;color:#fff}
+.share-x     {background:#000;color:#fff}
+.share-copied{background:var(--ok);color:#fff}
+
+/* ---- Zeal tooltip -------------------------------------------- */
+.zeal-tooltip{
+  position:absolute;z-index:400;
+  background:var(--surf2);border:1px solid var(--edgeL);
+  border-radius:var(--r);padding:0.75rem 0.9rem;
+  font-size:0.75rem;line-height:1.6;color:var(--ink2);
+  max-width:220px;
+  display:none;
+}
+.zeal-tooltip.open{display:block}
+.zeal-tooltip strong{color:var(--accL);display:block;margin-bottom:0.3rem}
+
+/* ---- FAB (floating action button) ---------------------------- */
+.db-fab{
+  position:fixed;bottom:1.5rem;right:1.5rem;z-index:300;
+  width:52px;height:52px;border-radius:50%;
+  background:var(--acc);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;border:none;cursor:pointer;
+  box-shadow:0 4px 16px rgba(59,130,246,0.35);
+  text-decoration:none;
+}
+@media(min-width:900px){.db-fab{bottom:2rem;right:2rem}}
+
+/* ---- Print card (hidden until print) ------------------------- */
+@media not print{.print-only{display:none!important}}
+@media print{
+  .no-print{display:none!important}
+  body{background:#fff;color:#000}
+  .print-card{
+    font-family:var(--font);max-width:700px;margin:0 auto;padding:2rem;
+    border:2px solid #000;border-radius:12px;
+  }
+  .print-brand{font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:1rem;color:#64748b}
+  .print-title{font-size:1.6rem;font-weight:700;margin-bottom:0.5rem}
+  .print-commit{font-size:1.1rem;font-style:italic;margin-bottom:1rem}
+  .print-stats{display:flex;gap:2rem;margin-bottom:1rem}
+  .print-stat-n{font-size:1.4rem;font-weight:700;display:block}
+  .print-stat-l{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.06em;color:#64748b}
+  .print-footer{font-size:0.7rem;color:#64748b;margin-top:1.5rem;border-top:1px solid #e2e8f0;padding-top:0.75rem}
+}
+
+/* ---- Utility ------------------------------------------------- */
+.hidden{display:none!important}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+
+
+
+create the profile dashboard for mw where user can edit and view data 
+
+only email cannot be changed, 
