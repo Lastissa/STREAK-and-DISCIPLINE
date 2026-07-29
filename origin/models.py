@@ -144,14 +144,14 @@ class Commitment(models.Model):
     
 #this is to link the entries data to the commitment it belong so each commitment can have its data since each pk is unique
 class Entries(models.Model):
-    commitment_id = models.ForeignKey(Commitment, on_delete=models.CASCADE) #hold each day entry attached to their respective commitment
+    commitment_key = models.ForeignKey(Commitment, on_delete=models.CASCADE) #hold each day entry attached to their respective commitment
     commit_at = models.DateField(auto_now_add=True) #the full datetime user wrote this commitment, used for abalytics and also to prevent user from creating new commit on that same dat
     content = models.TextField(blank=True)  #the note for that partiular commit
     mood = models.CharField(max_length=50, blank=True)
     word_count = models.PositiveIntegerField(default=0) #this will be for analysis purpose later
     
     class Meta:
-        unique_together = ('commitment_id', 'commit_at') #this make sure this is treated as unique and no duplicate ,
+        unique_together = ('commitment_key', 'commit_at') #this make sure this is treated as unique and no duplicate ,
     
     #overide rhe default save so automatically, work count get saved
     def save(self, *args, **kwargs):
@@ -161,7 +161,7 @@ class Entries(models.Model):
         super().save(*args, **kwargs)
         
     def __str__(self):
-        return f"latest commit for {self.commitment_id.user.email} is {self.commit_at}"
+        return f"latest commit for {self.commitment_key.user.email} is {self.commit_at}"
 
     
 #this tracks current state of friendship like pending, accepted, rejected and date they are sent   

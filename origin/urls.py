@@ -20,8 +20,9 @@ urlpatterns = [
     path('dashboard/commitment/<str:commitment_id>/', views.EachCommitmentView.as_view(), name = 'origin_each_commitment_view'),
     
     path('leaderboard/', views.Leaderboard.as_view(), name= "origin_leaderboard"),
-    path('blog/', views.BlogView.as_view(), name= "origin_blog"),
+    path('leaderboard/get_weekly_data/', views.GetLeaderBoardData.as_view(), name= "origin_get_weekly_leaderboard_json"),
     
+    path('blog/', views.BlogView.as_view(), name= "origin_blog"),
         
     path('extra/', views.Extras.as_view(),name='origin_extra'),
     path('navigation/', views.Extras.as_view(),name='origin_navigation'),

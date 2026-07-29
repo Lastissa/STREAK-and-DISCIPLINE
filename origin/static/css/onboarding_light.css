@@ -290,7 +290,7 @@ body.sd-light .ob-header{background:rgba(240,244,250,0.88)}
   background:rgba(59,130,246,0.08);
   border:1px solid rgba(59,130,246,0.22);
   border-radius:var(--r);padding:0.6rem 0.85rem;
-  font-size:0.77rem;color:var(--accXL);
+  font-size:0.77rem;color:var(--acc);
   line-height:1.55;margin-bottom:1.4rem;
 }
 .privacy-note{

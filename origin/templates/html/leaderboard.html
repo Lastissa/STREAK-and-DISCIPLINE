@@ -4,392 +4,992 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Weekly leaderboard — top 10 most disciplined members on STREAK & DISCIPLINE.">
   <meta name="robots" content="noindex, nofollow">
   <title>Leaderboard — STREAK &amp; DISCIPLINE</title>
 
+  <!-- Font Awesome (local) -->
+  <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
+
+  <!-- Space Grotesk — preconnect so it doesn't block -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap"
+        as="style" onload="this.onload=null;this.rel='stylesheet'">
+
+  <!-- Inline spinner CSS — renders before anything else -->
   <style>
-    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    :root{--bg:#0a0e17;--surface:#111827;--text:#e2e8f0;--text-secondary:#94a3b8;--accent:#3b82f6;--border:#1e293b;--radius:12px;--font:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
-    body{background:var(--bg);font-family:var(--font);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
     {% include "reusables/spinner.css" %}
-    .lb-app{display:none}
-    .lb-app.loaded{display:flex;min-height:100vh}
+    html,body{margin:0;padding:0;background:#0a0e17}
+    body.light-mode{background:#f8fafc}
+    /* App hidden until spinner clears */
+    #lbApp{opacity:0;visibility:hidden;transition:opacity 0.55s ease,visibility 0.55s}
+    #lbApp.lb-ready{opacity:1;visibility:visible}
   </style>
 
-  <link rel="stylesheet" href="{% static 'css/leaderboard_light.css' %}">
-  <link rel="preload" href="{% static 'cdn/leaderboard_advance.css' %}" as="style"
-        onload="this.onload=null;this.rel='stylesheet';document.documentElement.classList.add('engine-ready')"
-        id="heavy-css">
-  <noscript><link rel="stylesheet" href="{% static 'cdn/leaderboard_advance.css' %}"></noscript>
-  <link rel="preload" href="{{ font_awesome_all_min_css }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="{{ font_awesome_all_min_css }}"></noscript>
-</head>
-<body class="{% if request.COOKIES.sd_theme == 'light' %}sd-light{% endif %}">
+  <!-- LIGHT CSS: blocking, critical layout + structure -->
+  <link rel="stylesheet" href="{% static 'css/leaderboard.css' %}">
 
+  <!-- ADVANCE CSS: preloaded, non-blocking, all physics live here -->
+  <link rel="preload" href="{% static 'cdn/leaderboard_advance.css' %}" as="style"
+        onload="this.onload=null;this.rel='stylesheet'" id="adv-css">
+  <noscript><link rel="stylesheet" href="{% static 'cdn/leaderboard_advance.css' %}"></noscript>
+</head>
+<body>
+
+  <!-- ============================================================
+       SPINNER
+       ============================================================ -->
   {% include "reusables/spinner.html" %}
 
-  <div class="lb-app" id="lbApp">
-    <canvas id="particleCanvas"></canvas>
-    <div class="aside-overlay" id="asideOverlay"></div>
+  <!-- ============================================================
+       APP SHELL
+       ============================================================ -->
+  <div id="lbApp">
 
-    <aside class="lb-aside" id="lbAside">
-      <div class="aside-scroll">
-        <div class="aside-top">
-          <div class="aside-avatar-wrap" id="asideAvatarWrap">
-            <div class="sk sk-circle" style="width:48px;height:48px" id="asideAvatarSk"></div>
+    <!-- Scroll progress stripe -->
+    <div class="scroll-progress" id="scrollProgress"></div>
+
+    <!-- ==========================================================
+         HEADER / NAV  (matching demo_weekly_report pattern)
+         ========================================================== -->
+    <header class="site-header" id="siteHeader">
+      <div class="container header-inner">
+        <a href="/" class="logo-link">
+          <img src="{{ logo_url }}" alt="S&D" class="logo-img" width="34" height="34"
+               onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2234%22 height=%2234%22%3E%3Crect width=%2234%22 height=%2234%22 rx=%228%22 fill=%22%233b82f6%22/%3E%3Ctext x=%2250%25%22 y=%2255%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2215%22%3ES%26D%3C/text%3E%3C/svg%3E'">
+          <span class="logo-text">STREAK &amp; DISCIPLINE</span>
+        </a>
+
+        <nav class="nav-links" id="navLinks">
+          <a href="/v1/dashboard/">Dashboard</a>
+          <a href="/v1/commitments/">Commitments</a>
+          <a href="/v1/leaderboard/" class="current">Leaderboard</a>
+          <a href="/v1/groups/">Groups</a>
+          <a href="/v1/reports/">Reports</a>
+          <div class="nav-auth-mobile">
+            <a href="/v1/dashboard/" class="btn btn-outline btn-sm">Dashboard</a>
+            <a href="/v1/commitments/" class="btn btn-primary btn-sm">My Commitments</a>
           </div>
-          <div class="aside-username">{{ request.user.username }}</div>
-          <span class="tier-badge tier-{{ tier|default:'free' }}">
-            {% if tier == 'gold' %}<i class="fas fa-crown"></i> Gold
-            {% elif tier == 'premium' %}<i class="fas fa-gem"></i> Premium
-            {% else %}<i class="fas fa-user"></i> Free{% endif %}
-          </span>
-        </div>
-        <nav class="aside-nav">
-          <div class="aside-section-lbl">Navigation</div>
-          <a href="{% url 'origin_dashboard' %}" class="aside-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
-          <a href="/v1/profile/" class="aside-link"><i class="fas fa-circle-user"></i> Profile</a>
-          <a href="/v1/commitments/" class="aside-link"><i class="fas fa-fire-flame-curved"></i> My Commitments</a>
-          <a href="/v1/leaderboard/" class="aside-link active"><i class="fas fa-ranking-star"></i> Leaderboard</a>
-          <a href="/v1/groups/" class="aside-link"><i class="fas fa-users"></i> Groups</a>
-          <a href="/v1/blog/" class="aside-link"><i class="fas fa-newspaper"></i> Blog</a>
-          <a href="/v1/reports/" class="aside-link"><i class="fas fa-chart-line"></i> Analytics</a>
-          <div class="aside-section-lbl">Support</div>
-          <a href="https://wa.me/2347013687825" target="_blank" rel="noopener" class="aside-link"><i class="fab fa-whatsapp"></i> WhatsApp</a>
-          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link"><i class="fas fa-envelope"></i> Email</a>
         </nav>
-        {% if tier == 'free' %}
-        <div class="aside-upgrade">
-          <h4><i class="fas fa-gem"></i> Upgrade to Pro</h4>
-          <p>Unlock AI insights, 50 commitments, and more.</p>
-          <a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm btn-full">Start 7-Day Trial</a>
+
+        <div class="nav-actions">
+          <a href="/v1/commitments/" class="btn btn-outline btn-sm desktop-only">My Commitments</a>
+          <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+            <i class="fas fa-moon" id="themeIcon"></i>
+          </button>
+          <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">
+            <i class="fas fa-bars" id="mobileIcon"></i>
+          </button>
         </div>
-        {% endif %}
       </div>
-      <div class="aside-logout">
-        <button class="aside-logout-btn" id="logoutBtn"><i class="fas fa-right-from-bracket"></i> Log Out</button>
-      </div>
-    </aside>
+    </header>
 
-    <div class="lb-wrap">
-      <header class="lb-header">
-        <button class="menu-toggle" id="menuToggle" aria-label="Menu"><span></span><span></span><span></span></button>
-        <h1 class="lb-title">Weekly Leaderboard</h1>
-        <div class="lb-header-right">
-          <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
-        </div>
-      </header>
+    <main id="lbMain">
+      <div class="container">
 
-      <main class="lb-main">
-        <section class="lb-hero">
-          <div class="lb-hero-content">
-            <h2>Top 10 Disciplined Minds</h2>
-            <p class="lb-hero-sub">Every Sunday, a new ranking is calculated from total streak power across all active commitments. Only users who opt in appear here. Your journal entries are never shown.</p>
-            <div class="week-picker">
-              <button class="week-nav" id="prevWeekBtn"><i class="fas fa-chevron-left"></i></button>
-              <span class="current-week" id="currentWeekLabel">This Week</span>
-              <button class="week-nav" id="nextWeekBtn" disabled><i class="fas fa-chevron-right"></i></button>
+        <!-- ======================================================
+             HERO
+             ====================================================== -->
+        <section class="lb-section" style="border:none;padding-top:5rem;padding-bottom:2rem">
+          <div class="lb-hero">
+            <div>
+              <span class="section-eyebrow">
+                <i class="fas fa-ranking-star"></i> Weekly Leaderboard
+              </span>
+              <h1 class="lb-hero-title">
+                Who kept their word<br>
+                <span class="ink-highlight">this week?</span>
+              </h1>
+              <p class="lb-hero-sub">
+                Every Sunday the top 10 most disciplined members are ranked by their combined
+                commitment streak totals. This isn't social media. It's a mirror. Scores are
+                private by default — those shown have chosen to compete publicly.
+              </p>
+              <div class="hero-meta">
+                <span class="hero-meta-pill">
+                  <i class="fas fa-shield-halved"></i> User-id only — never your real username
+                </span>
+                <span class="hero-meta-pill">
+                  <i class="fas fa-lock"></i> Opt-in only
+                </span>
+                <span class="hero-meta-pill" id="weekNumPill">
+                  <i class="fas fa-calendar-week"></i> <span id="weekNumText">Week —</span>
+                </span>
+              </div>
             </div>
-          </div>
-          <div class="lb-hero-visual">
-            <div class="hero-ring">
-              <div class="hero-ring-inner"><span class="hero-ring-icon"><i class="fas fa-trophy"></i></span></div>
-            </div>
-          </div>
-        </section>
 
-        <section class="reveal-stage">
-          <div class="card-3d" id="card3d">
-            <div class="card-face card-front">
-              <div class="front-content">
-                <div class="lock-icon"><i class="fas fa-lock"></i></div>
-                <h3>Weekly Leaderboard</h3>
-                <p>Tap to reveal this week's top 10</p>
-                <button class="btn btn-primary btn-xl reveal-btn" id="revealBtn">
-                  <span class="btn-text">Reveal</span>
-                  <span class="btn-spinner"></span>
+            <!-- Week switcher -->
+            <div>
+              <div class="week-switcher" role="group" aria-label="Select week">
+                <button class="week-nav-btn" id="prevWeekBtn" aria-label="Last week">
+                  <i class="fas fa-chevron-left"></i>
                 </button>
-                <div class="loading-state" id="loadingState" style="display:none">
-                  <div class="spinner-large"></div>
-                  <span>Almost there…</span>
+                <div class="week-label-text">
+                  <i class="fas fa-calendar-check" style="color:var(--accL)"></i>
+                  <span id="weekLabelText">Current Week</span>
+                  <span class="week-badge current-badge" id="weekBadge">Live</span>
+                </div>
+                <button class="week-nav-btn" id="nextWeekBtn" disabled aria-label="Next week (unavailable)">
+                  <i class="fas fa-chevron-right"></i>
+                </button>
+              </div>
+              <p style="font-size:0.68rem;color:var(--ink3);text-align:center;margin-top:0.5rem;font-weight: 700;">
+                You can view last week's results
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================
+             STAGE: the 10 flipping cards
+             ====================================================== -->
+        <section class="lb-section" id="stageSection">
+          <div class="lb-stage-wrap">
+
+            <!-- TOP 3: Podium -->
+            <div class="lb-podium" id="lbPodium">
+              <!-- Rank 2 (left) -->
+              <div class="podium-slot rank2" id="slot2">
+                <div class="lb-card-wrap">
+                  <div class="lb-card" data-rank="2">
+                    <div class="lb-face lb-back">
+                      <div class="card-back-logo">
+                        <img src="{{ logo_url }}" alt=""
+                             onerror="this.style.display='none'">
+                        <i class="fas fa-question" style="color:rgba(59,130,246,0.2);font-size:1.5rem;margin-top:0.3rem"></i>
+                      </div>
+                      <div class="card-back-rank">2</div>
+                      <div class="card-back-hint">Not yet revealed</div>
+                    </div>
+                    <div class="lb-face lb-front rank-2" id="card-front-2"></div>
+                  </div>
+                </div>
+                <div class="podium-base">
+                  <div class="podium-rank-num">The no 2</div>
+                </div>
+              </div>
+
+              <!-- Rank 1 (center, tallest) -->
+              <div class="podium-slot rank1" id="slot1">
+                <div class="lb-card-wrap">
+                  <div class="lb-card card-rank-1" data-rank="1">
+                    <div class="lb-face lb-back">
+                      <div class="card-back-logo">
+                        <img src="{{ logo_url }}" alt=""
+                             onerror="this.style.display='none'">
+                        <i class="fas fa-crown" style="color:rgba(245,158,11,0.25);font-size:1.5rem;margin-top:0.3rem"></i>
+                      </div>
+                      <div class="card-back-rank">1</div>
+                      <div class="card-back-hint">The top spot</div>
+                    </div>
+                    <div class="lb-face lb-front rank-1" id="card-front-1"></div>
+                  </div>
+                </div>
+                <div class="podium-base">
+                  <div class="podium-rank-num">The No 1</div>
+                </div>
+              </div>
+
+              <!-- Rank 3 (right) -->
+              <div class="podium-slot rank3" id="slot3">
+                <div class="lb-card-wrap">
+                  <div class="lb-card" data-rank="3">
+                    <div class="lb-face lb-back">
+                      <div class="card-back-logo">
+                        <img src="{{ logo_url }}" alt=""
+                             onerror="this.style.display='none'">
+                        <i class="fas fa-question" style="color:rgba(59,130,246,0.2);font-size:1.5rem;margin-top:0.3rem"></i>
+                      </div>
+                      <div class="card-back-rank">3</div>
+                      <div class="card-back-hint">Third place</div>
+                    </div>
+                    <div class="lb-face lb-front rank-3" id="card-front-3"></div>
+                  </div>
+                </div>
+                <div class="podium-base">
+                  <div class="podium-rank-num">The No 3</div>
                 </div>
               </div>
             </div>
-            <div class="card-face card-back">
-              <div class="back-content">
-                <div class="lb-list-header"><span>#</span><span>User</span><span>Streak</span></div>
-                <ol class="lb-list" id="leaderboardList"></ol>
-                <div class="error-state" id="errorState" style="display:none">
-                  <p id="errorMessage"></p>
-                  <button class="btn btn-outline btn-sm" id="retryBtn">Retry</button>
+
+            <!-- RANKS 4–7: Grid -->
+            <div class="lb-grid-row" id="lbGridRow">
+              {% for i in "4567" %}
+              <div class="lb-card-wrap">
+                <div class="lb-card" data-rank="{{ forloop.counter|add:3 }}">
+                  <div class="lb-face lb-back">
+                    <div class="card-back-rank">{{ forloop.counter|add:3 }}</div>
+                    <div class="card-back-hint">Hidden</div>
+                  </div>
+                  <div class="lb-face lb-front" id="card-front-{{ forloop.counter|add:3 }}"></div>
                 </div>
+              </div>
+              {% endfor %}
+            </div>
+
+            <!-- RANKS 8–10: Strip -->
+            <div class="lb-strip-row" id="lbStripRow">
+              {% for i in "891" %}
+              <div class="lb-card-wrap">
+                <div class="lb-card" data-rank="{{ forloop.counter|add:7 }}">
+                  <div class="lb-face lb-back">
+                    <div class="card-back-rank">{{ forloop.counter|add:7 }}</div>
+                    <div class="card-back-hint">Hidden</div>
+                  </div>
+                  <div class="lb-face lb-front" id="card-front-{{ forloop.counter|add:7 }}"></div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+
+            <!-- ------------------------------------------------
+                 REVEAL CONTROLS
+                 ------------------------------------------------ -->
+            <div class="reveal-wrap" id="revealWrap">
+              <div class="reveal-cta-area" id="revealCtaArea">
+                <div class="reveal-cta-label">
+                  <i class="fas fa-lock"></i> Results sealed until you're ready
+                </div>
+                <button class="btn-reveal" id="revealBtn">
+                  <span class="btn-txt">
+                    <i class="fas fa-eye"></i>&nbsp; Reveal This Week's Top 10
+                  </span>
+                  <span class="btn-spin"></span>
+                </button>
+                <p style="font-size:0.72rem;color:var(--ink3);margin-top:0.75rem">
+                  Fetches live data — results update each Sunday at midnight
+                </p>
+              </div>
+
+              <!-- "Almost there" drama -->
+              <div class="almost-there" id="almostThere">
+                <div class="at-ring-wrap"></div>
+                <div class="at-msg-wrap" id="atMsgWrap">
+                  <div class="at-msg active" id="atMsg0">Counting streaks…</div>
+                  <div class="at-msg" id="atMsg1">Ranking warriors…</div>
+                  <div class="at-msg" id="atMsg2">Verifying consistency…</div>
+                  <div class="at-msg" id="atMsg3">Truth incoming…</div>
+                </div>
+                <div class="at-bar-track">
+                  <div class="at-bar-fill" id="atBarFill"></div>
+                </div>
+              </div>
+
+              <!-- Error state -->
+              <div class="lb-error" id="lbError">
+                <i class="fas fa-circle-exclamation" style="font-size:1.8rem;color:var(--bad);display:block;margin-bottom:0.75rem"></i>
+                <p id="lbErrorMsg" style="font-size:0.85rem;margin-bottom:1rem;line-height:1.6"></p>
+                <button class="btn btn-outline" id="lbRetryBtn">
+                  <i class="fas fa-rotate-right"></i> Try Again
+                </button>
+              </div>
+            </div><!-- /reveal-wrap -->
+
+          </div><!-- /lb-stage-wrap -->
+        </section>
+
+        <!-- ======================================================
+             YOUR RANK STRIP (populated after reveal)
+             ====================================================== -->
+        <section class="lb-section lb-reveal-target" id="yourRankSection" style="display:none">
+          <span class="section-eyebrow">
+            <i class="fas fa-user"></i> Your Position
+          </span>
+          <div class="your-rank-strip" id="yourRankStrip">
+            <div class="yr-rank-num" id="yrRankNum">#—</div>
+            <div class="yr-info">
+              <div class="yr-label">Your rank this week</div>
+              <div class="yr-streak" id="yrStreakText">—</div>
+            </div>
+            <a href="/v1/commitments/" class="btn btn-outline btn-sm">
+               View My Commitments
+            </a>
+          </div>
+          <p style="font-size:0.72rem;color:var(--ink3);margin-top:0.6rem">
+            <i class="fas fa-lock"></i>
+            Your score only appears here — it's never shown to others unless you opt in from your profile.
+          </p>
+        </section>
+
+        <!-- ======================================================
+             STATS: This week in numbers
+             ====================================================== -->
+        <section class="lb-section lb-reveal-target" id="statsSection">
+          <span class="section-eyebrow">
+            <i class="fas fa-chart-bar"></i> This Week in Numbers
+          </span>
+          <div class="stats-strip">
+            <div class="strip-stat">
+              <span class="ss-icon"><i class="fas fa-users"></i></span>
+              <span class="ss-num" id="ssTotalParticipants">
+                <span class="sk" style="width:60px;height:1.6rem;display:inline-block;border-radius:6px"></span>
+              </span>
+              <span class="ss-lbl">Participants</span>
+            </div>
+            <div class="strip-stat">
+              <span class="ss-icon"></i></span>
+              <span class="ss-num" id="ssTopStreak">
+                <span class="sk" style="width:60px;height:1.6rem;display:inline-block;border-radius:6px"></span>
+              </span>
+              <span class="ss-lbl">Top Combined Streak</span>
+            </div>
+            <div class="strip-stat">
+              <span class="ss-icon"><i class="fas fa-calendar-check"></i></span>
+              <span class="ss-num" id="ssMostActiveDay">
+                <span class="sk" style="width:80px;height:1.6rem;display:inline-block;border-radius:6px"></span>
+              </span>
+              <span class="ss-lbl">Most Active Day</span>
+            </div>
+            <div class="strip-stat">
+              <span class="ss-icon"><i class="fas fa-trophy"></i></span>
+              <span class="ss-num" id="ssWeekNumber">
+                <span class="sk" style="width:40px;height:1.6rem;display:inline-block;border-radius:6px"></span>
+              </span>
+              <span class="ss-lbl">Season Week</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================
+             ABOUT THE LEADERBOARD
+             ====================================================== -->
+        <section class="lb-section lb-reveal-target">
+          <span class="section-eyebrow">
+            <i class="fas fa-circle-info"></i> How It Works
+          </span>
+          <h2 style="margin-bottom:1.25rem">Earned, not gamed.</h2>
+          <div class="about-grid">
+            <div class="about-card">
+              <span class="about-icon"><i class="fas fa-calculator"></i></span>
+              <h3>How scores are calculated</h3>
+              <p>
+                Your leaderboard score is the <strong>sum of all active commitment streaks</strong>
+                you have running simultaneously. One 30-day streak = 30 points.
+                Three commitments each at 10 days = 30 points. The system rewards
+                breadth of discipline, not just one habit you've been riding.
+              </p>
+            </div>
+            <div class="about-card">
+              <span class="about-icon"><i class="fas fa-shield-halved"></i></span>
+              <h3>Privacy is the default</h3>
+              <p>
+                Your score is hidden from this board unless you explicitly opt in from
+                your profile settings. When you do appear, only your
+                <strong>public username</strong> is shown — never your real name, email,
+                or the content of your journal entries. You can opt out any time.
+              </p>
+            </div>
+            <div class="about-card">
+              <span class="about-icon"><i class="fas fa-rotate"></i></span>
+              <h3>Weekly reset, permanent record</h3>
+              <p>
+                The board resets every Monday at midnight. Previous weeks are archived
+                and viewable via the week switcher above. Consistent top-10 finishes
+                will eventually appear on a Hall of Fame page — coming soon.
+              </p>
+            </div>
+            <div class="about-card">
+              <span class="about-icon"><i class="fas fa-bolt-lightning"></i></span>
+              <h3>Zeal Score vs Streak Score</h3>
+              <p>
+                Your <strong>Zeal Score</strong> (shown on your dashboard) is a personal
+                discipline index — it includes streak quality and consistency rate.
+                The leaderboard uses a simpler <strong>raw combined streak total</strong>
+                so the ranking is objective and comparable across all users.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================
+             HOW TO CLIMB — horizontal card strip
+             ====================================================== -->
+        <section class="lb-section lb-reveal-target">
+          <span class="section-eyebrow">
+            <i class="fas fa-arrow-trend-up"></i> Want to rank higher?
+          </span>
+          <div style="display:grid;gap:0.75rem;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+            <div class="about-card" style="display:flex;align-items:flex-start;gap:0.75rem;padding:1.1rem">
+              <span style="font-size:1.4rem;flex-shrink:0">📅</span>
+              <div>
+                <h3 style="font-size:0.85rem;margin-bottom:0.3rem">Check in every day</h3>
+                <p style="font-size:0.74rem">Missing one day resets a streak to zero. No exceptions. No freeze.</p>
+              </div>
+            </div>
+            <div class="about-card" style="display:flex;align-items:flex-start;gap:0.75rem;padding:1.1rem">
+              <span style="font-size:1.4rem;flex-shrink:0"><i class="fas fa-minus" style="font-size:0.5rem;color:var(--ink3);vertical-align:middle;margin-right:0.5rem"></i></span>
+              <div>
+                <h3 style="font-size:0.85rem;margin-bottom:0.3rem">Stack commitments</h3>
+                <p style="font-size:0.74rem">More active commitments = more streak points. Each one compounds.</p>
+              </div>
+            </div>
+            <div class="about-card" style="display:flex;align-items:flex-start;gap:0.75rem;padding:1.1rem">
+              <span style="font-size:1.4rem;flex-shrink:0">-</span>
+              <div>
+                <h3 style="font-size:0.85rem;margin-bottom:0.3rem">Opt in publicly</h3>
+                <p style="font-size:0.74rem">Enable public scoring in Profile → Privacy to appear on the board.</p>
+              </div>
+            </div>
+            <div class="about-card" style="display:flex;align-items:flex-start;gap:0.75rem;padding:1.1rem">
+              <span style="font-size:1.4rem;flex-shrink:0">- </span>
+              <div>
+                <h3 style="font-size:0.85rem;margin-bottom:0.3rem">Be consistent, not perfect</h3>
+                <p style="font-size:0.74rem">Top performers on this board are consistent every week, not just once.</p>
               </div>
             </div>
           </div>
         </section>
 
-        <section class="podium-section">
-          <h3 class="section-title">Podium</h3>
-          <div class="podium" id="podium">
-            <div class="podium-item second"><div class="podium-bar"></div><span class="podium-name">—</span><span class="podium-medal">🥈</span></div>
-            <div class="podium-item first"><div class="podium-bar"></div><span class="podium-name">—</span><span class="podium-medal">🥇</span></div>
-            <div class="podium-item third"><div class="podium-bar"></div><span class="podium-name">—</span><span class="podium-medal">🥉</span></div>
-          </div>
-        </section>
+      </div><!-- /container -->
+    </main>
 
-        <section class="lb-stats-section">
-          <h3 class="section-title">This Week's Stats</h3>
-          <div class="stat-grid">
-            <div class="stat-card"><i class="fas fa-users"></i><span class="stat-num" id="totalParticipants">—</span><span class="stat-label">Participants</span></div>
-            <div class="stat-card"><i class="fas fa-fire"></i><span class="stat-num" id="highestStreak">—</span><span class="stat-label">Highest Streak</span></div>
-            <div class="stat-card"><i class="fas fa-eye-slash"></i><span class="stat-num" id="privateCount">—</span><span class="stat-label">Private Scores</span></div>
-            <div class="stat-card"><i class="fas fa-clock"></i><span class="stat-label">Next Update</span><span class="stat-num">Sunday</span></div>
-          </div>
-        </section>
-
-        <section class="lb-info-section">
-          <div class="info-grid">
-            <div class="info-card">
-              <i class="fas fa-calculator"></i>
-              <h4>How Ranking Works</h4>
-              <p>Your rank is based on your <strong>total streak sum</strong> across all active commitments. The higher your combined streaks, the higher you climb. You must opt in via profile settings to appear.</p>
-            </div>
-            <div class="info-card">
-              <i class="fas fa-shield-halved"></i>
-              <h4>Private Scores</h4>
-              <p>If a user's streak shows <span class="private-badge"><i class="fas fa-eye-slash"></i></span>, they chose to hide their count. Their rank still counts — the number is simply not displayed.</p>
-            </div>
-            <div class="info-card">
-              <i class="fas fa-bolt"></i>
-              <h4>Zeal vs Streak</h4>
-              <p>This leaderboard ranks by <strong>total streak sum</strong>. Your personal Zeal Score weighs commitment count × average streak — a different metric that measures overall discipline intensity.</p>
+    <!-- ==========================================================
+         FOOTER
+         ========================================================== -->
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <a href="/" class="logo-link" style="margin-bottom:0.75rem;display:inline-flex">
+              <img src="{{ logo_url }}" alt="S&D" class="logo-img" width="32" height="32"
+                   onerror="this.style.display='none'">
+              <span class="logo-text" style="margin-left:0.5rem">STREAK &amp; DISCIPLINE</span>
+            </a>
+            <p>A private discipline journal for those serious about keeping promises to themselves.</p>
+            <div class="social-links" style="margin-top:0.85rem">
+              <a href="https://x.com/lastissa" target="_blank" rel="noopener" aria-label="X">
+                <i class="fab fa-x-twitter"></i>
+              </a>
+              <a href="https://github.com/lastissa" target="_blank" rel="noopener" aria-label="GitHub">
+                <i class="fab fa-github"></i>
+              </a>
+              <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_blank" rel="noopener" aria-label="WhatsApp">
+                <i class="fab fa-whatsapp"></i>
+              </a>
+              <a href="mailto:issaabdulsalamope11@gmail.com" aria-label="Email">
+                <i class="fas fa-envelope"></i>
+              </a>
             </div>
           </div>
-        </section>
 
-        <section class="lb-faq-section">
-          <h3 class="section-title">Frequently Asked Questions</h3>
-          <div class="faq-list">
-            <div class="faq-item">
-              <button class="faq-question">How often does the leaderboard update? <i class="fas fa-chevron-down"></i></button>
-              <div class="faq-answer"><p>Every Sunday at midnight UTC. The ranking reflects the previous week's streak data. You can view last week's results using the navigation above.</p></div>
-            </div>
-            <div class="faq-item">
-              <button class="faq-question">Why can't I see myself on the leaderboard? <i class="fas fa-chevron-down"></i></button>
-              <div class="faq-answer"><p>You need to opt in via <strong>Profile Settings → Leaderboard Opt-in</strong>. If you've opted in but don't appear, your total streak may not be high enough to rank in the top 10 this week. Keep building those streaks!</p></div>
-            </div>
-            <div class="faq-item">
-              <button class="faq-question">What does "private" mean next to a score? <i class="fas fa-chevron-down"></i></button>
-              <div class="faq-answer"><p>The user chose to hide their exact streak count. They still participate in the ranking — their position is real — but the number is not shown publicly. You can set this in your profile settings.</p></div>
-            </div>
-            <div class="faq-item">
-              <button class="faq-question">Can I see leaderboards from previous weeks? <i class="fas fa-chevron-down"></i></button>
-              <div class="faq-answer"><p>Yes. Use the week navigation at the top of the page to switch between this week and last week. Historical data beyond last week is not currently available but is planned for a future update.</p></div>
-            </div>
-            <div class="faq-item">
-              <button class="faq-question">Do groups have separate leaderboards? <i class="fas fa-chevron-down"></i></button>
-              <div class="faq-answer"><p>Not yet. Currently, the leaderboard is global across all opted-in users. Group-specific leaderboards are planned for the Team tier. Stay tuned!</p></div>
-            </div>
+          <div class="footer-links">
+            <h4>Product</h4>
+            <a href="/v1/dashboard/"><i class="fas fa-gauge-high"></i> Dashboard</a>
+            <a href="/v1/commitments/"> Commitments</a>
+            <a href="/v1/leaderboard/"><i class="fas fa-ranking-star"></i> Leaderboard</a>
+            <a href="/v1/reports/"><i class="fas fa-chart-line"></i> Weekly Reports</a>
+            <a href="/v1/insights/"><i class="fas fa-microchip"></i> AI Insights</a>
           </div>
-        </section>
 
-        <section class="lb-quote-section">
-          <div class="quote-card">
-            <p class="quote-text" id="quoteText"></p>
-            <span class="quote-attribution">— STREAK &amp; DISCIPLINE</span>
+          <div class="footer-links">
+            <h4>Community</h4>
+            <a href="/v1/groups/"><i class="fas fa-users"></i> Groups</a>
+            <a href="/v1/blog/"><i class="fas fa-newspaper"></i> Blog</a>
+            <a href="/v1/profile/"><i class="fas fa-circle-user"></i> Profile</a>
           </div>
-        </section>
 
-        <footer class="lb-footer">
-          <div class="footer-grid">
-            <div class="footer-brand">
-              <span class="footer-logo">STREAK &amp; DISCIPLINE</span>
-              <p>A private discipline journal for those serious about keeping promises to themselves. No badges. No leaderboards you didn't choose. Just you vs your word.</p>
-            </div>
-            <div class="footer-links">
-              <h4>Leaderboard</h4>
-              <a href="#" id="footerThisWeek">This Week</a>
-              <a href="#" id="footerPrevWeek">Last Week</a>
-            </div>
-            <div class="footer-links">
-              <h4>Support</h4>
-              <a href="mailto:issaabdulsalamope11@gmail.com"><i class="fas fa-envelope"></i> Email Support</a>
-              <a href="https://wa.me/2347013687825"><i class="fab fa-whatsapp"></i> WhatsApp</a>
-            </div>
-            <div class="footer-links">
-              <h4>Legal</h4>
-              <a href="{% url 'origin_extra' %}#privacy">Privacy Policy</a>
-              <a href="{% url 'origin_extra' %}#terms">Terms of Service</a>
-            </div>
+          <div class="footer-links">
+            <h4>Support</h4>
+            <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_blank" rel="noopener">
+              <i class="fab fa-whatsapp"></i> WhatsApp
+            </a>
+            <a href="mailto:issaabdulsalamope11@gmail.com">
+              <i class="fas fa-envelope"></i> Email Us
+            </a>
+            <a href="/v1/extra/#privacy">
+              <i class="fas fa-shield-halved"></i> Privacy Policy
+            </a>
+            <a href="/v1/extra/#terms">
+              <i class="fas fa-file-lines"></i> Terms of Service
+            </a>
           </div>
-          <div class="footer-bottom">
-            <p>&copy; {{ footer_copyright_note }}</p>
-          </div>
-        </footer>
-      </main>
-    </div>
-  </div>
+        </div>
 
-  <form method="POST" action="{% url 'origin_logout' %}" id="logoutForm" style="display:none">{% csrf_token %}</form>
+        <div class="footer-bottom">
+          <p>&copy; {{ footer_copyright_note|default:"2026 STREAK & DISCIPLINE. All rights reserved." }}</p>
+          <p style="color:var(--ink3)">
+            Built by <a href="https://portfolio-lastissa.vercel.app/" target="_blank" rel="noopener"
+                        style="color:var(--accL)">Lastissa</a>
+          </p>
+        </div>
+      </div>
+    </footer>
 
-  <script>{% include "reusables/spinner.js" %}</script>
+  </div><!-- /lbApp -->
+
+  <!-- ============================================================
+       JAVASCRIPT — split into labelled segments
+       ============================================================ -->
   <script>
-  (function() {
-    'use strict';
-    const app = document.getElementById('lbApp');
-    const heavyCss = document.getElementById('heavy-css');
-    function boot() { if (!app.classList.contains('loaded')) { app.classList.add('loaded'); init(); } }
-    if (heavyCss) { if (heavyCss.rel === 'stylesheet') boot(); else heavyCss.addEventListener('load', boot); }
-    setTimeout(boot, 8000);
-
-    const $ = (s,c) => (c||document).querySelector(s);
-    const $$ = (s,c) => (c||document).querySelectorAll(s);
-    function getCookie(n) { let v = document.cookie.match('(?:^|;) ?'+n+'=([^;]*)'); return v ? decodeURIComponent(v[1]) : ''; }
-    function setCookie(n,v,d) { let t=new Date(); t.setDate(t.getDate()+(d||1)); document.cookie=n+'='+encodeURIComponent(v)+';path=/;expires='+t.toUTCString(); }
-    function fetchJSON(url) { return fetch(url,{headers:{'X-CSRFToken':getCookie('csrftoken')}}).then(r=>r.json().then(d=>({ok:r.ok,status:r.status,data:d}))); }
-
-    let currentWeek = 0, leaderboardCache = {};
-
-    function init() {
-      initTheme(); initSidebar(); initParticles(); initLogout(); initQuote(); initFAQ();
-      $('#prevWeekBtn').addEventListener('click',()=>changeWeek(-1));
-      $('#nextWeekBtn').addEventListener('click',()=>changeWeek(1));
-      $('#revealBtn').addEventListener('click',()=>{ burst($('#revealBtn'),20); loadLeaderboard(); });
-      $('#retryBtn').addEventListener('click',loadLeaderboard);
-      $('#footerThisWeek').addEventListener('click',(e)=>{e.preventDefault(); changeWeek(0);});
-      $('#footerPrevWeek').addEventListener('click',(e)=>{e.preventDefault(); changeWeek(-1);});
-      loadUserPicture();
-    }
-
-    function initTheme() {
-      const btn = $('#themeToggle'), icon = btn.querySelector('i');
-      function set(dark) { document.body.classList.toggle('sd-light',!dark); icon.className=dark?'fas fa-moon':'fas fa-sun'; setCookie('sd-theme',dark?'dark':'light',365); }
-      btn.addEventListener('click',()=>set(document.body.classList.contains('sd-light')));
-      if (getCookie('sd-theme')==='light') set(false);
-    }
-
-    function initSidebar() {
-      const sidebar=$('#lbAside'),toggle=$('#menuToggle'),overlay=$('#asideOverlay');
-      function open(){sidebar.classList.add('open');overlay.classList.add('show')}
-      function close(){sidebar.classList.remove('open');overlay.classList.remove('show')}
-      toggle.addEventListener('click',()=>sidebar.classList.contains('open')?close():open());
-      overlay.addEventListener('click',close);
-      sidebar.querySelectorAll('.aside-link').forEach(l=>l.addEventListener('click',()=>{if(window.innerWidth<1024)close()}));
-    }
-
-    function initParticles() {
-      const canvas=$('#particleCanvas'); if(!canvas)return;
-      const ctx=canvas.getContext('2d'); let pts=[],mouse={x:-1000,y:-1000};
-      function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight} resize();
-      window.addEventListener('resize',resize);
-      for(let i=0;i<60;i++) pts.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-0.5)*0.25,vy:(Math.random()-0.5)*0.25,r:Math.random()*2+1});
-      window.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
-      function draw(){
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        pts.forEach(p=>{
-          let dx=mouse.x-p.x,dy=mouse.y-p.y,dist=Math.sqrt(dx*dx+dy*dy);
-          if(dist<150){p.vx+=dx/dist*0.018;p.vy+=dy/dist*0.018}
-          p.vx*=0.99;p.vy*=0.99;p.x+=p.vx;p.y+=p.vy;
-          if(p.x<0||p.x>canvas.width)p.vx*=-1; if(p.y<0||p.y>canvas.height)p.vy*=-1;
-          ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba(59,130,246,0.22)';ctx.fill();
-        });
-        for(let i=0;i<pts.length;i++){
-          for(let j=i+1;j<pts.length;j++){
-            let a=pts[i],b=pts[j],d=Math.hypot(a.x-b.x,a.y-b.y);
-            if(d<90){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='rgba(59,130,246,'+(0.08*(1-d/90))+')';ctx.lineWidth=0.4;ctx.stroke()}
-          }
-        }
-        requestAnimationFrame(draw);
-      }
-      draw();
-    }
-
-    function burst(el,count){
-      count=count||16; let rect=el.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2,colors=['#60a5fa','#818cf8','#a78bfa','#3b82f6','#93c5fd'];
-      for(let i=0;i<count;i++){(function(i){
-        let dot=document.createElement('div'),angle=(i/count)*Math.PI*2,speed=50+Math.random()*80,tx=Math.cos(angle)*speed,ty=Math.sin(angle)*speed,size=3+Math.random()*3;
-        dot.style.cssText='position:fixed;border-radius:50%;pointer-events:none;z-index:9999;width:'+size+'px;height:'+size+'px;left:'+(cx-size/2)+'px;top:'+(cy-size/2)+'px;background:'+colors[i%colors.length];
-        document.body.appendChild(dot);
-        if(dot.animate){dot.animate([{transform:'translate(0,0)',opacity:1},{transform:'translate('+tx+'px,'+ty+'px) scale(0)',opacity:0}],{duration:400+Math.random()*200,easing:'cubic-bezier(0.22,1,0.36,1)',fill:'forwards'}).onfinish=()=>dot.remove()}else setTimeout(()=>dot.remove(),600);
-      })(i)}
-    }
-
-    function loadUserPicture(){
-      fetchJSON("{% url 'origin_user_picture' %}").then(res=>{
-        let url=(res.ok&&res.data.url)?res.data.url:'';
-        let wrap=$('#asideAvatarWrap'); if(!wrap)return;
-        let img=document.createElement('img');img.alt='{{request.user.username}}';img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%';
-        img.onerror=()=>{img.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\' viewBox=\'0 0 48 48\'%3E%3Ccircle cx=\'24\' cy=\'24\' r=\'24\' fill=\'%231e293b\'/%3E%3Ccircle cx=\'24\' cy=\'19\' r=\'9\' fill=\'%23475669\'/%3E%3Cellipse cx=\'24\' cy=\'46\' rx=\'16\' ry=\'10\' fill=\'%23475669\'/%3E%3C/svg%3E'};
-        img.onload=()=>{let sk=$('#asideAvatarSk');if(sk)sk.remove();wrap.appendChild(img)};
-        img.src=url||'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\' viewBox=\'0 0 48 48\'%3E%3Ccircle cx=\'24\' cy=\'24\' r=\'24\' fill=\'%231e293b\'/%3E%3Ccircle cx=\'24\' cy=\'19\' r=\'9\' fill=\'%23475669\'/%3E%3Cellipse cx=\'24\' cy=\'46\' rx=\'16\' ry=\'10\' fill=\'%23475669\'/%3E%3C/svg%3E';
-      }).catch(()=>{});
-    }
-
-    function initLogout(){
-      let btn=$('#logoutBtn'),form=$('#logoutForm');
-      btn&&btn.addEventListener('click',()=>{if(confirm('Log out?'))form?form.submit():window.location.href="{% url 'origin_logout' %}"});
-    }
-
-    function initQuote(){
-      let quotes=["He who conquers himself conquers all.","Small consistent actions rewrite who you are.","Motivation fades. Discipline stays.","One honest sentence a day is all it takes.","No audience. No applause. Just you keeping promises to yourself.","The streak doesn't care about your feelings. It just counts.","Champions don't wait for the mood. They build the habit."];
-      let day=Math.floor((Date.now()-new Date(new Date().getFullYear(),0,0))/86400000);
-      $('#quoteText').textContent='"'+quotes[day%quotes.length]+'"';
-    }
-
-    function initFAQ() {
-      $$('.faq-question').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const item = this.parentElement;
-          const isOpen = item.classList.contains('open');
-          document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
-          if (!isOpen) item.classList.add('open');
-        });
-      });
-    }
-
-    function changeWeek(delta){
-      let nv=currentWeek+delta; if(nv>0||nv<-1)return;
-      currentWeek=nv;$('#currentWeekLabel').textContent=currentWeek===0?'This Week':'Last Week';
-      $('#prevWeekBtn').disabled=currentWeek===-1;$('#nextWeekBtn').disabled=currentWeek===0;
-      $('#card3d').classList.remove('flipped');$('#loadingState').style.display='none';
-      $('#revealBtn').style.display='';$('#leaderboardList').innerHTML='';$('#errorState').style.display='none';
-      if(leaderboardCache[currentWeek]){renderLeaderboard(leaderboardCache[currentWeek].leaderboard);$('#card3d').classList.add('flipped');updatePodium(leaderboardCache[currentWeek].leaderboard);updateStats(leaderboardCache[currentWeek])}
-    }
-
-    function loadLeaderboard(){
-      let btn=$('#revealBtn'),loading=$('#loadingState');btn.style.display='none';loading.style.display='flex';
-      let params=currentWeek===-1?'?last_week=true':'';
-      fetchJSON('/v1/get_weekly_leaderboard/'+params).then(res=>{
-        loading.style.display='none';btn.style.display='';
-        if(!res.ok)throw new Error(res.data.message||'Failed to load');
-        leaderboardCache[currentWeek]=res.data;
-        renderLeaderboard(res.data.leaderboard);$('#card3d').classList.add('flipped');
-        updatePodium(res.data.leaderboard);updateStats(res.data);
-      }).catch(err=>{loading.style.display='none';btn.style.display='';$('#errorMessage').textContent=err.message;$('#errorState').style.display='block'});
-    }
-
-    function renderLeaderboard(list){
-      let ol=$('#leaderboardList');ol.innerHTML='';
-      list.forEach((e,i)=>{
-        let li=document.createElement('li');li.className='lb-item';
-        let streakHtml=e.is_private?'<span class="private-streak"><i class="fas fa-eye-slash"></i><span class="private-tooltip">User made their score private</span></span>':'<span class="streak-val">'+(e.streak_sum||0)+'</span>';
-        li.innerHTML='<span class="rank">'+(i+1)+'</span><span class="user-id">@'+(e.public_id||'unknown')+'</span>'+streakHtml;
-        ol.appendChild(li);
-      });
-      $('#errorState').style.display='none';
-    }
-
-    function updatePodium(list){
-      let names=$$('.podium-name'); for(let i=0;i<3&&i<list.length;i++)if(names[i])names[i].textContent='@'+list[i].public_id;
-    }
-
-    function updateStats(data){
-      let t=$('#totalParticipants'),h=$('#highestStreak'),p=$('#privateCount');
-      if(t&&data.total_participants)t.textContent=data.total_participants;
-      if(h&&data.leaderboard&&data.leaderboard.length){let max=Math.max(...data.leaderboard.filter(e=>!e.is_private).map(e=>e.streak_sum||0));h.textContent=max||'—'}
-      if(p&&data.leaderboard){let priv=data.leaderboard.filter(e=>e.is_private).length;p.textContent=priv}
+  /* ============================================================
+     SEGMENT 0: Input & Motion Detection
+     Sets html[data-input="fine|touch"] so CDN CSS can choose
+     between hover-physics and auto-playing ambient animation.
+     ============================================================ */
+  (function detectInput() {
+    var html = document.documentElement;
+    var mql = window.matchMedia('(pointer: fine) and (hover: hover)');
+    html.dataset.input = mql.matches ? 'fine' : 'touch';
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      html.classList.add('reduced-motion');
     }
   })();
+
+  /* ============================================================
+     SEGMENT 1: Spinner wait + App reveal
+     Waits for advance CSS (or 8s max), then reveals #lbApp
+     ============================================================ */
+  (function() {
+    var revealed = false;
+    var app = document.getElementById('lbApp');
+
+    function reveal() {
+      if (revealed) return;
+      revealed = true;
+      if (app) app.classList.add('lb-ready');
+      initApp();
+    }
+
+    var advCss = document.getElementById('adv-css');
+    if (advCss) {
+      if (advCss.rel === 'stylesheet') { reveal(); }
+      else { advCss.addEventListener('load', reveal); }
+    }
+    // 8-second hard fallback
+    setTimeout(reveal, 8000);
+    // Also reveal on window.load (spinner.js handles its own hide)
+    window.addEventListener('load', reveal);
+  })();
+
+  /* ============================================================
+     SEGMENT 2: Helpers & State
+     ============================================================ */
+  var LB = {
+    isLastWeek: false,
+    revealed:   false,
+    data:       null,    // last fetch response
+    ENDPOINT:   '{% url "origin_get_weekly_leaderboard_json" %}'
+  };
+
+  function qs(s, ctx)  { return (ctx || document).querySelector(s); }
+  function qsa(s, ctx) { return Array.from((ctx || document).querySelectorAll(s)); }
+  function show(el)    { if (el) el.style.display = ''; }
+  function hide(el)    { if (el) el.style.display = 'none'; }
+  function sanitize(str) {
+    var d = document.createElement('div');
+    d.textContent = str || '';
+    return d.innerHTML;
+  }
+
+  function getCookie(name) {
+    var v = document.cookie.match('(?:^|;) ?' + name + '=([^;]*)(;|$)');
+    return v ? decodeURIComponent(v[1]) : '';
+  }
+  function setCookie(name, value, days) {
+    var d = new Date(); d.setDate(d.getDate() + (days || 1));
+    document.cookie = name + '=' + encodeURIComponent(value) + ';path=/;expires=' + d.toUTCString();
+  }
+
+  /* Animate a number from 0 → to */
+  function countUp(el, to, suffix, delay) {
+    if (!el || isNaN(to)) return;
+    setTimeout(function() {
+      var start = performance.now(), dur = 900;
+      (function step(now) {
+        var t = Math.min((now - start) / dur, 1);
+        var ease = 1 - Math.pow(1 - t, 3);
+        el.textContent = Math.round(to * ease) + (suffix || '');
+        if (t < 1) requestAnimationFrame(step);
+      })(start);
+    }, delay || 0);
+  }
+
+  /* ============================================================
+     SEGMENT 3: Theme Toggle
+     ============================================================ */
+  function initTheme() {
+    var btn  = document.getElementById('themeToggle');
+    var icon = document.getElementById('themeIcon');
+    var saved = getCookie('sd-theme') || 'dark';
+    if (saved === 'light') {
+      document.body.classList.add('light-mode');
+      if (icon) icon.className = 'fas fa-sun';
+    }
+    if (!btn) return;
+    btn.addEventListener('click', function() {
+      var isDark = !document.body.classList.contains('light-mode');
+      document.body.classList.toggle('light-mode', isDark);
+      if (icon) icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+      setCookie('sd-theme', isDark ? 'light' : 'dark', 365);
+    });
+  }
+
+  /* ============================================================
+     SEGMENT 4: Mobile Nav Toggle
+     ============================================================ */
+  function initMobileNav() {
+    var btn   = document.getElementById('mobileToggle');
+    var nav   = document.getElementById('navLinks');
+    var icon  = document.getElementById('mobileIcon');
+    if (!btn || !nav) return;
+    btn.addEventListener('click', function() {
+      var open = nav.classList.toggle('open');
+      if (icon) icon.className = open ? 'fas fa-xmark' : 'fas fa-bars';
+    });
+  }
+
+  /* ============================================================
+     SEGMENT 5: Scroll Progress
+     ============================================================ */
+  function initScrollProgress() {
+    var bar = document.getElementById('scrollProgress');
+    if (!bar) return;
+    window.addEventListener('scroll', function() {
+      var scrolled = document.documentElement.scrollTop;
+      var total    = document.documentElement.scrollHeight - window.innerHeight;
+      bar.style.width = (total > 0 ? (scrolled / total * 100) : 0).toFixed(1) + '%';
+    }, { passive: true });
+  }
+
+  /* ============================================================
+     SEGMENT 6: Scroll-reveal for sections
+     ============================================================ */
+  function initScrollReveal() {
+    var targets = document.querySelectorAll('.lb-reveal-target');
+    if (!('IntersectionObserver' in window)) {
+      targets.forEach(function(t) { t.classList.add('lb-revealed'); });
+      return;
+    }
+    var obs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) {
+        if (e.isIntersecting) { e.target.classList.add('lb-revealed'); obs.unobserve(e.target); }
+      });
+    }, { threshold: 0.12 });
+    targets.forEach(function(t) { obs.observe(t); });
+  }
+
+  /* ============================================================
+     SEGMENT 7: Week Switcher
+     ============================================================ */
+  function initWeekSwitcher() {
+    var prevBtn   = document.getElementById('prevWeekBtn');
+    var nextBtn   = document.getElementById('nextWeekBtn');
+    var labelText = document.getElementById('weekLabelText');
+    var badge     = document.getElementById('weekBadge');
+
+    if (prevBtn) {
+      prevBtn.addEventListener('click', function() {
+        if (LB.isLastWeek) return; // already on last week
+        LB.isLastWeek = true;
+        LB.revealed = false; // must re-reveal
+        // Update UI
+        if (badge) {
+          badge.textContent = 'Last Week';
+          badge.classList.remove('current-badge');
+          badge.style.background = 'rgba(148,163,184,0.12)';
+          badge.style.color = 'var(--ink2)';
+        }
+        prevBtn.disabled = true;
+        nextBtn.disabled = false;
+        // Reset the stage
+        resetStage();
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', function() {
+        if (!LB.isLastWeek) return;
+        LB.isLastWeek = false;
+        LB.revealed = false;
+        if (badge) {
+          badge.textContent = 'Live';
+          badge.className = 'week-badge current-badge';
+        }
+        nextBtn.disabled = true;
+        prevBtn.disabled = false;
+        resetStage();
+      });
+    }
+  }
+
+  function resetStage() {
+    // Flip all cards back
+    qsa('.lb-card').forEach(function(c) { c.classList.remove('flipped','flip-stagger'); });
+    // Show reveal controls, hide error & almost-there
+    show(document.getElementById('revealCtaArea'));
+    hide(document.getElementById('almostThere'));
+    hide(document.getElementById('lbError'));
+    // Reset week label to skeleton while not fetched
+    var labelText = document.getElementById('weekLabelText');
+    if (labelText) labelText.textContent = LB.isLastWeek ? 'Last Week' : 'Current Week';
+    // Reset stat numbers to skeleton
+    ['ssTotalParticipants','ssTopStreak','ssMostActiveDay','ssWeekNumber'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.innerHTML = '<span class="sk" style="width:60px;height:1.6rem;display:inline-block;border-radius:6px"></span>';
+    });
+    // Hide your rank section
+    hide(document.getElementById('yourRankSection'));
+  }
+
+  /* ============================================================
+     SEGMENT 8: "Almost There" animation controller
+     ============================================================ */
+  var atMsgIndex = 0;
+  var atMsgTimer = null;
+  var atBarTimer = null;
+
+  function startAlmostThere() {
+    var wrap = document.getElementById('almostThere');
+    var fill = document.getElementById('atBarFill');
+    if (!wrap) return;
+    wrap.classList.add('show');
+    atMsgIndex = 0;
+    cycleAtMsg();
+    // Fill bar to 80% quickly, then slow down
+    if (fill) {
+      fill.style.width = '0%';
+      setTimeout(function() { fill.style.transition = 'width 1.2s ease'; fill.style.width = '70%'; }, 50);
+      setTimeout(function() { fill.style.transition = 'width 3s ease'; fill.style.width = '85%'; }, 1300);
+    }
+  }
+
+  function cycleAtMsg() {
+    var msgs = ['atMsg0','atMsg1','atMsg2','atMsg3'];
+    // Clear all
+    msgs.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) { el.classList.remove('active','exit'); }
+    });
+    var current = document.getElementById(msgs[atMsgIndex]);
+    if (current) current.classList.add('active');
+    atMsgTimer = setTimeout(function() {
+      var cur = document.getElementById(msgs[atMsgIndex]);
+      if (cur) { cur.classList.remove('active'); cur.classList.add('exit'); }
+      atMsgIndex = (atMsgIndex + 1) % msgs.length;
+      cycleAtMsg();
+    }, 1100);
+  }
+
+  function finishAlmostThere(success) {
+    clearTimeout(atMsgTimer);
+    var fill = document.getElementById('atBarFill');
+    if (fill) {
+      fill.style.transition = 'width 0.35s ease';
+      fill.style.width = success ? '100%' : '100%';
+      if (!success) fill.style.background = 'var(--bad)';
+    }
+  }
+
+  function hideAlmostThere() {
+    var wrap = document.getElementById('almostThere');
+    if (wrap) { wrap.classList.remove('show'); setTimeout(function(){ wrap.style.display = ''; }, 400); }
+  }
+
+  /* ============================================================
+     SEGMENT 9: Build a single card front face
+     ============================================================ */
+  var RANK_LABELS = {
+    1: '🥇', 2: '🥈', 3: '🥉',
+    4: '4th', 5: '5th', 6: '6th', 7: '7th',
+    8: '8th', 9: '9th', 10: '10th'
+  };
+
+  function buildCardFront(entry) {
+    console.log(entry)
+    var rank = entry.rank;
+    var html = '';
+
+    if (rank === 1) {
+      html += '<span class="card-crown">1st</span>';
+    }
+
+    html += '<div class="card-rank-badge ' +
+      (rank === 1 ? 'text-gold' : rank === 2 ? 'text-silver' : rank === 3 ? 'text-bronze' : 'text-acc') +
+      '">' + (RANK_LABELS[rank] || '#' + rank) + '</div>';
+
+    html += '<div class="card-public-id">@' + sanitize(entry.public_id) + '</div>';
+
+    if (entry.private || entry.total_streak === null || entry.total_streak === undefined) {
+      // Private — show info icon
+      html +=
+        '<div class="card-private">' +
+          '<button class="priv-icon" aria-label="Score hidden" tabindex="0">' +
+            '<i class="fas fa-circle-info"></i>' +
+            '<span class="priv-tooltip">User made their score private</span>' +
+          '</button>' +
+          '<span style="font-size:0.7rem;color:var(--ink3)">Score private</span>' +
+        '</div>';
+    } else {
+      html +=
+        '<div class="card-streak">' +
+          sanitize(String(entry.total_streak)) +
+          //if i want to put icon before the rankings
+        '</div>' +
+        '<div class="card-streak-lbl">combined streak pts</div>';
+    }
+
+    return html;
+  }
+
+  /* ============================================================
+     SEGMENT 10: Render the full leaderboard after data arrives
+     ============================================================ */
+  function renderLeaderboard(data) {
+    // Fill the 10 card fronts
+    var entries = data.entries || [];
+    entries.forEach(function(entry) {
+      var front = document.getElementById('card-front-' + entry.rank);
+      if (!front) return;
+      front.innerHTML = buildCardFront(entry);
+      // Apply rank class to front
+      if (entry.rank <= 3) {
+        front.classList.add('rank-' + entry.rank);
+      }
+    });
+
+    // Flip cards with stagger
+    var allCards = qsa('.lb-card');
+    allCards.forEach(function(card, i) {
+      card.style.setProperty('--fi', i);
+      setTimeout(function() {
+        card.classList.add('flipped', 'flip-stagger');
+      }, i * 90);
+    });
+
+    // Update week label
+    var labelText = document.getElementById('weekLabelText');
+    if (labelText && data.week_label) labelText.textContent = data.week_label;
+    var weekNumText = document.getElementById('weekNumText');
+    if (weekNumText && data.week_number) weekNumText.textContent = 'Week ' + data.week_number;
+
+    // Stats
+    setTimeout(function() {
+      var tp = document.getElementById('ssTotalParticipants');
+      var ts = document.getElementById('ssTopStreak');
+      var mad = document.getElementById('ssMostActiveDay');
+      var wn = document.getElementById('ssWeekNumber');
+
+      if (tp) countUp(tp, data.total_participants || 0, '', 0);
+      if (ts && entries.length > 0) {
+        var topEntry = entries.find(function(e) { return !e.private && e.total_streak; });
+        countUp(ts, topEntry ? topEntry.total_streak : 0, ' pts', 100);
+      }
+      if (mad) mad.textContent = data.most_active_day || '—';
+      if (wn)  wn.textContent  = data.week_number    || '—';
+    }, 400);
+
+    // Your rank
+    var yrSection = document.getElementById('yourRankSection');
+    var yrNum     = document.getElementById('yrRankNum');
+    var yrStreak  = document.getElementById('yrStreakText');
+    if (data.your_rank && yrSection) {
+      show(yrSection);
+      yrSection.classList.add('lb-revealed');
+      if (yrNum)    yrNum.textContent   = '#' + data.your_rank;
+      if (yrStreak) yrStreak.textContent =
+        data.your_total_streak !== null && data.your_total_streak !== undefined
+          ? data.your_total_streak + ' combined streak points this week'
+          : 'Score is set to private';
+    }
+  }
+
+  /* ============================================================
+     SEGMENT 11: Fetch + Reveal logic
+     ============================================================ */
+  function doReveal() {
+    if (LB.revealed) return;
+
+    var revealBtn     = document.getElementById('revealBtn');
+    var revealCtaArea = document.getElementById('revealCtaArea');
+    var lbError       = document.getElementById('lbError');
+    var lbErrorMsg    = document.getElementById('lbErrorMsg');
+
+    // Transition to "almost there"
+    hide(revealCtaArea);
+    hide(lbError);
+    startAlmostThere();
+
+    var url = LB.ENDPOINT + (LB.isLastWeek ? '?last_week=true' : '');
+
+    fetch(url, { credentials: 'include' })
+      .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, status: r.status, d: d }; }); })
+      .then(function(res) {
+        if (!res.ok || !Array.isArray(res.d.entries)) {
+          finishAlmostThere(false);
+          setTimeout(function() {
+            hideAlmostThere();
+            lbErrorMsg.textContent = res.d.message || 'Could not load leaderboard data. Try again.';
+            lbError.classList.add('show');
+            show(revealCtaArea);
+          }, 600);
+          return;
+        }
+
+        LB.data = res.d;
+        LB.revealed = true;
+        finishAlmostThere(true);
+
+        // Brief pause for drama, then render
+        setTimeout(function() {
+          hideAlmostThere();
+          renderLeaderboard(res.d);
+        }, 500);
+      })
+      .catch(function(err) {
+        finishAlmostThere(false);
+        setTimeout(function() {
+          hideAlmostThere();
+          lbErrorMsg.textContent = 'Network error. Check your connection and try again.';
+          lbError.classList.add('show');
+          show(revealCtaArea);
+        }, 600);
+      });
+  }
+
+  function initReveal() {
+    var revealBtn = document.getElementById('revealBtn');
+    var retryBtn  = document.getElementById('lbRetryBtn');
+    if (revealBtn) revealBtn.addEventListener('click', doReveal);
+    if (retryBtn)  retryBtn.addEventListener('click', function() {
+      LB.revealed = false;
+      document.getElementById('lbError').classList.remove('show');
+      doReveal();
+    });
+  }
+
+  /* ============================================================
+     SEGMENT 12: Privacy tooltip for "score private" cards
+     (uses event delegation since cards render dynamically)
+     ============================================================ */
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.priv-icon');
+    if (!btn) return;
+    e.stopPropagation();
+    var tt = btn.querySelector('.priv-tooltip');
+    if (tt) {
+      // Toggle via forced hover-like behaviour for touch
+      tt.style.display = tt.style.display === 'block' ? 'none' : 'block';
+      setTimeout(function() { tt.style.display = 'none'; }, 2500);
+    }
+  });
+
+  /* ============================================================
+     SEGMENT 13: App init — called once reveal() fires
+     ============================================================ */
+  function initApp() {
+    initTheme();
+    initMobileNav();
+    initScrollProgress();
+    initScrollReveal();
+    initWeekSwitcher();
+    initReveal();
+  }
+
   </script>
+
+  <!-- Spinner JS (handles its own hide on window.load + 8s) -->
+  <script>{% include "reusables/spinner.js" %}</script>
+
 </body>
 </html>

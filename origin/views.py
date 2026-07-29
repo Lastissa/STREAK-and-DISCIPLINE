@@ -290,7 +290,7 @@ class Dashboard(LoginRequiredMixin, View):
             'social_mode' : user_profile.social_mode,
             'total_active_commitments': commitment_istance.count(),
             'consistency_pct': c_pct,  
-             'total_entries': Entries.objects.filter(commitment_id__user = request.user).count(),       #Hold usr current tier
+             'total_entries': Entries.objects.filter(commitment_key__user = request.user).count(),       #Hold usr current tier
              'theme_mode': request.COOKIES.get("sd-theme", user_profile.theme.lower()),
             
             'public_searchable_username ' : user_profile.public_searchable_username,
@@ -448,8 +448,8 @@ class LogoutUI(View):
 
 
 class EachCommitmentView(LoginRequiredMixin, View):
-    def post(self, request, commitment_id):
-        messages.info(request, message=f"This page for {request.user.username} with commitment id: {commitment_id} is still being built, Check back later")
+    def post(self, request, commitment_key):
+        messages.info(request, message=f"This page for {request.user.username} with commitment id: {commitment_key} is still being built, Check back later")
         return render(request, 'html/full_screen_message.html')
     
 class Leaderboard(View):
@@ -478,7 +478,7 @@ class CommitmentData(LoginRequiredMixin, View):
             data = [
             {
                 'id' : i.pk,
-                'url' : reverse('origin_each_commitment_view', kwargs={'commitment_id' : i.pk}),
+                'url' : reverse('origin_each_commitment_view', kwargs={'commitment_key' : i.pk}),
                 "what": i.what,
                 "category": i.category,
                 "streak_count": i.streak_count,
@@ -517,14 +517,14 @@ class HeatMap(LoginRequiredMixin, View):
         start_date = today - timedelta(days=29)  # 30 days including today
          # Get all entries for the user's commitments in the last 30 days
         entries = Entries.objects.filter(
-                    commitment_id__user=request.user,
+                    commitment_key__user=request.user,
                     commit_at__gte=start_date,
                     commit_at__lte=today
                     ).order_by('commit_at')
         
         #check if the entries is empty
         if not entries.exists(): return JsonResponse({
-            'message' : 'user does not have any entries, create commitment and check in to view entries'.upper(),
+            'message' : 'user does not have any entries, create commitment and check in to view entries in a beutiful layout'.upper(),
             'cells' : []},status = 403)
         #if entries are NOT empty
         total_active = Commitment.objects.filter(user=request.user, is_active=True).count()     #total amount of active commitments
@@ -602,7 +602,7 @@ class PartnerWidget(LoginRequiredMixin, View):
 
         #Get all entries for ALL partners in one query
         all_entries = Entries.objects.filter(
-            commitment_id__user_id__in=partner_users
+            commitment_key__user_id__in=partner_users
         ).order_by('commit_at').all()
 
         #Group commitments by user
@@ -864,3 +864,30 @@ class BlogViewExpanded(View):
 #         }
 #         return JsonResponse({**data}, status = 200)
         
+        
+#Json ONly response
+class GetLeaderBoardData(View):
+    def get(self, request):
+        if 'last_week' in request.GET: #last week leaderboards
+            return JsonResponse({'message': 'ode'}, status = 404)
+        return JsonResponse({
+    "message": "ok",
+    "week_label": "Jul 21 – Jul 27, 2026",
+    "week_number": 30,
+    "entries": [
+        {"rank": 1, "public_id": "chidi007", "total_streak": 142, "private": False},
+        {"rank": 2, "public_id": "opeyemi01", "total_streak": None, "private": True},
+        {"rank": 3, "public_id": "david_n", "total_streak": 98, "private": False},
+        {"rank": 4, "public_id": "sarah_k", "total_streak": 87, "private": False},
+        {"rank": 5, "public_id": "ademide_m", "total_streak": None, "private": True},
+        {"rank": 6, "public_id": "success_a", "total_streak": 76, "private": False},
+        {"rank": 7, "public_id": "tunde_b", "total_streak": 64, "private": False},
+        {"rank": 8, "public_id": "nkechi_o", "total_streak": None, "private": True},
+        {"rank": 9, "public_id": "emeka_i", "total_streak": 51, "private": False},
+        {"rank": 10, "public_id": "fatima_u", "total_streak": 43, "private": False},
+        ],
+        "total_participants": 47,
+        "most_active_day": "Monday",
+        "your_rank": 3,
+        "your_total_streak": 89,
+        })
