@@ -34,16 +34,17 @@ class RedirectHandler(View):
                 logger.info(msg= user_istance)
                 if user_istance or user_exist:
                     #set a key in cache to rate limit after 3 attempt
-                    rate_limit = cache.get(f"attemp_login_{request.POST["email"]}") if cache.get(f"attemp_login_{request.POST["email"]}") is not None else ""
-                    if len(rate_limit)  <3:
+                    the_key = f"attemp_login_{request.POST["email"]}".upper()
+                    rate_limit = cache.get(the_key) if cache.get(the_key) is not None else ""
+                    if len(rate_limit)  <2:
                         messages.info( request=request,message= f"Incorrect password or Email.")
-                        cache.set(f"attemp_login_{request.POST["email"]}", rate_limit+"x", timeout=120)
-                    elif len(rate_limit) == 3:
+                        cache.set(the_key, rate_limit+"x", timeout=120)
+                    elif len(rate_limit) == 2:
                         messages.warning( request=request,message= f"Incorrect password or Email., one more fail attempt will lock you out. ")
-                        cache.set(f"attemp_login_{request.POST["email"]}", rate_limit+"x", timeout=120)
+                        cache.set(the_key, rate_limit+"x", timeout=120)
                     else:
-                        messages.info( request=request,message=f"Too many attempts. Please wait 2 minutes before trying again. If you try again before the time is up, the wait period will reset.---{rate_limit}")
-                        cache.set(f"attemp_login_{request.POST["email"]}", "banned", timeout=120)
+                        messages.error( request=request,message=f"Too many attempts. Please wait 2 minutes before trying again. If you try again before the time is up, the wait period will reset.---{rate_limit}")
+                        cache.set(the_key, "banned", timeout=120)
                         return redirect('origin_login')
                     
                     #user found but user password is wrong
@@ -280,6 +281,11 @@ class Dashboard(LoginRequiredMixin, View):
     login_url = '/v1/login/'
     def get(self, request):
         user_profile = Profile.objects.filter(user = request.user).order_by('tier').first()
+        if user_profile is None:
+            #incase user does not have tier configured and want to access this page, dont allow
+            messages.warning(request, message="Please Finish your onboarding before accessing this page, head to login and sigin in with you creedentials and you will be taken to onboarding")
+            return render(request, 'html/full_screen_message.html')
+        
         commitment_istance = Commitment.objects.filter(user=request.user, is_active=True)
         consistency_pct = [i.streak_count for i in  commitment_istance] #different from zeal score --- loop through streak; sum them all and divide by all
         c_pct = sum(consistency_pct) / (len(consistency_pct)+1) #i added one to curb the issue of division by zero
@@ -869,7 +875,14 @@ class BlogViewExpanded(View):
 class GetLeaderBoardData(View):
     def get(self, request):
         if 'last_week' in request.GET: #last week leaderboards
-            return JsonResponse({'message': 'ode'}, status = 404)
+            rank_list = []
+            for i in range(1,11):
+                rank_list.append({
+                    'rank': i ,'public_id': 'unavailable', 'total_streak': None, 'private': False
+                })
+            return JsonResponse({'entries': rank_list, 'total_participants': None, "most_active_day": None, "your_rank": None, "your_total_streak": None,}, status = 200)
+        
+        #the current week
         return JsonResponse({
     "message": "ok",
     "week_label": "Jul 21 – Jul 27, 2026",

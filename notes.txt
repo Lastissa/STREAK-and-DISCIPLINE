@@ -2224,3 +2224,20 @@ body.sd-light .db-header{background:rgba(240,244,250,0.9)}
 create the profile dashboard for mw where user can edit and view data 
 
 only email cannot be changed, 
+
+you are a frontnend enginner
+now is the time to create the leaderboard page, , it display the top ten fo the currnt week and it have a feature where the previours week can be viewed(look at the demo weekly analysis.html and it css, ask for the file, if u dont remember)
+i will pass none if the user did not give the permission for their streak to be shown , just put small info icon there that when clicked the message, "user made their score private", the data i will be passing for the heirachy will be summation of all streak user have tht i will pass as integer (or none if user does not want their streak to show)
+
+look at how long dashboard is, make this one too long,  be creative with content and component styling, physics if of high importnce, high end realistic phsycis for both hover and when user rap(mobile)
+
+also dont make the page jsut stack vertical component, let component be diverse, some vertical, some horizontal, other fixed or rtated, some , high endcard flipping
+
+also, to make this more interetsing, the component that will display the top 10 should be faced backkward and user should be prompted to press "reveal" and then a almost there text / ui is showin and then a get request is sent to get_weekly_leaderboard/ , if the response if 200, (all the needed item would have been inside the dictionary), flip the card now to reveal the top 10, 
+
+and for user to view the former week data, send the same request to that same endpoint but with a last_week param set to true, 
+
+i did the external endpoint calling to increase UI and also free my django from retuning too much data i can deletege to after page load on first page load
+
+
+tell user about the leaderboard and also add a footer at the end of page
