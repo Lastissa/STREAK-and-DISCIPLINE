@@ -131,7 +131,7 @@ class Commitment(models.Model):
     user_selected_reminder_time = models.TimeField(null=True, blank=False, default=None)#the time to which email will be sent to user
     #send via email a at the user specified reminder time, and a general mail should be send few minutes before the day ends to all user who have not been active, thats if user reminder time is at least 5 minutes < than this shcedules time 
     mode_of_delivery = models.CharField(max_length=10, default= custom_val.report_delivery_mode[0])
-    whatsapp_number = models.CharField(max_length=20, blank=True) #if the user chooses whtsap so i can save their phone number
+    whatsapp_number = models.CharField(max_length=20, blank=True) #if the user chooses whtsap so i can save their phone number using +xxxxxxxxxxxxxxx
     
     def __str__(self):
         return f"{self.user.email} Commitments -- what_name: {self.what}"
@@ -177,4 +177,11 @@ class Friendship(models.Model):
     
     class Meta:
         unique_together = ('from_user', 'to_user') #this make sure this is treated as unique and no duplicate , i will just edit the status each time istead of creating new column of the same two users
+        
+        
+        
+class News(models.Model):
+    title = models.CharField(blank=False, null= False)                                                              #news title
+    tag = models.CharField(blank=False, null= False)        #categrory of post
+    
     

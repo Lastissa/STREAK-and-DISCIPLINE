@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.core.cache import cache
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
-from django.db import IntegrityError
+from django.db import IntegrityError, models
 from django.db import transaction
 from django.core.validators import validate_email
 from resend.exceptions import ResendError
@@ -306,6 +306,12 @@ class Dashboard(LoginRequiredMixin, View):
         return render(request, 'html/dashboard.html', data)
 
 
+
+class ProfileSettings(LoginRequiredMixin, View):
+    def get(self, request):
+        return render(request, 'html/profile.html')    
+    
+    
 class Onboarding(LoginRequiredMixin, View):
     login_url = '/v1/login/'
     def get(self, request):
@@ -484,7 +490,7 @@ class CommitmentData(LoginRequiredMixin, View):
             data = [
             {
                 'id' : i.pk,
-                'url' : reverse('origin_each_commitment_view', kwargs={'commitment_key' : i.pk}),
+                'url' : reverse('origin_each_commitment_view', kwargs={'commitment_id' : i.pk}),
                 "what": i.what,
                 "category": i.category,
                 "streak_count": i.streak_count,
@@ -650,6 +656,14 @@ class DashboardJson(LoginRequiredMixin, View):
     def get(self, request):
         profile_istance = Profile.objects.filter(user = request.user).first()
         Commitment_istance = Commitment.objects.filter(user = request.user).all()
+        all_friendships = (
+        Friendship.objects
+        .filter(
+            models.Q(from_user=request.user) | models.Q(to_user=request.user)  # Q handles OR
+        )
+        .select_related('from_user', 'to_user')                                 #JOIN handles eager loading, istead f
+        .all()
+    )
         partner_request_received = Friendship.objects.filter(to_user = request.user).all()
         friend_request_sent = Friendship.objects.filter(from_user = request.user).all()
         if partner_request_received is None: partner_list_received = []
@@ -904,3 +918,80 @@ class GetLeaderBoardData(View):
         "your_rank": 3,
         "your_total_streak": 89,
         })
+        
+        
+class CommitmentView(LoginRequiredMixin, View):
+    def get(self, request):
+        user_tier = Profile.objects.filter(user = request.user).first()
+        
+        return render(request, 'html/commitments.html', {'tier' : user_tier})
+    
+    
+class CreateCommitment(LoginRequiredMixin, View):
+    login_url = '/v1/login/'
+    
+    def post(self, request):
+        try: data = json.loads(request.body)
+        except json.JSONDecodeError:return JsonResponse({'message': 'Invalid JSON.'}, status=400)
+        
+        # Extract fields
+        what = data.get('what', '').strip()
+        category = data.get('category', 'other').strip().lower()
+        why = data.get('why', '').strip()
+        minimum = data.get('minimum', '').strip()
+        goal_days = data.get('goal_days', 365)
+        checkin_time = data.get('checkin_time', '21:00')
+        reminder_enabled = data.get('reminder_enabled', True)
+        reminder_time = data.get('reminder_time', '20:30')
+        reminder_method = data.get('reminder_method', 'email').strip().lower()
+        whatsapp_number = data.get('whatsapp_number', '').strip()
+        
+        # Validate required fields
+        if not what: return JsonResponse({'message': 'Please describe your commitment.'}, status=400)
+        if not why:return JsonResponse({'message': 'Please write your reason.'}, status=400)
+        
+        # Validate reminder_time is provided when reminder is enabled
+        if reminder_enabled and not reminder_time: return JsonResponse({'message': 'Reminder time is required when reminders are enabled.'}, status=400)
+        
+        # Validate whatsapp_number is provided when method is whatsapp
+        if reminder_method == 'whatsapp' and not whatsapp_number: return JsonResponse({'message': 'WhatsApp number is required when WhatsApp reminders are selected.'}, status=400)
+        
+        # Validate category
+        validator = ChoicesValidatorInModels()
+        if category not in validator.commitment_category:category = 'other'
+        
+        # Validate reminder method
+        if reminder_method not in validator.report_delivery_mode: reminder_method = 'email'
+        
+        # Clean WhatsApp number — only store if method is whatsapp
+        if reminder_method != 'whatsapp': whatsapp_number = ''
+        else:
+            # Strip spaces, dashes, parentheses
+            whatsapp_number = whatsapp_number.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+            if not whatsapp_number.startswith('+'):
+                return JsonResponse({'message': 'invalid watsappp number; +xxxxx.. where x are number are the only allowed'})
+                
+        # Create the commitment
+        try:
+            commitment = Commitment.objects.create(
+                user=request.user,
+                what=what,
+                category=category,
+                why=why,
+                minimum_effort=minimum,
+                goal_days=goal_days,
+                checkin_time=checkin_time,
+                reminder_active=reminder_enabled,
+                user_selected_reminder_time=reminder_time,
+                mode_of_delivery=reminder_method,
+                whatsapp_number=whatsapp_number,
+            )
+            return JsonResponse({
+                'message': 'Commitment created successfully!',
+                'commitment_id': commitment.pk,
+            }, status=201)
+            
+        except Profile.DoesNotExist:
+            return JsonResponse({'message': 'Profile not found. Please complete onboarding first.'}, status=400)
+        except Exception as e:
+            return JsonResponse({'message': f'Error creating commitment. Please try again.'}, status=500)

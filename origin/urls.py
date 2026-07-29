@@ -17,7 +17,10 @@ urlpatterns = [
     path('dashboard/json/', views.DashboardJson.as_view(), name = 'origin_dashboard_json'),
     path('dashboard/settings/', views.Dashboard.as_view(), name = 'origin_settings'),
     path('dashboard/settings/', views.Dashboard.as_view(), name = 'origin_personal_data'),
+    path('dashboard/commitments/', views.CommitmentView.as_view(), name = 'origin_commitments'),
+    path('dashboard/create-commitments/', views.CommitmentView.as_view(), name = 'origin_commitments'),
     path('dashboard/commitment/<str:commitment_id>/', views.EachCommitmentView.as_view(), name = 'origin_each_commitment_view'),
+    path('dashboard/profile/', views.InProgress.as_view(), name = 'origin_profile'),
     
     path('leaderboard/', views.Leaderboard.as_view(), name= "origin_leaderboard"),
     path('leaderboard/get_weekly_data/', views.GetLeaderBoardData.as_view(), name= "origin_get_weekly_leaderboard_json"),

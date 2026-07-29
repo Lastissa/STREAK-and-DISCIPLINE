@@ -79,10 +79,10 @@
           <a href="/v1/dashboard/" class="aside-link active">
             <i class="fas fa-gauge-high"></i> Dashboard
           </a>
-          <a href="/v1/profile/" class="aside-link">
+          <a href="{% url "origin_profile" %}" class="aside-link">
             <i class="fas fa-circle-user"></i> Profile
           </a>
-          <a href="/v1/commitments/" class="aside-link">
+          <a href="{% url "origin_commitments" %}" class="aside-link">
             <i class="fas fa-fire-flame-curved"></i> My Commitments
           </a>
 
@@ -288,7 +288,7 @@
         <div class="db-commitments">
           <div class="db-section-label" style="justify-content:space-between">
             <span><i class="fas fa-fire-flame-curved"></i> Your Commitments</span>
-            <a href="/v1/commitments/?add=true" class="btn btn-outline btn-sm"
+            <a href="{% url "origin_commitments" %}?add=true" class="btn btn-outline btn-sm"
                style="font-size:0.72rem;padding:0.25rem 0.7rem">
               <i class="fas fa-plus"></i> Add
             </a>
@@ -362,7 +362,7 @@
     <!-- ================================================
          FAB — quick-add commitment (goes to commitments page)
          ================================================ -->
-    <a href="/v1/commitments/?add=true" class="db-fab no-print"
+    <a href="{% url "origin_commitments" %}?add=true" class="db-fab no-print"
        title="Add new commitment" aria-label="Add new commitment">
       <i class="fas fa-plus"></i>
     </a>
@@ -756,7 +756,7 @@
             '<i class="fas fa-fire-flame-curved"></i>' +
             '<h4>No commitments yet</h4>' +
             '<p>Make your first vow. Define what you will do every day without exception.</p>' +
-            '<a href="/v1/commitments/?add=true" class="btn btn-primary btn-sm">' +
+            '<a href="{% url "origin_commitments" %}?add=true" class="btn btn-primary btn-sm">' +
             '<i class="fas fa-plus"></i> Add First Commitment</a>';
             grid.appendChild(empty);
             return;
@@ -771,7 +771,7 @@
         var checkedClass = c.checked_in_today ? 'checked-today' : '';
 
         var card = el('a', 'commit-card ' + cat + ' ' + checkedClass + ' stagger');
-        card.href = c.url || '/v1/commitments/' + c.id + '/';
+        card.href = c.url || '{% url "origin_commitments" %}' + c.id + '/';
         card.style.setProperty('--i', i);
 
         card.innerHTML =
@@ -919,7 +919,7 @@
     hamburger && hamburger.addEventListener('click', openAside);
     hdrAvatar && hdrAvatar.addEventListener('click', function() {
       if (window.innerWidth < 900) openAside();
-      else window.location.href = '/v1/profile/';
+      else window.location.href = '{% url "origin_profile" %}';
     });
     overlay   && overlay.addEventListener('click', closeAside);
 

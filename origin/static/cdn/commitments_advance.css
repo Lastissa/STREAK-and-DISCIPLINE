@@ -1,0 +1,50 @@
+:root{--spring:cubic-bezier(0.34,1.56,0.64,1);--spring-soft:cubic-bezier(0.22,1,0.36,1);--elastic:cubic-bezier(0.68,-0.55,0.265,1.55)}
+body{background:radial-gradient(ellipse 800px 500px at 18% 0%,rgba(59,130,246,0.07),transparent 60%),radial-gradient(ellipse 600px 400px at 82% 15%,rgba(96,165,250,0.05),transparent 55%),var(--bg);animation:ambientDrift 22s ease-in-out infinite alternate}
+@keyframes ambientDrift{0%{background-position:0% 0%,100% 0%}50%{background-position:2% 3%,97% 2%}100%{background-position:-1% 1%,101% -1%}}
+.cm-app.loaded{animation:appReveal 0.5s var(--spring-soft) both}
+@keyframes appReveal{from{opacity:0;transform:scale(0.98)}to{opacity:1;transform:scale(1)}}
+
+.cm-aside{background:var(--surf);box-shadow:4px 0 40px rgba(0,0,0,0.45);transition:transform 0.45s var(--spring-soft)}
+.aside-avatar-wrap{box-shadow:0 0 0 2px var(--bg),0 0 0 3px rgba(59,130,246,0.45);transition:transform 0.35s var(--spring),box-shadow 0.35s}
+.aside-avatar-wrap:hover{transform:scale(1.08);box-shadow:0 0 0 2px var(--bg),0 0 0 4px rgba(59,130,246,0.7),0 0 20px rgba(59,130,246,0.3)}
+.aside-link{transition:all 0.25s var(--spring-soft);position:relative;overflow:hidden}
+.aside-link::before{content:'';position:absolute;inset:0;background:rgba(59,130,246,0.08);transform:scaleX(0);transform-origin:left;transition:transform 0.3s var(--spring-soft);border-radius:inherit;z-index:-1}
+.aside-link:hover::before,.aside-link.active::before{transform:scaleX(1)}
+.aside-link:hover,.aside-link.active{color:var(--accL);transform:translateX(4px)}.aside-link i{transition:transform 0.25s var(--spring)}.aside-link:hover i{transform:scale(1.2)}
+.aside-logout-btn{transition:all 0.25s var(--spring-soft)}.aside-logout-btn:hover{transform:translateX(4px)}
+
+.cm-header{box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.hdr-btn{transition:all 0.3s var(--spring)}.hdr-btn:hover{color:var(--accL);transform:scale(1.15)}
+
+.cm-progress-fill{background:linear-gradient(90deg,var(--acc),#818cf8,#a78bfa);background-size:300% 100%;animation:shimmerProg 3s ease-in-out infinite;box-shadow:0 0 8px rgba(59,130,246,0.4)}
+@keyframes shimmerProg{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+
+@keyframes phaseIn{0%{opacity:0;transform:translateY(48px) scale(0.94)}55%{opacity:1;transform:translateY(-7px) scale(1.008)}75%{transform:translateY(3px) scale(0.997)}100%{transform:translateY(0) scale(1)}}
+.cm-phase.active .cm-card{animation:phaseIn 0.65s var(--spring-soft) both}
+
+.cm-input{transition:border-color 0.2s ease,box-shadow 0.3s var(--spring),transform 0.25s var(--spring)}
+.cm-input:focus{box-shadow:0 0 0 3px rgba(59,130,246,0.18),0 0 22px rgba(59,130,246,0.08);transform:translateY(-1.5px)}
+
+.chip{transition:transform 0.32s var(--spring),border-color 0.18s ease,color 0.18s ease,background 0.18s ease,box-shadow 0.28s ease}.chip:hover{transform:scale(1.07);box-shadow:0 4px 14px rgba(0,0,0,0.2)}.chip:active{transform:scale(0.93)}
+
+.cat-card,.goal-card{transition:transform 0.32s var(--spring),border-color 0.2s ease,background 0.2s ease,box-shadow 0.3s ease}
+.cat-card:hover,.goal-card:hover{transform:translateY(-5px) scale(1.02);box-shadow:0 10px 28px rgba(0,0,0,0.28)}.cat-card:active,.goal-card:active{transform:scale(0.95)}
+.cat-card.on,.goal-card.on{box-shadow:0 4px 16px rgba(59,130,246,0.25)}
+
+.method-card{transition:transform 0.32s var(--spring),border-color 0.18s ease,background 0.18s ease,box-shadow 0.28s ease}
+.method-card:hover{transform:translateY(-4px);box-shadow:0 8px 20px rgba(0,0,0,0.25)}.method-card:active{transform:scale(0.95)}.method-card.on{box-shadow:0 4px 16px rgba(59,130,246,0.25)}
+
+.cm-switch input:checked+.cm-sw-track .cm-sw-thumb{animation:thumbSlam 0.42s var(--elastic) forwards}
+@keyframes thumbSlam{0%{transform:translateX(0)}55%{transform:translateX(23px)}75%{transform:translateX(17px)}100%{transform:translateX(19px)}}
+
+.emotion-chip{transition:all 0.25s var(--spring-soft)}.emotion-chip:hover{transform:scale(1.05)}.emotion-chip:active{transform:scale(0.95)}
+
+.btn-primary{box-shadow:0 0 0 0 rgba(59,130,246,0.3);transition:transform 0.28s var(--elastic),box-shadow 0.28s var(--spring-soft),background 0.18s ease}
+.btn-primary:hover{transform:translateY(-3px) scale(1.025);box-shadow:0 8px 28px rgba(59,130,246,0.45),0 4px 12px rgba(59,130,246,0.35)}
+.btn-primary:active{transform:translateY(1px) scale(0.96);transition-duration:0.1s}
+.btn-ghost{transition:transform 0.28s var(--spring),color 0.18s ease}.btn-ghost:hover{transform:translateY(-2px);color:var(--accL)}
+
+@keyframes shakeX{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.cm-err{animation:shakeX 0.4s ease}
+
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.1s!important}}

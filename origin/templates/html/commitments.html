@@ -1,0 +1,376 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include "reusables/web_icon.html" %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>New Commitment — STREAK &amp; DISCIPLINE</title>
+  <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--bg:#060b14;--surf:#0d1421;--ink:#e4ecf7;--ink2:#8da5c0;--acc:#3b82f6;--accL:#60a5fa;--edge:#1c2a3d;--font:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+    html,body{background:var(--bg);height:100%;overflow:hidden}
+    body{font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased}
+    body.sd-light{--bg:#f0f4fa;--surf:#fff;--ink:#0f172a;--ink2:#475569;--edge:#e2e8f0}
+    {% include "reusables/spinner.css" %}
+    .cm-app{opacity:0;visibility:hidden;transition:opacity 0.4s ease,visibility 0.4s ease}
+    .cm-app.loaded{opacity:1;visibility:visible;display:flex;height:100vh;overflow:hidden}
+  </style>
+  <link rel="stylesheet" href="{% static 'css/commitments.css' %}">
+  <link rel="preload" href="{% static 'cdn/commitments_advance.css' %}" as="style"
+        onload="this.onload=null;this.rel='stylesheet';document.documentElement.classList.add('engine-ready')"
+        id="heavy-css">
+  <noscript><link rel="stylesheet" href="{% static 'cdn/commitments_advance.css' %}"></noscript>
+</head>
+<body class="{% if request.COOKIES.sd_theme != 'dark' %}sd-light{% endif %}">
+
+  {% include "reusables/spinner.html" %}
+
+  <div class="cm-app" id="cmApp">
+    <canvas id="particleCanvas"></canvas>
+    <div class="aside-overlay" id="asideOverlay"></div>
+
+    <aside class="cm-aside" id="cmAside">
+      <div class="aside-scroll">
+        <div class="aside-top">
+          <div class="aside-avatar-wrap" id="asideAvatarWrap">
+            {% if request.user.is_authenticated %}<div class="sk sk-circle" style="width:52px;height:52px" id="asideAvatarSk"></div>
+            {% else %}<img src="{{ logo_url }}" alt="S&D" style="width:100%;height:100%;object-fit:cover;border-radius:50%">{% endif %}
+          </div>
+          <div class="aside-username">{{ request.user.username }}</div>
+          <div class="aside-email">{{ request.user.email }}</div>
+          <span class="tier-badge tier-{{ tier|default:'free' }}">{% if tier == 'gold' %}<i class="fas fa-crown"></i> Gold{% elif tier == 'premium' %}<i class="fas fa-gem"></i> Premium{% else %}<i class="fas fa-user"></i> Free{% endif %}</span>
+        </div>
+        <nav class="aside-nav">
+          <div class="aside-section-lbl">Navigation</div>
+          <a href="{% url 'origin_dashboard' %}" class="aside-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
+          <a href="/v1/profile/" class="aside-link"><i class="fas fa-circle-user"></i> Profile</a>
+          <a href="{% url "origin_commitments_create" %}" class="aside-link active"><i class="fas fa-fire-flame-curved"></i> Commitments</a>
+          <a href="/v1/leaderboard/" class="aside-link"><i class="fas fa-ranking-star"></i> Leaderboard</a>
+          <a href="/v1/groups/" class="aside-link"><i class="fas fa-users"></i> Groups</a>
+          <a href="/v1/blog/" class="aside-link"><i class="fas fa-newspaper"></i> Blog</a>
+          <a href="/v1/reports/" class="aside-link"><i class="fas fa-chart-line"></i> Analytics</a>
+          <div class="aside-section-lbl">Support</div>
+          <a href="https://wa.me/2347013687825" target="_blank" rel="noopener" class="aside-link"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link"><i class="fas fa-envelope"></i> Email</a>
+        </nav>
+        {% if tier == 'free' %}<div class="aside-upgrade"><h4><i class="fas fa-gem"></i> Upgrade to Pro</h4><p>Unlock 50 commitments, AI insights, and more.</p><a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm btn-full">Start 7-Day Trial</a></div>{% endif %}
+      </div>
+      <div class="aside-logout"><button class="aside-logout-btn" id="logoutBtn"><i class="fas fa-right-from-bracket"></i> Log Out</button></div>
+    </aside>
+
+    <div class="cm-wrap" id="cmWrap">
+      <header class="cm-header">
+        <h1 class="cm-title">New Commitment</h1>
+        <div class="cm-header-right">
+          <button class="hdr-btn" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
+          <button class="hdr-btn" id="shareBtnHdr" title="Share"><i class="fas fa-share-nodes"></i></button>
+          <button class="menu-toggle" id="menuToggle" aria-label="Menu"><span></span><span></span><span></span></button>
+        </div>
+      </header>
+
+      <main class="cm-main">
+        <div class="cm-progress"><div class="cm-progress-fill" id="cmProgressFill"></div></div>
+        <div class="cm-phases" id="cmPhases">
+
+          <!-- PHASE 1: What + Category -->
+          <div class="cm-phase active" data-phase="1" id="phase1">
+            <div class="cm-card">
+              <div class="cm-eyebrow">Step 1 of 6</div>
+              <h2 class="cm-h2">What do you commit to?</h2>
+              <p class="cm-hint">Be specific. "Write 300 words" beats "Write more."</p>
+              <input type="text" class="cm-input" id="whatInput" placeholder="e.g., Read 20 pages before bed" maxlength="120" autocomplete="off">
+              <div class="cm-field-err" id="whatErr">Please describe your commitment.</div>
+              <div class="chip-wrap" id="whatSuggestions">
+                <span class="chip" data-fill="whatInput">Read 20 pages daily</span>
+                <span class="chip" data-fill="whatInput">Exercise every morning</span>
+                <span class="chip" data-fill="whatInput">No phone after 10 PM</span>
+                <span class="chip" data-fill="whatInput">Wake up by 6 AM</span>
+                <span class="chip" data-fill="whatInput">Meditate 10 minutes</span>
+                <span class="chip" data-fill="whatInput">Maximum 5 hours screen time</span>
+              </div>
+              <label class="cm-label">Category</label>
+              <div class="cat-grid" id="catGrid">
+                <div class="cat-card" data-cat="fitness"><i class="fas fa-dumbbell"></i>Fitness</div>
+                <div class="cat-card" data-cat="study"><i class="fas fa-book-open"></i>Study</div>
+                <div class="cat-card" data-cat="health"><i class="fas fa-heart-pulse"></i>Health</div>
+                <div class="cat-card" data-cat="mindset"><i class="fas fa-brain"></i>Mindset</div>
+                <div class="cat-card" data-cat="growth"><i class="fas fa-seedling"></i>Growth</div>
+                <div class="cat-card on" data-cat="other"><i class="fas fa-ellipsis"></i>Other</div>
+              </div>
+              <div class="cm-btn-row">
+                <button class="btn btn-primary btn-lg" data-next="2" data-req="whatInput" data-err="whatErr">Continue <i class="fas fa-arrow-right"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PHASE 2: Why -->
+          <div class="cm-phase" data-phase="2" id="phase2">
+            <div class="cm-card">
+              <div class="cm-eyebrow">Step 2 of 6</div>
+              <h2 class="cm-h2">Why does this matter?</h2>
+              <p class="cm-hint">Not the LinkedIn answer. The real one. What's at stake?</p>
+              <textarea class="cm-input cm-textarea" id="whyInput" placeholder="e.g., I promised my dad I'd finish this before he turns 70." rows="3"></textarea>
+              <div class="cm-field-err" id="whyErr">Write your honest reason. It stays private.</div>
+              <div class="chip-wrap">
+                <span class="chip" data-fill="whyInput">To build real self-discipline</span>
+                <span class="chip" data-fill="whyInput">My health depends on it</span>
+                <span class="chip" data-fill="whyInput">I want to prove it to myself</span>
+                <span class="chip" data-fill="whyInput">My career needs this</span>
+                <span class="chip" data-fill="whyInput">I keep starting and quitting</span>
+              </div>
+              <div class="cm-btn-row">
+                <button class="btn btn-ghost" data-prev="1"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary" data-next="3" data-req="whyInput" data-err="whyErr">Continue <i class="fas fa-arrow-right"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PHASE 3: Minimum Effort -->
+          <div class="cm-phase" data-phase="3" id="phase3">
+            <div class="cm-card">
+              <div class="cm-eyebrow">Step 3 of 6</div>
+              <h2 class="cm-h2">What's the smallest version of this?</h2>
+              <p class="cm-hint">On your worst day — exhausted, sick, overwhelmed — what still counts as a win?</p>
+              <input type="text" class="cm-input" id="minInput" placeholder="e.g., Open the book and read even one page." maxlength="120" autocomplete="off">
+              <div class="cm-field-err" id="minErr">Set your minimum. Even tiny counts.</div>
+              <div class="chip-wrap">
+                <span class="chip" data-fill="minInput">Even 5 minutes counts</span>
+                <span class="chip" data-fill="minInput">Just show up, no excuses</span>
+                <span class="chip" data-fill="minInput">One sentence is enough</span>
+                <span class="chip" data-fill="minInput">One rep / one step</span>
+              </div>
+              <div class="cm-note"><i class="fas fa-lightbulb"></i> People who set a minimum are <strong>3x more likely</strong> to maintain streaks through hard days.</div>
+              <div class="cm-btn-row">
+                <button class="btn btn-ghost" data-prev="2"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary" data-next="4">Continue <i class="fas fa-arrow-right"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PHASE 4: Goal Duration -->
+          <div class="cm-phase" data-phase="4" id="phase4">
+            <div class="cm-card">
+              <div class="cm-eyebrow">Step 4 of 6</div>
+              <h2 class="cm-h2">How long are you committing?</h2>
+              <p class="cm-hint">Pick a target. You can extend it once you hit it — but having a horizon makes it real.</p>
+              <div class="goal-grid" id="goalGrid">
+                <div class="goal-card" data-days="30"><div class="gn">30</div><div class="gl">days — trial run</div></div>
+                <div class="goal-card" data-days="90"><div class="gn">90</div><div class="gl">days — habit lock</div></div>
+                <div class="goal-card" data-days="180"><div class="gn">180</div><div class="gl">days — identity shift</div></div>
+                <div class="goal-card on" data-days="365"><div class="gn">365</div><div class="gl">days — transformation</div></div>
+              </div>
+              <div class="cm-toggle-row">
+                <span>I'm committing for life — no end date</span>
+                <label class="cm-switch">
+                  <input type="checkbox" id="foreverToggle">
+                  <span class="cm-sw-track"><span class="cm-sw-thumb"></span></span>
+                </label>
+              </div>
+              <div class="cm-btn-row">
+                <button class="btn btn-ghost" data-prev="3"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary" data-next="5">Continue <i class="fas fa-arrow-right"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PHASE 5: Schedule & Reminders -->
+          <div class="cm-phase" data-phase="5" id="phase5">
+            <div class="cm-card">
+              <div class="cm-eyebrow">Step 5 of 6</div>
+              <h2 class="cm-h2">When do you want to check in?</h2>
+              <p class="cm-hint">Set a time that fits your day. We'll remind you so you never break the chain accidentally.</p>
+              <label class="cm-label">Daily check-in time</label>
+              <select class="cm-input" id="checkinTime"></select>
+              <div class="cm-toggle-row">
+                <span>Send me a reminder</span>
+                <label class="cm-switch">
+                  <input type="checkbox" id="reminderOn" checked>
+                  <span class="cm-sw-track"><span class="cm-sw-thumb"></span></span>
+                </label>
+              </div>
+              <div id="reminderSection">
+                <label class="cm-label">Reminder time</label>
+                <select class="cm-input" id="reminderTime"></select>
+                <label class="cm-label">Via</label>
+                <div class="method-grid" id="methodGrid">
+                  <div class="method-card on" data-method="email"><i class="fas fa-envelope"></i>Email</div>
+                  <div class="method-card" data-method="whatsapp"><i class="fab fa-whatsapp"></i>WhatsApp</div>
+                  <div class="method-card" data-method="push"><i class="fas fa-bell"></i>Push</div>
+                </div>
+                <div id="waField" style="display:none">
+                  <label class="cm-label">WhatsApp number</label>
+                  <input type="tel" class="cm-input" id="waNumber" placeholder="+2348000000000">
+                </div>
+              </div>
+              <div class="cm-btn-row">
+                <button class="btn btn-ghost" data-prev="4"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary" data-next="6">Continue <i class="fas fa-arrow-right"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PHASE 6: Mood + Submit -->
+          <div class="cm-phase" data-phase="6" id="phase6">
+            <div class="cm-card">
+              <div class="cm-eyebrow">Step 6 of 6</div>
+              <h2 class="cm-h2">How do you feel about this?</h2>
+              <p class="cm-hint">Choose the emotion that matches your energy right now.</p>
+              <div class="emotion-chips" id="emotionChips">
+                {% for emotion in emotion_list %}
+                <button type="button" class="emotion-chip" data-emotion="{{ emotion }}">{{ emotion }}</button>
+                {% endfor %}
+              </div>
+              <div class="cm-summary" id="cmSummary" style="display:none;margin:1rem 0;padding:0.8rem;background:var(--bg);border-radius:var(--r);font-size:0.82rem;color:var(--ink2);line-height:1.6"></div>
+              <div class="cm-btn-row">
+                <button class="btn btn-ghost" data-prev="5"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn btn-primary btn-xl" id="submitBtn">
+                  <span class="btn-txt"><i class="fas fa-fire"></i> Create Commitment</span>
+                  <span class="btn-spin"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  {% if request.user.is_authenticated %}<form method="POST" action="{% url 'origin_logout' %}" id="logoutForm" style="display:none">{% csrf_token %}</form>{% endif %}
+
+  <script>{% include "reusables/spinner.js" %}</script>
+  <script>
+  (function() {
+    'use strict';
+    var app=document.getElementById('cmApp'),heavyCss=document.getElementById('heavy-css');
+    function boot(){if(!app.classList.contains('loaded')){app.classList.add('loaded');init()}}
+    if(heavyCss){if(heavyCss.rel==='stylesheet')boot();else heavyCss.addEventListener('load',boot)}
+    setTimeout(boot,8000);
+
+    function $(s,c){return(c||document).querySelector(s)}
+    function $$(s,c){return(c||document).querySelectorAll(s)}
+    function getCookie(n){var v=document.cookie.match('(?:^|;) ?'+n+'=([^;]*)');return v?decodeURIComponent(v[1]):''}
+    function setCookie(n,v,d){var t=new Date();t.setDate(t.getDate()+(d||1));document.cookie=n+'='+encodeURIComponent(v)+';path=/;expires='+t.toUTCString()}
+
+    var STATE={what:'',category:'other',why:'',minimum:'',goalDays:365,goalForever:false,checkinTime:'21:00',reminderOn:true,reminderTime:'20:30',reminderMethod:'email',waNumber:'',mood:''};
+    var currentPhase=1;
+
+    function goTo(n){
+      if(n<1||n>6)return;
+      $$('.cm-phase').forEach(function(p){p.classList.remove('active')});
+      $('#phase'+n).classList.add('active');
+      currentPhase=n;
+      $('#cmProgressFill').style.width=((n/6)*100)+'%';
+      if(n===6)updateSummary();
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function collectState(){
+      STATE.what=$('#whatInput')?.value.trim()||'';
+      STATE.why=$('#whyInput')?.value.trim()||'';
+      STATE.minimum=$('#minInput')?.value.trim()||'';
+      STATE.checkinTime=$('#checkinTime')?.value||'21:00';
+      STATE.reminderOn=$('#reminderOn')?.checked||true;
+      STATE.reminderTime=$('#reminderTime')?.value||'20:30';
+      STATE.waNumber=$('#waNumber')?.value.trim()||'';
+    }
+
+    function updateSummary(){
+      collectState();
+      var s='<strong>Commitment:</strong> '+STATE.what+'<br><strong>Why:</strong> '+STATE.why.slice(0,50)+(STATE.why.length>50?'…':'')+'<br><strong>Goal:</strong> '+(STATE.goalForever?'Forever':STATE.goalDays+' days')+'<br><strong>Reminder:</strong> '+STATE.reminderTime+' via '+STATE.reminderMethod;
+      $('#cmSummary').innerHTML=s;$('#cmSummary').style.display='block';
+    }
+
+    // Navigation
+    document.addEventListener('click',function(e){
+      var btn=e.target.closest('[data-next]');
+      if(btn){
+        var req=btn.dataset.req,err=btn.dataset.err;
+        if(req){var el=$('#'+req);if(el&&!el.value.trim()){el.classList.add('cm-err');var er=$('#'+err);if(er)er.classList.add('show');return}}
+        collectState();goTo(parseInt(btn.dataset.next));
+      }
+      var prev=e.target.closest('[data-prev]');
+      if(prev){collectState();goTo(parseInt(prev.dataset.prev))}
+    });
+
+    // Clear errors
+    $$('.cm-input').forEach(function(el){el.addEventListener('input',function(){el.classList.remove('cm-err');var err=el.parentElement.querySelector('.cm-field-err');if(err)err.classList.remove('show')})});
+
+    // Category
+    $$('.cat-card').forEach(function(c){c.addEventListener('click',function(){$$('.cat-card').forEach(function(x){x.classList.remove('on')});this.classList.add('on');STATE.category=this.dataset.cat})});
+
+    // Goal cards
+    $$('.goal-card').forEach(function(g){g.addEventListener('click',function(){$$('.goal-card').forEach(function(x){x.classList.remove('on')});this.classList.add('on');STATE.goalDays=parseInt(this.dataset.days);$('#foreverToggle').checked=false;STATE.goalForever=false})});
+    $('#foreverToggle').addEventListener('change',function(){if(this.checked){$$('.goal-card').forEach(function(x){x.classList.remove('on')});STATE.goalForever=true}});
+
+    // Suggestion chips
+    $$('.chip[data-fill]').forEach(function(ch){ch.addEventListener('click',function(){var t=$('#'+ch.dataset.fill);if(t){t.value=ch.textContent;t.focus()}})});
+
+    // Method cards
+    $$('.method-card').forEach(function(m){m.addEventListener('click',function(){$$('.method-card').forEach(function(x){x.classList.remove('on')});this.classList.add('on');STATE.reminderMethod=this.dataset.method;$('#waField').style.display=STATE.reminderMethod==='whatsapp'?'block':'none'})});
+
+    // Reminder toggle
+    $('#reminderOn').addEventListener('change',function(){$('#reminderSection').style.display=this.checked?'':'none';STATE.reminderOn=this.checked});
+
+    // Emotion chips
+    $$('.emotion-chip').forEach(function(ch){ch.addEventListener('click',function(){$$('.emotion-chip').forEach(function(x){x.classList.remove('selected')});this.classList.add('selected');STATE.mood=this.dataset.emotion})});
+
+    // Build time selects
+    function buildTimeSelect(id,def){
+      var sel=$('#'+id);if(!sel)return;
+      for(var h=0;h<24;h++){for(var m=0;m<60;m+=30){var t=(h<10?'0':'')+h+':'+(m===0?'00':'30');var opt=document.createElement('option');opt.value=t;opt.textContent=t;if(t===def)opt.selected=true;sel.appendChild(opt)}}
+    }
+    buildTimeSelect('checkinTime','21:00');buildTimeSelect('reminderTime','20:30');
+
+    // Submit
+    $('#submitBtn').addEventListener('click',function(){
+      collectState();
+      if(!STATE.what){$('#whatInput').classList.add('cm-err');$('#whatErr').classList.add('show');goTo(1);return}
+      if(!STATE.why){$('#whyInput').classList.add('cm-err');$('#whyErr').classList.add('show');goTo(2);return}
+      var btn=$('#submitBtn');btn.classList.add('loading');btn.disabled=true;
+      var payload={what:STATE.what,category:STATE.category,why:STATE.why,minimum:STATE.minimum,goal_days:STATE.goalForever?0:STATE.goalDays,checkin_time:STATE.checkinTime,reminder_enabled:STATE.reminderOn,reminder_time:STATE.reminderTime,reminder_method:STATE.reminderMethod,whatsapp_number:STATE.waNumber,mood:STATE.mood};
+      fetch('{% url "origin_commitments_create" %}',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},body:JSON.stringify(payload)})
+        .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
+        .then(function(res){btn.classList.remove('loading');btn.disabled=false;if(!res.ok){alert(res.data.message||'Failed');return}window.location.href='{% url "origin_dashboard" %}'})
+        .catch(function(){btn.classList.remove('loading');btn.disabled=false;alert('Network error.')});
+    });
+
+    function init(){
+      // Theme
+      var tb=$('#themeToggle'),ti=tb.querySelector('i');
+      function setTheme(d){document.body.classList.toggle('sd-light',!d);ti.className=d?'fas fa-moon':'fas fa-sun';setCookie('sd-theme',d?'dark':'light',365)}
+      tb.addEventListener('click',function(){setTheme(document.body.classList.contains('sd-light'))});
+      if(getCookie('sd-theme')==='dark'){document.body.classList.remove('sd-light');ti.className='fas fa-moon'}
+
+      // Sidebar
+      var sidebar=$('#cmAside'),toggle=$('#menuToggle'),overlay=$('#asideOverlay');
+      function open(){sidebar.classList.add('open');overlay.classList.add('show')}
+      function close(){sidebar.classList.remove('open');overlay.classList.remove('show')}
+      toggle.addEventListener('click',function(){sidebar.classList.contains('open')?close():open()});
+      overlay.addEventListener('click',close);
+      sidebar.querySelectorAll('.aside-link').forEach(function(l){l.addEventListener('click',function(){if(window.innerWidth<1024)close()})});
+
+      // Profile picture
+      {% if request.user.is_authenticated %}
+      fetch("{% url 'origin_user_picture' %}",{headers:{'X-CSRFToken':getCookie('csrftoken')}}).then(function(r){return r.json()}).then(function(d){
+        var url=d.url||'',wrap=$('#asideAvatarWrap');if(!wrap)return;
+        var img=document.createElement('img');img.alt='{{request.user.username}}';img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%';
+        img.onerror=function(){img.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2248%22 height=%2248%22 viewBox=%220 0 48 48%22%3E%3Ccircle cx=%2224%22 cy=%2224%22 r=%2224%22 fill=%22%231e293b%22/%3E%3Ccircle cx=%2224%22 cy=%2219%22 r=%229%22 fill=%22%23475669%22/%3E%3Cellipse cx=%2224%22 cy=%2246%22 rx=%2216%22 ry=%2210%22 fill=%22%23475669%22/%3E%3C/svg%3E'};
+        img.onload=function(){var sk=$('#asideAvatarSk');if(sk)sk.remove();wrap.appendChild(img)};
+        img.src=url||'data:image/svg+xml,...';
+      }).catch(function(){});
+      {% endif %}
+
+      // Logout
+      var lb=$('#logoutBtn');if(lb)lb.addEventListener('click',function(){if(confirm('Log out?'))document.getElementById('logoutForm')?.submit()});
+
+      // Share
+      $('#shareBtnHdr').addEventListener('click',function(){if(navigator.share){navigator.share({title:'STREAK & DISCIPLINE',url:window.location.href})}else{alert('Copy: '+window.location.href)}});
+    }
+  })();
+  </script>
+</body>
+</html>
