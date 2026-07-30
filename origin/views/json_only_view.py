@@ -2,16 +2,19 @@
 
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
+
+from origin.views.utility_view import helper_with_friendship_request_answer
 from ..models import Commitment, Entries, Profile, ChoicesValidatorInModels, Friendship
 from django.shortcuts import reverse
 from django.http import JsonResponse
 from django.utils import timezone
 
-from django.db import models
 
+from django.db import models
+import json
 
 class CommitmentData(LoginRequiredMixin, View):
-    """RETURNS DATA FOR THE DASHBOARD HOME TO USE TO DISPLAY A QUICK VIEW OF USER COMMITMENTS WITH THE LINK THAT REDORECT USER TO VIEW ACTUAL FULL DATA"""
+    """RETURNS DATA FOR THE DASHBOARD HOME TO USE TO DISPLAY A QUICK VIEW OF USER COMMITMENTS WITH THE LINK THAT REDIRECT USER TO VIEW ACTUAL FULL DATA"""
     def get(self, request):
         commitment_istance = Commitment.objects.filter(user = request.user).all()
         if not commitment_istance.exists(): data = [
@@ -41,7 +44,7 @@ class CommitmentData(LoginRequiredMixin, View):
                 "days_since_start": (timezone.now().date() - i.created_at.date()).days,
                 "checkin_time": i.checkin_time,
                 'is_active': i.is_active,
-                "checked_in_today": (i.last_check_in is not None and i.last_check_in.date() == timezone.now().date()),                
+                "checked_in_today": (i.last_check_in is not None and i.last_check_in.date().day == timezone.now().date().day),                
             }
             for i in commitment_istance 
             ]
@@ -111,7 +114,7 @@ class HeatMap(LoginRequiredMixin, View):
             })
 
 
-class UserPicture(LoginRequiredMixin, View):
+class ProfilePicture(LoginRequiredMixin, View):
     """INCHARGE OF ALWAYS BRINNGIN BACK THE URL FOR USER PICTIRE(get) OR UPDATING THE PROFILE PICTURE (post) IN THE DB"""
     def get(self, request):
         """find url from db and return it to clien"""
@@ -199,8 +202,8 @@ class DashboardJson(LoginRequiredMixin, View):
             models.Q(from_user=request.user) | models.Q(to_user=request.user)  # Q handles OR
         ).select_related('from_user', 'to_user').all()                         #JOIN handles eager loading(selected from), istead for loop that lead to N+1q
         
-        partner_request_received = [i for i in all_friendships if all_friendships.to_user == request.user]
-        friend_request_sent = [i for i in all_friendships if all_friendships.from_user == request.user]
+        partner_request_received = [i for i in all_friendships if i.to_user == request.user]
+        friend_request_sent = [i for i in all_friendships if i.from_user == request.user]
         
         if partner_request_received is None: partner_list_received = []
         else: partner_list_received = [{
@@ -250,3 +253,131 @@ class DashboardJson(LoginRequiredMixin, View):
             'friend_request_received' : partner_list_received,
             'friend_request_sent' : partner_list_sent
             }, safe=False)
+
+
+
+class SearchFriend(LoginRequiredMixin,View):
+    #This one is specifically only for logged in user
+    login_url = '/v1/login/'
+    def get(self, request): return self.post(request)
+    def post(self, request):
+        data = request.POST['uuid']
+        friend_search = Profile.objects.filter(public_searchable_username__iexact = data).first()
+        if friend_search:
+            userid = friend_search.public_searchable_username
+            username = friend_search.user.username
+            profile_image = ''
+            status_code = 200
+        else:
+            userid, username, profile_image = None, None, ''
+            status_code = 404
+        return JsonResponse({
+            'userid' : userid,                        #use username + dabatase pk to make it unique
+            'username' : username,
+            'profile_image' : profile_image,
+        }, status = status_code)
+        
+class AddFriend(LoginRequiredMixin, View):
+    """This is for sending a freidn request to the user, maybe i will extend the code to make it hanlde accepting and rejectig and unresending with query params but by default it will send a fresh request"""
+    login_url = '/v1/login'
+    def get(self, request):return self.post(request)
+    def post(self, request):
+        incoming_user_id = request.POST['userid']
+        req = helper_with_friendship_request_answer(request=request, to_user_id = incoming_user_id.strip())
+        if req is None: return JsonResponse({'message': 'success, requst resend successfuly'}, status = 200)
+        else: return req
+
+class CommiementReceiveCommitment(LoginRequiredMixin, View):
+    """THIS ENDPOITT IS IN CHARGE OF SERVING THE COMMITMENT PAGE IN DASHBOARD THE DATA IT NEEDS"""
+    def get(self, request):
+        commitment_istance = Entries.objects.filter(commitment_key__user = request.user,).select_related('commitment_key').all() #to get all the commitment key data at once avoaiding the N+1 problem
+        commitment_list = [
+            {
+                'id': i.pk,
+                'what': i.commitment_key.what,
+                'why': i.commitment_key.why,
+                'category': i.commitment_key.category,
+                'streak_count': i.commitment_key.streak_count,
+                'goal_days': i.commitment_key.goal_days,
+                'checked_in_today': i.commitment_key.last_check_in.date().day == timezone.now().day,
+                'created_at': i.commitment_key.created_at
+            }
+            for i in commitment_istance
+        ]
+        consistency_pct = [i.streak_count for i in  commitment_istance] #different from zeal score --- loop through streak; sum them all and divide by all
+        c_pct = sum(consistency_pct) / (len(consistency_pct)+1) #i added one to curb the issue of division by zero
+        stats = {'consistency_pct': c_pct}
+        
+        return JsonResponse({'message': 'success', 'commitments': commitment_list, **stats})
+
+
+class CreateCommitment(LoginRequiredMixin, View):
+    """This create commitments"""
+    login_url = '/v1/login/'
+    def get(self, request): return self.post(request)
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+
+        except json.JSONDecodeError:return JsonResponse({'message': 'Invalid JSON.'}, status=400)
+        # Extract fields
+        what = data.get('what', '').strip()
+        category = data.get('category', 'other').strip().lower()
+        why = data.get('why', '').strip()
+        minimum = data.get('minimum', '').strip()
+        goal_days = data.get('goal_days', 365)
+        checkin_time = data.get('checkin_time', '21:00')
+        reminder_enabled = data.get('reminder_enabled', True)
+        reminder_time = data.get('reminder_time', '20:30')
+        reminder_method = data.get('reminder_method', 'email').strip().lower()
+        whatsapp_number = data.get('whatsapp_number', '').strip()
+        
+        # Validate required fields
+        if not what: return JsonResponse({'message': 'Please describe your commitment.'}, status=400)
+        if not why:return JsonResponse({'message': 'Please write your reason.'}, status=400)
+        
+        # Validate reminder_time is provided when reminder is enabled
+        if reminder_enabled and not reminder_time: return JsonResponse({'message': 'Reminder time is required when reminders are enabled.'}, status=400)
+        
+        # Validate whatsapp_number is provided when method is whatsapp
+        if reminder_method == 'whatsapp' and not whatsapp_number: return JsonResponse({'message': 'WhatsApp number is required when WhatsApp reminders are selected.'}, status=400)
+        
+        # Validate category
+        validator = ChoicesValidatorInModels()
+        if category not in validator.commitment_category:category = 'other'
+        
+        # Validate reminder method
+        if reminder_method not in validator.report_delivery_mode: reminder_method = 'email'
+        
+        # Clean WhatsApp number — only store if method is whatsapp
+        if reminder_method != 'whatsapp': whatsapp_number = ''
+        else:
+            # Strip spaces, dashes, parentheses
+            whatsapp_number = whatsapp_number.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+            if not whatsapp_number.startswith('+'):
+                return JsonResponse({'message': 'invalid watsappp number; +xxxxx.. where x are number are the only allowed'})
+                
+        # Create the commitment
+        try:
+            commitment = Commitment.objects.create(
+                user=request.user,
+                what=what,
+                category=category,
+                why=why,
+                minimum_effort=minimum,
+                goal_days=goal_days,
+                checkin_time=checkin_time,
+                reminder_active=reminder_enabled,
+                user_selected_reminder_time=reminder_time,
+                mode_of_delivery=reminder_method,
+                whatsapp_number=whatsapp_number,
+            )
+            return JsonResponse({
+                'message': 'Commitment created successfully!',
+                'commitment_id': commitment.pk,
+            }, status=201)
+            
+        except Profile.DoesNotExist:
+            return JsonResponse({'message': 'Profile not found. Please complete onboarding first.'}, status=400)
+        except Exception as e:
+            return JsonResponse({'message': f'Error creating commitment. Please try again.'}, status=500)

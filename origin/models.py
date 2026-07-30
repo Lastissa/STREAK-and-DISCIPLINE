@@ -123,7 +123,7 @@ class Commitment(models.Model):
     why = models.TextField(blank=True) # can be long text for showing why the user is dedicated to this commitment 
     minimum_effort = models.CharField(max_length=120, blank=True) #to evaluate user user expected note on days where they are not tht strong but they still show up
     goal_days = models.PositiveIntegerField(blank=False, null=False)   # 0 means forever
-    created_at = models.DateTimeField(auto_now_add=True) #to track current day in streak and know the end of streak
+    created_at = models.DateTimeField(auto_now_add=True, blank=False, null=False) #to track current day in streak and know the end of streak
     
     #sending email
     last_check_in = models.DateTimeField(null=True, blank=False, default=None)#to track user last check in istead of going to look at that entry - on initial , its None

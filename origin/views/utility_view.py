@@ -9,7 +9,10 @@ from django.shortcuts import render, reverse
 from django.http import JsonResponse
 from django.db import IntegrityError
 
-from ..models import ChoicesValidatorInModels
+from utility.config import custom_date_formatter
+from utility.email_sending import send_partner_request_notification
+
+from ..models import ChoicesValidatorInModels, Profile, Friendship
 
 import logging
 logger = logging.getLogger(__name__)
@@ -101,12 +104,23 @@ class RedirectHandler(View):
 
 
 
-def helper_with_friendship_request_answer(request, to_user : str):
+def helper_with_friendship_request_answer(request, to_user_id : str):
     """Since this code have to be repeated in both add friend and dbsaver, to avoid duplicate, i created this file which i will use in both class"""
     from_user = request.user
-    to_user = Profile.objects.filter(public_searchable_username__iexact = to_user.upper().strip()).first()
-    
-    if to_user is None:return JsonResponse({'message': f"potential partner '{social_friend_user_id}' does nt exist , please ask the user to share you their current username as they might have updated it." })
+    #add rate limiting here blocking the request for 30 secodns if user keep spamming me 3 times
+    key = f"{from_user}-{to_user_id}"
+    cache_does_exist = cache.get(key)
+    print(key, cache_does_exist)
+    if cache_does_exist is None:
+        cache.set(key ,"x", timeout=60)
+    elif cache_does_exist: 
+        cache.set(key ,cache_does_exist+"x", timeout=60)
+        if len(cache_does_exist) == 3: return JsonResponse({'message': 'too many request to the same user and that is violating our policy of no spamming, if you send one more request within the next 60 seconds, you will be banned for 1 minutes'.upper()}, status = 403)
+        elif len(cache_does_exist) > 3: return JsonResponse({'message': "You have been banned from sending partner request to anyone for the next 60 seconds, if you try sending request before 60 sec is up, the timer will reset".upper()}, status = 403)
+            
+        cache.set(key,cache_does_exist+"x", timeout=60)  #Increeasing the x count and when it get to 3 give warning and block them on the them for 60 seconds
+    to_user = Profile.objects.filter(public_searchable_username__iexact = to_user_id).first()
+    if to_user is None:return JsonResponse({'message': f"potential partner does not exist , please ask the user to share you their current username as they might have updated it." }, status= 403)
                     
     #check if user is trying to send request to theirself
     if to_user.user.email == request.user.email: return JsonResponse({'message': 'request to oneself is not allowed'}, status = 403)
@@ -114,17 +128,19 @@ def helper_with_friendship_request_answer(request, to_user : str):
     #check their status, if its pending -- request already sent at TIME, accepted -- you are already friends with this user since TIME
     relationship = Friendship.objects.filter(from_user = from_user, to_user = to_user.user).first()
     if relationship is None:
+        
         #send request --brb send email to notify to user also
         istance = Friendship.objects.create(
             from_user = from_user,
             to_user = to_user.user,
             status = ChoicesValidatorInModels().friendship_status[0], #pending
         )
-    elif relationship.status == ChoicesValidatorInModels().friendship_status[0]: return JsonResponse({'message' : f'request already sent since {custom_date_formatter(datetime_data = relationship.updated_at)} --pending'}, status = 200)
-    elif relationship.status == ChoicesValidatorInModels().friendship_status[1]: return JsonResponse({'message' : f'you are already friend with this person since {custom_date_formatter(datetime_data = relationship.updated_at)}'}, status = 200)
+    elif relationship.status == ChoicesValidatorInModels().friendship_status[0]: return JsonResponse({'message' : f'request already sent since {custom_date_formatter(datetime_data = relationship.updated_at)} --pending'}, status = 403)
+    elif relationship.status == ChoicesValidatorInModels().friendship_status[1]: return JsonResponse({'message' : f'you are already friend with this person since {custom_date_formatter(datetime_data = relationship.updated_at)}'}, status = 403)
     else:
         # status was 'rejected' — allow resending
         relationship.status = 'pending'
         relationship.save()
         return None
+    
     

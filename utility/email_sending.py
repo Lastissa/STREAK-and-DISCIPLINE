@@ -313,19 +313,25 @@ def send_partner_request_notification(to_email: str, from_username: str, from_us
                         <tr>
                             <td style="padding:24px">
                                 <h2 style="margin:0 0 12px;font-size:18px;color:#0f172a;font-weight:700">
-                                    {from_username} wants to be your accountability partner
+                                    {from_username} is giving you permission to see their discipline
                                 </h2>
                                 
                                 <p style="margin:0 0 16px;font-size:14px;color:#334155;line-height:1.6">
                                     <strong>@{from_userid}</strong> has sent you a partner request. 
-                                    If you accept, they'll be able to see your consistency score — 
-                                    <strong>never your private entries</strong>.
+                                    <strong>If you accept, you will be able to see their:</strong>
                                 </p>
                                 
                                 <div style="background:#f0f9ff;border:1px solid #bae6fd;padding:12px 14px;border-radius:8px;margin-bottom:20px">
                                     <p style="margin:0;font-size:13px;color:#0c4a6e;line-height:1.5">
-                                        <strong>What they'll see:</strong> Your streak count, consistency percentage, 
-                                        and commitment name — nothing more. Your journal entries and reasons stay private.
+                                        * Their current streak count across all commitments<br>
+                                        * Their Zeal Score (discipline index)<br>
+                                        * Their commitment names and categories<br>
+                                    </p>
+                                </div>
+                                
+                                <div style="background:#fff7ed;border:1px solid #fed7aa;padding:12px 14px;border-radius:8px;margin-bottom:20px">
+                                    <p style="margin:0;font-size:13px;color:#9a3412;line-height:1.5">
+                                        <strong>Important:</strong> This is a one-way permission. {from_username} is choosing to share their data with you. They will <strong>not</strong> be able to see your scores unless you also send them a partner request.
                                     </p>
                                 </div>
                                 
@@ -339,7 +345,8 @@ def send_partner_request_notification(to_email: str, from_username: str, from_us
                                 
                                 <p style="margin:0;font-size:12px;color:#64748b;line-height:1.5">
                                     You can accept or decline this request from your dashboard. 
-                                    If you change your mind later, you can remove partners anytime from Settings.
+                                    If you accept, you'll see {from_username}'s consistency data on your partners widget. 
+                                    You can remove them anytime from Profile → Settings.
                                 </p>
                             </td>
                         </tr>

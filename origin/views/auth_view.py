@@ -101,7 +101,7 @@ class DbSave(LoginRequiredMixin,View):
                 
             )
             if social_mode_settings.strip().lower() == "partner":
-                helper = helper_with_friendship_request_answer(request=request, to_user=social_friend_user_id.strip())
+                helper = helper_with_friendship_request_answer(request=request, to_user_id =social_friend_user_id.strip())
                 #so the issue can be returned succesdully
                 if helper is not None: return helper
                 

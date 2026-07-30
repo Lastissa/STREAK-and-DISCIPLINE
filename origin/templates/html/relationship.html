@@ -1,0 +1,785 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include "reusables/web_icon.html" %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Relationship — STREAK &amp; DISCIPLINE</title>
+
+  <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
+
+  <!--
+    CRITICAL INLINE — background + spinner.
+    Paints in <50ms. Nothing blocks the first pixel.
+  -->
+  <style>
+    {% include "reusables/spinner.css" %}
+    html, body { margin:0; padding:0; background:#060b14; }
+    body.sd-light { background:#f0f4fa; }
+    .rel-app { opacity:0; visibility:hidden; transition:opacity 0.6s ease, visibility 0.6s ease; }
+    .rel-app.rel-visible { opacity:1; visibility:visible; }
+  </style>
+
+  <!-- LIGHT CSS: blocking, critical layout, no animations -->
+  <link rel="stylesheet" href="{% static 'css/relationship_light.css' %}">
+
+  <!-- ADVANCE CSS: non-blocking, loads after first paint -->
+  <link rel="preload" href="{% static 'cdn/relationship_advance.css' %}" as="style"
+        onload="this.onload=null;this.rel='stylesheet'" id="adv-css">
+  <noscript><link rel="stylesheet" href="{% static 'cdn/relationship_advance.css' %}"></noscript>
+</head>
+<body class="sd-{{theme_mode}}">
+
+  <!-- ============================================================
+       LOADER — shows instantly, removed after window.load
+       ============================================================ -->
+  {% include "reusables/spinner.html" %}
+
+  <div id="relToastWrap"></div>
+
+  <!-- ============================================================
+       APP SHELL — hidden until JS reveal()
+       ============================================================ -->
+  <div class="rel-app" id="relApp">
+
+    <div class="aside-overlay" id="asideOverlay"></div>
+
+    <!-- ================================================
+         ASIDE — identical structure to dashboard.html,
+         "Relationship" marked active
+         ================================================ -->
+    <aside class="db-aside no-print" id="dbAside">
+      <div class="aside-scroll">
+
+        <div class="aside-top">
+          <div class="aside-avatar-wrap" id="asideAvatarWrap">
+            <div class="sk sk-circle" style="width:52px;height:52px" id="asideAvatarSk"></div>
+          </div>
+          <div class="aside-username">{{ request.user.username }}</div>
+          <div class="aside-email">{{ request.user.email }}</div>
+          <span class="tier-badge tier-{{ tier|default:'free' }}">
+            {% if tier == 'gold' %}<i class="fas fa-crown"></i> Gold
+            {% elif tier == 'premium' %}<i class="fas fa-gem"></i> Premium
+            {% else %}<i class="fas fa-user"></i> Free{% endif %}
+          </span>
+        </div>
+
+        <nav class="aside-nav" aria-label="Dashboard navigation">
+          <div class="aside-section-lbl">Navigation</div>
+          <a href="{% url "origin_dashboard" %}" class="aside-link">
+            <i class="fas fa-gauge-high"></i> Dashboard
+          </a>
+          <a href="{% url "origin_relationship" %}" class="aside-link active">
+            <i class="fas fa-user-group"></i> Relationship
+          </a>
+          <a href="{% url "origin_profile" %}" class="aside-link">
+            <i class="fas fa-circle-user"></i> Profile
+          </a>
+          <a href="{% url "origin_commitments" %}" class="aside-link">
+            <i class="fas fa-fire-flame-curved"></i> My Commitments
+          </a>
+
+          <div class="aside-section-lbl" style="margin-top:0.5rem">Community</div>
+          <a href="/v1/groups/" class="aside-link">
+            <i class="fas fa-users"></i> Groups
+          </a>
+          <a href="{% url "origin_leaderboard" %}" class="aside-link">
+            <i class="fas fa-ranking-star"></i> Leaderboard
+          </a>
+          <a href="{% url "origin_blog" %}" class="aside-link">
+            <i class="fas fa-newspaper"></i> Blog &amp; Updates
+          </a>
+
+          <div class="aside-section-lbl" style="margin-top:0.5rem">Insights</div>
+          <a href="{% url "origin_weekly_analysis" %}" class="aside-link">
+            <i class="fas fa-chart-line"></i> Analytics &amp; Reports
+          </a>
+          {% if ai_insight_active %}
+          <a href="/v1/insights/" class="aside-link">
+            <i class="fas fa-microchip"></i> AI Insights
+          </a>
+          {% endif %}
+
+          <div class="aside-section-lbl" style="margin-top:0.5rem">Others</div>
+          <a href="{% url "origin_extra" %}#help" class="aside-link"><i class="fas fa-circle-question"></i> Help</a>
+          <a href="{% url "origin_extra" %}#policy" class="aside-link"><i class="fas fa-shield-halved"></i> Privacy Policy</a>
+          <a href="{% url "origin_extra" %}#terms" class="aside-link"><i class="fas fa-file-lines"></i> Term of use</a>
+
+          <hr class="aside-sep">
+
+          <div class="aside-support-lbl">Support</div>
+          <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_self"
+             rel="noopener" class="aside-link">
+            <i class="fab fa-whatsapp"></i> WhatsApp Support
+          </a>
+          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link">
+            <i class="fas fa-envelope"></i> Email Support
+          </a>
+          <a href="tel:{{ customer_care_phone_number }}" class="aside-link">
+            <i class="fas fa-phone"></i> {{ customer_care_phone_number }}
+          </a>
+        </nav>
+
+        {% if tier == 'free' or not tier %}
+        <div class="aside-upgrade">
+          <h4><i class="fas fa-gem"></i> Upgrade to Pro</h4>
+          <p>Unlock AI insights, 50 commitments, custom reports and WhatsApp reminders.</p>
+          <a href="{% url "origin_signup" %}?trial=true" class="btn btn-primary btn-sm btn-full">
+            Start 7-Day Trial
+          </a>
+        </div>
+        {% endif %}
+
+      </div><!-- /aside-scroll -->
+
+      <div class="aside-logout">
+        <button class="aside-logout-btn" id="logoutBtn">
+          <i class="fas fa-right-from-bracket"></i> Log Out
+        </button>
+      </div>
+
+    </aside><!-- /db-aside -->
+
+    <!-- ================================================
+         HEADER — identical to dashboard.html
+         ================================================ -->
+    <header class="db-header no-print">
+      <div class="hdr-left">
+        <div class="hdr-avatar" id="hdrAvatarWrap" title="Open sidebar">
+          <div class="sk sk-circle" style="width:32px;height:32px" id="hdrAvatarSk"></div>
+        </div>
+        <span class="hdr-brand">STREAK &amp; DISCIPLINE</span>
+      </div>
+
+      <div class="hdr-quote" id="hdrQuote" aria-live="polite"></div>
+
+      <div class="hdr-right">
+        <button class="hdr-btn" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
+          <i class="fas fa-moon" id="themeIcon"></i>
+        </button>
+        <button class="hdr-btn hdr-hamburger" id="hamburgerBtn" aria-label="Open menu">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+    </header><!-- /db-header -->
+
+    <!-- ================================================
+         MAIN CONTENT
+         ================================================ -->
+    <div class="db-wrap">
+      <main class="db-main" id="relMain">
+
+        <div class="db-greeting">
+          <h1 class="db-greeting-text">Relationship</h1>
+          <p class="db-greeting-sub">Find a partner, and manage every request you've sent or received.</p>
+        </div>
+
+        <!-- ============================================
+             FIND A PARTNER — mirrors onboarding.html's
+             friend-search flow exactly (same endpoints,
+             same POST fields, same states).
+             ============================================ -->
+        <div class="rel-search">
+          <div class="db-section-label"><i class="fas fa-user-plus"></i> Find a Partner</div>
+
+          <div class="rel-search-row">
+            <input type="text" class="rel-input" id="relSearchInput" placeholder="Enter their User ID">
+            <button class="btn btn-primary btn-sm" id="relSearchBtn">
+              <span class="btn-txt">Search</span><span class="btn-spin"></span>
+            </button>
+          </div>
+
+          <div class="rel-msg info" id="relSearchLoading" style="display:none">
+            <div class="fr-spinner"></div> Searching...
+          </div>
+
+          <div class="rel-search-result" id="relSearchFound">
+            <img src="" alt="" id="relSearchAvatar">
+            <div class="rel-search-info">
+              <div class="rel-search-name" id="relSearchName"></div>
+              <div class="rel-search-id" id="relSearchId"></div>
+            </div>
+            <button class="btn btn-primary btn-sm" id="relSearchAddBtn">
+              <span class="btn-txt">Add</span><span class="btn-spin"></span>
+            </button>
+          </div>
+
+          <div class="rel-msg ok"   id="relSearchSent"><i class="fas fa-check-circle"></i> Friend request sent!</div>
+          <div class="rel-msg bad"  id="relSearchNone"><i class="fas fa-user-slash"></i> No user found with that ID.</div>
+          <div class="rel-msg bad"  id="relSearchError"><i class="fas fa-exclamation-circle"></i> <span id="relSearchErrMsg">Something went wrong.</span></div>
+        </div>
+
+        <!-- ============================================
+             REQUEST TABS
+             ============================================ -->
+        <div class="db-commitments">
+          <div class="db-section-label"><i class="fas fa-user-group"></i> Friend Requests</div>
+
+          <div class="rel-tabs" id="relTabs">
+            <button class="rel-tab on" data-key="outPending"><i class="fas fa-paper-plane"></i> Sent · Pending <span class="rel-tab-count" id="cnt-outPending">–</span></button>
+            <button class="rel-tab" data-key="outRejected"><i class="fas fa-xmark"></i> Sent · Rejected <span class="rel-tab-count" id="cnt-outRejected">–</span></button>
+            <button class="rel-tab" data-key="outAccepted"><i class="fas fa-check"></i> Sent · Accepted <span class="rel-tab-count" id="cnt-outAccepted">–</span></button>
+            <button class="rel-tab" data-key="inPending"><i class="fas fa-inbox"></i> Received · Pending <span class="rel-tab-count" id="cnt-inPending">–</span></button>
+            <button class="rel-tab" data-key="inAccepted"><i class="fas fa-user-check"></i> Partners <span class="rel-tab-count" id="cnt-inAccepted">–</span></button>
+            <button class="rel-tab" data-key="inRejected"><i class="fas fa-ban"></i> Received · Rejected <span class="rel-tab-count" id="cnt-inRejected">–</span></button>
+          </div>
+
+          <div class="rel-panel on" id="panel-outPending">
+            <div class="rel-list" id="list-outPending"></div>
+            <div class="rel-loadmore" id="more-outPending" style="display:none"><button class="btn btn-outline btn-sm">Load more</button></div>
+          </div>
+          <div class="rel-panel" id="panel-outRejected">
+            <div class="rel-list" id="list-outRejected"></div>
+            <div class="rel-loadmore" id="more-outRejected" style="display:none"><button class="btn btn-outline btn-sm">Load more</button></div>
+          </div>
+          <div class="rel-panel" id="panel-outAccepted">
+            <div class="rel-list" id="list-outAccepted"></div>
+            <div class="rel-loadmore" id="more-outAccepted" style="display:none"><button class="btn btn-outline btn-sm">Load more</button></div>
+          </div>
+          <div class="rel-panel" id="panel-inPending">
+            <div class="rel-list" id="list-inPending"></div>
+            <div class="rel-loadmore" id="more-inPending" style="display:none"><button class="btn btn-outline btn-sm">Load more</button></div>
+          </div>
+          <div class="rel-panel" id="panel-inAccepted">
+            <div class="rel-list" id="list-inAccepted"></div>
+            <div class="rel-loadmore" id="more-inAccepted" style="display:none"><button class="btn btn-outline btn-sm">Load more</button></div>
+          </div>
+          <div class="rel-panel" id="panel-inRejected">
+            <div class="rel-list" id="list-inRejected"></div>
+            <div class="rel-loadmore" id="more-inRejected" style="display:none"><button class="btn btn-outline btn-sm">Load more</button></div>
+          </div>
+        </div>
+
+      </main>
+    </div><!-- /db-wrap -->
+  </div><!-- /rel-app -->
+
+  <!-- ============================================================
+       FULL APP JAVASCRIPT — at bottom, no defer needed
+       ============================================================ -->
+  <script>
+    (function() {
+    'use strict';
+
+    /* ============================================================
+       HELPERS — identical set to dashboard.html
+       ============================================================ */
+    function getCookie(name) {
+      var v = document.cookie.match('(?:^|;) ?' + name + '=([^;]*)(;|$)');
+      return v ? decodeURIComponent(v[1]) : '';
+    }
+    function setCookie(name, value, days) {
+      var d = new Date(); d.setDate(d.getDate() + (days || 1));
+      document.cookie = name + '=' + encodeURIComponent(value) + ';path=/;expires=' + d.toUTCString();
+    }
+    function qs(sel, ctx) { return (ctx || document).querySelector(sel); }
+    function qsa(sel, ctx) { return (ctx || document).querySelectorAll(sel); }
+    function el(tag, cls, html) {
+      var e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (html) e.innerHTML = html;
+      return e;
+    }
+    function show(e) { if (e) { e.style.display = ''; e.classList.remove('hidden'); } }
+    function hide(e) { if (e) { e.classList.add('hidden'); } }
+    function sanitize(str) {
+      var d = document.createElement('div');
+      d.textContent = str || '';
+      return d.innerHTML;
+    }
+    function timeAgo(dateStr) {
+      var ms = Date.now() - new Date(dateStr).getTime();
+      var m = Math.floor(ms / 60000);
+      if (m < 60)  return m + 'm ago';
+      var h = Math.floor(m / 60);
+      if (h < 24)  return h + 'h ago';
+      var d = Math.floor(h / 24);
+      return d + ' day' + (d > 1 ? 's' : '') + ' ago';
+    }
+
+    var DEFAULT_AVATAR = 'https://api.dicebear.com/7.x/initials/svg?seed=' +
+                         encodeURIComponent('{{ request.user.username }}') +
+                         '&backgroundColor=1e293b&textColor=60a5fa&size=64';
+
+    /* ============================================================
+       TOAST
+       ============================================================ */
+    function toast(msg, kind) {
+      var wrap = document.getElementById('relToastWrap');
+      if (!wrap) return;
+      var t = el('div', 'rel-toast ' + (kind === 'ok' ? 'ok' : 'bad'));
+      t.innerHTML = '<i class="fas ' + (kind === 'ok' ? 'fa-circle-check' : 'fa-triangle-exclamation') + '"></i> ' + sanitize(msg);
+      wrap.appendChild(t);
+      setTimeout(function() {
+        t.style.transition = 'opacity .25s ease';
+        t.style.opacity = '0';
+        setTimeout(function() { t.remove(); }, 260);
+      }, 4000);
+    }
+
+    /* ============================================================
+       ASIDE TOGGLE — identical behavior to dashboard.html
+       ============================================================ */
+    var aside     = document.getElementById('dbAside');
+    var overlay   = document.getElementById('asideOverlay');
+    var hamburger = document.getElementById('hamburgerBtn');
+    var hdrAvatar = document.getElementById('hdrAvatarWrap');
+
+    function openAside()  { aside && aside.classList.add('open'); overlay && overlay.classList.add('show'); }
+    function closeAside() { aside && aside.classList.remove('open'); overlay && overlay.classList.remove('show'); }
+
+    hamburger && hamburger.addEventListener('click', openAside);
+    hdrAvatar && hdrAvatar.addEventListener('click', function() {
+      if (window.innerWidth < 900) openAside();
+      else window.location.href = '{% url "origin_profile" %}';
+    });
+    overlay && overlay.addEventListener('click', closeAside);
+
+    aside && aside.querySelectorAll('.aside-link').forEach(function(a) {
+      a.addEventListener('click', function() {
+        if (window.innerWidth < 900) closeAside();
+      });
+    });
+
+    /* ============================================================
+       THEME TOGGLE — identical to dashboard.html
+       ============================================================ */
+    var themeBtn  = document.getElementById('themeToggleBtn');
+    var themeIcon = document.getElementById('themeIcon');
+
+    (function() {
+      var saved = getCookie('sd-theme');
+      if (saved === 'light' && themeIcon) themeIcon.className = 'fas fa-sun';
+    })();
+
+    function setTheme(dark) {
+      document.body.classList.toggle('sd-light', !dark);
+      if (themeIcon) themeIcon.className = dark ? 'fas fa-moon' : 'fas fa-sun';
+      setCookie('sd-theme', dark ? 'dark' : 'light', 365);
+    }
+    themeBtn && themeBtn.addEventListener('click', function() {
+      setTheme(document.body.classList.contains('sd-light'));
+    });
+
+    /* ============================================================
+       LOGOUT — identical to dashboard.html
+       ============================================================ */
+    var logoutBtn = document.getElementById('logoutBtn');
+    logoutBtn && logoutBtn.addEventListener('click', function() {
+      if (confirm('Log out of STREAK & DISCIPLINE?')) {
+        window.location.href = '{% url "origin_logout" %}';
+      }
+    });
+
+    /* ============================================================
+       PROFILE PICTURE — /user_picture_data/, identical to dashboard.html
+       ============================================================ */
+    function loadProfilePicture() {
+      var hdrSk    = document.getElementById('hdrAvatarSk');
+      var asideSk  = document.getElementById('asideAvatarSk');
+      var hdrWrap  = document.getElementById('hdrAvatarWrap');
+      var asideWrap = document.getElementById('asideAvatarWrap');
+
+      function applyAvatar(url) {
+        [
+          { wrap: hdrWrap,   sk: hdrSk },
+          { wrap: asideWrap, sk: asideSk }
+        ].forEach(function(cfg) {
+          if (!cfg.wrap) return;
+          var img = document.createElement('img');
+          img.alt = '{{ request.user.username }}';
+          img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
+          img.onerror = function() { img.src = DEFAULT_AVATAR; };
+          img.onload  = function() {
+            if (cfg.sk && cfg.sk.parentNode) cfg.sk.remove();
+            img.classList.add('loaded');
+            cfg.wrap.appendChild(img);
+          };
+          img.src = url;
+        });
+      }
+
+      fetch('{% url "origin_user_picture" %}', { credentials: 'include' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) { applyAvatar(d.url || DEFAULT_AVATAR); })
+        .catch(function()  { applyAvatar(DEFAULT_AVATAR); });
+    }
+
+    /* ============================================================
+       FIND A PARTNER — same endpoints/fields as onboarding.html:
+       POST {% url "origin_search_friend" %}  body: uuid=<public_searchable_username>
+       POST {% url "origin_add_friend" %}     body: userid=<public_searchable_username>
+
+       NOTE: SearchFriend.get() forwards to .post() and reads
+       request.POST — so this must stay a POST, not a real GET,
+       or request.POST['uuid'] will raise a KeyError server-side.
+       ============================================================ */
+    function relSearchState(which) {
+      ['relSearchLoading','relSearchFound','relSearchSent','relSearchNone','relSearchError'].forEach(function(id) {
+        var e = document.getElementById(id);
+        if (e) e.style.display = 'none';
+      });
+      var target = document.getElementById(which);
+      if (target) target.style.display = 'flex';
+    }
+
+    var lastFoundUserId = '';
+    var relSearchBtn = document.getElementById('relSearchBtn');
+    relSearchBtn && relSearchBtn.addEventListener('click', function() {
+      var code = document.getElementById('relSearchInput').value.trim();
+      if (!code) return;
+      relSearchState('relSearchLoading');
+      relSearchBtn.disabled = true;
+
+      var fd = new FormData();
+      fd.append('uuid', code);
+
+      fetch('{% url "origin_search_friend" %}', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        body: fd,
+        signal: AbortSignal.timeout(6000)
+      }).then(function(r) {
+        return r.json().then(function(d) { return { status: r.status, data: d }; });
+      }).then(function(res) {
+        relSearchBtn.disabled = false;
+        if (res.status >= 200 && res.status < 400 && res.data.userid) {
+          document.getElementById('relSearchName').textContent = res.data.username || '-';
+          document.getElementById('relSearchId').textContent   = '@' + (res.data.userid || '');
+          document.getElementById('relSearchAvatar').src       = res.data.profile_image || DEFAULT_AVATAR;
+          lastFoundUserId = res.data.userid;
+          relSearchState('relSearchFound');
+        } else if (res.status === 404) {
+          relSearchState('relSearchNone');
+        } else {
+          document.getElementById('relSearchErrMsg').textContent = res.data.message || 'Something went wrong.';
+          relSearchState('relSearchError');
+        }
+      }).catch(function() {
+        relSearchBtn.disabled = false;
+        document.getElementById('relSearchErrMsg').textContent = 'Request timed out. Try again.';
+        relSearchState('relSearchError');
+      });
+    });
+
+    var relSearchAddBtn = document.getElementById('relSearchAddBtn');
+    relSearchAddBtn && relSearchAddBtn.addEventListener('click', function() {
+      if (!lastFoundUserId) return;
+      relSearchAddBtn.disabled = true;
+      var fd = new FormData();
+      fd.append('userid', lastFoundUserId);
+
+      fetch('{% url "origin_add_friend" %}', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        body: fd
+      }).then(function(r) {
+        return r.json().then(function(d) { return { status: r.status, data: d }; });
+      }).then(function(res) {
+        relSearchAddBtn.disabled = false;
+        if (res.status === 200) {
+          relSearchState('relSearchSent');
+          // Outgoing-pending tab is now stale — reload it next time it's opened
+          SECTIONS_STATE.outPending.loaded = false;
+          SECTIONS_STATE.outPending.items = [];
+          SECTIONS_STATE.outPending.nextId = null;
+          if (document.getElementById('panel-outPending').classList.contains('on')) {
+            loadSection('outPending', false);
+          }
+        } else {
+          document.getElementById('relSearchErrMsg').textContent = res.data.message || 'Could not send request.';
+          relSearchState('relSearchError');
+        }
+      }).catch(function() {
+        relSearchAddBtn.disabled = false;
+        document.getElementById('relSearchErrMsg').textContent = 'Something went wrong.';
+        relSearchState('relSearchError');
+      });
+    });
+
+    /* ============================================================
+       TABS
+       ============================================================ */
+    var tabs = qsa('.rel-tab');
+    tabs.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        tabs.forEach(function(b) { b.classList.remove('on'); });
+        btn.classList.add('on');
+        qsa('.rel-panel').forEach(function(p) { p.classList.remove('on'); });
+        var panel = document.getElementById('panel-' + btn.dataset.key);
+        if (panel) panel.classList.add('on');
+        ensureLoaded(btn.dataset.key);
+      });
+    });
+
+    /* ============================================================
+       REQUEST SECTIONS
+       These 6 endpoints don't exist in urls.py yet — add matching
+       path()/name entries pointing at Friendship queries filtered by
+       from_user/to_user + status. Each must accept ?limit= & ?after_id=
+       and return JSON shaped:
+         { "results": [{ "userid", "username", "profile_image", "created_at" }, ...],
+           "next_id": <id or null>, "total": <int> }
+       ============================================================ */
+    var PAGE_SIZE = 10;
+
+    var SECTIONS = {
+      outPending: {
+        url: '/v1/relationship/sent/pending/',
+        emptyIcon: 'fa-paper-plane', emptyText: 'No pending outgoing requests.',
+        badge: 'pending', render: renderPlainCard
+      },
+      outRejected: {
+        url: '/v1/relationship/sent/rejected/',
+        emptyIcon: 'fa-xmark', emptyText: 'No rejected requests yet.',
+        badge: 'rejected', render: renderPlainCard
+      },
+      outAccepted: {
+        url: '/v1/relationship/sent/accepted/',
+        emptyIcon: 'fa-user-group', emptyText: 'No accepted partners from your sent requests yet.',
+        badge: 'accepted', render: renderUnpartnerCard
+      },
+      inPending: {
+        url: '/v1/relationship/received/pending/',
+        emptyIcon: 'fa-inbox', emptyText: 'No incoming requests right now.',
+        badge: 'pending', render: renderPlainCard
+      },
+      inAccepted: {
+        url: '/v1/relationship/received/accepted/',
+        emptyIcon: 'fa-user-check', emptyText: 'No partners yet.',
+        badge: 'accepted', render: renderRecordsCard
+      },
+      inRejected: {
+        url: '/v1/relationship/received/rejected/',
+        emptyIcon: 'fa-ban', emptyText: 'You have not rejected any requests.',
+        badge: 'rejected', render: renderPlainCard
+      }
+    };
+
+    var SECTIONS_STATE = {};
+    Object.keys(SECTIONS).forEach(function(k) {
+      SECTIONS_STATE[k] = { loaded: false, nextId: null, loading: false, items: [] };
+    });
+
+    function ensureLoaded(key) {
+      if (!SECTIONS_STATE[key].loaded) loadSection(key, false);
+    }
+
+    function loadSection(key, isLoadMore) {
+      var cfg = SECTIONS[key];
+      var st  = SECTIONS_STATE[key];
+      if (st.loading) return;
+      st.loading = true;
+
+      var list = document.getElementById('list-' + key);
+      var moreWrap = document.getElementById('more-' + key);
+
+      if (!isLoadMore) {
+        list.innerHTML = '';
+        for (var i = 0; i < 3; i++) list.appendChild(skeletonCard());
+      } else {
+        var loadingBtn = moreWrap.querySelector('button');
+        if (loadingBtn) { loadingBtn.disabled = true; loadingBtn.textContent = 'Loading...'; }
+      }
+
+      var qparams = 'limit=' + PAGE_SIZE + (isLoadMore && st.nextId ? '&after_id=' + encodeURIComponent(st.nextId) : '');
+      var sep = cfg.url.indexOf('?') === -1 ? '?' : '&';
+
+      fetch(cfg.url + sep + qparams, { credentials: 'include' })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, d: d }; }); })
+        .then(function(res) {
+          st.loading = false;
+          if (!res.ok || !Array.isArray(res.d.results)) {
+            showSectionError(key, res.d.message || 'Could not load this list.');
+            return;
+          }
+          st.loaded = true;
+          st.nextId = res.d.next_id || null;
+          if (!isLoadMore) list.innerHTML = '';
+
+          if (res.d.results.length === 0 && st.items.length === 0) {
+            list.appendChild(emptyState(cfg.emptyIcon, cfg.emptyText));
+          } else {
+            res.d.results.forEach(function(item, i) {
+              st.items.push(item);
+              var card = cfg.render(item, cfg.badge);
+              card.style.setProperty('--i', st.items.length + i);
+              list.appendChild(card);
+            });
+          }
+
+          var countEl = document.getElementById('cnt-' + key);
+          if (countEl) countEl.textContent = res.d.total != null ? res.d.total : st.items.length;
+
+          if (st.nextId) {
+            show(moreWrap);
+            var btn = moreWrap.querySelector('button');
+            btn.disabled = false;
+            btn.textContent = 'Load more';
+            btn.onclick = function() { loadSection(key, true); };
+          } else {
+            hide(moreWrap);
+          }
+        })
+        .catch(function() {
+          st.loading = false;
+          showSectionError(key, 'Network error. Check your connection and retry.');
+        });
+    }
+
+    function showSectionError(key, msg) {
+      var list = document.getElementById('list-' + key);
+      list.innerHTML = '';
+      var err = el('div', 'commit-error show');
+      err.innerHTML =
+        '<i class="fas fa-circle-exclamation" style="color:var(--bad);font-size:1.4rem;margin-bottom:0.6rem;display:block"></i>' +
+        '<p style="font-size:0.8rem;color:var(--ink2);margin-bottom:0.75rem">' + sanitize(msg) + '</p>' +
+        '<button class="btn btn-outline btn-sm"><i class="fas fa-rotate-right"></i> Retry</button>';
+      err.querySelector('button').addEventListener('click', function() { loadSection(key, false); });
+      list.appendChild(err);
+    }
+
+    function skeletonCard() {
+      return el('div', 'sk-card',
+        '<div style="display:flex;align-items:center;gap:0.75rem">' +
+          '<div class="sk sk-circle" style="width:42px;height:42px"></div>' +
+          '<div style="flex:1">' +
+            '<div class="sk sk-text w50" style="height:0.75rem;margin-bottom:0.3rem"></div>' +
+            '<div class="sk sk-text w30" style="height:0.65rem"></div>' +
+          '</div>' +
+        '</div>');
+    }
+
+    function emptyState(icon, text) {
+      var e = el('div', 'rel-empty');
+      e.innerHTML = '<i class="fas ' + icon + '"></i>' + sanitize(text);
+      return e;
+    }
+
+    function baseCard(item, badgeKind) {
+      var card = el('div', 'rel-card');
+      var img = el('img');
+      img.src = item.profile_image || DEFAULT_AVATAR;
+      img.onerror = function() { img.src = DEFAULT_AVATAR; };
+      var info = el('div', 'rel-card-info');
+      info.innerHTML =
+        '<div class="rel-card-name">' + sanitize(item.username || 'Unknown') + '</div>' +
+        '<div class="rel-card-sub">@' + sanitize(item.userid || '') +
+        (item.created_at ? ' · ' + timeAgo(item.created_at) : '') + '</div>';
+      var badge = el('span', 'rel-badge ' + badgeKind, badgeKind.charAt(0).toUpperCase() + badgeKind.slice(1));
+      card.appendChild(img);
+      card.appendChild(info);
+      card.appendChild(badge);
+      return { card: card, img: img };
+    }
+
+    function renderPlainCard(item, badgeKind) {
+      return baseCard(item, badgeKind).card;
+    }
+
+    function renderUnpartnerCard(item, badgeKind) {
+      var b = baseCard(item, badgeKind);
+      var actions = el('div', 'rel-card-actions');
+      var btn = el('button', 'btn btn-outline btn-sm', '<span class="btn-txt">Unpartner</span><span class="btn-spin"></span>');
+      btn.addEventListener('click', function() { requestUnpartner(item, btn); });
+      actions.appendChild(btn);
+      b.card.appendChild(actions);
+      return b.card;
+    }
+
+    function renderRecordsCard(item, badgeKind) {
+      var b = baseCard(item, badgeKind);
+      var actions = el('div', 'rel-card-actions');
+      var btn = el('a', 'btn btn-outline btn-sm', 'View Records');
+      // TODO: point this at your real per-partner records view once it exists
+      btn.href = '/v1/relationship/partner/' + encodeURIComponent(item.userid) + '/records/';
+      actions.appendChild(btn);
+      b.card.appendChild(actions);
+      return b.card;
+    }
+
+    /* ============================================================
+       UNPARTNER — GET request with query param, per spec.
+       TODO: add path('relationship/unpartner/', ..., name='origin_relationship_unpartner')
+       ============================================================ */
+    function requestUnpartner(item, btn) {
+      if (!confirm('Unpartner with @' + (item.userid || '') + '? This cannot be undone.')) return;
+      btn.disabled = true;
+      btn.classList.add('ob-loading');
+
+      var url = '/v1/relationship/unpartner/?userid=' + encodeURIComponent(item.userid);
+      fetch(url, {
+        method: 'GET',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        credentials: 'include'
+      }).then(function(r) {
+        return r.json().catch(function() { return {}; }).then(function(d) { return { status: r.status, data: d }; });
+      }).then(function(res) {
+        btn.disabled = false;
+        btn.classList.remove('ob-loading');
+        if (res.status === 200) {
+          toast('Unpartner request successful — refresh the page to see the change.', 'ok');
+        } else {
+          toast((res.data && res.data.message) || 'Could not unpartner right now. Please try again.', 'bad');
+        }
+      }).catch(function() {
+        btn.disabled = false;
+        btn.classList.remove('ob-loading');
+        toast('Network error — please try again.', 'bad');
+      });
+    }
+
+    /* ============================================================
+       QUOTE TICKER — same list/behavior as dashboard.html
+       ============================================================ */
+    var QUOTES = [
+      'Motivation fades. Discipline stays.',
+      'One honest sentence a day is all it takes.',
+      'The person you want to be is built on days like today.',
+      'No audience. No applause. Just you keeping promises to yourself.',
+      "Tomorrow's pride is paid for with today's discipline."
+    ];
+    function startQuoteTicker(node) {
+      if (!node) return;
+      var i = 0;
+      function tick() {
+        node.textContent = QUOTES[i % QUOTES.length];
+        node.classList.remove('tick'); void node.offsetWidth; node.classList.add('tick');
+        i++;
+      }
+      tick();
+      setInterval(tick, 6000);
+    }
+
+    /* ============================================================
+       INIT / REVEAL — same pattern as dashboard.html.
+       Spinner already handles window.load hide timing.
+       ============================================================ */
+    function reveal() {
+      var app = document.getElementById('relApp');
+      if (app) app.classList.add('rel-visible');
+    }
+
+    function init() {
+      startQuoteTicker(document.getElementById('hdrQuote'));
+      loadProfilePicture();
+      ensureLoaded('outPending'); // first visible tab
+    }
+
+    if (document.readyState === 'complete') {
+      reveal(); init();
+    } else {
+      window.addEventListener('load', function() { reveal(); init(); });
+      setTimeout(function() { reveal(); init(); }, 8000);
+    }
+
+    })();
+  </script>
+
+  <!-- Loader JS (handles its own hide on window.load + 8s fallback) -->
+  <script>{% include "reusables/spinner.js" %}</script>
+
+</body>
+</html>

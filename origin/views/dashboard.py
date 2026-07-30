@@ -5,8 +5,9 @@ from django.shortcuts import render, redirect
 from django.utils import timezone
 from ..models import Profile, Commitment, Entries
 from django.contrib import messages
+from django.http import JsonResponse
 
-
+from ..models import ChoicesValidatorInModels
 
 class Onboarding(LoginRequiredMixin, View):
     """PRE DASHBOARD"""
@@ -29,7 +30,9 @@ class ProfileSettings(LoginRequiredMixin, View):
             #incase user does not have tier configured and want to access this page, dont allow
             messages.warning(request, message="Please Finish your onboarding before accessing this page, head to login and sigin in with you creedentials and you will be taken to onboarding")
             return render(request, 'html/full_screen_message.html')
-        return render(request, 'html/profile.html')    
+        return render(request, 'html/profile.html', {
+            'tier': user_profile.tier,
+        })    
   
 class Dashboard(LoginRequiredMixin, View):
     """THE FIRST LANDING PAGE WHEN DASHBOARD IS CLICKED, COMES RIGHT AFTER ONBOARDING DONE ALSO"""
@@ -46,7 +49,8 @@ class Dashboard(LoginRequiredMixin, View):
         c_pct = sum(consistency_pct) / (len(consistency_pct)+1) #i added one to curb the issue of division by zero
         data = {
             'tier' : user_profile.tier,
-            'Upcoming_milestone': 6 - timezone.now().weekday(),
+            'zeal_score' : user_profile.zeal_score,
+            'Upcoming_milestone': 6 - timezone.now().weekday(), #This is to make sure user are celebrated weekly
             'ai_insight_active' : user_profile.ai_insight_active,
             'social_mode' : user_profile.social_mode,
             'total_active_commitments': commitment_istance.count(),
@@ -55,19 +59,41 @@ class Dashboard(LoginRequiredMixin, View):
              'theme_mode': request.COOKIES.get("sd-theme", user_profile.theme.lower()),
             
             'public_searchable_username ' : user_profile.public_searchable_username,
-            'zeal_score' : user_profile.zeal_score
             
         }
         return render(request, 'html/dashboard.html', data)
 
 
 class EachCommitmentView(LoginRequiredMixin, View):
-    """This is for viewing each commitment data, note and every other details based on A commitment"""
+    """This is for viewing each commitment data, note and every other details based on X commitment(ENTRIES)"""
     def get(self, request, commitment_key): return self.post(request, commitment_key=commitment_key)
     def post(self, request, commitment_key):
-        messages.info(request, message=f"This page for {request.user.username} with commitment id: {commitment_key} is still being built, Check back later")
-        return render(request, 'html/full_screen_message.html')
+        #get the instance i will need
+        profile_istance = Profile.objects.filter(user = request.user).first()
+        if profile_istance is None: return JsonResponse({'message': 'no profile attached to this account, please contact customer support ASAP'}, statu = 400)
+        commitment_istance = Commitment.objects.filter(user = request.user, pk = commitment_key).first()
+        
+        today_entry_istance = Entries.objects.filter(commitment_key__user = request.user, commit_at = timezone.datetime.now().date()).select_related('commitment_key').first()
+        
+        
+        return render(request, 'html/commitment_detail-entries.html',{
+            'theme-mode': request.COOKIES['sd-theme'],
+            'tier': profile_istance.tier,
+            'ai_insight_active': profile_istance.ai_insight_active,
+            'commitment':    commitment_istance,        # full model instance,
+            'commitment_id': commitment_istance.pk,     # int ; used by all JS API calls
+            'has_entry_today': today_entry_istance is not None,
+            'today_entry':     today_entry_istance,
+            'motion_list': ChoicesValidatorInModels().mood,         # list of strings, same as commitment page
+            
+        })
    
+class Relationship(LoginRequiredMixin, View):
+    def get(self, request):
+        return render(request, 'html/relationship.html', {'theme_mode': request.COOKIES['sd-theme']})
+
+
+
     
 class DashboardCommitmentView(LoginRequiredMixin, View):
     """The commitment page on dashboard contents"""
@@ -79,6 +105,13 @@ class DashboardCommitmentView(LoginRequiredMixin, View):
             #incase user does not have tier configured and want to access this page, dont allow
             messages.warning(request, message="Please Finish your onboarding before accessing this page, head to login and sigin in with you creedentials and you will be taken to onboarding")
             return render(request, 'html/full_screen_message.html')
-        return render(request, 'html/commitments.html', {'tier' : istance})
+        
+        open_add_commitment = request.GET.get('add', False)
+        return render(request, 'html/commitments.html', {
+            'tier' : istance,
+            'ai_insight_active': istance.ai_insight_active,
+            'add': open_add_commitment,
+            'motion_list': ['Happy', 'Sad', 'more happy', 'more sad', 'mix of balance']
+            })
     
     

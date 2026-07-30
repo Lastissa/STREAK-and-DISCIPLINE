@@ -79,7 +79,7 @@
           <a href="{% url "origin_dashboard" %}" class="aside-link active">
             <i class="fas fa-gauge-high"></i> Dashboard
           </a>
-          <a href="{% url "origin_dashboard" %}" class="aside-link">
+          <a href="{% url "origin_relationship" %}" class="aside-link">
             <i class="fas fa-gauge-high"></i> Relationship
           </a>
           <a href="{% url "origin_profile" %}" class="aside-link">
@@ -93,7 +93,7 @@
           <a href="/v1/groups/" class="aside-link">
             <i class="fas fa-users"></i> Groups
           </a>
-          <a href="/v1/leaderboard/" class="aside-link">
+          <a href="{% url "origin_leaderboard" %}" class="aside-link">
             <i class="fas fa-ranking-star"></i> Leaderboard
           </a>
           <a href="/v1/blog/" class="aside-link">
@@ -728,7 +728,7 @@
     };
 
     function loadCommitments() {
-      fetch('{% url "get_commitment_data" %}', { credentials: 'include' })
+      fetch('{% url "origin_commitment_data" %}', { credentials: 'include' })
         .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, d: d }; }); })
         .then(function(res) {
           if (!res.ok) {

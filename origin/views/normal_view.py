@@ -84,36 +84,6 @@ class Reports(View):
 
 
 
-class SearchFriend(LoginRequiredMixin,View):#This one is specifically only for logged in user
-    login_url = '/v1/login/'
-    def get(self, request): return self.post(request)
-    def post(self, request):
-        data = request.POST['uuid']
-        friend_search = Profile.objects.filter(public_searchable_username__iexact = data).last()
-        if friend_search:
-            userid = friend_search.public_searchable_username
-            username = friend_search.user.username
-            profile_image = ''
-            status_code = 200
-        else:
-            userid, username, profile_image = None, None, ''
-            status_code = 404
-        return JsonResponse({
-            'userid' : userid,                        #use username + dabatase pk to make it unique
-            'username' : username,
-            'profile_image' : profile_image,
-        }, status = status_code)
-        
-class AddFriend(LoginRequiredMixin, View):
-    login_url = '/v1/login'
-    def get(self, request):return self.post(request)
-    def post(self, request):
-        incoming_user_id = request.POST['userid']
-        req = helper_with_friendship_request_answer(request=request, to_user = incoming_user_id.strip())
-        print(req)
-        if req is None: return JsonResponse({'message': 'success, requst resend successfuly'}, status = 200)
-        else: return req
-
 
 class TestSearch(View):
     def get(self, request):return render(request, 'html/test_friend_search.html')
@@ -212,6 +182,7 @@ class PartnerWidget(LoginRequiredMixin, View):
         
 
 class BlogView(View):
+    """The one in charge of showing the general blog page"""
     login_url = '/v1/login/'
     
     def get(self, request):
@@ -315,8 +286,7 @@ class BlogView(View):
 class BlogViewExpanded(View):
     def get(self, request):
         """When usr click on that blog and they want to see the content, colect the blog id from user as extra sub endpoint"""
-        pass
-
+    
 
 #Json ONly response
 class GetLeaderBoardData(View):
@@ -353,72 +323,3 @@ class GetLeaderBoardData(View):
         })
         
         
-
-class CreateCommitment(LoginRequiredMixin, View):
-    login_url = '/v1/login/'
-    
-    def post(self, request):
-        try: data = json.loads(request.body)
-        except json.JSONDecodeError:return JsonResponse({'message': 'Invalid JSON.'}, status=400)
-        
-        # Extract fields
-        what = data.get('what', '').strip()
-        category = data.get('category', 'other').strip().lower()
-        why = data.get('why', '').strip()
-        minimum = data.get('minimum', '').strip()
-        goal_days = data.get('goal_days', 365)
-        checkin_time = data.get('checkin_time', '21:00')
-        reminder_enabled = data.get('reminder_enabled', True)
-        reminder_time = data.get('reminder_time', '20:30')
-        reminder_method = data.get('reminder_method', 'email').strip().lower()
-        whatsapp_number = data.get('whatsapp_number', '').strip()
-        
-        # Validate required fields
-        if not what: return JsonResponse({'message': 'Please describe your commitment.'}, status=400)
-        if not why:return JsonResponse({'message': 'Please write your reason.'}, status=400)
-        
-        # Validate reminder_time is provided when reminder is enabled
-        if reminder_enabled and not reminder_time: return JsonResponse({'message': 'Reminder time is required when reminders are enabled.'}, status=400)
-        
-        # Validate whatsapp_number is provided when method is whatsapp
-        if reminder_method == 'whatsapp' and not whatsapp_number: return JsonResponse({'message': 'WhatsApp number is required when WhatsApp reminders are selected.'}, status=400)
-        
-        # Validate category
-        validator = ChoicesValidatorInModels()
-        if category not in validator.commitment_category:category = 'other'
-        
-        # Validate reminder method
-        if reminder_method not in validator.report_delivery_mode: reminder_method = 'email'
-        
-        # Clean WhatsApp number — only store if method is whatsapp
-        if reminder_method != 'whatsapp': whatsapp_number = ''
-        else:
-            # Strip spaces, dashes, parentheses
-            whatsapp_number = whatsapp_number.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
-            if not whatsapp_number.startswith('+'):
-                return JsonResponse({'message': 'invalid watsappp number; +xxxxx.. where x are number are the only allowed'})
-                
-        # Create the commitment
-        try:
-            commitment = Commitment.objects.create(
-                user=request.user,
-                what=what,
-                category=category,
-                why=why,
-                minimum_effort=minimum,
-                goal_days=goal_days,
-                checkin_time=checkin_time,
-                reminder_active=reminder_enabled,
-                user_selected_reminder_time=reminder_time,
-                mode_of_delivery=reminder_method,
-                whatsapp_number=whatsapp_number,
-            )
-            return JsonResponse({
-                'message': 'Commitment created successfully!',
-                'commitment_id': commitment.pk,
-            }, status=201)
-            
-        except Profile.DoesNotExist:
-            return JsonResponse({'message': 'Profile not found. Please complete onboarding first.'}, status=400)
-        except Exception as e:
-            return JsonResponse({'message': f'Error creating commitment. Please try again.'}, status=500)

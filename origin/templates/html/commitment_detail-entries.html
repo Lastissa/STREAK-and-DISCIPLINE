@@ -1,0 +1,1173 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include "reusables/web_icon.html" %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{{ commitment.what|truncatechars:45 }} — STREAK &amp; DISCIPLINE</title>
+
+  <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
+
+  <style>
+    {% include "reusables/spinner.css" %}
+    html,body{margin:0;padding:0;background:#060b14}
+    body.sd-light{background:#f0f4fa}
+    .cd-app{opacity:0;visibility:hidden;transition:opacity .6s ease,visibility .6s ease}
+    .cd-app.cd-visible{opacity:1;visibility:visible}
+  </style>
+
+  <link rel="stylesheet" href="{% static 'css/commitment_detail_light.css' %}">
+  <link rel="preload" href="{% static 'cdn/commitment_detail_advance.css' %}" as="style"
+        onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="{% static 'cdn/commitment_detail_advance.css' %}"></noscript>
+</head>
+<body class="sd-{{ theme_mode }}">
+
+  {% include "reusables/spinner.html" %}
+
+  <div class="cd-app" id="cdApp">
+
+    <!-- Mobile aside overlay -->
+    <div class="aside-overlay" id="asideOverlay"></div>
+
+    <!-- ================================================
+         ASIDE
+         ================================================ -->
+    <aside class="db-aside no-print" id="dbAside">
+      <div class="aside-scroll">
+        <div class="aside-top">
+          <div class="aside-avatar-wrap" id="asideAvatarWrap">
+            <div class="sk sk-circle" style="width:52px;height:52px" id="asideAvatarSk"></div>
+          </div>
+          <div class="aside-username">{{ request.user.username }}</div>
+          <div class="aside-email">{{ request.user.email }}</div>
+          <span class="tier-badge tier-{{ tier|default:'free' }}">
+            {% if tier == 'gold' %}<i class="fas fa-crown"></i> Gold
+            {% elif tier == 'premium' %}<i class="fas fa-gem"></i> Premium
+            {% else %}<i class="fas fa-user"></i> Free{% endif %}
+          </span>
+        </div>
+        <nav class="aside-nav" aria-label="Main navigation">
+          <div class="aside-section-lbl">Navigation</div>
+          <a href="/v1/dashboard/"    class="aside-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
+          <a href="/v1/profile/"      class="aside-link"><i class="fas fa-circle-user"></i> Profile</a>
+          <a href="/v1/commitments/"  class="aside-link active" aria-current="page">
+            <i class="fas fa-fire-flame-curved"></i> My Commitments</a>
+          <div class="aside-section-lbl" style="margin-top:.5rem">Community</div>
+          <a href="/v1/groups/"       class="aside-link"><i class="fas fa-users"></i> Groups</a>
+          <a href="/v1/leaderboard/"  class="aside-link"><i class="fas fa-ranking-star"></i> Leaderboard</a>
+          <a href="{% url 'origin_blog' %}" class="aside-link"><i class="fas fa-newspaper"></i> Blog &amp; Updates</a>
+          <div class="aside-section-lbl" style="margin-top:.5rem">Insights</div>
+          <a href="/v1/reports/"      class="aside-link"><i class="fas fa-chart-line"></i> Analytics &amp; Reports</a>
+          {% if ai_insight_active %}
+          <a href="/v1/insights/"     class="aside-link"><i class="fas fa-microchip"></i> AI Insights</a>
+          {% endif %}
+          <div class="aside-section-lbl" style="margin-top:.5rem">Others</div>
+          <a href="{% url 'origin_extra' %}#help"   class="aside-link"><i class="fas fa-circle-question"></i> Help</a>
+          <a href="{% url 'origin_extra' %}#policy" class="aside-link"><i class="fas fa-shield-halved"></i> Privacy Policy</a>
+          <a href="{% url 'origin_extra' %}#terms"  class="aside-link"><i class="fas fa-file-contract"></i> Terms</a>
+          <hr class="aside-sep">
+          <div class="aside-support-lbl">Support</div>
+          <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_blank" rel="noopener" class="aside-link">
+            <i class="fab fa-whatsapp"></i> WhatsApp Support</a>
+          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link"><i class="fas fa-envelope"></i> Email Support</a>
+          <a href="tel:{{ customer_care_phone_number }}" class="aside-link">
+            <i class="fas fa-phone"></i> {{ customer_care_phone_number }}</a>
+        </nav>
+        {% if not tier or tier == 'free' %}
+        <div class="aside-upgrade">
+          <h4><i class="fas fa-gem"></i> Upgrade to Pro</h4>
+          <p>Unlimited commitments, AI insights, WhatsApp reminders &amp; custom reports.</p>
+          <a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm btn-full">Start 7-Day Trial</a>
+        </div>
+        {% endif %}
+      </div>
+      <div class="aside-logout">
+        <button class="aside-logout-btn" id="logoutBtn">
+          <i class="fas fa-right-from-bracket"></i> Log Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- ================================================
+         HEADER
+         ================================================ -->
+    <header class="db-header no-print">
+      <div class="hdr-left">
+        <div class="hdr-avatar" id="hdrAvatarWrap" role="button" tabindex="0" title="Toggle menu">
+          <div class="sk sk-circle" style="width:32px;height:32px" id="hdrAvatarSk"></div>
+        </div>
+        <span class="hdr-brand">STREAK &amp; DISCIPLINE</span>
+      </div>
+      <div class="hdr-quote" id="hdrQuote" aria-live="polite"></div>
+      <div class="hdr-right">
+        <button class="hdr-btn" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
+          <i class="fas fa-moon" id="themeIcon"></i>
+        </button>
+        <button class="hdr-btn hdr-hamburger" id="hamburgerBtn" aria-label="Open navigation">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- ================================================
+         MAIN
+         ================================================ -->
+    <div class="cd-wrap">
+      <main class="cd-main">
+
+        <!-- Back nav -->
+        <div class="cd-back-nav">
+          <a href="/v1/commitments/" class="cd-back-link">
+            <i class="fas fa-arrow-left"></i> My Commitments
+          </a>
+          <span class="cd-breadcrumb" id="cdBreadcrumb">
+            {{ commitment.category }} / {{ commitment.what|truncatechars:32 }}
+          </span>
+        </div>
+
+        <!-- ──────────────────────────────────────────────
+             HERO
+             ────────────────────────────────────────────── -->
+        <section class="cd-hero" id="cdHero">
+          <div class="cd-hero__bar" id="cdHeroBar"></div>
+          <div class="cd-hero__inner">
+
+            <div class="cd-hero__left">
+              <div class="cd-cat-orb {{ commitment.category }}" id="cdCatOrb">
+                <i class="fas" id="cdCatIcon"></i>
+              </div>
+              <div class="cd-hero__text">
+                <div class="cd-hero__cat" id="cdHeroCat">{{ commitment.category }}</div>
+                <h1 class="cd-hero__what">{{ commitment.what }}</h1>
+                <div class="cd-hero__meta">
+                  <span class="cd-status-badge {% if commitment.is_active %}active{% else %}inactive{% endif %}">
+                    {% if commitment.is_active %}
+                      <i class="fas fa-circle" style="font-size:.45rem"></i> Active
+                    {% else %}
+                      Inactive
+                    {% endif %}
+                  </span>
+                  <span class="cd-meta-sep">·</span>
+                  <span class="cd-meta-txt">
+                    Started {{ commitment.created_at|date:"M d, Y" }}
+                  </span>
+                  {% if commitment.goal_days > 0 %}
+                  <span class="cd-meta-sep">·</span>
+                  <span class="cd-meta-txt" id="cdDaysLeft">— days left</span>
+                  {% else %}
+                  <span class="cd-meta-sep">·</span>
+                  <span class="cd-meta-txt"><i class="fas fa-infinity"></i> Lifelong</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <div class="cd-hero__right">
+              <div class="cd-streak-orb">
+                <span class="cd-streak-fire">🔥</span>
+                <span class="cd-streak-num" id="cdStreakNum"
+                      data-val="{{ commitment.streak_count }}">0</span>
+                <span class="cd-streak-lbl">day streak</span>
+              </div>
+              {% if commitment.goal_days > 0 %}
+              <div class="cd-ring-wrap">
+                <svg class="cd-prog-ring" viewBox="0 0 60 60" aria-hidden="true">
+                  <circle class="cd-ring-bg"  cx="30" cy="30" r="26"/>
+                  <circle class="cd-ring-arc" cx="30" cy="30" r="26"
+                    id="cdRingArc"
+                    stroke="{{ commitment.category|default:'other'|lower }}"
+                    stroke-dasharray="0 163.4"/>
+                </svg>
+                <div class="cd-ring-label" id="cdRingLabel">0%</div>
+              </div>
+              {% endif %}
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ──────────────────────────────────────────────
+             TWO-COLUMN GRID
+             ────────────────────────────────────────────── -->
+        <div class="cd-grid">
+
+          <!-- ── LEFT COLUMN ───────────────────────────── -->
+          <div class="cd-col-main">
+
+            <!-- TODAY'S ENTRY CARD -->
+            <section class="cd-card" id="cdEntryCard" style="--i:.05s">
+
+              <div class="cd-card-header">
+                <div class="cd-card-title">
+                  <i class="fas fa-pen-nib"></i>
+                  <span id="cdEntryCardTitle">Today's Entry</span>
+                </div>
+                <span id="cdEntryDateChip"
+                      style="font-size:.7rem;color:var(--ink3);font-weight:500"></span>
+              </div>
+
+              <!-- ── DONE STATE ── -->
+              {% if has_entry_today and today_entry %}
+              <div class="cd-entry-done" id="cdEntryDone">
+                <div class="cd-done-header">
+                  <div class="cd-done-badge"><i class="fas fa-check"></i> Logged today</div>
+                  <button class="btn btn-ghost btn-sm" id="cdEditBtn">
+                    <i class="fas fa-pen"></i> Edit
+                  </button>
+                </div>
+                <p class="cd-done-content" id="cdDoneContent">{{ today_entry.content }}</p>
+                <div class="cd-done-meta">
+                  {% if today_entry.mood %}
+                  <span class="cd-done-mood">{{ today_entry.mood }}</span>
+                  {% endif %}
+                  <span class="cd-done-wc">{{ today_entry.word_count }} words</span>
+                  {% if today_entry.rating %}
+                  <span class="cd-done-rating">
+                    {% for i in "12345" %}
+                    <span style="color:{% if today_entry.rating >= forloop.counter %}var(--gold){% else %}var(--surf3){% endif %}">★</span>
+                    {% endfor %}
+                  </span>
+                  {% endif %}
+                </div>
+              </div>
+              {% else %}
+              <div id="cdEntryDone" class="cd-entry-done" style="display:none"></div>
+              {% endif %}
+
+              <!-- ── ENTRY FORM ── -->
+              <div class="cd-entry-form {% if has_entry_today %}hidden{% endif %}" id="cdEntryForm">
+
+                <div class="cd-entry-date-row">
+                  <div class="cd-entry-date" id="cdEntryDateLabel"></div>
+                  <button class="cd-prompt-btn" id="cdPromptBtn" type="button" title="Get a writing prompt">
+                    <i class="fas fa-lightbulb"></i> Prompt
+                  </button>
+                </div>
+
+                <!-- Writing prompt (hidden by default, revealed on button click) -->
+                <div class="cd-prompt-box hidden" id="cdPromptBox"></div>
+
+                {% if commitment.minimum_effort %}
+                <div class="cd-min-hint">
+                  <i class="fas fa-circle-info"></i>
+                  <span><strong>Minimum:</strong> {{ commitment.minimum_effort }}</span>
+                </div>
+                {% endif %}
+
+                <textarea
+                  class="cd-textarea"
+                  id="cdTextarea"
+                  placeholder="How did it go today? Be honest with yourself — this is only for you."
+                  rows="5"
+                  aria-label="Today's entry"
+                ></textarea>
+                <div class="cd-textarea-foot">
+                  <span class="cd-wc" id="cdWc">0 words</span>
+                </div>
+
+                <!-- Mood picker -->
+                <div class="cd-mood-section">
+                  <div class="cd-mood-lbl">How are you feeling right now?</div>
+                  <div class="cd-mood-chips" id="cdMoodChips" role="group" aria-label="Mood">
+                    {% for word in motion_list %}
+                    <button class="cd-mood-chip" data-mood="{{ word }}" type="button">{{ word }}</button>
+                    {% empty %}
+                    <button class="cd-mood-chip" data-mood="focused"     type="button">focused</button>
+                    <button class="cd-mood-chip" data-mood="determined"  type="button">determined</button>
+                    <button class="cd-mood-chip" data-mood="tired"       type="button">tired</button>
+                    <button class="cd-mood-chip" data-mood="motivated"   type="button">motivated</button>
+                    <button class="cd-mood-chip" data-mood="calm"        type="button">calm</button>
+                    <button class="cd-mood-chip" data-mood="proud"       type="button">proud</button>
+                    <button class="cd-mood-chip" data-mood="struggling"  type="button">struggling</button>
+                    <button class="cd-mood-chip" data-mood="strong"      type="button">strong</button>
+                    <button class="cd-mood-chip" data-mood="hopeful"     type="button">hopeful</button>
+                    <button class="cd-mood-chip" data-mood="distracted"  type="button">distracted</button>
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <!-- Rating (1-5) — requires rating field on Entry model -->
+                <div class="cd-rating-section">
+                  <div class="cd-rating-lbl">Rate today's effort</div>
+                  <div class="cd-stars" id="cdStars" role="group" aria-label="Effort rating 1 to 5">
+                    <button class="cd-star" data-val="1" type="button" aria-label="1 — poor">★</button>
+                    <button class="cd-star" data-val="2" type="button" aria-label="2 — below average">★</button>
+                    <button class="cd-star" data-val="3" type="button" aria-label="3 — average">★</button>
+                    <button class="cd-star" data-val="4" type="button" aria-label="4 — good">★</button>
+                    <button class="cd-star" data-val="5" type="button" aria-label="5 — outstanding">★</button>
+                  </div>
+                </div>
+
+                <div class="cd-entry-actions">
+                  <button class="btn btn-ghost btn-sm hidden" id="cdCancelEditBtn" type="button">
+                    Cancel
+                  </button>
+                  <button class="btn btn-primary" id="cdSubmitBtn" type="button">
+                    <span class="btn-txt"><i class="fas fa-check"></i> Log Today</span>
+                    <span class="btn-spin"></span>
+                  </button>
+                </div>
+
+              </div><!-- /cd-entry-form -->
+            </section>
+
+            <!-- 7-DAY HEATMAP CARD -->
+            <section class="cd-card" id="cdHeatmapCard" style="--i:.15s">
+              <div class="cd-card-header">
+                <div class="cd-card-title">
+                  <i class="fas fa-calendar-week"></i> Last 7 Days
+                </div>
+                <span style="font-size:.68rem;color:var(--ink3)" id="cdHeatLegend">
+                  darker = more words
+                </span>
+              </div>
+              <!-- Skeletons -->
+              <div class="cd-heat-sk-grid" id="cdHeatSkGrid">
+                {% for i in "1234567" %}
+                <div class="sk cd-heat-sk-cell"></div>
+                {% endfor %}
+              </div>
+              <!-- Real cells injected by JS -->
+              <div class="cd-heat-cells hidden" id="cdHeatCells"></div>
+            </section>
+
+          </div><!-- /cd-col-main -->
+
+          <!-- ── RIGHT COLUMN ──────────────────────────── -->
+          <div class="cd-col-side">
+
+            <!-- DETAILS CARD -->
+            <section class="cd-card" id="cdDetailsCard" style="--i:.1s">
+              <div class="cd-card-header">
+                <div class="cd-card-title"><i class="fas fa-circle-info"></i> Details</div>
+              </div>
+              <div class="cd-details-body">
+
+                <!-- Stats mini row -->
+                <div class="cd-stats-mini">
+                  <div class="cd-stat-mini">
+                    <div class="cd-stat-mini-n" id="cdStatDays">—</div>
+                    <div class="cd-stat-mini-l">Days in</div>
+                  </div>
+                  <div class="cd-stat-mini">
+                    <div class="cd-stat-mini-n" id="cdStatLeft">
+                      {% if commitment.goal_days > 0 %}—{% else %}∞{% endif %}
+                    </div>
+                    <div class="cd-stat-mini-l">Days left</div>
+                  </div>
+                  <div class="cd-stat-mini">
+                    <div class="cd-stat-mini-n" id="cdStatPct">—</div>
+                    <div class="cd-stat-mini-l">Complete</div>
+                  </div>
+                </div>
+
+                <!-- Goal progress bar -->
+                {% if commitment.goal_days > 0 %}
+                <div class="cd-detail-row">
+                  <div class="cd-detail-lbl">Goal Progress</div>
+                  <div class="cd-goal-bar-wrap">
+                    <div class="cd-goal-bar-track">
+                      <div class="cd-goal-bar-fill" id="cdGoalBarFill" style="width:0%"></div>
+                    </div>
+                    <div class="cd-goal-meta">
+                      <span>{{ commitment.streak_count }} days done</span>
+                      <span>{{ commitment.goal_days }} days goal</span>
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
+
+                <!-- Why -->
+                {% if commitment.why %}
+                <div class="cd-detail-row">
+                  <div class="cd-detail-lbl">Why this matters</div>
+                  <div class="cd-detail-val">{{ commitment.why }}</div>
+                </div>
+                {% endif %}
+
+                <!-- Minimum effort -->
+                {% if commitment.minimum_effort %}
+                <div class="cd-detail-row">
+                  <div class="cd-detail-lbl">Minimum effort</div>
+                  <div class="cd-detail-val cd-detail-min">
+                    <i class="fas fa-circle-check" style="color:var(--ok)"></i>
+                    {{ commitment.minimum_effort }}
+                  </div>
+                </div>
+                {% endif %}
+
+                <!-- Last check-in -->
+                {% if commitment.last_check_in %}
+                <div class="cd-detail-row">
+                  <div class="cd-detail-lbl">Last check-in</div>
+                  <div class="cd-detail-val" style="font-size:.78rem;color:var(--ink2)">
+                    {{ commitment.last_check_in|date:"D, M d Y — g:i A" }}
+                  </div>
+                </div>
+                {% endif %}
+
+                <!-- Daily check-in time -->
+                <div class="cd-detail-row">
+                  <div class="cd-detail-lbl">Check-in time</div>
+                  <div class="cd-detail-val" style="font-size:.78rem;color:var(--ink2)">
+                    <i class="fas fa-clock" style="color:var(--ink3)"></i>
+                    {{ commitment.checkin_time|time:"g:i A" }}
+                  </div>
+                </div>
+
+              </div>
+            </section>
+
+            <!-- SETTINGS CARD (accordion) -->
+            <section class="cd-card" id="cdSettingsCard" style="--i:.2s">
+
+              <button class="cd-settings-toggle" id="cdSettingsToggle"
+                      aria-expanded="false" aria-controls="cdSettingsBody">
+                <span><i class="fas fa-sliders"></i> Commitment Settings</span>
+                <i class="fas fa-chevron-down cd-settings-chevron" id="cdSettingsChevron"></i>
+              </button>
+
+              <div class="cd-settings-body" id="cdSettingsBody" aria-hidden="true">
+
+                <!-- Check-in time -->
+                <div>
+                  <label class="cd-set-label" for="cdsCheckinTime">Daily check-in time</label>
+                  <select class="cd-set-input" id="cdsCheckinTime"></select>
+                </div>
+
+                <!-- Reminder toggle -->
+                <div class="cd-toggle-row">
+                  <span>Send me reminders</span>
+                  <label class="cd-switch">
+                    <input type="checkbox" id="cdsReminderOn"
+                           {% if commitment.reminder_active %}checked{% endif %}>
+                    <span class="cd-sw-track"><span class="cd-sw-thumb"></span></span>
+                  </label>
+                </div>
+
+                <div id="cdsReminderFields">
+                  <!-- Reminder time -->
+                  <div style="margin-bottom:.85rem">
+                    <label class="cd-set-label" for="cdsReminderTime">Reminder time</label>
+                    <select class="cd-set-input" id="cdsReminderTime"></select>
+                  </div>
+
+                  <!-- Delivery method -->
+                  <div>
+                    <label class="cd-set-label" style="margin-bottom:.4rem">Delivery method</label>
+                    <div class="cd-method-grid" id="cdsMethodGrid" role="group">
+                      <div class="cd-method-card {% if commitment.mode_of_delivery == 'email' %}on{% endif %}"
+                           data-method="email" tabindex="0" role="button">
+                        <i class="fas fa-envelope"></i><span>Email</span>
+                      </div>
+                      <div class="cd-method-card {% if commitment.mode_of_delivery == 'whatsapp' %}on{% endif %}"
+                           data-method="whatsapp" tabindex="0" role="button">
+                        <i class="fab fa-whatsapp"></i><span>WhatsApp</span>
+                      </div>
+                      <div class="cd-method-card {% if commitment.mode_of_delivery == 'push' %}on{% endif %}"
+                           data-method="push" tabindex="0" role="button">
+                        <i class="fas fa-bell"></i><span>Push</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- WhatsApp number (shown when method = whatsapp) -->
+                  <div id="cdsWaWrap"
+                       style="margin-top:.75rem;{% if commitment.mode_of_delivery != 'whatsapp' %}display:none{% endif %}">
+                    <label class="cd-set-label" for="cdsWaNum">WhatsApp number</label>
+                    <input type="tel" class="cd-set-input" id="cdsWaNum"
+                           value="{{ commitment.whatsapp_number }}"
+                           placeholder="+2348000000000">
+                  </div>
+                </div>
+
+                <!-- Save + Danger -->
+                <div style="display:flex;align-items:center;justify-content:space-between;
+                            gap:.5rem;padding-top:.5rem;border-top:1px solid var(--edge);flex-wrap:wrap">
+                  <button class="btn btn-primary btn-sm" id="cdsSaveBtn" type="button">
+                    <span class="btn-txt"><i class="fas fa-floppy-disk"></i> Save Changes</span>
+                    <span class="btn-spin"></span>
+                  </button>
+                  <button class="btn btn-bad btn-sm" id="cdsArchiveBtn" type="button">
+                    <i class="fas fa-box-archive"></i> Archive
+                  </button>
+                </div>
+
+              </div><!-- /cd-settings-body -->
+            </section>
+
+          </div><!-- /cd-col-side -->
+        </div><!-- /cd-grid -->
+
+      </main>
+    </div><!-- /cd-wrap -->
+
+  </div><!-- /cd-app -->
+
+  <!-- TOAST -->
+  <div class="cm-toast" id="cmToast" role="alert" aria-live="assertive" aria-atomic="true">
+    <i class="cm-toast-icon fas fa-fire" id="cmToastIcon" aria-hidden="true"></i>
+    <span class="cm-toast-msg" id="cmToastMsg"></span>
+    <button class="cm-toast-close" id="cmToastClose" aria-label="Dismiss"><i class="fas fa-xmark"></i></button>
+  </div>
+
+  <!-- Logout form -->
+  <form method="POST" action="{% url 'origin_logout' %}" id="logoutForm" style="display:none">
+    {% csrf_token %}
+  </form>
+
+  <script>{% include "reusables/spinner.js" %}</script>
+
+  <!-- ============================================================
+       APPLICATION SCRIPT
+       ============================================================ -->
+  <script>
+  (function(){
+    'use strict';
+
+    /* ============================================================
+       DJANGO CONTEXT → JS
+       ============================================================ */
+    var CID              = {{ commitment_id }};
+    var STREAK           = {{ commitment.streak_count }};
+    var GOAL_DAYS        = {{ commitment.goal_days }};
+    var CREATED_AT       = '{{ commitment.created_at|date:"Y-m-d" }}';
+    var CATEGORY         = '{{ commitment.category }}';
+    var HAS_ENTRY_TODAY  = {% if has_entry_today %}true{% else %}false{% endif %};
+    var TODAY_ENTRY_ID   = {% if has_entry_today and today_entry %}{{ today_entry.id }}{% else %}null{% endif %};
+    var TODAY_ENTRY_CONTENT = {% if has_entry_today and today_entry %}'{{ today_entry.content|escapejs }}'{% else %}null{% endif %};
+    var TODAY_ENTRY_MOOD = {% if has_entry_today and today_entry %}'{{ today_entry.mood|escapejs }}'{% else %}null{% endif %};
+    var TODAY_ENTRY_RATING = {% if has_entry_today and today_entry and today_entry.rating %}{{ today_entry.rating }}{% else %}null{% endif %};
+    var CHECKIN_TIME_RAW = '{{ commitment.checkin_time|time:"H:i" }}';
+    var REMINDER_TIME_RAW= '{{ commitment.user_selected_reminder_time|time:"H:i"|default:"20:00" }}';
+    var REMINDER_ACTIVE  = {% if commitment.reminder_active %}true{% else %}false{% endif %};
+    var MODE             = '{{ commitment.mode_of_delivery }}';
+    var IS_EDITING       = false;  /* tracks whether we're editing an existing entry */
+
+    /* ============================================================
+       API ENDPOINTS  (dummy — change later)
+       ============================================================ */
+    var API = {
+      heatmap:      '/api/v1/commitments/' + CID + '/heatmap/',
+      entryCreate:  '/api/v1/commitments/' + CID + '/entry/create/',
+      entryUpdate:  function(id){ return '/api/v1/commitments/' + CID + '/entry/' + id + '/update/'; },
+      settings:     '/api/v1/commitments/' + CID + '/settings/'
+    };
+
+    /* ============================================================
+       CATEGORY CONFIG
+       ============================================================ */
+    var CAT_ICON = {
+      fitness:'fa-dumbbell', study:'fa-book-open', work:'fa-briefcase',
+      health:'fa-heart-pulse', mindset:'fa-brain', growth:'fa-seedling', other:'fa-ellipsis'
+    };
+    var CAT_COLOR = {
+      fitness:'#ef4444', study:'#3b82f6', health:'#22c55e',
+      mindset:'#a855f7', growth:'#f59e0b', work:'#fb923c', other:'#64748b'
+    };
+
+    /* ============================================================
+       WRITING PROMPTS
+       ============================================================ */
+    var PROMPTS = [
+      'What was the hardest moment today, and how did you handle it?',
+      'What\'s one thing you did better than yesterday?',
+      'Describe today in three honest words. Why those three?',
+      'Did you push past the minimum today? What made the difference?',
+      'What would you tell yourself before starting today, knowing what you know now?',
+      'Rate your focus today. What pulled your attention away?',
+      'What did showing up today cost you — and was it worth it?',
+      'What story did you almost tell yourself to skip today?',
+      'What would not doing this have felt like tonight?',
+      'What is today\'s entry teaching you about who you\'re becoming?'
+    ];
+
+    var QUOTES = [
+      'Motivation fades. Discipline stays.',
+      'The person you want to be is built on days like today.',
+      "Tomorrow's pride is paid for with today's discipline.",
+      "Small, consistent actions rewrite who you are.",
+      "You can't think your way into discipline. You act your way into it.",
+      "Don't break the chain. Not today.",
+      "He who conquers himself conquers all."
+    ];
+
+    /* ============================================================
+       HELPERS
+       ============================================================ */
+    function qs(sel, ctx){ return (ctx||document).querySelector(sel); }
+    function qsa(sel, ctx){ return (ctx||document).querySelectorAll(sel); }
+    function hide(el){ if(el) el.classList.add('hidden'); }
+    function show(el){ if(el) el.classList.remove('hidden'); }
+    function getCookie(n){ var m=document.cookie.match('(?:^|;)\\s?'+n+'=([^;]*)'); return m?decodeURIComponent(m[1]):''; }
+    function setCookie(n,v,d){ var dt=new Date(); dt.setDate(dt.getDate()+(d||365));
+      document.cookie=n+'='+encodeURIComponent(v)+';path=/;expires='+dt.toUTCString(); }
+    function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function countWords(s){ return s.trim()==='' ? 0 : s.trim().split(/\s+/).length; }
+
+    function formatTime12(h,m){
+      var ap=h>=12?'PM':'AM', hh=h%12||12;
+      return hh+':'+(m===0?'00':'30')+' '+ap;
+    }
+    function populateTime(id, defaultVal){
+      var sel=document.getElementById(id); if(!sel) return;
+      sel.innerHTML='';
+      for(var h=0;h<24;h++){
+        for(var m=0;m<60;m+=30){
+          var val=(h<10?'0':'')+h+':'+(m===0?'00':'30');
+          var opt=document.createElement('option');
+          opt.value=val; opt.textContent=formatTime12(h,m);
+          if(val===defaultVal) opt.selected=true;
+          sel.appendChild(opt);
+        }
+      }
+    }
+
+    /* ============================================================
+       REVEAL
+       ============================================================ */
+    function reveal(){
+      var app=document.getElementById('cdApp');
+      if(app) app.classList.add('cd-visible');
+    }
+
+    /* ============================================================
+       QUOTE
+       ============================================================ */
+    (function(){
+      var el=document.getElementById('hdrQuote'); if(!el) return;
+      var idx=(new Date().getDate()+new Date().getMonth()*31)%QUOTES.length;
+      el.textContent=QUOTES[idx];
+    })();
+
+    /* ============================================================
+       AVATAR
+       ============================================================ */
+    var FALLBACK_AVT='https://api.dicebear.com/7.x/initials/svg?seed='+
+      encodeURIComponent('{{ request.user.username }}')+'&backgroundColor=1e293b&textColor=60a5fa&size=64';
+
+    function applyAvatar(url){
+      [['hdrAvatarWrap','hdrAvatarSk'],['asideAvatarWrap','asideAvatarSk']].forEach(function(p){
+        var wrap=document.getElementById(p[0]); if(!wrap) return;
+        var img=document.createElement('img');
+        img.alt='{{ request.user.username }}';
+        img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%;opacity:0;transition:opacity .3s ease';
+        img.onload=function(){ img.style.opacity='1'; var sk=document.getElementById(p[1]); if(sk) sk.remove(); };
+        img.onerror=function(){ img.src=FALLBACK_AVT; };
+        img.src=url; wrap.appendChild(img);
+      });
+    }
+    fetch('/get_user_picture/',{credentials:'same-origin'})
+      .then(function(r){ return r.ok?r.json():null; })
+      .then(function(d){ applyAvatar(d&&d.url?d.url:FALLBACK_AVT); })
+      .catch(function(){ applyAvatar(FALLBACK_AVT); });
+
+    /* ============================================================
+       ASIDE TOGGLE
+       ============================================================ */
+    var aside=document.getElementById('dbAside');
+    var asideOvly=document.getElementById('asideOverlay');
+    function openAside(){ aside&&aside.classList.add('open'); asideOvly&&asideOvly.classList.add('show'); }
+    function closeAside(){ aside&&aside.classList.remove('open'); asideOvly&&asideOvly.classList.remove('show'); }
+    document.getElementById('hamburgerBtn')&&document.getElementById('hamburgerBtn').addEventListener('click',openAside);
+    asideOvly&&asideOvly.addEventListener('click',closeAside);
+    var hdrAv=document.getElementById('hdrAvatarWrap');
+    hdrAv&&hdrAv.addEventListener('click',function(){ aside&&aside.classList.contains('open')?closeAside():openAside(); });
+    hdrAv&&hdrAv.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){e.preventDefault();this.click();} });
+
+    /* ============================================================
+       THEME TOGGLE
+       ============================================================ */
+    var themeBtn=document.getElementById('themeToggleBtn');
+    var themeIcon=document.getElementById('themeIcon');
+    function applyTheme(mode){
+      if(mode==='light'){ document.body.classList.add('sd-light'); if(themeIcon) themeIcon.className='fas fa-sun'; }
+      else{ document.body.classList.remove('sd-light'); if(themeIcon) themeIcon.className='fas fa-moon'; }
+      setCookie('sd-theme',mode,365);
+    }
+    (function(){ var s=getCookie('sd-theme'); if(s) applyTheme(s); })();
+    themeBtn&&themeBtn.addEventListener('click',function(){ applyTheme(document.body.classList.contains('sd-light')?'dark':'light'); });
+
+    /* ============================================================
+       LOGOUT
+       ============================================================ */
+    document.getElementById('logoutBtn')&&document.getElementById('logoutBtn').addEventListener('click',function(){
+      if(confirm('Log out?')){ var f=document.getElementById('logoutForm'); if(f) f.submit(); }
+    });
+
+    /* ============================================================
+       TOAST
+       ============================================================ */
+    var toastEl=document.getElementById('cmToast');
+    var toastMsg=document.getElementById('cmToastMsg');
+    var toastIcon=document.getElementById('cmToastIcon');
+    var toastTimer=null;
+    var TICONS={info:'fa-fire',success:'fa-check-circle',error:'fa-exclamation-circle',loading:'fa-circle-notch fa-spin'};
+
+    function showToast(msg,type,dur,retryFn){
+      if(!toastEl) return;
+      clearTimeout(toastTimer);
+      toastMsg.textContent=msg;
+      toastEl.className='cm-toast cm-toast-'+(type||'info');
+      toastIcon.className='cm-toast-icon fas '+(TICONS[type]||TICONS.info);
+      toastEl.classList.add('cm-toast-visible');
+      if(retryFn){ toastEl.style.cursor='pointer'; toastEl.onclick=function(){ retryFn(); toastEl.onclick=null; toastEl.style.cursor=''; }; }
+      else{ toastEl.onclick=null; toastEl.style.cursor=''; }
+      if(dur!==0) toastTimer=setTimeout(hideToast, dur||3500);
+    }
+    function hideToast(){ if(toastEl) toastEl.classList.remove('cm-toast-visible'); }
+    document.getElementById('cmToastClose')&&document.getElementById('cmToastClose').addEventListener('click',hideToast);
+
+    /* ============================================================
+       HERO SETUP
+       ============================================================ */
+    (function(){
+      /* Category icon */
+      var iconEl=document.getElementById('cdCatIcon');
+      if(iconEl) iconEl.className='fas '+(CAT_ICON[CATEGORY]||CAT_ICON.other);
+
+      /* Hero bar colour */
+      var bar=document.getElementById('cdHeroBar');
+      if(bar) bar.style.background=CAT_COLOR[CATEGORY]||CAT_COLOR.other;
+
+      /* Ring arc colour */
+      var arc=document.getElementById('cdRingArc');
+      if(arc) arc.setAttribute('stroke', CAT_COLOR[CATEGORY]||CAT_COLOR.other);
+
+      /* Streak count-up */
+      var numEl=document.getElementById('cdStreakNum');
+      if(numEl){
+        var dur=900, start=performance.now();
+        (function tick(now){
+          var t=Math.min((now-start)/dur,1), ease=1-Math.pow(1-t,3);
+          numEl.textContent=Math.round(STREAK*ease);
+          if(t<1) requestAnimationFrame(tick);
+          else numEl.classList.add('settled');
+        })(start);
+      }
+
+      /* Progress ring */
+      if(GOAL_DAYS>0){
+        var pct=Math.min(Math.round((STREAK/GOAL_DAYS)*100),100);
+        var circ=163.4;
+        setTimeout(function(){
+          var arcEl=document.getElementById('cdRingArc');
+          if(arcEl) arcEl.setAttribute('stroke-dasharray', (pct*circ/100).toFixed(1)+' '+(circ-(pct*circ/100)).toFixed(1));
+          var lbl=document.getElementById('cdRingLabel');
+          if(lbl) lbl.textContent=pct+'%';
+        }, 400);
+
+        /* Days left chip */
+        var left=document.getElementById('cdDaysLeft');
+        if(left){
+          var rem=Math.max(0,GOAL_DAYS-STREAK);
+          left.textContent=rem+' day'+(rem!==1?'s':'')+' left';
+        }
+      }
+
+      /* Stats mini */
+      var created=new Date(CREATED_AT+'T00:00:00');
+      var today=new Date(); today.setHours(0,0,0,0);
+      var daysIn=Math.max(0,Math.round((today-created)/(1000*60*60*24)));
+      var statD=document.getElementById('cdStatDays');
+      var statL=document.getElementById('cdStatLeft');
+      var statP=document.getElementById('cdStatPct');
+      if(statD) statD.textContent=daysIn;
+      if(GOAL_DAYS>0){
+        var dLeft=Math.max(0,GOAL_DAYS-STREAK);
+        var pct2=Math.min(Math.round((STREAK/GOAL_DAYS)*100),100);
+        if(statL) statL.textContent=dLeft;
+        if(statP) statP.textContent=pct2+'%';
+        /* goal bar */
+        setTimeout(function(){
+          var fill=document.getElementById('cdGoalBarFill');
+          if(fill) fill.style.width=pct2+'%';
+        }, 600);
+      }
+    })();
+
+    /* ============================================================
+       ENTRY DATE LABEL
+       ============================================================ */
+    (function(){
+      var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var d=new Date();
+      var label=days[d.getDay()]+', '+months[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
+      var el=document.getElementById('cdEntryDateLabel'); if(el) el.textContent=label;
+      var chip=document.getElementById('cdEntryDateChip'); if(chip) chip.textContent=label;
+    })();
+
+    /* ============================================================
+       WRITING PROMPT
+       ============================================================ */
+    var promptShown=false;
+    var promptBox=document.getElementById('cdPromptBox');
+    var promptBtn=document.getElementById('cdPromptBtn');
+    promptBtn&&promptBtn.addEventListener('click',function(){
+      if(!promptBox) return;
+      if(promptShown){ hide(promptBox); promptShown=false; return; }
+      var idx=Math.floor(Math.random()*PROMPTS.length);
+      promptBox.textContent=PROMPTS[idx];
+      show(promptBox);
+      promptShown=true;
+    });
+
+    /* ============================================================
+       TEXTAREA AUTO-EXPAND + WORD COUNT
+       ============================================================ */
+    var textarea=document.getElementById('cdTextarea');
+    var wcEl=document.getElementById('cdWc');
+    var selectedMood='';
+    var selectedRating=0;
+
+    textarea&&textarea.addEventListener('input',function(){
+      this.style.height='auto';
+      this.style.height=this.scrollHeight+'px';
+      var wc=countWords(this.value);
+      if(wcEl){
+        wcEl.textContent=wc+' word'+(wc!==1?'s':'');
+        wcEl.className='cd-wc'+(wc===0?'': wc<50?' cd-wc-low':' cd-wc-good');
+      }
+    });
+
+    /* Pre-fill form when editing */
+    if(HAS_ENTRY_TODAY && TODAY_ENTRY_CONTENT){
+      if(textarea){ textarea.value=TODAY_ENTRY_CONTENT; textarea.dispatchEvent(new Event('input')); }
+      if(TODAY_ENTRY_MOOD) selectedMood=TODAY_ENTRY_MOOD;
+      if(TODAY_ENTRY_RATING) selectedRating=TODAY_ENTRY_RATING;
+    }
+
+    /* ============================================================
+       MOOD CHIPS
+       ============================================================ */
+    qsa('.cd-mood-chip').forEach(function(chip){
+      if(TODAY_ENTRY_MOOD && chip.getAttribute('data-mood')===TODAY_ENTRY_MOOD){
+        chip.classList.add('on');
+      }
+      chip.addEventListener('click',function(){
+        qsa('.cd-mood-chip').forEach(function(c){ c.classList.remove('on'); });
+        this.classList.add('on');
+        selectedMood=this.getAttribute('data-mood');
+      });
+    });
+
+    /* ============================================================
+       STAR RATING
+       ============================================================ */
+    var stars=qsa('.cd-star');
+    function setStars(val){
+      selectedRating=val;
+      stars.forEach(function(s){
+        var sv=parseInt(s.getAttribute('data-val'));
+        s.classList.toggle('lit', sv<=val);
+      });
+    }
+    if(TODAY_ENTRY_RATING) setStars(TODAY_ENTRY_RATING);
+    stars.forEach(function(star){
+      star.addEventListener('mouseenter',function(){
+        var hv=parseInt(this.getAttribute('data-val'));
+        stars.forEach(function(s){ s.classList.toggle('lit', parseInt(s.getAttribute('data-val'))<=hv); });
+      });
+      star.addEventListener('mouseleave',function(){ setStars(selectedRating); });
+      star.addEventListener('click',function(){
+        var v=parseInt(this.getAttribute('data-val'));
+        setStars(v);
+        this.classList.add('just-lit');
+        setTimeout(function(){ star.classList.remove('just-lit'); }, 350);
+      });
+    });
+
+    /* ============================================================
+       EDIT / CANCEL EDIT
+       ============================================================ */
+    document.getElementById('cdEditBtn')&&document.getElementById('cdEditBtn').addEventListener('click',function(){
+      IS_EDITING=true;
+      var doneEl=document.getElementById('cdEntryDone');
+      var formEl=document.getElementById('cdEntryForm');
+      var cancelBtn=document.getElementById('cdCancelEditBtn');
+      var submitBtn=document.getElementById('cdSubmitBtn');
+      if(doneEl) doneEl.style.display='none';
+      show(formEl);
+      show(cancelBtn);
+      if(submitBtn){
+        var span=submitBtn.querySelector('.btn-txt');
+        if(span) span.innerHTML='<i class="fas fa-floppy-disk"></i> Update Entry';
+      }
+      if(textarea){ textarea.dispatchEvent(new Event('input')); textarea.focus(); }
+    });
+
+    document.getElementById('cdCancelEditBtn')&&document.getElementById('cdCancelEditBtn').addEventListener('click',function(){
+      IS_EDITING=false;
+      var doneEl=document.getElementById('cdEntryDone');
+      var formEl=document.getElementById('cdEntryForm');
+      if(doneEl) doneEl.style.display='';
+      hide(formEl);
+    });
+
+    /* ============================================================
+       SUBMIT ENTRY
+       ============================================================ */
+    document.getElementById('cdSubmitBtn')&&document.getElementById('cdSubmitBtn').addEventListener('click',function(){
+      var content=textarea?textarea.value.trim():'';
+      if(!content){ showToast('Write something — even one sentence counts.','error'); return; }
+      var wc=countWords(content);
+
+      var btn=this;
+      btn.classList.add('cd-loading'); btn.disabled=true;
+
+      var payload={ content:content, mood:selectedMood, word_count:wc, rating:selectedRating||null };
+
+      var url  = IS_EDITING && TODAY_ENTRY_ID ? API.entryUpdate(TODAY_ENTRY_ID) : API.entryCreate;
+      var method= IS_EDITING && TODAY_ENTRY_ID ? 'PATCH' : 'POST';
+
+      fetch(url,{
+        method:method, credentials:'same-origin',
+        headers:{ 'Content-Type':'application/json', 'X-CSRFToken':getCookie('csrftoken') },
+        body:JSON.stringify(payload)
+      })
+      .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+      .then(function(res){
+        btn.classList.remove('cd-loading'); btn.disabled=false;
+        if(res.ok){
+          showToast(IS_EDITING?'Entry updated. ✓':'Logged! 🔥 Streak protected.','success', 4000);
+          /* Update done state inline */
+          var doneEl=document.getElementById('cdEntryDone');
+          var formEl=document.getElementById('cdEntryForm');
+          if(doneEl){
+            doneEl.style.display='';
+            doneEl.classList.add('just-submitted');
+            var dc=doneEl.querySelector('#cdDoneContent');
+            if(dc) dc.textContent=content;
+          }
+          if(formEl) hide(formEl);
+          hide(document.getElementById('cdCancelEditBtn'));
+          IS_EDITING=false;
+          TODAY_ENTRY_CONTENT=content;
+          /* Refresh heatmap to reflect new entry */
+          loadHeatmap();
+        } else {
+          var msg=(res.data&&res.data.message)||'Could not save your entry. Try again.';
+          showToast(msg,'error');
+        }
+      })
+      .catch(function(){
+        btn.classList.remove('cd-loading'); btn.disabled=false;
+        showToast('Network error — please retry.','error');
+      });
+    });
+
+    /* ============================================================
+       HEATMAP
+       ============================================================ */
+    function loadHeatmap(){
+      fetch(API.heatmap, {credentials:'same-origin'})
+      .then(function(r){ return r.ok?r.json():null; })
+      .then(function(data){
+        var skGrid=document.getElementById('cdHeatSkGrid');
+        var cellWrap=document.getElementById('cdHeatCells');
+        if(skGrid) skGrid.style.display='none';
+        if(!data||!data.days){ if(cellWrap) hide(cellWrap); return; }
+        renderHeatmap(data.days, cellWrap);
+        if(cellWrap) show(cellWrap);
+      })
+      .catch(function(){
+        /* Keep skeletons hidden on failure — silent degradation */
+        var skGrid=document.getElementById('cdHeatSkGrid');
+        if(skGrid) skGrid.style.display='none';
+      });
+    }
+
+    function renderHeatmap(days, wrap){
+      if(!wrap) return;
+      wrap.innerHTML='';
+      var todayStr=new Date().toISOString().slice(0,10);
+      days.forEach(function(day, i){
+        var cell=document.createElement('div');
+        cell.className='cd-heat-cell';
+        cell.style.setProperty('--ci', i);
+
+        /* Intensity class */
+        if(day.checked_in){
+          var wc=day.word_count||0;
+          if(wc<=0)         cell.classList.add('hit-low');
+          else if(wc<=60)   cell.classList.add('hit-low');
+          else if(wc<=150)  cell.classList.add('hit-mid');
+          else               cell.classList.add('hit-hi');
+        } else {
+          cell.classList.add('missed');
+        }
+
+        if(day.date===todayStr) cell.classList.add('today');
+
+        var d=new Date(day.date+'T00:00:00');
+        var dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+        /* Tooltip */
+        var tipLines=[''];
+        if(day.checked_in){
+          tipLines=[ day.mood ? '😌 '+day.mood : '✓ Checked in' ];
+          if(day.word_count>0) tipLines.push(day.word_count+' words');
+        } else {
+          tipLines=['Missed'];
+        }
+
+        cell.innerHTML=
+          '<div class="cd-heat-day">'+escHtml(dayNames[d.getDay()])+'</div>'+
+          '<div class="cd-heat-date">'+d.getDate()+'</div>'+
+          '<div class="cd-heat-dot"></div>'+
+          '<div class="cd-heat-tip">'+tipLines.map(escHtml).join('<br>')+'</div>';
+
+        wrap.appendChild(cell);
+
+        /* Stagger flip-in */
+        requestAnimationFrame(function(){
+          setTimeout(function(){ cell.classList.add('cd-cell-in'); }, i*65);
+        });
+      });
+    }
+
+    /* ============================================================
+       SETTINGS ACCORDION
+       ============================================================ */
+    var settingsToggle=document.getElementById('cdSettingsToggle');
+    var settingsBody=document.getElementById('cdSettingsBody');
+    var settingsChevron=document.getElementById('cdSettingsChevron');
+    var settingsOpen=false;
+
+    function openSettings(){
+      settingsOpen=true;
+      if(settingsBody){ settingsBody.classList.add('open'); settingsBody.setAttribute('aria-hidden','false'); }
+      if(settingsChevron) settingsChevron.classList.add('open');
+      if(settingsToggle) settingsToggle.setAttribute('aria-expanded','true');
+    }
+    function closeSettings(){
+      settingsOpen=false;
+      if(settingsBody){ settingsBody.classList.remove('open'); settingsBody.setAttribute('aria-hidden','true'); }
+      if(settingsChevron) settingsChevron.classList.remove('open');
+      if(settingsToggle) settingsToggle.setAttribute('aria-expanded','false');
+    }
+
+    settingsToggle&&settingsToggle.addEventListener('click',function(){
+      settingsOpen?closeSettings():openSettings();
+    });
+
+    /* Populate time selects */
+    populateTime('cdsCheckinTime', CHECKIN_TIME_RAW||'21:00');
+    populateTime('cdsReminderTime', REMINDER_TIME_RAW||'20:00');
+
+    /* Reminder toggle */
+    var remOn=document.getElementById('cdsReminderOn');
+    var remFields=document.getElementById('cdsReminderFields');
+    function applyReminderUI(active){
+      if(remFields){ remFields.style.opacity=active?'1':'0.4'; remFields.style.pointerEvents=active?'':'none'; }
+    }
+    applyReminderUI(REMINDER_ACTIVE);
+    remOn&&remOn.addEventListener('change',function(){ applyReminderUI(this.checked); });
+
+    /* Method cards */
+    var curMethod=MODE;
+    qsa('.cd-method-card').forEach(function(card){
+      function select(){
+        qsa('.cd-method-card').forEach(function(c){ c.classList.remove('on'); });
+        card.classList.add('on'); curMethod=card.getAttribute('data-method');
+        var waWrap=document.getElementById('cdsWaWrap');
+        if(waWrap) waWrap.style.display=curMethod==='whatsapp'?'':'none';
+      }
+      card.addEventListener('click',select);
+      card.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); select(); } });
+    });
+
+    /* Save settings */
+    document.getElementById('cdsSaveBtn')&&document.getElementById('cdsSaveBtn').addEventListener('click',function(){
+      var btn=this;
+      var ct=document.getElementById('cdsCheckinTime');
+      var rt=document.getElementById('cdsReminderTime');
+      var ro=document.getElementById('cdsReminderOn');
+      var wn=document.getElementById('cdsWaNum');
+
+      if(curMethod==='whatsapp'&&wn&&!wn.value.trim()){
+        showToast('Enter your WhatsApp number with country code.','error'); return;
+      }
+
+      btn.classList.add('cd-loading'); btn.disabled=true;
+
+      var payload={
+        checkin_time:       ct?ct.value:'21:00',
+        reminder_active:    ro?ro.checked:true,
+        user_selected_reminder_time: rt?rt.value:'20:00',
+        mode_of_delivery:   curMethod,
+        whatsapp_number:    (wn&&curMethod==='whatsapp')?wn.value.trim():''
+      };
+
+      fetch(API.settings,{
+        method:'PATCH', credentials:'same-origin',
+        headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
+        body:JSON.stringify(payload)
+      })
+      .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+      .then(function(res){
+        btn.classList.remove('cd-loading'); btn.disabled=false;
+        if(res.ok){
+          showToast('Settings saved.','success');
+          btn.classList.add('save-ok');
+          setTimeout(function(){ btn.classList.remove('save-ok'); },600);
+        } else {
+          showToast((res.data&&res.data.message)||'Could not save settings. Try again.','error');
+        }
+      })
+      .catch(function(){
+        btn.classList.remove('cd-loading'); btn.disabled=false;
+        showToast('Network error — please retry.','error');
+      });
+    });
+
+    /* Archive commitment */
+    document.getElementById('cdsArchiveBtn')&&document.getElementById('cdsArchiveBtn').addEventListener('click',function(){
+      if(!confirm('Archive "{{ commitment.what|truncatechars:60|escapejs }}"?\nYou can restore it from your profile later.')) return;
+      fetch('/api/v1/commitments/'+CID+'/archive/',{
+        method:'POST', credentials:'same-origin',
+        headers:{'X-CSRFToken':getCookie('csrftoken'),'Content-Type':'application/json'}
+      })
+      .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+      .then(function(res){
+        if(res.ok){ showToast('Commitment archived.','info',2500); setTimeout(function(){ window.location.href='/v1/commitments/'; },2700); }
+        else showToast((res.data&&res.data.message)||'Could not archive. Try again.','error');
+      })
+      .catch(function(){ showToast('Network error.','error'); });
+    });
+
+    /* ============================================================
+       KEYBOARD SHORTCUT  Ctrl/Cmd+Enter → submit entry
+       ============================================================ */
+    document.addEventListener('keydown',function(e){
+      if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){
+        var formEl=document.getElementById('cdEntryForm');
+        if(formEl&&!formEl.classList.contains('hidden')){
+          e.preventDefault();
+          document.getElementById('cdSubmitBtn')&&document.getElementById('cdSubmitBtn').click();
+        }
+      }
+    });
+
+    /* ============================================================
+       INIT
+       ============================================================ */
+    function init(){
+      loadHeatmap();
+    }
+
+    if(document.readyState==='complete'){ reveal(); init(); }
+    else{
+      window.addEventListener('load',function(){ reveal(); init(); });
+      setTimeout(function(){ reveal(); init(); }, 8000);
+    }
+
+  })();
+  </script>
+
+</body>
+</html>

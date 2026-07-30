@@ -43,11 +43,13 @@
         <nav class="aside-nav">
           <div class="aside-section-lbl">Navigation</div>
           <a href="{% url 'origin_dashboard' %}" class="aside-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
-          <a href="/v1/profile/" class="aside-link active"><i class="fas fa-circle-user"></i> Profile</a>
-          <a href="{% url "origin_commitments" %}" class="aside-link"><i class="fas fa-fire-flame-curved"></i> Commitments</a>
-          <a href="/v1/leaderboard/" class="aside-link"><i class="fas fa-ranking-star"></i> Leaderboard</a>
+          <a href="{% url 'origin_relationship' %}" class="aside-link"><i class="fas fa-gauge-high"></i> Relationship</a>
+          <a href="{% url "origin_profile" %}" class="aside-link active"><i class="fas fa-circle-user"></i> Profile</a>
+          <a href="{% url "origin_commitments" %}" class="aside-link"><i class="fas fa-fire-flame-curved"></i> My Commitments</a>
+          <div class="aside-section-lbl">Community</div>
+          <a href="{% url "origin_leaderboard" %}" class="aside-link"><i class="fas fa-ranking-star"></i> Leaderboard</a>
           <a href="/v1/groups/" class="aside-link"><i class="fas fa-users"></i> Groups</a>
-          <a href="/v1/blog/" class="aside-link"><i class="fas fa-newspaper"></i> Blog</a>
+          <a href="{% url "origin_blog" %}" class="aside-link"><i class="fas fa-newspaper"></i> Blog And Updates</a>
           <div class="aside-section-lbl">Support</div>
           <a href="https://wa.me/2347013687825" target="_blank" rel="noopener" class="aside-link"><i class="fab fa-whatsapp"></i> WhatsApp</a>
           <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link"><i class="fas fa-envelope"></i> Email</a>

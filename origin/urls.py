@@ -21,9 +21,11 @@ urlpatterns = [
     path('dashboard/', views.Dashboard.as_view(), name = 'origin_dashboard'),
     path('dashboard/json/', views.DashboardJson.as_view(), name = 'origin_dashboard_json'),
     path('dashboard/settings/', views.Dashboard.as_view(), name = 'origin_settings'),
-    path('dashboard/commitments/', views.DashboardCommitmentView.as_view(), name = 'origin_commitments'),
+    path('dashboard/commitment/', views.DashboardCommitmentView.as_view(), name = 'origin_commitments'),
     path('dashboard/commitment/<str:commitment_key>/', views.EachCommitmentView.as_view(), name = 'origin_each_commitment_view'),
     path('dashboard/profile/', views.ProfileSettings.as_view(), name = 'origin_profile'),
+    path('dashboard/relationship/', views.Relationship.as_view(), name = 'origin_relationship'),
+    
     
     #public accesible
     path('blog/', views.BlogView.as_view(), name= "origin_blog"),
@@ -44,12 +46,19 @@ urlpatterns = [
     path('debug/test-search/', views.TestSearch.as_view(), name='test_search'),
     path('debug/logout/', views.Logout.as_view(), name = 'origin_logout_active_user'),
     
+    
     #json only
-    path('user_commitment_data/', views.CommitmentData.as_view(), name = "origin_commitmnet_data"),
-    path('user_picture_data/', views.UserPicture.as_view(), name = "origin_user_picture"),
-    path('user_partner_widget/', views.PartnerWidget.as_view(), name = "origin_parner_widget"),
-    path('user_heat_map/', views.HeatMap.as_view(), name = "origin_user_HeatMap"),
-    path('user_commitment_data/', views.CommitmentData.as_view(), name = "get_commitment_data"),
+    path('user_commitment_data/', views.CommitmentData.as_view(), name = "origin_commitment_data"),                     # Handles dashboard.html commitment summary
+    path('user_picture_data/', views.ProfilePicture.as_view(), name = "origin_user_picture"),                           # Load Picture if user have one(GLOBAL JSON)
+    path('user_partner_widget/', views.PartnerWidget.as_view(), name = "origin_parner_widget"),                         # for dashboard loading partner for partner mode users
+    path('user_heat_map/', views.HeatMap.as_view(), name = "origin_user_HeatMap"),                                      # Also for dashboard
+    path('user_commitment_data/', views.CommiementReceiveCommitment.as_view(), name = "origin_commitment_page_commitment_data"),# Handles commitment data for commitment page
+    path('user_commitment_data/create/', views.CreateCommitment.as_view(), name = "origin_commitment_create_json"),     # same
+    path('user_commitment_data/<str:commitment_key>/checkin', views.CreateCommitment.as_view(), name = "origin_commitment_create_json"),# same
+    path('user_commitment_data/<str:commitment_key>/archive/', views.CreateCommitment.as_view(), name = "origin_commitment_create_json"),# same
+    
+    
+    
 
 
 
