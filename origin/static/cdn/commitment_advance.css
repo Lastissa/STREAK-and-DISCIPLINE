@@ -1,0 +1,656 @@
+/* ================================================================
+   COMMITMENT — ADVANCE CSS  (deferred / non-blocking)
+   origin/static/cdn/commitment_advance.css
+
+   Spring easing catalogue:
+     Overshoot (door swings open) → cubic-bezier(0.34,1.56,0.64,1)
+     Fast decelerate (car braking) → cubic-bezier(0.22,1,0.36,1)
+     Elastic snap (rubber band)    → cubic-bezier(0.68,-0.55,0.265,1.55)
+     Heavy settle (dropped object) → cubic-bezier(0.16,1,0.3,1)
+   ================================================================ */
+
+/* ================================================================
+   SKELETON SHIMMER
+   ================================================================ */
+@keyframes shimmer {
+  0%   { background-position: -400px 0 }
+  100% { background-position:  400px 0 }
+}
+.sk {
+  background: linear-gradient(
+    90deg,
+    var(--surf2) 25%,
+    var(--surf3) 50%,
+    var(--surf2) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* ================================================================
+   BACKGROUND ATMOSPHERE (solid — no glass)
+   Subtle ambient orbs via CSS, NO backdrop-filter.
+   ================================================================ */
+.cm-app::before {
+  content: '';
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(ellipse 600px 500px at 20% 80%,  rgba(59,130,246,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 500px 400px at 80% 15%,  rgba(129,140,248,0.03) 0%, transparent 55%),
+    radial-gradient(ellipse 350px 300px at 55% 50%,  rgba(167,139,250,0.02) 0%, transparent 50%);
+  animation: orbDrift 30s ease-in-out infinite alternate;
+}
+@keyframes orbDrift {
+  0%   { transform: scale(1) translate(0, 0) }
+  50%  { transform: scale(1.06) translate(-8px, 12px) }
+  100% { transform: scale(1) translate(5px, -8px) }
+}
+
+/* ================================================================
+   APP SHELL REVEAL
+   ================================================================ */
+.cm-app { transition: opacity 0.55s cubic-bezier(0.22,1,0.36,1),
+                       visibility 0.55s ease; }
+.cm-app.cm-visible { opacity: 1 !important; visibility: visible !important; }
+
+/* ================================================================
+   PAGE HERO ENTRANCE
+   ================================================================ */
+@keyframes heroIn {
+  from { opacity: 0; transform: translateY(20px) }
+  to   { opacity: 1; transform: translateY(0) }
+}
+.cm-hero { animation: heroIn 0.55s cubic-bezier(0.22,1,0.36,1) 0.1s both }
+
+/* ================================================================
+   STATS BAR ENTRANCE
+   ================================================================ */
+.cm-stats-bar {
+  animation: heroIn 0.5s cubic-bezier(0.22,1,0.36,1) 0.2s both;
+  transition: box-shadow 0.3s ease;
+}
+.cm-stats-bar:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.25) }
+.cm-stat-sep { animation: sepExpand 0.4s 0.4s ease both }
+@keyframes sepExpand {
+  from { transform: scaleY(0) } to { transform: scaleY(1) }
+}
+
+/* ================================================================
+   FILTER BAR ENTRANCE
+   ================================================================ */
+.cm-filter-bar { animation: heroIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.3s both }
+
+/* ================================================================
+   CATEGORY CHIP — hover spring
+   ================================================================ */
+.cm-cat {
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.25s cubic-bezier(0.34,1.56,0.64,1),
+    box-shadow 0.25s ease;
+}
+.cm-cat:hover { transform: translateY(-2px) }
+.cm-cat:active { transform: scale(0.93) }
+.cm-cat.active { box-shadow: 0 2px 10px rgba(59,130,246,0.3) }
+
+/* ================================================================
+   COMMITMENT CARD — stagger entrance + hover physics
+   ================================================================ */
+@keyframes cardIn {
+  0%   { opacity: 0; transform: translateY(36px) scale(0.95) }
+  58%  { opacity: 1; transform: translateY(-5px) scale(1.006) }
+  78%  { transform: translateY(2px) scale(0.999) }
+  100% { opacity: 1; transform: translateY(0) scale(1) }
+}
+
+.cm-card--stagger {
+  opacity: 0;
+  animation: none;
+}
+.cm-card--stagger.cm-card-in {
+  animation: cardIn 0.7s cubic-bezier(0.22,1,0.36,1) calc(var(--i,0) * 80ms) both;
+}
+
+.cm-card {
+  transition:
+    transform 0.35s cubic-bezier(0.34,1.56,0.64,1),
+    box-shadow 0.35s ease,
+    border-color 0.25s ease;
+}
+.cm-card:hover {
+  transform: translateY(-5px) scale(1.012);
+  box-shadow: 0 12px 36px rgba(0,0,0,0.3);
+}
+.cm-card:active { transform: translateY(-2px) scale(1.005) }
+
+/* Accent bar pulse on hover */
+.cm-card__bar {
+  transition: width 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.cm-card:hover .cm-card__bar { width: 6px }
+
+/* Category icon pop */
+.cm-cat-icon {
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.cm-card:hover .cm-cat-icon { transform: scale(1.12) rotate(-3deg) }
+
+/* Streak number pulse on card hover */
+.cm-streak-num {
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), color 0.2s ease;
+}
+.cm-card:hover .cm-streak-num { transform: scale(1.12) }
+
+/* Action buttons spring */
+.cm-action-btn {
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.cm-action-btn:hover  { transform: scale(1.15) }
+.cm-action-btn:active { transform: scale(0.9) }
+
+/* Progress ring arc — animated by JS, transition here */
+.cm-ring-arc {
+  transition: stroke-dasharray 1.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* ================================================================
+   EMPTY / ERROR STATE ENTRANCE
+   ================================================================ */
+@keyframes emptyBounce {
+  0%   { opacity: 0; transform: scale(0.85) translateY(16px) }
+  60%  { opacity: 1; transform: scale(1.04) translateY(-4px) }
+  100% { opacity: 1; transform: scale(1) translateY(0) }
+}
+.cm-empty-state, .cm-err-state {
+  animation: emptyBounce 0.55s cubic-bezier(0.22,1,0.36,1) both;
+}
+.cm-empty-icon {
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+.cm-empty-state:hover .cm-empty-icon { transform: scale(1.1) rotate(5deg) }
+
+/* ================================================================
+   FAB — entrance + spring press
+   ================================================================ */
+@keyframes fabIn {
+  0%   { opacity: 0; transform: scale(0.5) rotate(-45deg) }
+  70%  { opacity: 1; transform: scale(1.1) rotate(5deg) }
+  100% { opacity: 1; transform: scale(1) rotate(0deg) }
+}
+.cm-fab {
+  animation: fabIn 0.65s cubic-bezier(0.34,1.56,0.64,1) 0.6s both;
+  transition:
+    transform 0.35s cubic-bezier(0.34,1.56,0.64,1),
+    box-shadow 0.3s ease,
+    background 0.2s ease;
+}
+.cm-fab:hover {
+  transform: scale(1.1) translateY(-3px);
+  box-shadow: 0 8px 30px rgba(59,130,246,0.55);
+}
+.cm-fab:active { transform: scale(0.92) }
+
+/* FAB + icon rotation on hover */
+.cm-fab i {
+  transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+.cm-fab:hover i { transform: rotate(90deg) }
+
+/* ================================================================
+   BUTTON SPRING PHYSICS
+   ================================================================ */
+.btn {
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.3s cubic-bezier(0.34,1.56,0.64,1),
+    box-shadow 0.3s ease;
+}
+.btn:hover  { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.2) }
+.btn:active { transform: translateY(0) scale(0.96) }
+.btn-primary:hover { box-shadow: 0 6px 20px rgba(59,130,246,0.35) }
+
+/* ================================================================
+   CREATE COMMITMENT OVERLAY — OPEN / CLOSE
+   ================================================================ */
+@keyframes backdropIn {
+  from { opacity: 0 }
+  to   { opacity: 1 }
+}
+@keyframes panelIn {
+  0%   { opacity: 0; transform: scale(0.88) translateY(30px) }
+  65%  { opacity: 1; transform: scale(1.012) translateY(-5px) }
+  100% { opacity: 1; transform: scale(1) translateY(0) }
+}
+@keyframes panelOut {
+  from { opacity: 1; transform: scale(1) translateY(0) }
+  to   { opacity: 0; transform: scale(0.9) translateY(20px) }
+}
+
+.ov-backdrop { display: none }
+.ov-backdrop.ov-open {
+  display: flex;
+  animation: backdropIn 0.3s ease both;
+}
+.ov-backdrop.ov-open .ov-panel {
+  animation: panelIn 0.55s cubic-bezier(0.22,1,0.36,1) both;
+}
+.ov-backdrop.ov-closing {
+  display: flex;
+  animation: backdropIn 0.25s ease reverse both;
+}
+.ov-backdrop.ov-closing .ov-panel {
+  animation: panelOut 0.25s ease both;
+}
+
+/* Panel hover lift */
+.ov-panel {
+  transition: box-shadow 0.3s ease;
+}
+
+/* ================================================================
+   OVERLAY STEPS — SLIDE IN / OUT
+   ================================================================ */
+@keyframes stepInLeft {
+  from { opacity: 0; transform: translateX(45px) }
+  to   { opacity: 1; transform: translateX(0) }
+}
+@keyframes stepInRight {
+  from { opacity: 0; transform: translateX(-45px) }
+  to   { opacity: 1; transform: translateX(0) }
+}
+@keyframes stepOutLeft {
+  from { opacity: 1; transform: translateX(0) }
+  to   { opacity: 0; transform: translateX(-35px) }
+}
+@keyframes stepOutRight {
+  from { opacity: 1; transform: translateX(0) }
+  to   { opacity: 0; transform: translateX(35px) }
+}
+
+.ov-step--in-left {
+  animation: stepInLeft 0.42s cubic-bezier(0.22,1,0.36,1) both;
+}
+.ov-step--in-right {
+  animation: stepInRight 0.42s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* Stagger step content in */
+.ov-step--active .ov-eyebrow { animation: fadeUp 0.35s 0.08s ease both }
+.ov-step--active .ov-h2      { animation: fadeUp 0.4s  0.16s cubic-bezier(0.22,1,0.36,1) both }
+.ov-step--active .ov-hint    { animation: fadeUp 0.35s 0.24s ease both }
+.ov-step--active .ov-label   { animation: fadeUp 0.35s 0.30s ease both }
+.ov-step--active .ov-input   { animation: fadeUp 0.35s 0.36s ease both }
+.ov-step--active .ov-chips   { animation: fadeUp 0.35s 0.44s ease both }
+.ov-step--active .ov-cat-grid{ animation: fadeUp 0.38s 0.40s ease both }
+.ov-step--active .ov-goal-grid{ animation: fadeUp 0.38s 0.38s ease both }
+.ov-step--active .ov-method-grid{ animation: fadeUp 0.38s 0.42s ease both }
+.ov-step--active .ov-motion-grid{ animation: fadeUp 0.4s  0.32s ease both }
+.ov-step--active .ov-toggle-row { animation: fadeUp 0.35s 0.48s ease both }
+.ov-step--active .ov-note    { animation: fadeUp 0.35s 0.52s ease both }
+.ov-step--active .ov-btn-row { animation: fadeUp 0.35s 0.60s ease both }
+.ov-step--active .ov-privacy-note { animation: fadeUp 0.35s 0.65s ease both }
+.ov-step--active .ov-selected-word-wrap { animation: fadeUp 0.3s ease both }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px) }
+  to   { opacity: 1; transform: translateY(0) }
+}
+
+/* ================================================================
+   PROGRESS BAR SHIMMER
+   ================================================================ */
+.ov-prog-fill {
+  background: linear-gradient(90deg, var(--acc), #818cf8, var(--acc));
+  background-size: 300% 100%;
+  animation: progShimmer 2.5s ease-in-out infinite;
+  transition: width 0.45s cubic-bezier(0.22,1,0.36,1);
+}
+@keyframes progShimmer {
+  0%,100% { background-position: 0% 50% }
+  50%      { background-position: 100% 50% }
+}
+
+/* ================================================================
+   FORM ELEMENTS — FOCUS + SPRING
+   ================================================================ */
+.ov-input {
+  transition: border-color 0.2s ease, transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.ov-input:focus { transform: translateY(-1px) }
+
+/* ================================================================
+   CATEGORY CARDS IN OVERLAY — SPRING SELECT
+   ================================================================ */
+.ov-cat-card {
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.3s cubic-bezier(0.34,1.56,0.64,1),
+    box-shadow 0.3s ease,
+    color 0.2s ease;
+}
+.ov-cat-card:hover  { transform: translateY(-3px); box-shadow: 0 4px 14px rgba(0,0,0,0.2) }
+.ov-cat-card:active { transform: scale(0.93) }
+.ov-cat-card.on {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(59,130,246,0.25);
+}
+
+/* Category-specific glow on selection */
+.ov-cat-card[data-cat="fitness"].on { box-shadow: 0 4px 14px rgba(239,68,68,0.2) }
+.ov-cat-card[data-cat="study"].on   { box-shadow: 0 4px 14px rgba(59,130,246,0.2) }
+.ov-cat-card[data-cat="health"].on  { box-shadow: 0 4px 14px rgba(34,197,94,0.2) }
+.ov-cat-card[data-cat="mindset"].on { box-shadow: 0 4px 14px rgba(168,85,247,0.2) }
+.ov-cat-card[data-cat="growth"].on  { box-shadow: 0 4px 14px rgba(245,158,11,0.2) }
+
+/* ================================================================
+   GOAL DURATION CARDS — SPRING SELECT
+   ================================================================ */
+.ov-goal-card {
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.3s cubic-bezier(0.34,1.56,0.64,1),
+    box-shadow 0.3s ease;
+}
+.ov-goal-card:hover  { transform: translateY(-3px); box-shadow: 0 4px 14px rgba(0,0,0,0.2) }
+.ov-goal-card:active { transform: scale(0.94) }
+.ov-goal-card.on {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(59,130,246,0.25);
+}
+.ov-goal-n { transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1) }
+.ov-goal-card:hover .ov-goal-n { transform: scale(1.08) }
+
+/* ================================================================
+   DELIVERY METHOD CARDS
+   ================================================================ */
+.ov-method-card {
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.ov-method-card:hover  { transform: translateY(-2px) }
+.ov-method-card:active { transform: scale(0.93) }
+.ov-method-card.on { box-shadow: 0 4px 14px rgba(59,130,246,0.25) }
+
+/* ================================================================
+   TOGGLE SWITCH — SPRING THUMB
+   ================================================================ */
+.ov-sw-thumb {
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.ov-switch input:checked + .ov-sw-track .ov-sw-thumb {
+  transform: translateX(18px) scale(1.08);
+}
+
+/* ================================================================
+   MOTION WORD CHIPS — SPRING SELECT + RIPPLE
+   ================================================================ */
+.ov-motion-word {
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.3s cubic-bezier(0.34,1.56,0.64,1),
+    box-shadow 0.3s ease;
+}
+.ov-motion-word:hover  { transform: translateY(-2px); box-shadow: 0 3px 10px rgba(0,0,0,0.2) }
+.ov-motion-word:active { transform: scale(0.9) }
+.ov-motion-word.on {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 14px rgba(59,130,246,0.35);
+}
+
+/* ================================================================
+   SELECTED WORD REVEAL
+   ================================================================ */
+@keyframes wordReveal {
+  0%   { opacity: 0; transform: scale(0.7) }
+  65%  { opacity: 1; transform: scale(1.08) }
+  100% { opacity: 1; transform: scale(1) }
+}
+.ov-selected-word {
+  animation: wordReveal 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+/* ================================================================
+   OVERLAY CHIPS — spring hover
+   ================================================================ */
+.ov-chip {
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.ov-chip:hover  { transform: translateY(-2px) }
+.ov-chip:active { transform: scale(0.93) }
+
+/* ================================================================
+   BACK / CLOSE BUTTONS IN OVERLAY — spring
+   ================================================================ */
+.ov-back-btn, .ov-close-btn {
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.ov-back-btn:hover  { transform: scale(1.08) translateX(-2px) }
+.ov-close-btn:hover { transform: scale(1.08) rotate(90deg) }
+.ov-back-btn:active, .ov-close-btn:active { transform: scale(0.9) }
+
+/* ================================================================
+   VALIDATION SHAKE
+   ================================================================ */
+@keyframes shake {
+  0%,100% { transform: translateX(0) }
+  15%  { transform: translateX(-7px) }
+  35%  { transform: translateX(6px) }
+  55%  { transform: translateX(-5px) }
+  75%  { transform: translateX(4px) }
+  90%  { transform: translateX(-2px) }
+}
+.ov-shake { animation: shake 0.48s cubic-bezier(0.36,0.07,0.19,0.97) both }
+
+/* ================================================================
+   ERROR MESSAGE SLIDE IN
+   ================================================================ */
+.ov-err:not(.hidden) {
+  animation: fadeUp 0.3s ease both;
+}
+
+/* ================================================================
+   TOAST — spring enter / exit
+   ================================================================ */
+@keyframes toastIn {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(80px) scale(0.9) }
+  65%  { opacity: 1; transform: translateX(-50%) translateY(-6px) scale(1.01) }
+  100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1) }
+}
+.cm-toast.cm-toast-visible {
+  animation: toastIn 0.5s cubic-bezier(0.22,1,0.36,1) both;
+  transform: translateX(-50%) translateY(0) !important;
+  opacity: 1 !important;
+}
+.cm-toast-close {
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+.cm-toast-close:hover { transform: scale(1.15) rotate(90deg) }
+
+/* Loading toast spinner */
+.cm-toast-loading .cm-toast-icon {
+  animation: cmSpin 0.65s linear infinite;
+}
+@keyframes cmSpin { to { transform: rotate(360deg) } }
+
+/* ================================================================
+   HEADER REVEAL
+   ================================================================ */
+@keyframes headerIn {
+  from { opacity: 0; transform: translateY(-100%) }
+  to   { opacity: 1; transform: translateY(0) }
+}
+.db-header { animation: headerIn 0.5s cubic-bezier(0.22,1,0.36,1) both }
+
+/* ================================================================
+   ASIDE REVEAL (desktop)
+   ================================================================ */
+@keyframes asideIn {
+  from { opacity: 0; transform: translateX(-100%) }
+  to   { opacity: 1; transform: translateX(0) }
+}
+@media (min-width: 900px) {
+  .db-aside { animation: asideIn 0.5s cubic-bezier(0.22,1,0.36,1) both }
+}
+
+/* Aside link hover underline slide */
+.aside-link { position: relative }
+.aside-link::after {
+  content: ''; position: absolute; left: 0; bottom: 0;
+  width: 0; height: 1px; background: var(--acc);
+  transition: width 0.3s cubic-bezier(0.22,1,0.36,1);
+}
+.aside-link:hover::after { width: 100% }
+
+/* Aside avatar zoom on hover */
+.aside-avatar-wrap {
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.aside-avatar-wrap:hover { transform: scale(1.06) }
+
+/* ================================================================
+   HEADER BUTTONS — spring
+   ================================================================ */
+.hdr-btn {
+  transition: color 0.2s ease, transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.hdr-btn:hover  { transform: scale(1.15) }
+.hdr-btn:active { transform: scale(0.9) }
+
+/* ================================================================
+   STAT CHIPS — spring on hover
+   ================================================================ */
+.cm-stat-chip {
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.cm-stat-chip:hover { transform: translateY(-2px) }
+
+/* ================================================================
+   SEARCH FOCUS GLOW
+   ================================================================ */
+.cm-search {
+  transition: border-color 0.2s ease, box-shadow 0.3s ease, transform 0.2s ease;
+}
+.cm-search:focus {
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  transform: translateY(-1px);
+}
+
+/* ================================================================
+   SORT SELECT — hover
+   ================================================================ */
+.cm-sort {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.cm-sort:focus { box-shadow: 0 0 0 3px rgba(59,130,246,0.12) }
+
+/* ================================================================
+   TIER BADGE SHINE (premium/gold)
+   ================================================================ */
+@keyframes badgeShine {
+  0%   { background-position: -200% center }
+  100% { background-position: 200% center }
+}
+.tier-gold {
+  background: linear-gradient(90deg,
+    rgba(245,158,11,0.1),
+    rgba(251,191,36,0.2),
+    rgba(245,158,11,0.1));
+  background-size: 200% 100%;
+  animation: badgeShine 3s ease-in-out infinite;
+}
+.tier-premium {
+  background: linear-gradient(90deg,
+    rgba(59,130,246,0.08),
+    rgba(99,102,241,0.15),
+    rgba(59,130,246,0.08));
+  background-size: 200% 100%;
+  animation: badgeShine 4s ease-in-out infinite;
+}
+
+/* ================================================================
+   CHECKIN BADGE — pulse for pending
+   ================================================================ */
+@keyframes pendingPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0) }
+  50%      { box-shadow: 0 0 0 5px rgba(245,158,11,0.2) }
+}
+.cm-checkin-badge.pending {
+  animation: pendingPulse 2.2s ease-in-out infinite;
+}
+
+/* ================================================================
+   UPGRADE BOX — subtle border glow
+   ================================================================ */
+@keyframes upgradePulse {
+  0%,100% { border-color: rgba(59,130,246,0.2) }
+  50%      { border-color: rgba(59,130,246,0.45) }
+}
+.aside-upgrade { animation: upgradePulse 3.5s ease-in-out infinite }
+
+/* ================================================================
+   MOBILE ASIDE SLIDE (already in light CSS; add spring here)
+   ================================================================ */
+@media (max-width: 899px) {
+  .db-aside {
+    transition: transform 0.4s cubic-bezier(0.22,1,0.36,1), box-shadow 0.4s ease;
+  }
+  .db-aside.open { box-shadow: 8px 0 40px rgba(0,0,0,0.5) }
+}
+
+/* ================================================================
+   REDUCED MOTION — safety net
+   ================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.1s !important;
+  }
+  .cm-card:hover  { transform: none }
+  .ov-cat-card:hover, .ov-goal-card:hover, .ov-motion-word:hover { transform: none }
+  .cm-fab:hover   { transform: none }
+}
+
+/* ================================================================
+   LIGHT MODE OVERRIDES
+   ================================================================ */
+body.sd-light .cm-card {
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+body.sd-light .cm-card:hover {
+  box-shadow: 0 8px 28px rgba(0,0,0,0.12);
+}
+body.sd-light .ov-panel {
+  background: #ffffff;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+body.sd-light .cm-toast {
+  background: #ffffff;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+}
+body.sd-light .db-header {
+  box-shadow: 0 1px 0 #e2e8f0;
+}

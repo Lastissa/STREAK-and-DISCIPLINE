@@ -11,38 +11,40 @@ urlpatterns = [
     path('db_save', views.DbSave.as_view(), name = "origin_database"),
     path('redirect_url/<str:raw_url>/', views.RedirectHandler.as_view(), name='origin_redirect_handler'),
     path('in-progress/', views.InProgress.as_view(), name = 'in_progess'),
-    
     path('onboarding/', views.Onboarding.as_view(),name='origin_onboarding'),
-    path('dashboard/', views.Dashboard.as_view(), name = 'origin_dashboard'),
-    path('dashboard/json/', views.DashboardJson.as_view(), name = 'origin_dashboard_json'),
-    path('dashboard/settings/', views.Dashboard.as_view(), name = 'origin_settings'),
-    path('dashboard/settings/', views.Dashboard.as_view(), name = 'origin_personal_data'),
-    path('dashboard/commitments/', views.CommitmentView.as_view(), name = 'origin_commitments'),
-    path('dashboard/create-commitments/', views.CommitmentView.as_view(), name = 'origin_commitments'),
-    path('dashboard/commitment/<str:commitment_id>/', views.EachCommitmentView.as_view(), name = 'origin_each_commitment_view'),
-    path('dashboard/profile/', views.InProgress.as_view(), name = 'origin_profile'),
-    
+
+    #leaderboard ui and json
     path('leaderboard/', views.Leaderboard.as_view(), name= "origin_leaderboard"),
     path('leaderboard/get_weekly_data/', views.GetLeaderBoardData.as_view(), name= "origin_get_weekly_leaderboard_json"),
     
+    #Dashboard
+    path('dashboard/', views.Dashboard.as_view(), name = 'origin_dashboard'),
+    path('dashboard/json/', views.DashboardJson.as_view(), name = 'origin_dashboard_json'),
+    path('dashboard/settings/', views.Dashboard.as_view(), name = 'origin_settings'),
+    path('dashboard/commitments/', views.DashboardCommitmentView.as_view(), name = 'origin_commitments'),
+    path('dashboard/commitment/<str:commitment_key>/', views.EachCommitmentView.as_view(), name = 'origin_each_commitment_view'),
+    path('dashboard/profile/', views.ProfileSettings.as_view(), name = 'origin_profile'),
+    
+    #public accesible
     path('blog/', views.BlogView.as_view(), name= "origin_blog"),
-        
     path('extra/', views.Extras.as_view(),name='origin_extra'),
     path('navigation/', views.Extras.as_view(),name='origin_navigation'),
     path('weekly-analysis/', views.Reports.as_view(),name='origin_weekly_analysis'),
+    path('search_friend/', views.SearchFriend.as_view(), name = 'origin_search_friend'),
+    path('add_friend/', views.AddFriend.as_view(), name = 'origin_add_friend'),
+    path('message/', views.LogoutUI.as_view(), name = 'origin_logout'),
+    
+    #auth
     path('login/', views.Login.as_view(),name='origin_login'),
     path('signup/', views.Signup.as_view(),name='origin_signup'),
     path('password-reset/', views.PasswordReset.as_view(),name='origin_password_reset'),
     path('password/<str:email>/<str:token>/',views.PasswordValidate.as_view(), name = 'origin_password_reset_validate' ),
-
-    path('search_friend/', views.SearchFriend.as_view(), name = 'origin_search_friend'),
-    path('add_friend/', views.AddFriend.as_view(), name = 'origin_add_friend'),
-   
-    path('message/', views.LogoutUI.as_view(), name = 'origin_logout'),
     
+    #debug
     path('debug/test-search/', views.TestSearch.as_view(), name='test_search'),
     path('debug/logout/', views.Logout.as_view(), name = 'origin_logout_active_user'),
     
+    #json only
     path('user_commitment_data/', views.CommitmentData.as_view(), name = "origin_commitmnet_data"),
     path('user_picture_data/', views.UserPicture.as_view(), name = "origin_user_picture"),
     path('user_partner_widget/', views.PartnerWidget.as_view(), name = "origin_parner_widget"),

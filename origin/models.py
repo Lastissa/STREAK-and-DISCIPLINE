@@ -93,7 +93,7 @@ class PasswordResetToken(models.Model):
 class Profile(models.Model):
     user = models.OneToOneField(CustomeUser, on_delete=models.CASCADE) #onetoonefeild cos it need to be unique unlike foreignKey
     tier = models.CharField(max_length=20, default= custom_val.tier[0])
-    # profile_img_url = models.URLField(max_length=500, blank=True, null=True)
+    profile_img_url = models.URLField(max_length=500, blank=True, null=True)
     public_searchable_username = models.CharField(max_length=50, blank=True, unique=True) # this is user unique id and can be changed by user anytime, it contain their username from base user and their database CustomeUser pk which is alwasy unique e.g opeyemi01, its used incase the user want to share info other user and to avoid leaking credentials, i adeed unique true cos ope01 to yemi01(yemi01 might already exist)
     leaderboard_optin = models.BooleanField(default=False) #This hides the user from appearing in the public leaderboard analysis -though the streak will still be visible to their partner
     streak_count_is_public_visible = models.BooleanField(default=False) #This hides the streak from showing to the public leaderboard if leaderboard optin is enabled
@@ -181,7 +181,16 @@ class Friendship(models.Model):
         
         
 class News(models.Model):
-    title = models.CharField(blank=False, null= False)                                                              #news title
-    tag = models.CharField(blank=False, null= False)        #categrory of post
+    title = models.CharField(blank=False, null= False)          # News title
+    tag = models.CharField(blank=False, null= False)            # Category of post based on the custom choiced class
+    excerpt = models.CharField(blank=False, null= False)        # Frist few lines of the full text
+    date = models.DateField(auto_now_add= True)                 # Date created
+    read_time = models.IntegerField(blank=False, null=False)    # Estimated time user is suppose to read it for
+    banner = models.URLField(null=False)                        # IF the new have a banner and the image of the banner
+    featuered = models.BooleanField(default=True)               # for full width set to true
+    
+    def __str__(self):
+        return "News"
+    
     
     

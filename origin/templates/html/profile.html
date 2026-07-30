@@ -44,7 +44,7 @@
           <div class="aside-section-lbl">Navigation</div>
           <a href="{% url 'origin_dashboard' %}" class="aside-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
           <a href="/v1/profile/" class="aside-link active"><i class="fas fa-circle-user"></i> Profile</a>
-          <a href="/v1/commitments/" class="aside-link"><i class="fas fa-fire-flame-curved"></i> Commitments</a>
+          <a href="{% url "origin_commitments" %}" class="aside-link"><i class="fas fa-fire-flame-curved"></i> Commitments</a>
           <a href="/v1/leaderboard/" class="aside-link"><i class="fas fa-ranking-star"></i> Leaderboard</a>
           <a href="/v1/groups/" class="aside-link"><i class="fas fa-users"></i> Groups</a>
           <a href="/v1/blog/" class="aside-link"><i class="fas fa-newspaper"></i> Blog</a>
@@ -68,73 +68,96 @@
       <main class="pf-main">
         <div class="pf-grid">
 
+          <!-- SECTION 0: Profile Picture -->
+          <section class="pf-section">
+            <div class="pf-section-head"><i class="fas fa-camera"></i><h2>Profile Picture</h2></div>
+            <div class="pf-card">
+              <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
+                <div class="pf-avatar-large" id="pfAvatarLarge">
+                  <div class="sk sk-circle" style="width:96px;height:96px" id="pfAvatarLargeSk"></div>
+                </div>
+                <div style="flex:1;min-width:200px">
+                  {% if tier == 'free' %}
+                  <p class="pf-hint" style="margin-bottom:0.8rem"><i class="fas fa-lock"></i> Profile picture upload is a <strong>Premium & Gold</strong> feature.</p>
+                  <a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm">Upgrade to Upload</a>
+                  {% else %}
+                  <div class="pf-field">
+                    <label>Upload Profile Picture</label>
+                    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+                      <input type="file" id="profilePicFile" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none">
+                      <button class="btn btn-outline btn-sm" id="chooseFileBtn"><i class="fas fa-folder-open"></i> Choose File</button>
+                      <span id="fileNameDisplay" style="font-size:0.78rem;color:var(--ink2)">No file chosen</span>
+                      <button class="btn btn-primary btn-sm" id="saveProfilePic" disabled>Upload</button>
+                    </div>
+                    <p class="pf-hint">JPEG, PNG, WebP, or GIF. Maximum 5MB. Image will be automatically compressed.</p>
+                  </div>
+                  <span class="pf-cooldown" id="cooldown-profile_picture"></span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- SECTION 1: Identity -->
           <section class="pf-section">
             <div class="pf-section-head"><i class="fas fa-id-card"></i><h2>Identity</h2></div>
             <div class="pf-card">
-              <div class="pf-field"><label>Public User ID</label><div class="pf-readonly-row"><span class="pf-readonly-value" id="publicId">{{ public_id }}</span><button class="btn btn-sm btn-outline copy-btn" data-copy="{{ public_id }}"><i class="fas fa-copy"></i></button></div><p class="pf-hint">Share this ID so others can find you as an accountability partner.</p></div>
-              <div class="pf-field"><label>Username</label><div class="pf-edit-row"><input type="text" class="pf-input" id="displayName" value="{{ display_name }}" maxlength="40"><button class="btn btn-primary btn-sm save-btn" data-field="display_name" data-input="displayName">Save</button></div><span class="pf-cooldown" id="cooldown-display_name"></span></div>
-              <div class="pf-field"><label>Email Address</label><div class="pf-readonly-row"><span class="pf-readonly-value">{{ request.user.email }}</span></div><p class="pf-hint">Your email is used for login and notifications.</p></div>
+              <div class="pf-field"><label>Username</label><div class="pf-edit-row"><input type="text" class="pf-input" id="usernameInput" value="{{ request.user.username }}" maxlength="50"><button class="btn btn-primary btn-sm save-btn" data-field="username" data-input="usernameInput">Save</button></div><p class="pf-hint">Changing your username will prompt you to also update your Public User ID (currently <strong>{{ public_id }}</strong>). You can choose to keep your current ID or update it.</p><span class="pf-cooldown" id="cooldown-username"></span></div>
+              <div class="pf-field"><label>Public User ID</label><div class="pf-edit-row"><input type="text" class="pf-input" id="publicIdInput" value="{{ public_id }}" maxlength="50"><button class="btn btn-primary btn-sm save-btn" data-field="public_searchable_username" data-input="publicIdInput">Save</button></div><p class="pf-hint">This is how others find you for accountability partnerships. Changing it does not affect your login.</p><span class="pf-cooldown" id="cooldown-public_searchable_username"></span></div>
+              <div class="pf-field"><label>Email Address</label><div class="pf-readonly-row"><span class="pf-readonly-value">{{ request.user.email }}</span></div><p class="pf-hint">Your email is used for login and notifications. Contact support to change it.</p></div>
               <div class="pf-field"><label>Account Created</label><div class="pf-readonly-row"><span class="pf-readonly-value">{{ request.user.date_joined|date:"F j, Y" }}</span></div></div>
             </div>
           </section>
 
+          <!-- SECTION 2: Privacy & Visibility -->
           <section class="pf-section">
             <div class="pf-section-head"><i class="fas fa-shield-halved"></i><h2>Privacy & Visibility</h2></div>
             <div class="pf-card">
-              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Appear on Leaderboard</span><p class="pf-hint">Your public ID and streak total will be visible.</p></div><label class="pf-switch"><input type="checkbox" id="leaderboardOptin" {% if leaderboard_optin %}checked{% endif %} data-field="leaderboard_optin"><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-leaderboard_optin"></span>
-              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Show Exact Streak Count</span><p class="pf-hint">When off, only your rank is shown.</p></div><label class="pf-switch"><input type="checkbox" id="streakVisible" {% if streak_visible %}checked{% endif %} data-field="streak_count_is_public_visible"><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-streak_count_is_public_visible"></span>
-              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Partner Mode</span><p class="pf-hint">Allow partners to see your consistency.</p></div><label class="pf-switch"><input type="checkbox" id="socialMode" {% if social_mode == 'partner' %}checked{% endif %} data-field="social_mode" data-true="partner" data-false="solo"><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-social_mode"></span>
+              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Appear on Weekly Leaderboard</span><p class="pf-hint">When enabled, your Public User ID and rank appear on the public weekly leaderboard. Your journal entries are never shown.</p></div><label class="pf-switch"><input type="checkbox" id="leaderboardOptin" {% if leaderboard_optin %}checked{% endif %} data-field="leaderboard_optin"><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-leaderboard_optin"></span>
+              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Show Zeal Score Publicly</span><p class="pf-hint">If leaderboard appearance is on, this controls whether your exact Zeal Score number is displayed or just your rank. <strong>Premium & Gold only.</strong></p></div><label class="pf-switch"><input type="checkbox" id="streakVisible" {% if streak_visible %}checked{% endif %} data-field="streak_count_is_public_visible" {% if tier == 'free' %}disabled{% endif %}><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-streak_count_is_public_visible"></span>
+              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Partner Mode</span><p class="pf-hint">Allow accountability partners to see your consistency score. Your journal entries remain private regardless.</p></div><label class="pf-switch"><input type="checkbox" id="socialMode" {% if social_mode == 'partner' %}checked{% endif %} data-field="social_mode" data-true="partner" data-false="solo"><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-social_mode"></span>
             </div>
           </section>
 
+          <!-- SECTION 3: Notifications -->
           <section class="pf-section">
-            <div class="pf-section-head"><i class="fas fa-bell"></i><h2>Notifications</h2></div>
+            <div class="pf-section-head"><i class="fas fa-bell"></i><h2>Notifications & Reports</h2></div>
             <div class="pf-card">
-              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Weekly Truth Report</span><p class="pf-hint">Every Sunday via email.</p></div><label class="pf-switch"><input type="checkbox" id="weeklyReport" {% if weekly_report %}checked{% endif %} data-field="weekly_report_email_active"><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-weekly_report_email_active"></span>
-              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Custom Reports</span><p class="pf-hint">Every 3, 5, or 30 days. Pro feature.</p></div><label class="pf-switch"><input type="checkbox" id="customReports" {% if custom_reports %}checked{% endif %} data-field="custom_report_email_active" {% if tier == 'free' %}disabled{% endif %}><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-custom_report_email_active"></span>
-              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Newsletter</span><p class="pf-hint">Tips, updates, discipline content.</p></div><label class="pf-switch"><input type="checkbox" id="newsletter" {% if newsletter %}checked{% endif %} data-field="receive_newsletter"><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-receive_newsletter"></span>
+              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Weekly Truth Report</span><p class="pf-hint">Receive an honest breakdown of your week every Sunday via email.</p></div><label class="pf-switch"><input type="checkbox" id="weeklyReport" {% if weekly_report %}checked{% endif %} data-field="weekly_report_email_active"><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-weekly_report_email_active"></span>
+              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Custom Periodical Reports</span><p class="pf-hint">Receive reports every 3, 5, or 30 days. <strong>Pro feature.</strong></p></div><label class="pf-switch"><input type="checkbox" id="customReports" {% if custom_reports %}checked{% endif %} data-field="custom_report_email_active" {% if tier == 'free' %}disabled{% endif %}><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-custom_report_email_active"></span>
+              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Product Newsletter</span><p class="pf-hint">Occasional tips, new features, and discipline content.</p></div><label class="pf-switch"><input type="checkbox" id="newsletter" {% if newsletter %}checked{% endif %} data-field="receive_newsletter"><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-receive_newsletter"></span>
             </div>
           </section>
 
+          <!-- SECTION 4: Appearance -->
+          <section class="pf-section"><div class="pf-section-head"><i class="fas fa-palette"></i><h2>Appearance</h2></div><div class="pf-card"><div class="pf-field"><label>Theme Mode</label><div class="theme-picker"><button class="theme-opt {% if theme == 'dark' %}on{% endif %}" data-theme="dark" data-field="theme"><span class="theme-swatch dark-swatch"></span> Dark</button><button class="theme-opt {% if theme == 'light' %}on{% endif %}" data-theme="light" data-field="theme"><span class="theme-swatch light-swatch"></span> Light</button></div></div></div></section>
+
+          <!-- SECTION 5: AI & Advanced -->
           <section class="pf-section">
-            <div class="pf-section-head"><i class="fas fa-palette"></i><h2>Appearance</h2></div>
+            <div class="pf-section-head"><i class="fas fa-microchip"></i><h2>AI & Advanced Features</h2></div>
             <div class="pf-card">
-              <div class="pf-field"><label>Theme Mode</label><div class="theme-picker"><button class="theme-opt {% if theme == 'dark' %}on{% endif %}" data-theme="dark" data-field="theme"><span class="theme-swatch dark-swatch"></span> Dark</button><button class="theme-opt {% if theme == 'light' %}on{% endif %}" data-theme="light" data-field="theme"><span class="theme-swatch light-swatch"></span> Light</button></div></div>
+              <div class="pf-toggle-row"><div><span class="pf-toggle-label">AI-Powered Weekly Insights</span><p class="pf-hint">Anonymous analysis of your entries for personalized recommendations.</p></div><label class="pf-switch"><input type="checkbox" id="aiInsights" {% if ai_insights %}checked{% endif %} data-field="ai_insight_active"><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-ai_insight_active"></span>
+              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Advanced Predictive Analytics</span><p class="pf-hint">AI predicts future consistency trends and suggests optimal check-in times. <strong>Premium & Gold only.</strong></p></div><label class="pf-switch"><input type="checkbox" id="advancedAnalytics" {% if advanced_analytics %}checked{% endif %} data-field="advanced_analytics" {% if tier == 'free' %}disabled{% endif %}><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-advanced_analytics"></span>
             </div>
           </section>
 
-          <section class="pf-section">
-            <div class="pf-section-head"><i class="fas fa-microchip"></i><h2>AI & Insights</h2></div>
-            <div class="pf-card">
-              <div class="pf-toggle-row"><div><span class="pf-toggle-label">AI-Powered Insights</span><p class="pf-hint">Anonymous analysis of your entries.</p></div><label class="pf-switch"><input type="checkbox" id="aiInsights" {% if ai_insights %}checked{% endif %} data-field="ai_insight_active"><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-ai_insight_active"></span>
-            </div>
-          </section>
-
+          <!-- SECTION 6: Subscription -->
           <section class="pf-section">
             <div class="pf-section-head"><i class="fas fa-gem"></i><h2>Subscription</h2></div>
             <div class="pf-card">
               <div class="pf-field"><label>Current Plan</label><div class="pf-readonly-row"><span class="pf-readonly-value" style="text-transform:capitalize">{{ tier }}</span></div></div>
-              {% if tier == 'free' %}<p class="pf-hint" style="margin-bottom:1rem">Upgrade to unlock 50 commitments, AI insights, and more.</p><a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm">Start 7-Day Trial</a>{% elif tier == 'premium' %}<p class="pf-hint" style="margin-bottom:1rem">You're on Premium. Thank you.</p><a href="/v1/upgrade/" class="btn btn-outline btn-sm">Upgrade to Gold</a>{% else %}<p class="pf-hint">Gold plan — full access.</p>{% endif %}
+              {% if tier == 'free' %}<p class="pf-hint" style="margin-bottom:1rem">Upgrade to unlock 50 commitments, AI insights, custom reports, profile pictures, advanced analytics, and WhatsApp reminders.</p><a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm">Start 7-Day Pro Trial</a>{% elif tier == 'premium' %}<p class="pf-hint" style="margin-bottom:1rem">You're on Premium. Upgrade to Gold for unlimited everything.</p><a href="/v1/upgrade/" class="btn btn-outline btn-sm">Upgrade to Gold</a>{% else %}<p class="pf-hint">Gold plan — full access to everything. Thank you.</p>{% endif %}
             </div>
           </section>
 
-          <section class="pf-section">
-            <div class="pf-section-head"><i class="fas fa-database"></i><h2>Data & Export</h2></div>
-            <div class="pf-card">
-              <p class="pf-hint" style="margin-bottom:1rem">Download all your data in portable formats.</p>
-              <div style="display:flex;gap:0.5rem;flex-wrap:wrap"><button class="btn btn-outline btn-sm" id="exportJsonBtn"><i class="fas fa-file-code"></i> JSON</button><button class="btn btn-outline btn-sm" id="exportCsvBtn"><i class="fas fa-file-csv"></i> CSV</button></div>
-            </div>
-          </section>
+          <!-- SECTION 7: Data -->
+          <section class="pf-section"><div class="pf-section-head"><i class="fas fa-database"></i><h2>Data & Export</h2></div><div class="pf-card"><p class="pf-hint" style="margin-bottom:1rem">Download all your data.</p><div style="display:flex;gap:0.5rem"><button class="btn btn-outline btn-sm" id="exportJsonBtn"><i class="fas fa-file-code"></i> JSON</button><button class="btn btn-outline btn-sm" id="exportCsvBtn"><i class="fas fa-file-csv"></i> CSV</button></div></div></section>
 
-          <section class="pf-section">
-            <div class="pf-section-head"><i class="fas fa-user-group"></i><h2>Partners</h2></div>
-            <div class="pf-card"><div id="partnerListContainer"><p class="pf-hint">Loading partners…</p></div></div>
-          </section>
+          <!-- SECTION 8: Partners -->
+          <section class="pf-section"><div class="pf-section-head"><i class="fas fa-user-group"></i><h2>Partners</h2></div><div class="pf-card"><div id="partnerListContainer"><p class="pf-hint">Loading partners…</p></div></div></section>
 
-          <section class="pf-section pf-danger">
-            <div class="pf-section-head"><i class="fas fa-triangle-exclamation"></i><h2>Danger Zone</h2></div>
-            <div class="pf-card"><p class="pf-hint" style="margin-bottom:1rem">Permanent actions. No undo.</p><button class="btn btn-outline btn-sm" id="deleteAccountBtn" style="border-color:#ef4444;color:#ef4444"><i class="fas fa-trash"></i> Delete My Account</button></div>
-          </section>
+          <!-- SECTION 9: Danger -->
+          <section class="pf-section pf-danger"><div class="pf-section-head"><i class="fas fa-triangle-exclamation"></i><h2>Danger Zone</h2></div><div class="pf-card"><p class="pf-hint" style="margin-bottom:1rem">Permanent. No undo.</p><button class="btn btn-outline btn-sm" id="deleteAccountBtn" style="border-color:#ef4444;color:#ef4444"><i class="fas fa-trash"></i> Delete My Account</button></div></section>
 
         </div>
         <footer class="pf-footer"><p>&copy; {{ footer_copyright_note }}</p><p><a href="{% url 'origin_extra' %}#privacy">Privacy</a> · <a href="{% url 'origin_extra' %}#terms">Terms</a> · <a href="mailto:issaabdulsalamope11@gmail.com">Contact</a></p></footer>
@@ -158,11 +181,24 @@
     var cooldowns={};
     function isOnCooldown(f){if(!cooldowns[f])return false;return(Date.now()-cooldowns[f])<10000}
     function setCooldown(f){cooldowns[f]=Date.now();var el=$('#cooldown-'+f);if(el){el.textContent='Saved. Wait 10s.';el.classList.add('show');var r=10;var t=setInterval(function(){r--;if(r<=0){el.textContent='';el.classList.remove('show');clearInterval(t)}else{el.textContent='Saved. Wait '+r+'s.'}},1000)}}
+
+    // Profile picture upload
+    var fileInput=$('#profilePicFile'),chooseBtn=$('#chooseFileBtn'),fileNameDisplay=$('#fileNameDisplay'),savePicBtn=$('#saveProfilePic'),selectedFile=null;
+    if(chooseBtn){chooseBtn.addEventListener('click',function(){fileInput.click()})}
+    if(fileInput){fileInput.addEventListener('change',function(){if(this.files&&this.files[0]){selectedFile=this.files[0];fileNameDisplay.textContent=selectedFile.name;savePicBtn.disabled=false}})}
+    if(savePicBtn){savePicBtn.addEventListener('click',function(){if(!selectedFile)return;if(isOnCooldown('profile_picture')){alert('Wait 10 seconds.');return}var fd=new FormData();fd.append('profile_picture',selectedFile);savePicBtn.disabled=true;fetch('/v1/update_profile_picture/',{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken')},body:fd}).then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})}).then(function(res){savePicBtn.disabled=false;if(!res.ok){alert(res.data.message||'Failed');return}setCooldown('profile_picture');updateAvatarDisplay(res.data.url);fileNameDisplay.textContent='No file chosen';selectedFile=null}).catch(function(){savePicBtn.disabled=false;alert('Network error.')})})}
+
+    function updateAvatarDisplay(url){var ts='?t='+Date.now();var largeWrap=$('#pfAvatarLarge'),asideWrap=$('#asideAvatarWrap');[largeWrap,asideWrap].forEach(function(w){if(!w)return;w.innerHTML='';var img=document.createElement('img');img.alt='{{request.user.username}}';img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%';img.onerror=function(){this.src='https://api.dicebear.com/7.x/initials/svg?seed='+encodeURIComponent('{{request.user.username}}')+'&backgroundColor=1e293b&textColor=60a5fa&size=64'};img.src=url?url+ts:'';w.appendChild(img)})}
+
+    // Username change warning
+    $('#usernameInput').addEventListener('input',function(){var n=this.value.trim(),p=$('#publicIdInput').value;if(n&&p&&!p.startsWith(n.toLowerCase())){if(confirm('Update your Public User ID to "'+n.toLowerCase()+'" as well?')){$('#publicIdInput').value=n.toLowerCase()}}});
+
     $$('.save-btn').forEach(function(b){b.addEventListener('click',function(){var f=this.dataset.field,i=$('#'+this.dataset.input);if(isOnCooldown(f)){alert('Wait 10 seconds.');return}fetch('/v1/update_profile/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},body:JSON.stringify({field:f,value:i.value.trim()})}).then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})}).then(function(res){if(!res.ok){alert(res.data.message||'Failed');return}setCooldown(f)}).catch(function(){alert('Network error.')})})});
-    $$('.pf-switch input[type="checkbox"]').forEach(function(t){t.addEventListener('change',function(){var f=this.dataset.field;if(isOnCooldown(f)){this.checked=!this.checked;alert('Wait 10 seconds.');return}var v=this.dataset.true!==undefined?(this.checked?this.dataset.true:this.dataset.false):this.checked;fetch('/v1/update_profile/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},body:JSON.stringify({field:f,value:v})}).then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})}).then(function(res){if(!res.ok){t.checked=!t.checked;alert(res.data.message||'Failed');return}setCooldown(f)}).catch(function(){t.checked=!t.checked;alert('Network error.')})})});
+    $$('.pf-switch input[type="checkbox"]:not([disabled])').forEach(function(t){t.addEventListener('change',function(){var f=this.dataset.field;if(isOnCooldown(f)){this.checked=!this.checked;alert('Wait 10 seconds.');return}var v=this.dataset.true!==undefined?(this.checked?this.dataset.true:this.dataset.false):this.checked;fetch('/v1/update_profile/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},body:JSON.stringify({field:f,value:v})}).then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})}).then(function(res){if(!res.ok){t.checked=!t.checked;alert(res.data.message||'Failed');return}setCooldown(f)}).catch(function(){t.checked=!t.checked;alert('Network error.')})})});
     $$('.theme-opt').forEach(function(b){b.addEventListener('click',function(){var f=this.dataset.field,v=this.dataset.theme;if(isOnCooldown(f)){alert('Wait 10 seconds.');return}fetch('/v1/update_profile/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},body:JSON.stringify({field:f,value:v})}).then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})}).then(function(res){if(!res.ok){alert(res.data.message||'Failed');return}$$('.theme-opt').forEach(function(x){x.classList.remove('on')});b.classList.add('on');setCooldown(f)}).catch(function(){alert('Network error.')})})});
-    $$('.copy-btn').forEach(function(b){b.addEventListener('click',function(){navigator.clipboard.writeText(this.dataset.copy).then(function(){b.innerHTML='<i class="fas fa-check"></i>';setTimeout(function(){b.innerHTML='<i class="fas fa-copy"></i>'},1500)})})});
+
     $('#deleteAccountBtn').addEventListener('click',function(){if(confirm('Delete your account forever?')){if(confirm('Final confirmation: All data erased.')){fetch('/v1/delete_account/',{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken')}}).then(function(r){return r.json()}).then(function(d){if(d.ok){window.location.href='{% url "origin_login" %}'}else{alert(d.message||'Failed')}}).catch(function(){alert('Network error.')})}}});
+
     function init(){
       var tb=$('#themeToggle'),ti=tb.querySelector('i');
       function setTheme(d){document.body.classList.toggle('sd-light',!d);ti.className=d?'fas fa-moon':'fas fa-sun';setCookie('sd-theme',d?'dark':'light',365)}
@@ -172,8 +208,9 @@
       toggle.addEventListener('click',function(){sidebar.classList.contains('open')?close():open()});overlay.addEventListener('click',close);
       sidebar.querySelectorAll('.aside-link').forEach(function(l){l.addEventListener('click',function(){if(window.innerWidth<1024)close()})});
       var DEFAULT_AVATAR='https://api.dicebear.com/7.x/initials/svg?seed='+encodeURIComponent('{{ request.user.username }}')+'&backgroundColor=1e293b&textColor=60a5fa&size=64';
-      fetch("{% url 'origin_user_picture' %}",{headers:{'X-CSRFToken':getCookie('csrftoken')}}).then(function(r){return r.json()}).then(function(d){var url=d.url||'',wrap=$('#asideAvatarWrap');if(!wrap)return;var img=document.createElement('img');img.alt='{{request.user.username}}';img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%';img.onerror=function(){this.src=DEFAULT_AVATAR};img.onload=function(){var sk=$('#asideAvatarSk');if(sk)sk.remove();wrap.appendChild(img)};img.src=url||DEFAULT_AVATAR}).catch(function(){});
-      fetch("{% url 'origin_parner_widget' %}",{headers:{'X-CSRFToken':getCookie('csrftoken')}}).then(function(r){return r.json()}).then(function(d){var c=$('#partnerListContainer');if(!d.partners||!d.partners.length){c.innerHTML='<p class="pf-hint">No partners yet.</p>';return}c.innerHTML=d.partners.map(function(p){return '<div class="pf-readonly-row" style="margin-bottom:0.5rem"><span class="pf-readonly-value">@'+p.public_id+'</span><span style="font-size:0.78rem;color:var(--ink3)">'+p.streak_count+' pts</span></div>'}).join('')}).catch(function(){ $('#partnerListContainer').innerHTML='<p class="pf-hint">Could not load partners.</p>' });
+      function loadAvatars(url){var ts=url?'?t='+Date.now():'';var largeWrap=$('#pfAvatarLarge'),asideWrap=$('#asideAvatarWrap');[largeWrap,asideWrap].forEach(function(w){if(!w)return;w.innerHTML='';var img=document.createElement('img');img.alt='{{request.user.username}}';img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%';img.onerror=function(){this.src=DEFAULT_AVATAR};img.onload=function(){var sk=w.querySelector('.sk');if(sk)sk.remove()};img.src=url?url+ts:DEFAULT_AVATAR;w.appendChild(img)})}
+      fetch("{% url 'origin_user_picture' %}",{headers:{'X-CSRFToken':getCookie('csrftoken')}}).then(function(r){return r.json()}).then(function(d){loadAvatars(d.url||'')}).catch(function(){loadAvatars('')});
+      fetch("{% url 'origin_parner_widget' %}",{headers:{'X-CSRFToken':getCookie('csrftoken')}}).then(function(r){return r.json()}).then(function(d){var c=$('#partnerListContainer');if(!d.partners||!d.partners.length){c.innerHTML='<p class="pf-hint">No partners yet.</p>';return}c.innerHTML=d.partners.map(function(p){return '<div class="pf-readonly-row" style="margin-bottom:0.5rem"><span class="pf-readonly-value">@'+p.public_id+'</span><span style="font-size:0.78rem;color:var(--ink3)">'+p.streak_count+' pts</span></div>'}).join('')}).catch(function(){$('#partnerListContainer').innerHTML='<p class="pf-hint">Could not load partners.</p>'});
       var lb=$('#logoutBtn');if(lb)lb.addEventListener('click',function(){if(confirm('Log out?'))document.getElementById('logoutForm')?.submit()});
     }
   })();

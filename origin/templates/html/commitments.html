@@ -6,371 +6,1718 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>New Commitment — STREAK &amp; DISCIPLINE</title>
-  <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
-  <style>
-    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    :root{--bg:#060b14;--surf:#0d1421;--ink:#e4ecf7;--ink2:#8da5c0;--acc:#3b82f6;--accL:#60a5fa;--edge:#1c2a3d;--font:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
-    html,body{background:var(--bg);height:100%;overflow:hidden}
-    body{font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased}
-    body.sd-light{--bg:#f0f4fa;--surf:#fff;--ink:#0f172a;--ink2:#475569;--edge:#e2e8f0}
-    {% include "reusables/spinner.css" %}
-    .cm-app{opacity:0;visibility:hidden;transition:opacity 0.4s ease,visibility 0.4s ease}
-    .cm-app.loaded{opacity:1;visibility:visible;display:flex;height:100vh;overflow:hidden}
-  </style>
-  <link rel="stylesheet" href="{% static 'css/commitments.css' %}">
-  <link rel="preload" href="{% static 'cdn/commitments_advance.css' %}" as="style"
-        onload="this.onload=null;this.rel='stylesheet';document.documentElement.classList.add('engine-ready')"
-        id="heavy-css">
-  <noscript><link rel="stylesheet" href="{% static 'cdn/commitments_advance.css' %}"></noscript>
-</head>
-<body class="{% if request.COOKIES.sd_theme != 'dark' %}sd-light{% endif %}">
+  <title>My Commitments — STREAK &amp; DISCIPLINE</title>
 
+  <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
+
+  <!--
+    CRITICAL INLINE — background + spinner.
+    Paints in <50ms. Nothing blocks the first pixel.
+  -->
+  <style>
+    {% include "reusables/spinner.css" %}
+    html, body { margin:0; padding:0; background:#060b14; }
+    body.sd-light { background:#f0f4fa; }
+    .cm-app { opacity:0; visibility:hidden; transition:opacity 0.6s ease, visibility 0.6s ease; }
+    .cm-app.cm-visible { opacity:1; visibility:visible; }
+  </style>
+
+  <!-- LIGHT CSS: blocking, critical layout, no animations -->
+  <link rel="stylesheet" href="{% static 'css/commitment_light.css' %}">
+
+  <!-- ADVANCE CSS: non-blocking, loads after first paint -->
+  <link rel="preload" href="{% static 'cdn/commitment_advance.css' %}" as="style"
+        onload="this.onload=null;this.rel='stylesheet'" id="adv-css">
+  <noscript><link rel="stylesheet" href="{% static 'cdn/commitment_advance.css' %}"></noscript>
+</head>
+<body class="sd-{{theme_mode}}">
+
+  <!-- ============================================================
+       SPINNER — shows instantly, removed after window.load
+       ============================================================ -->
   {% include "reusables/spinner.html" %}
 
+  <!-- ============================================================
+       APP SHELL — hidden until JS reveal()
+       ============================================================ -->
   <div class="cm-app" id="cmApp">
-    <canvas id="particleCanvas"></canvas>
+
+    <!-- Mobile aside overlay -->
     <div class="aside-overlay" id="asideOverlay"></div>
 
-    <aside class="cm-aside" id="cmAside">
+    <!-- ================================================
+         ASIDE
+         ================================================ -->
+    <aside class="db-aside no-print" id="dbAside">
       <div class="aside-scroll">
+
         <div class="aside-top">
           <div class="aside-avatar-wrap" id="asideAvatarWrap">
-            {% if request.user.is_authenticated %}<div class="sk sk-circle" style="width:52px;height:52px" id="asideAvatarSk"></div>
-            {% else %}<img src="{{ logo_url }}" alt="S&D" style="width:100%;height:100%;object-fit:cover;border-radius:50%">{% endif %}
+            <div class="sk sk-circle" style="width:52px;height:52px" id="asideAvatarSk"></div>
           </div>
           <div class="aside-username">{{ request.user.username }}</div>
           <div class="aside-email">{{ request.user.email }}</div>
-          <span class="tier-badge tier-{{ tier|default:'free' }}">{% if tier == 'gold' %}<i class="fas fa-crown"></i> Gold{% elif tier == 'premium' %}<i class="fas fa-gem"></i> Premium{% else %}<i class="fas fa-user"></i> Free{% endif %}</span>
+          <span class="tier-badge tier-{{ tier|default:'free' }}">
+            {% if tier == 'gold' %}<i class="fas fa-crown"></i> Gold
+            {% elif tier == 'premium' %}<i class="fas fa-gem"></i> Premium
+            {% else %}<i class="fas fa-user"></i> Free{% endif %}
+          </span>
         </div>
-        <nav class="aside-nav">
+
+        <nav class="aside-nav" aria-label="Main navigation">
           <div class="aside-section-lbl">Navigation</div>
-          <a href="{% url 'origin_dashboard' %}" class="aside-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
-          <a href="/v1/profile/" class="aside-link"><i class="fas fa-circle-user"></i> Profile</a>
-          <a href="{% url "origin_commitments_create" %}" class="aside-link active"><i class="fas fa-fire-flame-curved"></i> Commitments</a>
-          <a href="/v1/leaderboard/" class="aside-link"><i class="fas fa-ranking-star"></i> Leaderboard</a>
+          <a href="{% url "origin_dashboard" %}" class="aside-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
+          <a href="{% url "origin_profile" %}" class="aside-link"><i class="fas fa-circle-user"></i> Profile</a>
+          <a href="{% url "origin_commitments" %}" class="aside-link active" aria-current="page">
+            <i class="fas fa-fire-flame-curved"></i> My Commitments
+          </a>
+
+          <div class="aside-section-lbl" style="margin-top:0.5rem">Community</div>
           <a href="/v1/groups/" class="aside-link"><i class="fas fa-users"></i> Groups</a>
-          <a href="/v1/blog/" class="aside-link"><i class="fas fa-newspaper"></i> Blog</a>
-          <a href="/v1/reports/" class="aside-link"><i class="fas fa-chart-line"></i> Analytics</a>
-          <div class="aside-section-lbl">Support</div>
-          <a href="https://wa.me/2347013687825" target="_blank" rel="noopener" class="aside-link"><i class="fab fa-whatsapp"></i> WhatsApp</a>
-          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link"><i class="fas fa-envelope"></i> Email</a>
+          <a href="/v1/leaderboard/" class="aside-link"><i class="fas fa-ranking-star"></i> Leaderboard</a>
+          <a href="{% url 'origin_blog' %}" class="aside-link"><i class="fas fa-newspaper"></i> Blog &amp; Updates</a>
+
+          <div class="aside-section-lbl" style="margin-top:0.5rem">Insights</div>
+          <a href="/v1/reports/" class="aside-link"><i class="fas fa-chart-line"></i> Analytics &amp; Reports</a>
+          {% if ai_insight_active %}
+          <a href="/v1/insights/" class="aside-link"><i class="fas fa-microchip"></i> AI Insights</a>
+          {% endif %}
+
+          <div class="aside-section-lbl" style="margin-top:0.5rem">Others</div>
+          <a href="{% url 'origin_extra' %}#help" class="aside-link"><i class="fas fa-circle-question"></i> Help</a>
+          <a href="{% url 'origin_extra' %}#policy" class="aside-link"><i class="fas fa-shield-halved"></i> Privacy Policy</a>
+          <a href="{% url 'origin_extra' %}#terms" class="aside-link"><i class="fas fa-file-contract"></i> Terms of Use</a>
+
+          <hr class="aside-sep">
+          <div class="aside-support-lbl">Support</div>
+          <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_blank" rel="noopener" class="aside-link">
+            <i class="fab fa-whatsapp"></i> WhatsApp Support
+          </a>
+          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link">
+            <i class="fas fa-envelope"></i> Email Support
+          </a>
+          <a href="tel:{{ customer_care_phone_number }}" class="aside-link">
+            <i class="fas fa-phone"></i> {{ customer_care_phone_number }}
+          </a>
         </nav>
-        {% if tier == 'free' %}<div class="aside-upgrade"><h4><i class="fas fa-gem"></i> Upgrade to Pro</h4><p>Unlock 50 commitments, AI insights, and more.</p><a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm btn-full">Start 7-Day Trial</a></div>{% endif %}
+
+        {% if not tier or tier == 'free' %}
+        <div class="aside-upgrade">
+          <h4><i class="fas fa-gem"></i> Upgrade to Pro</h4>
+          <p>Unlock AI insights, unlimited commitments, custom reports and WhatsApp reminders.</p>
+          <a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm btn-full">Start 7-Day Trial</a>
+        </div>
+        {% endif %}
+
+      </div><!-- /aside-scroll -->
+
+      <div class="aside-logout">
+        <button class="aside-logout-btn" id="logoutBtn">
+          <i class="fas fa-right-from-bracket"></i> Log Out
+        </button>
       </div>
-      <div class="aside-logout"><button class="aside-logout-btn" id="logoutBtn"><i class="fas fa-right-from-bracket"></i> Log Out</button></div>
-    </aside>
+    </aside><!-- /aside -->
 
-    <div class="cm-wrap" id="cmWrap">
-      <header class="cm-header">
-        <h1 class="cm-title">New Commitment</h1>
-        <div class="cm-header-right">
-          <button class="hdr-btn" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
-          <button class="hdr-btn" id="shareBtnHdr" title="Share"><i class="fas fa-share-nodes"></i></button>
-          <button class="menu-toggle" id="menuToggle" aria-label="Menu"><span></span><span></span><span></span></button>
+    <!-- ================================================
+         HEADER
+         ================================================ -->
+    <header class="db-header no-print">
+      <div class="hdr-left">
+        <div class="hdr-avatar" id="hdrAvatarWrap" role="button" tabindex="0" title="Toggle menu">
+          <div class="sk sk-circle" style="width:32px;height:32px" id="hdrAvatarSk"></div>
         </div>
-      </header>
+        <span class="hdr-brand">STREAK &amp; DISCIPLINE</span>
+      </div>
+      <div class="hdr-quote" id="hdrQuote" aria-live="polite"></div>
+      <div class="hdr-right">
+        <button class="hdr-btn" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
+          <i class="fas fa-moon" id="themeIcon"></i>
+        </button>
+        <button class="hdr-btn hdr-hamburger" id="hamburgerBtn" aria-label="Open navigation">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+    </header>
 
-      <main class="cm-main">
-        <div class="cm-progress"><div class="cm-progress-fill" id="cmProgressFill"></div></div>
-        <div class="cm-phases" id="cmPhases">
+    <!-- ================================================
+         MAIN CONTENT
+         ================================================ -->
+    <div class="cm-wrap">
+      <main class="cm-main" id="cmMain">
 
-          <!-- PHASE 1: What + Category -->
-          <div class="cm-phase active" data-phase="1" id="phase1">
-            <div class="cm-card">
-              <div class="cm-eyebrow">Step 1 of 6</div>
-              <h2 class="cm-h2">What do you commit to?</h2>
-              <p class="cm-hint">Be specific. "Write 300 words" beats "Write more."</p>
-              <input type="text" class="cm-input" id="whatInput" placeholder="e.g., Read 20 pages before bed" maxlength="120" autocomplete="off">
-              <div class="cm-field-err" id="whatErr">Please describe your commitment.</div>
-              <div class="chip-wrap" id="whatSuggestions">
-                <span class="chip" data-fill="whatInput">Read 20 pages daily</span>
-                <span class="chip" data-fill="whatInput">Exercise every morning</span>
-                <span class="chip" data-fill="whatInput">No phone after 10 PM</span>
-                <span class="chip" data-fill="whatInput">Wake up by 6 AM</span>
-                <span class="chip" data-fill="whatInput">Meditate 10 minutes</span>
-                <span class="chip" data-fill="whatInput">Maximum 5 hours screen time</span>
-              </div>
-              <label class="cm-label">Category</label>
-              <div class="cat-grid" id="catGrid">
-                <div class="cat-card" data-cat="fitness"><i class="fas fa-dumbbell"></i>Fitness</div>
-                <div class="cat-card" data-cat="study"><i class="fas fa-book-open"></i>Study</div>
-                <div class="cat-card" data-cat="health"><i class="fas fa-heart-pulse"></i>Health</div>
-                <div class="cat-card" data-cat="mindset"><i class="fas fa-brain"></i>Mindset</div>
-                <div class="cat-card" data-cat="growth"><i class="fas fa-seedling"></i>Growth</div>
-                <div class="cat-card on" data-cat="other"><i class="fas fa-ellipsis"></i>Other</div>
-              </div>
-              <div class="cm-btn-row">
-                <button class="btn btn-primary btn-lg" data-next="2" data-req="whatInput" data-err="whatErr">Continue <i class="fas fa-arrow-right"></i></button>
-              </div>
-            </div>
+        <!-- 1. PAGE HERO -->
+        <div class="cm-hero">
+          <div class="cm-hero-text">
+            <h1 class="cm-page-title">
+              <i class="fas fa-fire-flame-curved" style="color:var(--acc)"></i>
+              My Commitments
+            </h1>
+            <p class="cm-page-sub">Every promise you keep to yourself builds the person you're becoming.</p>
           </div>
+          <button class="btn btn-primary" id="addCommitBtn" aria-label="Add new commitment">
+            <i class="fas fa-plus"></i>
+            <span class="btn-txt">Add Commitment</span>
+          </button>
+        </div>
 
-          <!-- PHASE 2: Why -->
-          <div class="cm-phase" data-phase="2" id="phase2">
-            <div class="cm-card">
-              <div class="cm-eyebrow">Step 2 of 6</div>
-              <h2 class="cm-h2">Why does this matter?</h2>
-              <p class="cm-hint">Not the LinkedIn answer. The real one. What's at stake?</p>
-              <textarea class="cm-input cm-textarea" id="whyInput" placeholder="e.g., I promised my dad I'd finish this before he turns 70." rows="3"></textarea>
-              <div class="cm-field-err" id="whyErr">Write your honest reason. It stays private.</div>
-              <div class="chip-wrap">
-                <span class="chip" data-fill="whyInput">To build real self-discipline</span>
-                <span class="chip" data-fill="whyInput">My health depends on it</span>
-                <span class="chip" data-fill="whyInput">I want to prove it to myself</span>
-                <span class="chip" data-fill="whyInput">My career needs this</span>
-                <span class="chip" data-fill="whyInput">I keep starting and quitting</span>
-              </div>
-              <div class="cm-btn-row">
-                <button class="btn btn-ghost" data-prev="1"><i class="fas fa-arrow-left"></i> Back</button>
-                <button class="btn btn-primary" data-next="3" data-req="whyInput" data-err="whyErr">Continue <i class="fas fa-arrow-right"></i></button>
-              </div>
-            </div>
+        <!-- 2. STATS BAR (skeleton → lazy filled) -->
+        <div class="cm-stats-bar" id="cmStatsBar">
+          <div class="cm-stat-chip">
+            <span class="cm-stat-n sk sk-text" id="statActive"
+                  style="width:42px;height:1.4rem;display:inline-block;border-radius:6px"></span>
+            <span class="cm-stat-l">Active</span>
           </div>
-
-          <!-- PHASE 3: Minimum Effort -->
-          <div class="cm-phase" data-phase="3" id="phase3">
-            <div class="cm-card">
-              <div class="cm-eyebrow">Step 3 of 6</div>
-              <h2 class="cm-h2">What's the smallest version of this?</h2>
-              <p class="cm-hint">On your worst day — exhausted, sick, overwhelmed — what still counts as a win?</p>
-              <input type="text" class="cm-input" id="minInput" placeholder="e.g., Open the book and read even one page." maxlength="120" autocomplete="off">
-              <div class="cm-field-err" id="minErr">Set your minimum. Even tiny counts.</div>
-              <div class="chip-wrap">
-                <span class="chip" data-fill="minInput">Even 5 minutes counts</span>
-                <span class="chip" data-fill="minInput">Just show up, no excuses</span>
-                <span class="chip" data-fill="minInput">One sentence is enough</span>
-                <span class="chip" data-fill="minInput">One rep / one step</span>
-              </div>
-              <div class="cm-note"><i class="fas fa-lightbulb"></i> People who set a minimum are <strong>3x more likely</strong> to maintain streaks through hard days.</div>
-              <div class="cm-btn-row">
-                <button class="btn btn-ghost" data-prev="2"><i class="fas fa-arrow-left"></i> Back</button>
-                <button class="btn btn-primary" data-next="4">Continue <i class="fas fa-arrow-right"></i></button>
-              </div>
-            </div>
+          <div class="cm-stat-sep"></div>
+          <div class="cm-stat-chip">
+            <span class="cm-stat-n sk sk-text" id="statAvgStreak"
+                  style="width:60px;height:1.4rem;display:inline-block;border-radius:6px"></span>
+            <span class="cm-stat-l">Avg Streak</span>
           </div>
-
-          <!-- PHASE 4: Goal Duration -->
-          <div class="cm-phase" data-phase="4" id="phase4">
-            <div class="cm-card">
-              <div class="cm-eyebrow">Step 4 of 6</div>
-              <h2 class="cm-h2">How long are you committing?</h2>
-              <p class="cm-hint">Pick a target. You can extend it once you hit it — but having a horizon makes it real.</p>
-              <div class="goal-grid" id="goalGrid">
-                <div class="goal-card" data-days="30"><div class="gn">30</div><div class="gl">days — trial run</div></div>
-                <div class="goal-card" data-days="90"><div class="gn">90</div><div class="gl">days — habit lock</div></div>
-                <div class="goal-card" data-days="180"><div class="gn">180</div><div class="gl">days — identity shift</div></div>
-                <div class="goal-card on" data-days="365"><div class="gn">365</div><div class="gl">days — transformation</div></div>
-              </div>
-              <div class="cm-toggle-row">
-                <span>I'm committing for life — no end date</span>
-                <label class="cm-switch">
-                  <input type="checkbox" id="foreverToggle">
-                  <span class="cm-sw-track"><span class="cm-sw-thumb"></span></span>
-                </label>
-              </div>
-              <div class="cm-btn-row">
-                <button class="btn btn-ghost" data-prev="3"><i class="fas fa-arrow-left"></i> Back</button>
-                <button class="btn btn-primary" data-next="5">Continue <i class="fas fa-arrow-right"></i></button>
-              </div>
-            </div>
+          <div class="cm-stat-sep"></div>
+          <div class="cm-stat-chip">
+            <span class="cm-stat-n sk sk-text" id="statConsist"
+                  style="width:50px;height:1.4rem;display:inline-block;border-radius:6px"></span>
+            <span class="cm-stat-l">Consistency</span>
           </div>
+        </div>
 
-          <!-- PHASE 5: Schedule & Reminders -->
-          <div class="cm-phase" data-phase="5" id="phase5">
-            <div class="cm-card">
-              <div class="cm-eyebrow">Step 5 of 6</div>
-              <h2 class="cm-h2">When do you want to check in?</h2>
-              <p class="cm-hint">Set a time that fits your day. We'll remind you so you never break the chain accidentally.</p>
-              <label class="cm-label">Daily check-in time</label>
-              <select class="cm-input" id="checkinTime"></select>
-              <div class="cm-toggle-row">
-                <span>Send me a reminder</span>
-                <label class="cm-switch">
-                  <input type="checkbox" id="reminderOn" checked>
-                  <span class="cm-sw-track"><span class="cm-sw-thumb"></span></span>
-                </label>
-              </div>
-              <div id="reminderSection">
-                <label class="cm-label">Reminder time</label>
-                <select class="cm-input" id="reminderTime"></select>
-                <label class="cm-label">Via</label>
-                <div class="method-grid" id="methodGrid">
-                  <div class="method-card on" data-method="email"><i class="fas fa-envelope"></i>Email</div>
-                  <div class="method-card" data-method="whatsapp"><i class="fab fa-whatsapp"></i>WhatsApp</div>
-                  <div class="method-card" data-method="push"><i class="fas fa-bell"></i>Push</div>
+        <!-- 3. FILTER BAR -->
+        <div class="cm-filter-bar" id="cmFilterBar">
+          <div class="cm-search-wrap">
+            <i class="fas fa-magnifying-glass cm-search-icon" aria-hidden="true"></i>
+            <input
+              type="text"
+              class="cm-search"
+              id="cmSearch"
+              placeholder="Search commitments…"
+              autocomplete="off"
+              aria-label="Search your commitments"
+            >
+            <button class="cm-search-clear hidden" id="cmSearchClear" aria-label="Clear search">
+              <i class="fas fa-xmark"></i>
+            </button>
+          </div>
+          <div class="cm-cats" id="cmCats" role="group" aria-label="Filter by category">
+            <button class="cm-cat active" data-cat="all">All</button>
+            <button class="cm-cat" data-cat="fitness" title="Fitness"><i class="fas fa-dumbbell"></i></button>
+            <button class="cm-cat" data-cat="study"   title="Study"><i class="fas fa-book-open"></i></button>
+            <button class="cm-cat" data-cat="health"  title="Health"><i class="fas fa-heart-pulse"></i></button>
+            <button class="cm-cat" data-cat="mindset" title="Mindset"><i class="fas fa-brain"></i></button>
+            <button class="cm-cat" data-cat="growth"  title="Growth"><i class="fas fa-seedling"></i></button>
+            <button class="cm-cat" data-cat="work"    title="Work"><i class="fas fa-briefcase"></i></button>
+            <button class="cm-cat" data-cat="other"   title="Other"><i class="fas fa-ellipsis"></i></button>
+          </div>
+          <select class="cm-sort" id="cmSort" aria-label="Sort commitments">
+            <option value="streak">By Streak</option>
+            <option value="date">Newest</option>
+            <option value="name">A – Z</option>
+            <option value="goal">Goal Progress</option>
+          </select>
+        </div>
+
+        <!-- 4. COMMITMENT CARDS GRID -->
+        <div class="cm-grid" id="cmGrid" aria-live="polite" aria-label="Your commitments">
+          <!-- Skeleton placeholders — removed when real data arrives -->
+          {% for i in "123" %}
+          <div class="cm-sk-card" aria-hidden="true">
+            <div class="cm-sk-bar"></div>
+            <div class="cm-sk-body">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+                <div>
+                  <div class="sk sk-text" style="width:60px;height:0.65rem;margin-bottom:0.5rem"></div>
+                  <div class="sk sk-text" style="width:100px;height:0.8rem"></div>
                 </div>
-                <div id="waField" style="display:none">
-                  <label class="cm-label">WhatsApp number</label>
-                  <input type="tel" class="cm-input" id="waNumber" placeholder="+2348000000000">
+                <div class="sk sk-circle" style="width:44px;height:44px"></div>
+              </div>
+              <div class="sk sk-text" style="width:90%;height:1rem;margin-bottom:0.85rem"></div>
+              <div class="sk sk-text" style="width:70%;height:0.8rem;margin-bottom:0.4rem"></div>
+              <div style="display:flex;justify-content:space-between;margin-top:0.65rem;padding-top:0.65rem;border-top:1px solid var(--edge)">
+                <div class="sk sk-text" style="width:80px;height:0.65rem"></div>
+                <div style="display:flex;gap:6px">
+                  <div class="sk" style="width:26px;height:26px;border-radius:7px"></div>
+                  <div class="sk" style="width:26px;height:26px;border-radius:7px"></div>
                 </div>
               </div>
-              <div class="cm-btn-row">
-                <button class="btn btn-ghost" data-prev="4"><i class="fas fa-arrow-left"></i> Back</button>
-                <button class="btn btn-primary" data-next="6">Continue <i class="fas fa-arrow-right"></i></button>
-              </div>
             </div>
           </div>
-
-          <!-- PHASE 6: Mood + Submit -->
-          <div class="cm-phase" data-phase="6" id="phase6">
-            <div class="cm-card">
-              <div class="cm-eyebrow">Step 6 of 6</div>
-              <h2 class="cm-h2">How do you feel about this?</h2>
-              <p class="cm-hint">Choose the emotion that matches your energy right now.</p>
-              <div class="emotion-chips" id="emotionChips">
-                {% for emotion in emotion_list %}
-                <button type="button" class="emotion-chip" data-emotion="{{ emotion }}">{{ emotion }}</button>
-                {% endfor %}
-              </div>
-              <div class="cm-summary" id="cmSummary" style="display:none;margin:1rem 0;padding:0.8rem;background:var(--bg);border-radius:var(--r);font-size:0.82rem;color:var(--ink2);line-height:1.6"></div>
-              <div class="cm-btn-row">
-                <button class="btn btn-ghost" data-prev="5"><i class="fas fa-arrow-left"></i> Back</button>
-                <button class="btn btn-primary btn-xl" id="submitBtn">
-                  <span class="btn-txt"><i class="fas fa-fire"></i> Create Commitment</span>
-                  <span class="btn-spin"></span>
-                </button>
-              </div>
-            </div>
-          </div>
-
+          {% endfor %}
         </div>
+
+        <!-- Error state -->
+        <div class="cm-err-state hidden" id="cmErr" role="alert">
+          <i class="fas fa-circle-exclamation"></i>
+          <h4>Couldn't load your commitments</h4>
+          <p id="cmErrMsg">Check your connection and try again.</p>
+          <button class="btn btn-outline btn-sm" id="cmRetryBtn">
+            <i class="fas fa-rotate-right"></i> Retry
+          </button>
+        </div>
+
+        <!-- Empty state — no commitments at all -->
+        <div class="cm-empty-state hidden" id="cmEmpty">
+          <div class="cm-empty-icon"><i class="fas fa-fire-flame-curved"></i></div>
+          <h4>No commitments yet</h4>
+          <p>Make your first promise to yourself.<br>One commitment is all it takes to start.</p>
+          <button class="btn btn-primary" id="addFirstBtn">
+            <i class="fas fa-plus"></i> Make Your First Commitment
+          </button>
+        </div>
+
+        <!-- No results state — search / filter returned nothing -->
+        <div class="cm-empty-state hidden" id="cmNoResults">
+          <div class="cm-empty-icon" style="font-size:1.25rem"><i class="fas fa-magnifying-glass"></i></div>
+          <h4>No matches found</h4>
+          <p>Try a different keyword or remove a filter.</p>
+          <button class="btn btn-ghost btn-sm" id="clearFilterBtn">
+            <i class="fas fa-xmark"></i> Clear filters
+          </button>
+        </div>
+
       </main>
-    </div>
+    </div><!-- /cm-wrap -->
+
+    <!-- FAB -->
+    <button class="cm-fab" id="cmFab" title="Add commitment" aria-label="Add new commitment">
+      <i class="fas fa-plus"></i>
+    </button>
+
+  </div><!-- /cm-app -->
+
+
+  <!-- ============================================================
+       CREATE COMMITMENT OVERLAY  (6-step wizard)
+       ============================================================ -->
+  <div class="ov-backdrop" id="ovBackdrop"
+       role="dialog" aria-modal="true" aria-label="Create a new commitment">
+    <div class="ov-panel" id="ovPanel">
+
+      <!-- Panel header -->
+      <div class="ov-header">
+        <div class="ov-header-left">
+          <button class="ov-back-btn" id="ovBackBtn" aria-label="Previous step" style="visibility:hidden">
+            <i class="fas fa-arrow-left"></i>
+          </button>
+          <span class="ov-step-lbl" id="ovStepLbl" aria-live="polite">Step 1 of 6</span>
+        </div>
+        <button class="ov-close-btn" id="ovCloseBtn" aria-label="Close and discard">
+          <i class="fas fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Progress track -->
+      <div class="ov-prog-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="ovProg">
+        <div class="ov-prog-fill" id="ovProgFill" style="width:16.66%"></div>
+      </div>
+
+      <!-- Steps wrapper -->
+      <div class="ov-steps" id="ovSteps">
+
+        <!-- ── STEP 1: What + Category ─────────────────────── -->
+        <div class="ov-step ov-step--active" data-step="1" id="ovStep1">
+          <div class="ov-eyebrow">Step 1 of 6</div>
+          <h2 class="ov-h2">What do you want to commit to?</h2>
+          <p class="ov-hint">"Walk 30 minutes daily" is 10× stronger than "exercise more." Be specific.</p>
+
+          <label class="ov-label" for="ovWhat">Your commitment</label>
+          <input type="text" class="ov-input" id="ovWhat" maxlength="120"
+                 placeholder="e.g., Read 20 pages before bed" autocomplete="off"
+                 aria-describedby="ovWhatErr">
+          <div class="ov-char-count"><span id="ovWhatLen">0</span>/120</div>
+          <div class="ov-err hidden" id="ovWhatErr" role="alert">Please describe your commitment.</div>
+
+          <div class="ov-chips" id="ovWhatChips" aria-label="Quick fill suggestions">
+            <span class="ov-chip" data-fill="ovWhat">Read 20 pages daily</span>
+            <span class="ov-chip" data-fill="ovWhat">Exercise every morning</span>
+            <span class="ov-chip" data-fill="ovWhat">No phone after 10 PM</span>
+            <span class="ov-chip" data-fill="ovWhat">Wake up by 6 AM</span>
+            <span class="ov-chip" data-fill="ovWhat">Meditate 10 minutes</span>
+            <span class="ov-chip" data-fill="ovWhat">Cold shower daily</span>
+          </div>
+
+          <label class="ov-label" style="margin-top:0.75rem">Category</label>
+          <div class="ov-cat-grid" id="ovCatGrid" role="group" aria-label="Choose category">
+            <div class="ov-cat-card" data-cat="fitness" tabindex="0" role="button" aria-pressed="false"><i class="fas fa-dumbbell"></i><span>Fitness</span></div>
+            <div class="ov-cat-card" data-cat="study"   tabindex="0" role="button" aria-pressed="false"><i class="fas fa-book-open"></i><span>Study</span></div>
+            <div class="ov-cat-card" data-cat="health"  tabindex="0" role="button" aria-pressed="false"><i class="fas fa-heart-pulse"></i><span>Health</span></div>
+            <div class="ov-cat-card" data-cat="mindset" tabindex="0" role="button" aria-pressed="false"><i class="fas fa-brain"></i><span>Mindset</span></div>
+            <div class="ov-cat-card" data-cat="growth"  tabindex="0" role="button" aria-pressed="false"><i class="fas fa-seedling"></i><span>Growth</span></div>
+            <div class="ov-cat-card on" data-cat="other" tabindex="0" role="button" aria-pressed="true"><i class="fas fa-ellipsis"></i><span>Other</span></div>
+          </div>
+
+          <div class="ov-btn-row">
+            <button class="btn btn-primary" id="ovNext1">
+              <span class="btn-txt">Continue <i class="fas fa-arrow-right"></i></span>
+              <span class="btn-spin"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── STEP 2: Why ────────────────────────────────── -->
+        <div class="ov-step" data-step="2" id="ovStep2">
+          <div class="ov-eyebrow">Step 2 of 6</div>
+          <h2 class="ov-h2">Why does this actually matter?</h2>
+          <p class="ov-hint">Not the clean answer. The real one. What's at stake if you don't?</p>
+
+          <label class="ov-label" for="ovWhy">Your honest reason</label>
+          <textarea class="ov-input ov-textarea" id="ovWhy" rows="4"
+                    placeholder="e.g., I keep promising myself I'll do this and never follow through. This time is different."
+                    aria-describedby="ovWhyErr"></textarea>
+          <div class="ov-err hidden" id="ovWhyErr" role="alert">Write your honest reason — it stays completely private.</div>
+
+          <div class="ov-chips">
+            <span class="ov-chip" data-fill="ovWhy">To build real self-discipline</span>
+            <span class="ov-chip" data-fill="ovWhy">My health depends on this</span>
+            <span class="ov-chip" data-fill="ovWhy">I want to prove it to myself</span>
+            <span class="ov-chip" data-fill="ovWhy">I keep starting and quitting</span>
+            <span class="ov-chip" data-fill="ovWhy">My future self needs this now</span>
+          </div>
+
+          <div class="ov-privacy-note">
+            <i class="fas fa-lock"></i> This stays completely private. Only you see it.
+          </div>
+
+          <div class="ov-btn-row">
+            <button class="btn btn-primary" id="ovNext2">
+              <span class="btn-txt">Continue <i class="fas fa-arrow-right"></i></span>
+              <span class="btn-spin"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── STEP 3: Minimum Effort ─────────────────────── -->
+        <div class="ov-step" data-step="3" id="ovStep3">
+          <div class="ov-eyebrow">Step 3 of 6</div>
+          <h2 class="ov-h2">What's the smallest version that still counts?</h2>
+          <p class="ov-hint">On your worst day — exhausted, sick, overwhelmed — what still earns a check-in?</p>
+
+          <label class="ov-label" for="ovMin">Minimum effort that counts</label>
+          <input type="text" class="ov-input" id="ovMin" maxlength="120"
+                 placeholder="e.g., Even one page. Even 5 minutes." autocomplete="off"
+                 aria-describedby="ovMinErr">
+          <div class="ov-err hidden" id="ovMinErr" role="alert">Set your minimum — it keeps the streak alive on hard days.</div>
+
+          <div class="ov-chips">
+            <span class="ov-chip" data-fill="ovMin">Even 5 minutes counts</span>
+            <span class="ov-chip" data-fill="ovMin">Just show up — that's enough</span>
+            <span class="ov-chip" data-fill="ovMin">One sentence is a win</span>
+            <span class="ov-chip" data-fill="ovMin">One rep, one step</span>
+            <span class="ov-chip" data-fill="ovMin">Open the app and log it</span>
+          </div>
+
+          <div class="ov-note">
+            <i class="fas fa-lightbulb" style="color:var(--warn);flex-shrink:0;margin-top:1px"></i>
+            <span>People who define a minimum are <strong>3× more consistent</strong> through hard days.</span>
+          </div>
+
+          <div class="ov-btn-row">
+            <button class="btn btn-primary" id="ovNext3">
+              <span class="btn-txt">Continue <i class="fas fa-arrow-right"></i></span>
+              <span class="btn-spin"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── STEP 4: Duration ───────────────────────────── -->
+        <div class="ov-step" data-step="4" id="ovStep4">
+          <div class="ov-eyebrow">Step 4 of 6</div>
+          <h2 class="ov-h2">How long are you committing?</h2>
+          <p class="ov-hint">A deadline makes it real. You can always extend once you hit it.</p>
+
+          <div class="ov-goal-grid" id="ovGoalGrid" role="group" aria-label="Goal duration">
+            <div class="ov-goal-card" data-days="30" tabindex="0" role="button" aria-pressed="false">
+              <div class="ov-goal-n">30</div>
+              <div class="ov-goal-l">days — trial run</div>
+            </div>
+            <div class="ov-goal-card" data-days="90" tabindex="0" role="button" aria-pressed="false">
+              <div class="ov-goal-n">90</div>
+              <div class="ov-goal-l">days — habit lock</div>
+            </div>
+            <div class="ov-goal-card" data-days="180" tabindex="0" role="button" aria-pressed="false">
+              <div class="ov-goal-n">180</div>
+              <div class="ov-goal-l">days — identity shift</div>
+            </div>
+            <div class="ov-goal-card on" data-days="365" tabindex="0" role="button" aria-pressed="true">
+              <div class="ov-goal-n">365</div>
+              <div class="ov-goal-l">days — transformation</div>
+            </div>
+          </div>
+
+          <div class="ov-toggle-row">
+            <span>Commit for life — no end date</span>
+            <label class="ov-switch">
+              <input type="checkbox" id="ovForever" aria-label="Lifelong commitment">
+              <span class="ov-sw-track"><span class="ov-sw-thumb"></span></span>
+            </label>
+          </div>
+
+          <div class="ov-btn-row">
+            <button class="btn btn-primary" id="ovNext4">
+              <span class="btn-txt">Continue <i class="fas fa-arrow-right"></i></span>
+              <span class="btn-spin"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── STEP 5: Schedule ───────────────────────────── -->
+        <div class="ov-step" data-step="5" id="ovStep5">
+          <div class="ov-eyebrow">Step 5 of 6</div>
+          <h2 class="ov-h2">When do you check in?</h2>
+          <p class="ov-hint">Pick the time that fits your day. We log your daily win at this hour.</p>
+
+          <label class="ov-label" for="ovCheckinTime">Daily check-in time</label>
+          <select class="ov-input" id="ovCheckinTime" style="margin-bottom:1rem"></select>
+
+          <div class="ov-toggle-row">
+            <span>Send me a reminder before check-in</span>
+            <label class="ov-switch">
+              <input type="checkbox" id="ovReminderOn" checked aria-label="Enable reminder">
+              <span class="ov-sw-track"><span class="ov-sw-thumb"></span></span>
+            </label>
+          </div>
+
+          <div id="ovReminderSection" style="display:flex;flex-direction:column;gap:0.85rem">
+            <div>
+              <label class="ov-label" for="ovReminderTime">Reminder time</label>
+              <select class="ov-input" id="ovReminderTime"></select>
+            </div>
+
+            <div>
+              <label class="ov-label" style="margin-bottom:0.4rem">How should we remind you?</label>
+              <div class="ov-method-grid" id="ovMethodGrid" role="group" aria-label="Reminder method">
+                <div class="ov-method-card on" data-method="email" tabindex="0" role="button" aria-pressed="true">
+                  <i class="fas fa-envelope"></i><span>Email</span>
+                </div>
+                <div class="ov-method-card" data-method="whatsapp" tabindex="0" role="button" aria-pressed="false">
+                  <i class="fab fa-whatsapp"></i><span>WhatsApp</span>
+                </div>
+                <div class="ov-method-card" data-method="push" tabindex="0" role="button" aria-pressed="false">
+                  <i class="fas fa-bell"></i><span>Push</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="ovWaField" class="hidden">
+              <label class="ov-label" for="ovWaNum">WhatsApp number</label>
+              <input type="tel" class="ov-input" id="ovWaNum"
+                     placeholder="+2348000000000"
+                     aria-describedby="ovWaErr">
+              <div class="ov-err hidden" id="ovWaErr" role="alert">Enter a valid WhatsApp number with country code.</div>
+            </div>
+          </div>
+
+          <div class="ov-btn-row" style="margin-top:1rem">
+            <button class="btn btn-primary" id="ovNext5">
+              <span class="btn-txt">Continue <i class="fas fa-arrow-right"></i></span>
+              <span class="btn-spin"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── STEP 6: Motion Word ────────────────────────── -->
+        <div class="ov-step" data-step="6" id="ovStep6">
+          <div class="ov-eyebrow">Step 6 of 6 — Final step</div>
+          <h2 class="ov-h2">How are you feeling right now?</h2>
+          <p class="ov-hint">Pick one word. It anchors your commitment to this moment — something to return to on hard days.</p>
+
+          <div class="ov-motion-grid" id="ovMotionGrid" role="group" aria-label="Choose your emotion word">
+            {% for word in motion_list %}
+            <button class="ov-motion-word" data-word="{{ word }}" type="button">{{ word }}</button>
+            {% empty %}
+            <!-- Fallback words if motion_list not passed from Django context -->
+            <button class="ov-motion-word" data-word="determined"  type="button">determined</button>
+            <button class="ov-motion-word" data-word="focused"      type="button">focused</button>
+            <button class="ov-motion-word" data-word="ready"        type="button">ready</button>
+            <button class="ov-motion-word" data-word="motivated"    type="button">motivated</button>
+            <button class="ov-motion-word" data-word="excited"      type="button">excited</button>
+            <button class="ov-motion-word" data-word="calm"         type="button">calm</button>
+            <button class="ov-motion-word" data-word="confident"    type="button">confident</button>
+            <button class="ov-motion-word" data-word="disciplined"  type="button">disciplined</button>
+            <button class="ov-motion-word" data-word="strong"       type="button">strong</button>
+            <button class="ov-motion-word" data-word="hopeful"      type="button">hopeful</button>
+            <button class="ov-motion-word" data-word="proud"        type="button">proud</button>
+            <button class="ov-motion-word" data-word="inspired"     type="button">inspired</button>
+            <button class="ov-motion-word" data-word="grateful"     type="button">grateful</button>
+            <button class="ov-motion-word" data-word="fearless"     type="button">fearless</button>
+            <button class="ov-motion-word" data-word="relentless"   type="button">relentless</button>
+            {% endfor %}
+          </div>
+          <div class="ov-err hidden" id="ovMotionErr" role="alert">Pick the word that captures this moment.</div>
+
+          <div class="ov-selected-word-wrap hidden" id="ovSelectedWordWrap" aria-live="polite">
+            <span class="ov-selected-word-lbl">You feel:</span>
+            <span class="ov-selected-word" id="ovSelectedWordDisplay"></span>
+          </div>
+
+          <div class="ov-btn-row" style="margin-top:0.25rem">
+            <button class="btn btn-primary btn-lg" id="ovCreateBtn" type="button">
+              <span class="btn-txt"><i class="fas fa-fire"></i> Create My Commitment</span>
+              <span class="btn-spin"></span>
+            </button>
+          </div>
+
+          <p class="ov-privacy-note" style="text-align:center;margin-top:0.5rem;justify-content:center">
+            <i class="fas fa-lock"></i>&nbsp; Private by default. Only you see your why and entries.
+          </p>
+        </div>
+
+      </div><!-- /ov-steps -->
+    </div><!-- /ov-panel -->
+  </div><!-- /ov-backdrop -->
+
+
+  <!-- ============================================================
+       TOAST
+       ============================================================ -->
+  <div class="cm-toast" id="cmToast" role="alert" aria-live="assertive" aria-atomic="true">
+    <i class="cm-toast-icon fas fa-fire" id="cmToastIcon" aria-hidden="true"></i>
+    <span class="cm-toast-msg" id="cmToastMsg">Creating your commitment…</span>
+    <button class="cm-toast-close" id="cmToastClose" aria-label="Dismiss notification">
+      <i class="fas fa-xmark"></i>
+    </button>
   </div>
 
-  {% if request.user.is_authenticated %}<form method="POST" action="{% url 'origin_logout' %}" id="logoutForm" style="display:none">{% csrf_token %}</form>{% endif %}
 
+  <!-- Logout form -->
+  <form method="POST" action="{% url 'origin_logout' %}" id="logoutForm" style="display:none">
+    {% csrf_token %}
+  </form>
+
+
+  <!-- ============================================================
+       SPINNER JS (handles rotate-text + auto-hide)
+       ============================================================ -->
   <script>{% include "reusables/spinner.js" %}</script>
+
+
+  <!-- ============================================================
+       COMMITMENT PAGE — FULL APPLICATION SCRIPT
+       ============================================================ -->
   <script>
-  (function() {
+  (function () {
     'use strict';
-    var app=document.getElementById('cmApp'),heavyCss=document.getElementById('heavy-css');
-    function boot(){if(!app.classList.contains('loaded')){app.classList.add('loaded');init()}}
-    if(heavyCss){if(heavyCss.rel==='stylesheet')boot();else heavyCss.addEventListener('load',boot)}
-    setTimeout(boot,8000);
 
-    function $(s,c){return(c||document).querySelector(s)}
-    function $$(s,c){return(c||document).querySelectorAll(s)}
-    function getCookie(n){var v=document.cookie.match('(?:^|;) ?'+n+'=([^;]*)');return v?decodeURIComponent(v[1]):''}
-    function setCookie(n,v,d){var t=new Date();t.setDate(t.getDate()+(d||1));document.cookie=n+'='+encodeURIComponent(v)+';path=/;expires='+t.toUTCString()}
+    /* ============================================================
+       CONFIG
+       ============================================================ */
+    var AUTO_OPEN = {% if add %}true{% else %}false{% endif %};
 
-    var STATE={what:'',category:'other',why:'',minimum:'',goalDays:365,goalForever:false,checkinTime:'21:00',reminderOn:true,reminderTime:'20:30',reminderMethod:'email',waNumber:'',mood:''};
-    var currentPhase=1;
+    var API = {
+      list:    '/api/v1/commitments/',
+      create:  '/api/v1/commitments/create/',
+      checkin: function (id) { return '/api/v1/commitments/' + id + '/checkin/'; },
+      archive: function (id) { return '/api/v1/commitments/' + id + '/archive/'; }
+    };
 
-    function goTo(n){
-      if(n<1||n>6)return;
-      $$('.cm-phase').forEach(function(p){p.classList.remove('active')});
-      $('#phase'+n).classList.add('active');
-      currentPhase=n;
-      $('#cmProgressFill').style.width=((n/6)*100)+'%';
-      if(n===6)updateSummary();
-      window.scrollTo({top:0,behavior:'smooth'});
+    var CAT_ICON = {
+      fitness: 'fa-dumbbell',
+      study:   'fa-book-open',
+      work:    'fa-briefcase',
+      health:  'fa-heart-pulse',
+      mindset: 'fa-brain',
+      growth:  'fa-seedling',
+      other:   'fa-ellipsis'
+    };
+    var CAT_COLOR = {
+      fitness: '#ef4444',
+      study:   '#3b82f6',
+      health:  '#22c55e',
+      mindset: '#a855f7',
+      growth:  '#f59e0b',
+      work:    '#fb923c',
+      other:   '#64748b'
+    };
+
+    var QUOTES = [
+      'Motivation fades. Discipline stays.',
+      'The person you want to be is built on days like today.',
+      "Tomorrow's pride is paid for with today's discipline.",
+      'No audience. No applause. Just you keeping your word.',
+      "You can't think your way into discipline. You act your way into it.",
+      'Small, consistent actions rewrite who you are.',
+      "Your future self is begging you to start today.",
+      'One day or day one. You decide.',
+      "Don't break the chain. Not today.",
+      "He who conquers himself conquers all.",
+      "Winning the morning wins the day.",
+      "The streak doesn't care about your mood. It just counts.",
+      "You're one decision away from a different life.",
+      "No dsicipline == no balance."
+    ];
+
+    /* ============================================================
+       HELPERS
+       ============================================================ */
+    function qs(sel, ctx)   { return (ctx || document).querySelector(sel); }
+    function qsa(sel, ctx)  { return (ctx || document).querySelectorAll(sel); }
+    function hide(el)       { if (el) el.classList.add('hidden'); }
+    function show(el)       { if (el) el.classList.remove('hidden'); }
+    function escHtml(s)     {
+      return String(s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function getCookie(name) {
+      var m = document.cookie.match('(?:^|;)\\s?' + name + '=([^;]*)');
+      return m ? decodeURIComponent(m[1]) : '';
+    }
+    function setCookie(name, val, days) {
+      var d = new Date();
+      d.setDate(d.getDate() + (days || 365));
+      document.cookie = name + '=' + encodeURIComponent(val) +
+                        ';path=/;expires=' + d.toUTCString();
     }
 
-    function collectState(){
-      STATE.what=$('#whatInput')?.value.trim()||'';
-      STATE.why=$('#whyInput')?.value.trim()||'';
-      STATE.minimum=$('#minInput')?.value.trim()||'';
-      STATE.checkinTime=$('#checkinTime')?.value||'21:00';
-      STATE.reminderOn=$('#reminderOn')?.checked||true;
-      STATE.reminderTime=$('#reminderTime')?.value||'20:30';
-      STATE.waNumber=$('#waNumber')?.value.trim()||'';
+    /* ============================================================
+       REVEAL
+       ============================================================ */
+    function reveal() {
+      var app = document.getElementById('cmApp');
+      if (app) app.classList.add('cm-visible');
     }
 
-    function updateSummary(){
-      collectState();
-      var s='<strong>Commitment:</strong> '+STATE.what+'<br><strong>Why:</strong> '+STATE.why.slice(0,50)+(STATE.why.length>50?'…':'')+'<br><strong>Goal:</strong> '+(STATE.goalForever?'Forever':STATE.goalDays+' days')+'<br><strong>Reminder:</strong> '+STATE.reminderTime+' via '+STATE.reminderMethod;
-      $('#cmSummary').innerHTML=s;$('#cmSummary').style.display='block';
+    /* ============================================================
+       QUOTE
+       ============================================================ */
+    (function () {
+      var el = document.getElementById('hdrQuote');
+      if (!el) return;
+      var idx = (new Date().getDate() + new Date().getMonth() * 31) % QUOTES.length;
+      el.textContent = QUOTES[idx];
+    })();
+
+    /* ============================================================
+       AVATAR LOADING
+       ============================================================ */
+    var FALLBACK_AVATAR = 'https://api.dicebear.com/7.x/initials/svg?seed=' +
+      encodeURIComponent('{{ request.user.username }}') +
+      '&backgroundColor=1e293b&textColor=60a5fa&size=64';
+
+    function applyAvatar(url) {
+      [
+        { wrap: 'hdrAvatarWrap',   sk: 'hdrAvatarSk',   size: '32px' },
+        { wrap: 'asideAvatarWrap', sk: 'asideAvatarSk',  size: '52px' }
+      ].forEach(function (cfg) {
+        var wrap = document.getElementById(cfg.wrap);
+        if (!wrap) return;
+        var img  = document.createElement('img');
+        img.alt  = '{{ request.user.username }}';
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;opacity:0;transition:opacity 0.3s ease';
+        img.onload  = function () {
+          img.style.opacity = '1';
+          var sk = document.getElementById(cfg.sk);
+          if (sk) sk.remove();
+        };
+        img.onerror = function () { img.src = FALLBACK_AVATAR; };
+        img.src = url;
+        wrap.appendChild(img);
+      });
     }
 
-    // Navigation
-    document.addEventListener('click',function(e){
-      var btn=e.target.closest('[data-next]');
-      if(btn){
-        var req=btn.dataset.req,err=btn.dataset.err;
-        if(req){var el=$('#'+req);if(el&&!el.value.trim()){el.classList.add('cm-err');var er=$('#'+err);if(er)er.classList.add('show');return}}
-        collectState();goTo(parseInt(btn.dataset.next));
+    fetch('/get_user_picture/', { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { applyAvatar(d && d.url ? d.url : FALLBACK_AVATAR); })
+      .catch(function ()  { applyAvatar(FALLBACK_AVATAR); });
+
+    /* ============================================================
+       ASIDE TOGGLE
+       ============================================================ */
+    var aside     = document.getElementById('dbAside');
+    var asideOvly = document.getElementById('asideOverlay');
+
+    function openAside()  {
+      if (aside)     aside.classList.add('open');
+      if (asideOvly) asideOvly.classList.add('show');
+    }
+    function closeAside() {
+      if (aside)     aside.classList.remove('open');
+      if (asideOvly) asideOvly.classList.remove('show');
+    }
+
+    var hamburger = document.getElementById('hamburgerBtn');
+    var hdrAvatar = document.getElementById('hdrAvatarWrap');
+    hamburger && hamburger.addEventListener('click', openAside);
+    asideOvly && asideOvly.addEventListener('click', closeAside);
+    hdrAvatar && hdrAvatar.addEventListener('click', function () {
+      aside && aside.classList.contains('open') ? closeAside() : openAside();
+    });
+    hdrAvatar && hdrAvatar.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
+    });
+
+    /* ============================================================
+       THEME TOGGLE
+       ============================================================ */
+    var themeBtn  = document.getElementById('themeToggleBtn');
+    var themeIcon = document.getElementById('themeIcon');
+
+    function applyTheme(mode) {
+      if (mode === 'light') {
+        document.body.classList.add('sd-light');
+        if (themeIcon) themeIcon.className = 'fas fa-sun';
+      } else {
+        document.body.classList.remove('sd-light');
+        if (themeIcon) themeIcon.className = 'fas fa-moon';
       }
-      var prev=e.target.closest('[data-prev]');
-      if(prev){collectState();goTo(parseInt(prev.dataset.prev))}
+      setCookie('sd-theme', mode, 365);
+    }
+
+    (function () {
+      var saved = getCookie('sd-theme');
+      if (saved) applyTheme(saved);
+    })();
+
+    themeBtn && themeBtn.addEventListener('click', function () {
+      applyTheme(document.body.classList.contains('sd-light') ? 'dark' : 'light');
     });
 
-    // Clear errors
-    $$('.cm-input').forEach(function(el){el.addEventListener('input',function(){el.classList.remove('cm-err');var err=el.parentElement.querySelector('.cm-field-err');if(err)err.classList.remove('show')})});
-
-    // Category
-    $$('.cat-card').forEach(function(c){c.addEventListener('click',function(){$$('.cat-card').forEach(function(x){x.classList.remove('on')});this.classList.add('on');STATE.category=this.dataset.cat})});
-
-    // Goal cards
-    $$('.goal-card').forEach(function(g){g.addEventListener('click',function(){$$('.goal-card').forEach(function(x){x.classList.remove('on')});this.classList.add('on');STATE.goalDays=parseInt(this.dataset.days);$('#foreverToggle').checked=false;STATE.goalForever=false})});
-    $('#foreverToggle').addEventListener('change',function(){if(this.checked){$$('.goal-card').forEach(function(x){x.classList.remove('on')});STATE.goalForever=true}});
-
-    // Suggestion chips
-    $$('.chip[data-fill]').forEach(function(ch){ch.addEventListener('click',function(){var t=$('#'+ch.dataset.fill);if(t){t.value=ch.textContent;t.focus()}})});
-
-    // Method cards
-    $$('.method-card').forEach(function(m){m.addEventListener('click',function(){$$('.method-card').forEach(function(x){x.classList.remove('on')});this.classList.add('on');STATE.reminderMethod=this.dataset.method;$('#waField').style.display=STATE.reminderMethod==='whatsapp'?'block':'none'})});
-
-    // Reminder toggle
-    $('#reminderOn').addEventListener('change',function(){$('#reminderSection').style.display=this.checked?'':'none';STATE.reminderOn=this.checked});
-
-    // Emotion chips
-    $$('.emotion-chip').forEach(function(ch){ch.addEventListener('click',function(){$$('.emotion-chip').forEach(function(x){x.classList.remove('selected')});this.classList.add('selected');STATE.mood=this.dataset.emotion})});
-
-    // Build time selects
-    function buildTimeSelect(id,def){
-      var sel=$('#'+id);if(!sel)return;
-      for(var h=0;h<24;h++){for(var m=0;m<60;m+=30){var t=(h<10?'0':'')+h+':'+(m===0?'00':'30');var opt=document.createElement('option');opt.value=t;opt.textContent=t;if(t===def)opt.selected=true;sel.appendChild(opt)}}
-    }
-    buildTimeSelect('checkinTime','21:00');buildTimeSelect('reminderTime','20:30');
-
-    // Submit
-    $('#submitBtn').addEventListener('click',function(){
-      collectState();
-      if(!STATE.what){$('#whatInput').classList.add('cm-err');$('#whatErr').classList.add('show');goTo(1);return}
-      if(!STATE.why){$('#whyInput').classList.add('cm-err');$('#whyErr').classList.add('show');goTo(2);return}
-      var btn=$('#submitBtn');btn.classList.add('loading');btn.disabled=true;
-      var payload={what:STATE.what,category:STATE.category,why:STATE.why,minimum:STATE.minimum,goal_days:STATE.goalForever?0:STATE.goalDays,checkin_time:STATE.checkinTime,reminder_enabled:STATE.reminderOn,reminder_time:STATE.reminderTime,reminder_method:STATE.reminderMethod,whatsapp_number:STATE.waNumber,mood:STATE.mood};
-      fetch('{% url "origin_commitments_create" %}',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},body:JSON.stringify(payload)})
-        .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
-        .then(function(res){btn.classList.remove('loading');btn.disabled=false;if(!res.ok){alert(res.data.message||'Failed');return}window.location.href='{% url "origin_dashboard" %}'})
-        .catch(function(){btn.classList.remove('loading');btn.disabled=false;alert('Network error.')});
+    /* ============================================================
+       LOGOUT
+       ============================================================ */
+    document.getElementById('logoutBtn') &&
+    document.getElementById('logoutBtn').addEventListener('click', function () {
+      if (confirm('Log out of STREAK & DISCIPLINE?')) {
+        var f = document.getElementById('logoutForm');
+        if (f) f.submit();
+        else window.location.href = '{% url "origin_logout" %}';
+      }
     });
 
-    function init(){
-      // Theme
-      var tb=$('#themeToggle'),ti=tb.querySelector('i');
-      function setTheme(d){document.body.classList.toggle('sd-light',!d);ti.className=d?'fas fa-moon':'fas fa-sun';setCookie('sd-theme',d?'dark':'light',365)}
-      tb.addEventListener('click',function(){setTheme(document.body.classList.contains('sd-light'))});
-      if(getCookie('sd-theme')==='dark'){document.body.classList.remove('sd-light');ti.className='fas fa-moon'}
+    /* ============================================================
+       TOAST SYSTEM
+       ============================================================ */
+    var toastEl    = document.getElementById('cmToast');
+    var toastMsg   = document.getElementById('cmToastMsg');
+    var toastIcon  = document.getElementById('cmToastIcon');
+    var toastClose = document.getElementById('cmToastClose');
+    var toastTimer = null;
 
-      // Sidebar
-      var sidebar=$('#cmAside'),toggle=$('#menuToggle'),overlay=$('#asideOverlay');
-      function open(){sidebar.classList.add('open');overlay.classList.add('show')}
-      function close(){sidebar.classList.remove('open');overlay.classList.remove('show')}
-      toggle.addEventListener('click',function(){sidebar.classList.contains('open')?close():open()});
-      overlay.addEventListener('click',close);
-      sidebar.querySelectorAll('.aside-link').forEach(function(l){l.addEventListener('click',function(){if(window.innerWidth<1024)close()})});
+    var TOAST_ICONS = {
+      info:    'fa-fire',
+      success: 'fa-check-circle',
+      error:   'fa-exclamation-circle',
+      loading: 'fa-circle-notch fa-spin'
+    };
 
-      // Profile picture
-      {% if request.user.is_authenticated %}
-      fetch("{% url 'origin_user_picture' %}",{headers:{'X-CSRFToken':getCookie('csrftoken')}}).then(function(r){return r.json()}).then(function(d){
-        var url=d.url||'',wrap=$('#asideAvatarWrap');if(!wrap)return;
-        var img=document.createElement('img');img.alt='{{request.user.username}}';img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%';
-        img.onerror=function(){img.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2248%22 height=%2248%22 viewBox=%220 0 48 48%22%3E%3Ccircle cx=%2224%22 cy=%2224%22 r=%2224%22 fill=%22%231e293b%22/%3E%3Ccircle cx=%2224%22 cy=%2219%22 r=%229%22 fill=%22%23475669%22/%3E%3Cellipse cx=%2224%22 cy=%2246%22 rx=%2216%22 ry=%2210%22 fill=%22%23475669%22/%3E%3C/svg%3E'};
-        img.onload=function(){var sk=$('#asideAvatarSk');if(sk)sk.remove();wrap.appendChild(img)};
-        img.src=url||'data:image/svg+xml,...';
-      }).catch(function(){});
-      {% endif %}
+    function showToast(msg, type, duration, retryFn) {
+      if (!toastEl) return;
+      clearTimeout(toastTimer);
+      toastMsg.textContent = msg;
+      toastEl.className    = 'cm-toast cm-toast-' + (type || 'info');
+      toastIcon.className  = 'cm-toast-icon fas ' + (TOAST_ICONS[type] || TOAST_ICONS.info);
+      toastEl.classList.add('cm-toast-visible');
 
-      // Logout
-      var lb=$('#logoutBtn');if(lb)lb.addEventListener('click',function(){if(confirm('Log out?'))document.getElementById('logoutForm')?.submit()});
+      // Retry tap support
+      if (retryFn) {
+        toastEl.style.cursor = 'pointer';
+        toastEl.onclick = function () { retryFn(); toastEl.onclick = null; toastEl.style.cursor = ''; };
+      } else {
+        toastEl.onclick = null;
+        toastEl.style.cursor = '';
+      }
 
-      // Share
-      $('#shareBtnHdr').addEventListener('click',function(){if(navigator.share){navigator.share({title:'STREAK & DISCIPLINE',url:window.location.href})}else{alert('Copy: '+window.location.href)}});
+      if (duration !== 0) {
+        toastTimer = setTimeout(hideToast, duration || 3500);
+      }
     }
+
+    function hideToast() {
+      if (!toastEl) return;
+      toastEl.classList.remove('cm-toast-visible');
+    }
+
+    toastClose && toastClose.addEventListener('click', hideToast);
+
+    /* ============================================================
+       COMMITMENT STATE
+       ============================================================ */
+    var allCommitments = [];
+    var activeFilter   = 'all';
+    var activeSearch   = '';
+    var activeSort     = 'streak';
+
+    /* ============================================================
+       LOAD COMMITMENTS
+       ============================================================ */
+    function loadCommitments() {
+      var grid   = document.getElementById('cmGrid');
+      var errDiv = document.getElementById('cmErr');
+      var emDiv  = document.getElementById('cmEmpty');
+      var noRes  = document.getElementById('cmNoResults');
+
+      hide(errDiv); hide(emDiv); hide(noRes);
+
+      fetch(API.list, { credentials: 'same-origin' })
+        .then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(function (data) {
+          allCommitments = Array.isArray(data.commitments) ? data.commitments : [];
+          fillStatsBar(data.stats || null);
+          renderGrid();
+        })
+        .catch(function (err) {
+          if (grid) grid.innerHTML = '';
+          show(errDiv);
+          var msgEl = document.getElementById('cmErrMsg');
+          if (msgEl) msgEl.textContent =
+            'Could not load your commitments. Check your connection and retry.';
+        });
+    }
+
+    /* ============================================================
+       STATS BAR
+       ============================================================ */
+    function fillStatsBar(stats) {
+      var active     = allCommitments.length;
+      var avgStreak  = active > 0
+        ? Math.round(allCommitments.reduce(function (s, c) { return s + (c.streak_count || 0); }, 0) / active)
+        : 0;
+      var consist    = stats && stats.consistency_pct != null ? stats.consistency_pct : null;
+
+      countUp('statActive',    active);
+      countUpSuffix('statAvgStreak', avgStreak, ' days');
+      if (consist != null) countUpSuffix('statConsist', consist, '%');
+      else setStatText('statConsist', '—');
+    }
+
+    function setStatText(id, text) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.className   = 'cm-stat-n';
+      el.textContent = text;
+    }
+
+    function countUp(id, target) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.className = 'cm-stat-n';
+      var start = performance.now();
+      var dur   = 700;
+      (function tick(now) {
+        var t    = Math.min((now - start) / dur, 1);
+        var ease = 1 - Math.pow(1 - t, 3);
+        el.textContent = Math.round(target * ease);
+        if (t < 1) requestAnimationFrame(tick);
+      })(start);
+    }
+
+    function countUpSuffix(id, target, suffix) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.className = 'cm-stat-n';
+      var start = performance.now();
+      var dur   = 700;
+      (function tick(now) {
+        var t    = Math.min((now - start) / dur, 1);
+        var ease = 1 - Math.pow(1 - t, 3);
+        el.textContent = Math.round(target * ease) + suffix;
+        if (t < 1) requestAnimationFrame(tick);
+      })(start);
+    }
+
+    /* ============================================================
+       RENDER GRID
+       ============================================================ */
+    function getFiltered() {
+      var list = allCommitments.slice();
+
+      if (activeFilter !== 'all') {
+        list = list.filter(function (c) { return c.category === activeFilter; });
+      }
+      if (activeSearch.trim()) {
+        var q = activeSearch.trim().toLowerCase();
+        list = list.filter(function (c) {
+          return (c.what || '').toLowerCase().indexOf(q) >= 0 ||
+                 (c.category || '').toLowerCase().indexOf(q) >= 0;
+        });
+      }
+
+      if (activeSort === 'streak') {
+        list.sort(function (a, b) { return (b.streak_count || 0) - (a.streak_count || 0); });
+      } else if (activeSort === 'date') {
+        list.sort(function (a, b) { return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
+      } else if (activeSort === 'name') {
+        list.sort(function (a, b) { return (a.what || '').localeCompare(b.what || ''); });
+      } else if (activeSort === 'goal') {
+        list.sort(function (a, b) {
+          var pa = a.goal_days ? (a.streak_count || 0) / a.goal_days : 0;
+          var pb = b.goal_days ? (b.streak_count || 0) / b.goal_days : 0;
+          return pb - pa;
+        });
+      }
+
+      return list;
+    }
+
+    function renderGrid() {
+      var grid   = document.getElementById('cmGrid');
+      var errDiv = document.getElementById('cmErr');
+      var emDiv  = document.getElementById('cmEmpty');
+      var noRes  = document.getElementById('cmNoResults');
+      if (!grid) return;
+
+      hide(errDiv);
+
+      var filtered = getFiltered();
+
+      if (allCommitments.length === 0) {
+        grid.innerHTML = '';
+        show(emDiv); hide(noRes);
+        return;
+      }
+      if (filtered.length === 0) {
+        grid.innerHTML = '';
+        hide(emDiv); show(noRes);
+        return;
+      }
+
+      hide(emDiv); hide(noRes);
+      grid.innerHTML = '';
+
+      filtered.forEach(function (c, i) {
+        var card = buildCard(c, i);
+        grid.appendChild(card);
+        /* trigger entrance animation on next frame */
+        requestAnimationFrame(function () {
+          setTimeout(function () { card.classList.add('cm-card-in'); }, i * 55);
+        });
+      });
+    }
+
+    /* ============================================================
+       BUILD CARD
+       ============================================================ */
+    function buildCard(c, i) {
+      var color      = CAT_COLOR[c.category]  || CAT_COLOR.other;
+      var icon       = CAT_ICON[c.category]   || CAT_ICON.other;
+      var streak     = c.streak_count  || 0;
+      var goalDays   = c.goal_days     || 0;
+      var isForever  = goalDays === 0;
+      var pct        = (!isForever && goalDays > 0)
+                         ? Math.min(Math.round((streak / goalDays) * 100), 100)
+                         : 0;
+      var circumf    = 125.6;
+      var arcFinal   = isForever ? circumf + ' 0' : (pct * 1.256).toFixed(1) + ' ' + (circumf - pct * 1.256).toFixed(1);
+      var checkedIn  = !!c.checked_in_today;
+      var daysLeft   = (!isForever && goalDays > 0) ? Math.max(0, goalDays - streak) : null;
+
+      var el = document.createElement('article');
+      el.className = 'cm-card cm-card--stagger';
+      el.style.setProperty('--i', i);
+      el.setAttribute('aria-label', c.what || 'Commitment');
+
+      el.innerHTML = [
+        '<div class="cm-card__bar" style="background:' + color + '" aria-hidden="true"></div>',
+        '<div class="cm-card__body">',
+
+          /* Top row: category meta + ring */
+          '<div class="cm-card__top">',
+            '<div class="cm-card__meta">',
+              '<div class="cm-cat-icon ' + escHtml(c.category || 'other') + '" aria-hidden="true">',
+                '<i class="fas ' + icon + '"></i>',
+              '</div>',
+              '<span class="cm-cat-lbl">' + escHtml(c.category || 'other') + '</span>',
+            '</div>',
+            /* SVG progress ring */
+            '<div class="cm-ring-wrap" aria-label="' + (isForever ? 'Lifelong' : pct + '% complete') + '">',
+              '<svg class="cm-prog-ring" viewBox="0 0 44 44" aria-hidden="true">',
+                '<circle class="cm-ring-bg"  cx="22" cy="22" r="20"/>',
+                '<circle class="cm-ring-arc" cx="22" cy="22" r="20"',
+                  ' stroke="' + color + '"',
+                  ' stroke-dasharray="0 125.6"',
+                  ' data-final="' + arcFinal + '"',
+                '/>',
+                '<text x="22" y="22" dominant-baseline="middle" text-anchor="middle"',
+                  ' fill="var(--ink2)" font-size="7" font-weight="700"',
+                  ' font-family="system-ui,sans-serif"',
+                  ' style="transform:rotate(90deg);transform-origin:50% 50%">',
+                  isForever ? '∞' : pct + '%',
+                '</text>',
+              '</svg>',
+            '</div>',
+          '</div>',
+
+          /* Commitment text */
+          '<p class="cm-card__what">' + escHtml(c.what || '—') + '</p>',
+
+          /* Streak row */
+          '<div class="cm-card__streak">',
+            '<span class="cm-streak-fire" aria-hidden="true">🔥</span>',
+            '<span class="cm-streak-num">' + streak + '</span>',
+            '<span class="cm-streak-lbl"> day' + (streak !== 1 ? 's' : '') + '</span>',
+            '<span class="cm-checkin-badge ' + (checkedIn ? 'done' : 'pending') + '" aria-label="' + (checkedIn ? 'Checked in today' : 'Check-in pending') + '">',
+              checkedIn
+                ? '<i class="fas fa-check" aria-hidden="true"></i> Done today'
+                : '<i class="fas fa-clock" aria-hidden="true"></i> Pending',
+            '</span>',
+          '</div>',
+
+          /* Footer */
+          '<div class="cm-card__foot">',
+            isForever
+              ? '<span class="cm-goal-lbl"><i class="fas fa-infinity" aria-hidden="true"></i> Lifelong</span>'
+              : '<span class="cm-goal-lbl"><i class="fas fa-flag-checkered" aria-hidden="true"></i> '
+                  + daysLeft + ' day' + (daysLeft !== 1 ? 's' : '') + ' left</span>',
+            '<div class="cm-card__actions">',
+              '<button class="cm-action-btn" data-id="' + c.id + '" data-action="checkin"',
+                ' title="' + (checkedIn ? 'Already checked in' : 'Check in now') + '"',
+                ' aria-label="' + (checkedIn ? 'Already checked in today' : 'Check in now') + '"',
+                (checkedIn ? ' disabled' : '') + '>',
+                '<i class="fas ' + (checkedIn ? 'fa-check' : 'fa-pen-to-square') + '" aria-hidden="true"></i>',
+              '</button>',
+              '<button class="cm-action-btn cm-action-archive" data-id="' + c.id + '" data-action="archive"',
+                ' title="Archive this commitment" aria-label="Archive this commitment">',
+                '<i class="fas fa-box-archive" aria-hidden="true"></i>',
+              '</button>',
+            '</div>',
+          '</div>',
+
+        '</div>',
+        '<div class="cm-card__arrow" aria-hidden="true"><i class="fas fa-chevron-right"></i></div>'
+      ].join('');
+
+      /* Animate SVG arc after card is in the DOM */
+      requestAnimationFrame(function () {
+        setTimeout(function () {
+          var arc = el.querySelector('.cm-ring-arc');
+          if (arc && !isForever) {
+            arc.setAttribute('stroke-dasharray', arcFinal);
+          }
+        }, 300 + i * 80);
+      });
+
+      /* Card click → detail page */
+      el.addEventListener('click', function (e) {
+        if (e.target.closest('.cm-action-btn')) return;
+        window.location.href = '/v1/commitments/' + c.id + '/';
+      });
+
+      /* Action buttons */
+      el.querySelectorAll('.cm-action-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var action = this.getAttribute('data-action');
+          var id     = this.getAttribute('data-id');
+          if (action === 'checkin') handleCheckin(id, this);
+          if (action === 'archive') handleArchive(id, this);
+        });
+      });
+
+      return el;
+    }
+
+    /* ============================================================
+       CHECKIN
+       ============================================================ */
+    function handleCheckin(id, btn) {
+      if (!btn || btn.disabled) return;
+      btn.disabled = true;
+      var ico = btn.querySelector('i');
+      if (ico) ico.className = 'fas fa-circle-notch fa-spin';
+
+      fetch(API.checkin(id), {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ commitment_id: id })
+      })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .then(function (res) {
+        if (res.ok || res.data.success || res.data.ok) {
+          showToast('Check-in recorded! 🔥 Keep the streak alive.', 'success');
+          loadCommitments();
+        } else {
+          showToast(res.data.message || 'Could not check in. Try again.', 'error');
+          btn.disabled = false;
+          if (ico) ico.className = 'fas fa-pen-to-square';
+        }
+      })
+      .catch(function () {
+        showToast('Network error — please retry.', 'error');
+        btn.disabled = false;
+        if (ico) ico.className = 'fas fa-pen-to-square';
+      });
+    }
+
+    /* ============================================================
+       ARCHIVE
+       ============================================================ */
+    function handleArchive(id, btn) {
+      if (!confirm('Archive this commitment? You can restore it from your profile.')) return;
+      btn.disabled = true;
+      var ico = btn.querySelector('i');
+      if (ico) ico.className = 'fas fa-circle-notch fa-spin';
+
+      fetch(API.archive(id), {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' }
+      })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .then(function (res) {
+        if (res.ok || res.data.success || res.data.ok) {
+          showToast('Commitment archived.', 'info');
+          loadCommitments();
+        } else {
+          showToast(res.data.message || 'Could not archive. Try again.', 'error');
+          btn.disabled = false;
+          if (ico) ico.className = 'fas fa-box-archive';
+        }
+      })
+      .catch(function () {
+        showToast('Network error — please retry.', 'error');
+        btn.disabled = false;
+        if (ico) ico.className = 'fas fa-box-archive';
+      });
+    }
+
+    /* ============================================================
+       RETRY / CLEAR FILTERS
+       ============================================================ */
+    var retryBtn = document.getElementById('cmRetryBtn');
+    retryBtn && retryBtn.addEventListener('click', loadCommitments);
+
+    var clearBtn = document.getElementById('clearFilterBtn');
+    clearBtn && clearBtn.addEventListener('click', function () {
+      activeFilter = 'all';
+      activeSearch = '';
+      var si = document.getElementById('cmSearch');
+      if (si) si.value = '';
+      hide(document.getElementById('cmSearchClear'));
+      qsa('.cm-cat').forEach(function (b) { b.classList.remove('active'); });
+      var allCat = qs('.cm-cat[data-cat="all"]');
+      if (allCat) allCat.classList.add('active');
+      renderGrid();
+    });
+
+    /* ============================================================
+       SEARCH
+       ============================================================ */
+    var srchInput = document.getElementById('cmSearch');
+    var srchClear = document.getElementById('cmSearchClear');
+
+    srchInput && srchInput.addEventListener('input', function () {
+      activeSearch = this.value;
+      if (activeSearch) show(srchClear); else hide(srchClear);
+      renderGrid();
+    });
+    srchClear && srchClear.addEventListener('click', function () {
+      srchInput.value = '';
+      activeSearch = '';
+      hide(srchClear);
+      renderGrid();
+    });
+
+    /* ============================================================
+       CATEGORY FILTER
+       ============================================================ */
+    qsa('.cm-cat').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        activeFilter = this.getAttribute('data-cat');
+        qsa('.cm-cat').forEach(function (b) { b.classList.remove('active'); });
+        this.classList.add('active');
+        renderGrid();
+      });
+    });
+
+    /* ============================================================
+       SORT
+       ============================================================ */
+    var sortSel = document.getElementById('cmSort');
+    sortSel && sortSel.addEventListener('change', function () {
+      activeSort = this.value;
+      renderGrid();
+    });
+
+    /* ============================================================
+       FAB PARTICLE BURST
+       ============================================================ */
+    var fab = document.getElementById('cmFab');
+    fab && fab.addEventListener('click', function (e) {
+      var colors = ['#60a5fa', '#818cf8', '#a78bfa', '#34d399'];
+      for (var p = 0; p < 10; p++) {
+        (function (p) {
+          var d     = document.createElement('div');
+          var angle = (p / 10) * Math.PI * 2;
+          var speed = 30 + Math.random() * 50;
+          d.style.cssText =
+            'position:fixed;width:5px;height:5px;border-radius:50%;' +
+            'pointer-events:none;z-index:9999;' +
+            'background:' + colors[p % colors.length] + ';' +
+            'left:' + (e.clientX - 2) + 'px;top:' + (e.clientY - 2) + 'px';
+          document.body.appendChild(d);
+          if (d.animate) {
+            d.animate([
+              { transform: 'translate(0,0)', opacity: 1 },
+              {
+                transform: 'translate(' + (Math.cos(angle) * speed) + 'px,' +
+                           (Math.sin(angle) * speed) + 'px) scale(0)',
+                opacity: 0
+              }
+            ], { duration: 380 + Math.random() * 200,
+                 easing: 'cubic-bezier(0.22,1,0.36,1)', fill: 'forwards' })
+            .onfinish = function () { d.remove(); };
+          } else {
+            setTimeout(function () { d.remove(); }, 600);
+          }
+        })(p);
+      }
+      openOverlay();
+    });
+
+    /* ============================================================
+       OVERLAY — OPEN / CLOSE
+       ============================================================ */
+    var TOTAL_STEPS = 6;
+    var currentStep = 1;
+
+    /* Form accumulator */
+    var FORM = {
+      what: '', category: 'other', why: '', minimum_effort: '',
+      goal_days: 365, checkin_time: '21:00',
+      reminder_active: true, reminder_time: '20:00',
+      mode_of_delivery: 'email', whatsapp_number: '', motion_word: ''
+    };
+
+    function openOverlay() {
+      var bd = document.getElementById('ovBackdrop');
+      if (!bd) return;
+      bd.classList.add('ov-open');
+      document.body.style.overflow = 'hidden';
+      goToStep(1);
+    }
+
+    function closeOverlay(force) {
+      var bd = document.getElementById('ovBackdrop');
+      if (!bd) return;
+      if (!force && !confirm('Close and discard this commitment?')) return;
+      bd.classList.remove('ov-open');
+      document.body.style.overflow = '';
+    }
+
+    /* Open triggers */
+    var openTriggers = ['addCommitBtn', 'addFirstBtn'];
+    openTriggers.forEach(function (id) {
+      var el = document.getElementById(id);
+      el && el.addEventListener('click', openOverlay);
+    });
+
+    /* Close trigger */
+    document.getElementById('ovCloseBtn') &&
+    document.getElementById('ovCloseBtn').addEventListener('click', function () {
+      closeOverlay(false);
+    });
+
+    /* Backdrop click → close */
+    document.getElementById('ovBackdrop') &&
+    document.getElementById('ovBackdrop').addEventListener('click', function (e) {
+      if (e.target === this) closeOverlay(false);
+    });
+
+    /* Escape key */
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        var bd = document.getElementById('ovBackdrop');
+        if (bd && bd.classList.contains('ov-open')) closeOverlay(false);
+      }
+    });
+
+    /* ============================================================
+       STEP NAVIGATION
+       ============================================================ */
+    function goToStep(n) {
+      var dir = n > currentStep ? 1 : -1;
+      currentStep = n;
+
+      qsa('.ov-step').forEach(function (s) {
+        var sn = parseInt(s.getAttribute('data-step'));
+        s.classList.remove(
+          'ov-step--active',
+          'ov-step--in-left', 'ov-step--in-right',
+          'ov-step--out-left', 'ov-step--out-right'
+        );
+        if (sn === n) {
+          s.classList.add('ov-step--active');
+          s.classList.add(dir >= 0 ? 'ov-step--in-left' : 'ov-step--in-right');
+          /* Scroll step to top */
+          var stepsWrap = document.getElementById('ovSteps');
+          if (stepsWrap) stepsWrap.scrollTop = 0;
+        }
+      });
+
+      /* Progress bar */
+      var fill = document.getElementById('ovProgFill');
+      if (fill) fill.style.width = ((n / TOTAL_STEPS) * 100) + '%';
+
+      /* Step label */
+      var lbl = document.getElementById('ovStepLbl');
+      if (lbl) lbl.textContent = 'Step ' + n + ' of ' + TOTAL_STEPS;
+
+      /* Progress aria */
+      var prog = document.getElementById('ovProg');
+      if (prog) prog.setAttribute('aria-valuenow', Math.round((n / TOTAL_STEPS) * 100));
+
+      /* Back button */
+      var backBtn = document.getElementById('ovBackBtn');
+      if (backBtn) {
+        backBtn.style.visibility = n <= 1 ? 'hidden' : 'visible';
+        backBtn.onclick = function () {
+          collectStep(currentStep);
+          goToStep(currentStep - 1);
+        };
+      }
+    }
+
+    /* ============================================================
+       COLLECT FORM DATA FROM CURRENT STEP
+       ============================================================ */
+    function collectStep(n) {
+      if (n === 1) {
+        var w = qs('#ovWhat');
+        FORM.what = w ? w.value.trim() : FORM.what;
+        var selCat = qs('.ov-cat-card.on');
+        FORM.category = selCat ? selCat.getAttribute('data-cat') : FORM.category;
+      } else if (n === 2) {
+        var wh = qs('#ovWhy');
+        FORM.why = wh ? wh.value.trim() : FORM.why;
+      } else if (n === 3) {
+        var mn = qs('#ovMin');
+        FORM.minimum_effort = mn ? mn.value.trim() : FORM.minimum_effort;
+      } else if (n === 4) {
+        var fg = qs('#ovForever');
+        if (fg && fg.checked) {
+          FORM.goal_days = 0;
+        } else {
+          var sg = qs('.ov-goal-card.on');
+          FORM.goal_days = sg ? parseInt(sg.getAttribute('data-days')) || 365 : FORM.goal_days;
+        }
+      } else if (n === 5) {
+        var ct = qs('#ovCheckinTime');
+        var rt = qs('#ovReminderTime');
+        var ro = qs('#ovReminderOn');
+        var sm = qs('.ov-method-card.on');
+        var wn = qs('#ovWaNum');
+        if (ct) FORM.checkin_time = ct.value;
+        if (ro) FORM.reminder_active = ro.checked;
+        if (rt) FORM.reminder_time = rt.value;
+        if (sm) FORM.mode_of_delivery = sm.getAttribute('data-method');
+        if (wn) FORM.whatsapp_number = wn.value.trim();
+      } else if (n === 6) {
+        var sw = qs('.ov-motion-word.on');
+        FORM.motion_word = sw ? sw.getAttribute('data-word') : FORM.motion_word;
+      }
+    }
+
+    /* ============================================================
+       VALIDATE STEP
+       ============================================================ */
+    function validateStep(n) {
+      if (n === 1) {
+        var w = qs('#ovWhat');
+        if (!w || !w.value.trim()) {
+          showErr('ovWhatErr'); shakeEl(w); w && w.focus(); return false;
+        }
+        hideErr('ovWhatErr');
+      } else if (n === 2) {
+        var wh = qs('#ovWhy');
+        if (!wh || !wh.value.trim()) {
+          showErr('ovWhyErr'); shakeEl(wh); wh && wh.focus(); return false;
+        }
+        hideErr('ovWhyErr');
+      } else if (n === 3) {
+        var mn = qs('#ovMin');
+        if (!mn || !mn.value.trim()) {
+          showErr('ovMinErr'); shakeEl(mn); mn && mn.focus(); return false;
+        }
+        hideErr('ovMinErr');
+      } else if (n === 5) {
+        var sm = qs('.ov-method-card.on');
+        if (sm && sm.getAttribute('data-method') === 'whatsapp') {
+          var wn = qs('#ovWaNum');
+          if (!wn || !wn.value.trim()) {
+            showErr('ovWaErr'); shakeEl(wn); wn && wn.focus(); return false;
+          }
+          hideErr('ovWaErr');
+        }
+      } else if (n === 6) {
+        if (!qs('.ov-motion-word.on')) {
+          showErr('ovMotionErr');
+          shakeEl(document.getElementById('ovMotionGrid'));
+          return false;
+        }
+        hideErr('ovMotionErr');
+      }
+      return true;
+    }
+
+    function showErr(id) { show(document.getElementById(id)); }
+    function hideErr(id) { hide(document.getElementById(id)); }
+
+    function shakeEl(el) {
+      if (!el) return;
+      el.classList.remove('ov-shake');
+      void el.offsetWidth; /* force reflow */
+      el.classList.add('ov-shake');
+    }
+
+    /* ============================================================
+       NEXT BUTTONS
+       ============================================================ */
+    [1, 2, 3, 4, 5].forEach(function (n) {
+      var btn = document.getElementById('ovNext' + n);
+      btn && btn.addEventListener('click', function () {
+        collectStep(n);
+        if (validateStep(n)) goToStep(n + 1);
+      });
+    });
+
+    /* ============================================================
+       CATEGORY CARDS
+       ============================================================ */
+    qsa('.ov-cat-card').forEach(function (card) {
+      function select() {
+        qsa('.ov-cat-card').forEach(function (c) {
+          c.classList.remove('on');
+          c.setAttribute('aria-pressed', 'false');
+        });
+        card.classList.add('on');
+        card.setAttribute('aria-pressed', 'true');
+        FORM.category = card.getAttribute('data-cat');
+      }
+      card.addEventListener('click', select);
+      card.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(); }
+      });
+    });
+
+    /* ============================================================
+       SUGGESTION CHIPS
+       ============================================================ */
+    qsa('.ov-chip').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var targetId = this.getAttribute('data-fill');
+        var target   = document.getElementById(targetId);
+        if (!target) return;
+        target.value = this.textContent.trim();
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+        target.focus();
+      });
+    });
+
+    /* ============================================================
+       GOAL CARDS
+       ============================================================ */
+    qsa('.ov-goal-card').forEach(function (card) {
+      function select() {
+        qsa('.ov-goal-card').forEach(function (c) {
+          c.classList.remove('on');
+          c.setAttribute('aria-pressed', 'false');
+        });
+        card.classList.add('on');
+        card.setAttribute('aria-pressed', 'true');
+        FORM.goal_days = parseInt(card.getAttribute('data-days')) || 365;
+      }
+      card.addEventListener('click', select);
+      card.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(); }
+      });
+    });
+
+    /* Forever toggle */
+    var foreverChk = document.getElementById('ovForever');
+    foreverChk && foreverChk.addEventListener('change', function () {
+      var gg = document.getElementById('ovGoalGrid');
+      if (gg) {
+        gg.style.opacity = this.checked ? '0.4' : '1';
+        gg.style.pointerEvents = this.checked ? 'none' : '';
+      }
+      if (this.checked) FORM.goal_days = 0;
+    });
+
+    /* ============================================================
+       TIME SELECTS
+       ============================================================ */
+    function populateTime(id, defaultVal) {
+      var sel = document.getElementById(id);
+      if (!sel) return;
+      for (var h = 0; h < 24; h++) {
+        for (var m = 0; m < 60; m += 30) {
+          var val = (h < 10 ? '0' : '') + h + ':' + (m === 0 ? '00' : '30');
+          var ampm = h >= 12 ? 'PM' : 'AM';
+          var hh   = h % 12 || 12;
+          var txt  = hh + ':' + (m === 0 ? '00' : '30') + ' ' + ampm;
+          var opt  = document.createElement('option');
+          opt.value = val;
+          opt.textContent = txt;
+          if (val === defaultVal) opt.selected = true;
+          sel.appendChild(opt);
+        }
+      }
+    }
+    populateTime('ovCheckinTime', '21:00');
+    populateTime('ovReminderTime', '20:00');
+
+    /* Reminder toggle */
+    var remOn   = document.getElementById('ovReminderOn');
+    var remSect = document.getElementById('ovReminderSection');
+    remOn && remOn.addEventListener('change', function () {
+      if (!remSect) return;
+      remSect.style.opacity      = this.checked ? '1' : '0.4';
+      remSect.style.pointerEvents = this.checked ? '' : 'none';
+    });
+
+    /* ============================================================
+       METHOD CARDS
+       ============================================================ */
+    qsa('.ov-method-card').forEach(function (card) {
+      function select() {
+        qsa('.ov-method-card').forEach(function (c) {
+          c.classList.remove('on');
+          c.setAttribute('aria-pressed', 'false');
+        });
+        card.classList.add('on');
+        card.setAttribute('aria-pressed', 'true');
+        FORM.mode_of_delivery = card.getAttribute('data-method');
+        var waField = document.getElementById('ovWaField');
+        if (waField) {
+          FORM.mode_of_delivery === 'whatsapp' ? show(waField) : hide(waField);
+        }
+      }
+      card.addEventListener('click', select);
+      card.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(); }
+      });
+    });
+
+    /* ============================================================
+       MOTION WORDS
+       ============================================================ */
+    qsa('.ov-motion-word').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        qsa('.ov-motion-word').forEach(function (b) { b.classList.remove('on'); });
+        this.classList.add('on');
+        FORM.motion_word = this.getAttribute('data-word');
+        hideErr('ovMotionErr');
+
+        var wrap    = document.getElementById('ovSelectedWordWrap');
+        var display = document.getElementById('ovSelectedWordDisplay');
+        if (wrap && display) {
+          display.textContent = FORM.motion_word;
+          display.style.animation = 'none';
+          void display.offsetWidth;
+          display.style.animation = '';
+          show(wrap);
+        }
+      });
+    });
+
+    /* ============================================================
+       CHAR COUNTER
+       ============================================================ */
+    var whatInput = document.getElementById('ovWhat');
+    var whatLen   = document.getElementById('ovWhatLen');
+    whatInput && whatInput.addEventListener('input', function () {
+      if (whatLen) whatLen.textContent = this.value.length;
+      if (this.value.trim()) hideErr('ovWhatErr');
+    });
+
+    /* ============================================================
+       SUBMIT — CREATE COMMITMENT
+       ============================================================ */
+    document.getElementById('ovCreateBtn') &&
+    document.getElementById('ovCreateBtn').addEventListener('click', function () {
+      collectStep(6);
+      if (!validateStep(6)) return;
+
+      /* 1. Close overlay immediately — great UX */
+      closeOverlay(true);
+
+      /* 2. Show loading toast */
+      showToast('Creating your commitment…', 'loading', 0);
+
+      var payload = {
+        what:                        FORM.what,
+        category:                    FORM.category,
+        why:                         FORM.why,
+        minimum_effort:              FORM.minimum_effort,
+        goal_days:                   FORM.goal_days,
+        checkin_time:                FORM.checkin_time,
+        reminder_active:             FORM.reminder_active,
+        user_selected_reminder_time: FORM.reminder_time,
+        mode_of_delivery:            FORM.mode_of_delivery,
+        whatsapp_number:             FORM.whatsapp_number,
+        motion_word:                 FORM.motion_word
+      };
+
+      function doCreate() {
+        fetch(API.create, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+          },
+          body: JSON.stringify(payload)
+        })
+        .then(function (r) {
+          return r.json().then(function (d) { return { ok: r.ok, data: d }; });
+        })
+        .then(function (res) {
+          if (res.ok) {
+            showToast('Commitment created! 🔥 Day 1 starts now.', 'success', 4500);
+            /* Reset form state */
+            FORM.what = ''; FORM.category = 'other'; FORM.why = '';
+            FORM.minimum_effort = ''; FORM.goal_days = 365;
+            FORM.checkin_time = '21:00'; FORM.reminder_active = true;
+            FORM.reminder_time = '20:00'; FORM.mode_of_delivery = 'email';
+            FORM.whatsapp_number = ''; FORM.motion_word = '';
+            /* Refresh list */
+            loadCommitments();
+          } else {
+            var msg = (res.data && res.data.message)
+              ? res.data.message
+              : 'Something went wrong. Tap to retry.';
+            showToast(msg, 'error', 0, doCreate);
+          }
+        })
+        .catch(function () {
+          showToast('Network error. Tap to retry.', 'error', 0, doCreate);
+        });
+      }
+
+      doCreate();
+    });
+
+    /* ============================================================
+       KEYBOARD SHORTCUT — Ctrl/Cmd+K → focus search
+       ============================================================ */
+    document.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        var si = document.getElementById('cmSearch');
+        if (si) si.focus();
+      }
+    });
+
+    /* ============================================================
+       INIT
+       ============================================================ */
+    function init() {
+      loadCommitments();
+      if (AUTO_OPEN) setTimeout(openOverlay, 650);
+    }
+
+    if (document.readyState === 'complete') {
+      reveal(); init();
+    } else {
+      window.addEventListener('load', function () { reveal(); init(); });
+      /* Hard fallback: 8 s max wait (matches spinner timeout) */
+      setTimeout(function () { reveal(); init(); }, 8000);
+    }
+
   })();
   </script>
+
 </body>
 </html>

@@ -76,8 +76,11 @@
         <!-- Nav links -->
         <nav class="aside-nav" aria-label="Dashboard navigation">
           <div class="aside-section-lbl">Navigation</div>
-          <a href="/v1/dashboard/" class="aside-link active">
+          <a href="{% url "origin_dashboard" %}" class="aside-link active">
             <i class="fas fa-gauge-high"></i> Dashboard
+          </a>
+          <a href="{% url "origin_dashboard" %}" class="aside-link">
+            <i class="fas fa-gauge-high"></i> Relationship
           </a>
           <a href="{% url "origin_profile" %}" class="aside-link">
             <i class="fas fa-circle-user"></i> Profile
