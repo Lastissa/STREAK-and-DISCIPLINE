@@ -116,7 +116,7 @@ def helper_with_friendship_request_answer(request, to_user_id : str):
     elif cache_does_exist: 
         cache.set(key ,cache_does_exist+"x", timeout=60)
         if len(cache_does_exist) == 3: return JsonResponse({'message': 'too many request to the same user and that is violating our policy of no spamming, if you send one more request within the next 60 seconds, you will be banned for 1 minutes'.upper()}, status = 403)
-        elif len(cache_does_exist) > 3: return JsonResponse({'message': "You have been banned from sending partner request to anyone for the next 60 seconds, if you try sending request before 60 sec is up, the timer will reset".upper()}, status = 403)
+        elif len(cache_does_exist) > 3: return JsonResponse({'message': "You have been banned from sending partner request to THIS USER for the next 60 seconds, if you try sending request before 60 sec is up, the timer will reset".upper()}, status = 403)
             
         cache.set(key,cache_does_exist+"x", timeout=60)  #Increeasing the x count and when it get to 3 give warning and block them on the them for 60 seconds
     to_user = Profile.objects.filter(public_searchable_username__iexact = to_user_id).first()

@@ -12,6 +12,9 @@ from django.utils import timezone
 
 from django.db import models
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 class CommitmentData(LoginRequiredMixin, View):
     """RETURNS DATA FOR THE DASHBOARD HOME TO USE TO DISPLAY A QUICK VIEW OF USER COMMITMENTS WITH THE LINK THAT REDIRECT USER TO VIEW ACTUAL FULL DATA"""
@@ -48,8 +51,7 @@ class CommitmentData(LoginRequiredMixin, View):
             }
             for i in commitment_istance 
             ]
-            status = 'all good'
-
+            
         return JsonResponse({'commitments' : data}, status = 200)
 
 
@@ -79,7 +81,7 @@ class HeatMap(LoginRequiredMixin, View):
         
         #check if the entries is empty
         if not entries.exists(): return JsonResponse({
-            'message' : 'user does not have any entries, create commitment and check in to view entries in a beutiful layout'.upper(),
+            'message' : 'YOU dont have any entries, create commitment and check in to view entries in a beutiful layout'.upper(),
             'cells' : []},status = 403)
         #if entries are NOT empty
         total_active = Commitment.objects.filter(user=request.user, is_active=True).count()     #total amount of active commitments
@@ -119,7 +121,7 @@ class ProfilePicture(LoginRequiredMixin, View):
     def get(self, request):
         """find url from db and return it to clien"""
         istance = Profile.objects.filter(user = request.user).first().profile_img_url
-        return JsonResponse({'message': "success", 'url' :istance}, status = 200)
+        return JsonResponse({'message': "success", 'url' :istance}, status = 404)
     
     def post(self, request):
         """take url from user and save it in the db or cloudinary; nt sure fr now"""
@@ -287,8 +289,110 @@ class AddFriend(LoginRequiredMixin, View):
         if req is None: return JsonResponse({'message': 'success, requst resend successfuly'}, status = 200)
         else: return req
 
+
+class RelationshipSent(LoginRequiredMixin, View):
+    """FOr getting user SENT friend / partner request to others with status like pending, accepted and rejected"""
+    login_url = '/v1/login/'
+    def get(self, request, status):
+        options = ChoicesValidatorInModels().friendship_status
+        #incase the status is not pending, accepted or rejected
+        if status not in options: return JsonResponse({'message': 'Unknown request, please contact customer support'}, status= 404)
+        
+        limit = int(float(request.GET.get('limit', '10')))
+        after_id = int(float(request.GET.get('after_id', '0'))) #if its null, it simply mean the user is on the first request
+        start_fetch = limit*(after_id)                          #The begining of the pagination
+        end_fetch = limit*(after_id+1)                          #the end of the pagination
+        
+        if limit>20: limit  = 20  #max should be 20 to avoid spammers issue
+        logger.info(msg= f"Pagination in relationship for SENT with start = {start_fetch} and end  = {end_fetch}")
+        friend_istance = Friendship.objects.filter(from_user = request.user, status__iexact= status).select_related('to_user')[start_fetch: end_fetch]
+        #i dont want to make another call for each friend_istance to get reciever profile so i wil just recreate the formula again which is username + CustomUser pk
+        results = [
+            {
+                'userid': f"{i.to_user.username}{i.to_user.pk:02d}",
+                'username': i.to_user.username,
+                'profile_image': '',
+                'updated_at': i.updated_at
+            }
+            for i in friend_istance
+        ]
+        return JsonResponse({
+            'results': results,             #the output per wach pagination
+            'next_id': after_id+1           #Increasing the pagination number for the client side
+            }, status = 200)
+
+
+class RelationshipReceived(LoginRequiredMixin, View):
+    """FOr getting user RECEIVED friend / partner request FROM others with status like pending, accepted and rejected"""
+    login_url = '/v1/login/'
+    def get(self, request, status):
+        options = ChoicesValidatorInModels().friendship_status
+        #incase the status is not pending, accepted or rejected
+        if status not in options: return JsonResponse({'message': 'Unknown request, please write am properly'}, status= 404)
+        
+        limit = int(float(request.GET.get('limit', '10')))
+        after_id = int(float(request.GET.get('after_id', '0'))) #if its null, it simply mean the user is on the first request
+        start_fetch = limit*(after_id)                          #The begining of the pagination
+        end_fetch = limit*(after_id+1)                          #the end of the pagination
+        
+        if limit>20: limit  = 20  #max should be 20 to avoid spammers issue
+        logger.info(msg= f"Pagination in relationship for RECEIVED with start = {start_fetch} and end  = {end_fetch}")
+        friend_istance = Friendship.objects.filter(to_user = request.user, status__iexact= status).select_related('to_user')[start_fetch: end_fetch]
+        #i dont want to make another call for each friend_istance to get reciever profile so i wil just recreate the formula again which is username + CustomUser pk
+        results = [
+            {
+                'userid': f"{i.from_user.username}{i.to_user.pk:02d}",
+                'username': i.from_user.username,
+                'profile_image': '',
+                'updated_at': i.updated_at
+            }
+            for i in friend_istance
+        ]
+        return JsonResponse({
+            'results': results,             #the output per wach pagination
+            'next_id': after_id+1           #Increasing the pagination number for the client side
+            }, status = 200)
+
+class RelationshipUnpair(LoginRequiredMixin, View):
+    """Remove a partner from accepted list of current usr friends"""
+    def get(self, request):
+        user_to_unpair = request.GET.get('userid', '').strip()
+        
+        if not user_to_unpair:
+            return JsonResponse({'message': 'No user specified.'}, status=400)
+        
+        
+        # Find the partner's profile
+        partner_profile = Profile.objects.filter(
+            public_searchable_username__iexact=user_to_unpair
+        ).first()
+        
+        if not partner_profile:
+            return JsonResponse({'message': 'User not found.'}, status=404)
+        
+        partner_user = partner_profile.user
+        
+        # Find the accepted friendship between these two users
+        friendship = Friendship.objects.filter(
+            models.Q(from_user=request.user, to_user=partner_user) |
+            models.Q(from_user=partner_user, to_user=request.user),
+            status='accepted'
+        ).first()
+        
+        if not friendship:
+            return JsonResponse({'message': 'No active partnership found with this user.'}, status=404)
+        
+        # Update status to rejected
+        friendship.status = 'rejected'
+        friendship.save()
+        
+        return JsonResponse({
+            'message': f'Successfully unpaired with @{user_to_unpair}.',
+        }, status=200)
+    
 class CommiementReceiveCommitment(LoginRequiredMixin, View):
     """THIS ENDPOITT IS IN CHARGE OF SERVING THE COMMITMENT PAGE IN DASHBOARD THE DATA IT NEEDS"""
+    login_url = '/v1/login/'
     def get(self, request):
         commitment_istance = Entries.objects.filter(commitment_key__user = request.user,).select_related('commitment_key').all() #to get all the commitment key data at once avoaiding the N+1 problem
         commitment_list = [

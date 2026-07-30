@@ -520,24 +520,24 @@
        path()/name entries pointing at Friendship queries filtered by
        from_user/to_user + status. Each must accept ?limit= & ?after_id=
        and return JSON shaped:
-         { "results": [{ "userid", "username", "profile_image", "created_at" }, ...],
+         { "results": [{ "userid", "username", "profile_image", "updated_at" }, ...],
            "next_id": <id or null>, "total": <int> }
        ============================================================ */
     var PAGE_SIZE = 10;
 
     var SECTIONS = {
       outPending: {
-        url: '/v1/relationship/sent/pending/',
+        url: '{% url "origin_relationship_sent" status='pending'%}',
         emptyIcon: 'fa-paper-plane', emptyText: 'No pending outgoing requests.',
         badge: 'pending', render: renderPlainCard
       },
       outRejected: {
-        url: '/v1/relationship/sent/rejected/',
+        url: '{% url "origin_relationship_sent" status='rejected'%}',
         emptyIcon: 'fa-xmark', emptyText: 'No rejected requests yet.',
         badge: 'rejected', render: renderPlainCard
       },
       outAccepted: {
-        url: '/v1/relationship/sent/accepted/',
+        url: '{% url "origin_relationship_sent" status='accepted'%}',
         emptyIcon: 'fa-user-group', emptyText: 'No accepted partners from your sent requests yet.',
         badge: 'accepted', render: renderUnpartnerCard
       },
@@ -667,7 +667,7 @@
       info.innerHTML =
         '<div class="rel-card-name">' + sanitize(item.username || 'Unknown') + '</div>' +
         '<div class="rel-card-sub">@' + sanitize(item.userid || '') +
-        (item.created_at ? ' · ' + timeAgo(item.created_at) : '') + '</div>';
+        (item.updated_at ? ' · ' + timeAgo(item.updated_at) : '') + '</div>';
       var badge = el('span', 'rel-badge ' + badgeKind, badgeKind.charAt(0).toUpperCase() + badgeKind.slice(1));
       card.appendChild(img);
       card.appendChild(info);
@@ -709,7 +709,7 @@
       btn.disabled = true;
       btn.classList.add('ob-loading');
 
-      var url = '/v1/relationship/unpartner/?userid=' + encodeURIComponent(item.userid);
+      var url = '{% url "origin_relationship_unpair" %}?userid=' + encodeURIComponent(item.userid);
       fetch(url, {
         method: 'GET',
         headers: { 'X-CSRFToken': getCookie('csrftoken') },

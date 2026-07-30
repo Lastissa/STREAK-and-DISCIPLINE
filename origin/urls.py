@@ -56,6 +56,10 @@ urlpatterns = [
     path('user_commitment_data/create/', views.CreateCommitment.as_view(), name = "origin_commitment_create_json"),     # same
     path('user_commitment_data/<str:commitment_key>/checkin', views.CreateCommitment.as_view(), name = "origin_commitment_create_json"),# same
     path('user_commitment_data/<str:commitment_key>/archive/', views.CreateCommitment.as_view(), name = "origin_commitment_create_json"),# same
+    path('relationship/sent/<str:status>/', views.RelationshipSent.as_view(), name = 'origin_relationship_sent'),         # Handles dashboard relationship friend / partner request sent
+    path('relationship/received/<str:status>/', views.RelationshipReceived.as_view(), name = 'origin_relationship_received'),         # Handles dashboard relationship friend / partner request sent
+    path('relationship/unpartner/', views.RelationshipUnpair.as_view(), name = 'origin_relationship_unpair')                                     #This handle user that have the accepetd in their relationship status to remove it and delete it
+
     
     
     
