@@ -542,17 +542,17 @@
         badge: 'accepted', render: renderUnpartnerCard
       },
       inPending: {
-        url: '/v1/relationship/received/pending/',
+        url: '{% url "origin_relationship_received" status='pending'%}',
         emptyIcon: 'fa-inbox', emptyText: 'No incoming requests right now.',
-        badge: 'pending', render: renderPlainCard
+        badge: 'pending', render: renderIncomingPendingCard  
       },
       inAccepted: {
-        url: '/v1/relationship/received/accepted/',
+        url: '{% url "origin_relationship_received" status='accepted'%}',
         emptyIcon: 'fa-user-check', emptyText: 'No partners yet.',
         badge: 'accepted', render: renderRecordsCard
       },
       inRejected: {
-        url: '/v1/relationship/received/rejected/',
+        url: '{% url "origin_relationship_received" status='rejected'%}',
         emptyIcon: 'fa-ban', emptyText: 'You have not rejected any requests.',
         badge: 'rejected', render: renderPlainCard
       }
@@ -775,6 +775,93 @@
       setTimeout(function() { reveal(); init(); }, 8000);
     }
 
+    //ADDITIONAL JS FOR THE ACCEPT AND DECLINE  REQUEST
+      
+      function renderIncomingPendingCard(item, badgeKind) {
+      var b = baseCard(item, badgeKind);
+      var actions = el('div', 'rel-card-actions');
+      
+      // Accept button
+      var acceptBtn = el('button', 'btn btn-primary btn-sm', '<span class="btn-txt">Accept</span><span class="btn-spin"></span>');
+      acceptBtn.addEventListener('click', function() { 
+        requestAcceptPartner(item, acceptBtn); 
+      });
+      
+      // Decline button
+      var declineBtn = el('button', 'btn btn-outline btn-sm', '<span class="btn-txt">Decline</span><span class="btn-spin"></span>');
+      declineBtn.addEventListener('click', function() { 
+        requestDeclinePartner(item, declineBtn); 
+      });
+      
+      actions.appendChild(acceptBtn);
+      actions.appendChild(declineBtn);
+      b.card.appendChild(actions);
+      return b.card;
+    }
+    //Function in charge of accept or decline
+
+    function requestAcceptPartner(item, btn) {
+      if (!confirm('Accept partner request from @' + (item.userid || '') + '? You will be able to see their consistency score')) return;
+      btn.disabled = true;
+      btn.classList.add('ob-loading');
+
+      var url = '{% url "origin_relationship_accept_partner" %}?userid=' + encodeURIComponent(item.userid);
+      fetch(url, {
+        method: 'GET',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        credentials: 'include'
+      }).then(function(r) {
+        return r.json().catch(function() { return {}; }).then(function(d) { return { status: r.status, data: d }; });
+      }).then(function(res) {
+        btn.disabled = false;
+        btn.classList.remove('ob-loading');
+        if (res.status === 200) {
+          toast('Partner request accepted!', 'ok');
+          // Reload the tabs
+          SECTIONS_STATE.inPending.loaded = false;
+          SECTIONS_STATE.inPending.items = [];
+          SECTIONS_STATE.inAccepted.loaded = false;
+          SECTIONS_STATE.inAccepted.items = [];
+          ensureLoaded('inPending');
+        } else {
+          toast((res.data && res.data.message) || 'Could not accept request. Try again.', 'bad');
+        }
+      }).catch(function() {
+        btn.disabled = false;
+        btn.classList.remove('ob-loading');
+        toast('Network error — please try again.', 'bad');
+      });
+    }
+
+    function requestDeclinePartner(item, btn) {
+      if (!confirm('Decline partner request from @' + (item.userid || '') + '?')) return;
+      btn.disabled = true;
+      btn.classList.add('ob-loading');
+
+      var url = '{% url "origin_relationship_decline_partner" %}?userid=' + encodeURIComponent(item.userid);
+      fetch(url, {
+        method: 'GET',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        credentials: 'include'
+      }).then(function(r) {
+        return r.json().catch(function() { return {}; }).then(function(d) { return { status: r.status, data: d }; });
+      }).then(function(res) {
+        btn.disabled = false;
+        btn.classList.remove('ob-loading');
+        if (res.status === 200) {
+          toast('Request declined.', 'ok');
+          SECTIONS_STATE.inPending.loaded = false;
+          SECTIONS_STATE.inPending.items = [];
+          ensureLoaded('inPending');
+        } else {
+          toast((res.data && res.data.message) || 'Could not decline. Try again.', 'bad');
+        }
+      }).catch(function() {
+        btn.disabled = false;
+        btn.classList.remove('ob-loading');
+        toast('Network error — please try again.', 'bad');
+      });
+    }
     })();
   </script>
 

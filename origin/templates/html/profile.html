@@ -6,215 +6,1265 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Profile & Settings — STREAK &amp; DISCIPLINE</title>
+  <title>Profile &amp; Settings — STREAK &amp; DISCIPLINE</title>
   <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
   <style>
-    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    :root{--bg:#060b14;--surf:#0d1421;--ink:#e4ecf7;--ink2:#8da5c0;--acc:#3b82f6;--accL:#60a5fa;--edge:#1c2a3d;--font:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
-    html,body{background:var(--bg);height:100%;overflow:hidden}
-    body{font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased}
-    body.sd-light{--bg:#f0f4fa;--surf:#fff;--ink:#0f172a;--ink2:#475569;--edge:#e2e8f0}
     {% include "reusables/spinner.css" %}
-    .pf-app{opacity:0;visibility:hidden;transition:opacity 0.4s ease,visibility 0.4s ease}
-    .pf-app.loaded{opacity:1;visibility:visible;display:flex;height:100vh;overflow:hidden}
+    html,body{margin:0;padding:0;background:#060b14}
+    body.sd-light{background:#f0f4fa}
+    .pf-app{opacity:0;visibility:hidden;transition:opacity .6s ease,visibility .6s ease}
+    .pf-app.pf-visible{opacity:1;visibility:visible}
   </style>
-  <link rel="stylesheet" href="{% static 'css/profile.css' %}">
+  <link rel="stylesheet" href="{% static 'css/profile_light.css' %}">
   <link rel="preload" href="{% static 'cdn/profile_advance.css' %}" as="style"
-        onload="this.onload=null;this.rel='stylesheet';document.documentElement.classList.add('engine-ready')"
-        id="heavy-css">
+        onload="this.onload=null;this.rel='stylesheet'" id="advCss">
   <noscript><link rel="stylesheet" href="{% static 'cdn/profile_advance.css' %}"></noscript>
 </head>
-<body class="{% if request.COOKIES.sd_theme != 'dark' %}sd-light{% endif %}">
+<body class="sd-{{ theme|default:'dark' }}">
+
   {% include "reusables/spinner.html" %}
 
   <div class="pf-app" id="pfApp">
-    <canvas id="particleCanvas"></canvas>
+
     <div class="aside-overlay" id="asideOverlay"></div>
 
-    <aside class="pf-aside" id="pfAside">
+    <!-- ================================================ ASIDE -->
+    <aside class="db-aside no-print" id="dbAside">
       <div class="aside-scroll">
         <div class="aside-top">
           <div class="aside-avatar-wrap" id="asideAvatarWrap">
             <div class="sk sk-circle" style="width:52px;height:52px" id="asideAvatarSk"></div>
           </div>
           <div class="aside-username">{{ request.user.username }}</div>
-          <span class="tier-badge tier-{{ tier|default:'free' }}">{% if tier == 'gold' %}<i class="fas fa-crown"></i> Gold{% elif tier == 'premium' %}<i class="fas fa-gem"></i> Premium{% else %}<i class="fas fa-user"></i> Free{% endif %}</span>
+          <div class="aside-email">{{ request.user.email }}</div>
+          <span class="tier-badge tier-{{ tier|default:'free' }}">
+            {% if tier == 'gold' %}<i class="fas fa-crown"></i> Gold
+            {% elif tier == 'premium' %}<i class="fas fa-gem"></i> Premium
+            {% else %}<i class="fas fa-user"></i> Free{% endif %}
+          </span>
         </div>
-        <nav class="aside-nav">
+        <nav class="aside-nav" aria-label="Main navigation">
           <div class="aside-section-lbl">Navigation</div>
-          <a href="{% url 'origin_dashboard' %}" class="aside-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
-          <a href="{% url 'origin_relationship' %}" class="aside-link"><i class="fas fa-gauge-high"></i> Relationship</a>
-          <a href="{% url "origin_profile" %}" class="aside-link active"><i class="fas fa-circle-user"></i> Profile</a>
-          <a href="{% url "origin_commitments" %}" class="aside-link"><i class="fas fa-fire-flame-curved"></i> My Commitments</a>
-          <div class="aside-section-lbl">Community</div>
-          <a href="{% url "origin_leaderboard" %}" class="aside-link"><i class="fas fa-ranking-star"></i> Leaderboard</a>
-          <a href="/v1/groups/" class="aside-link"><i class="fas fa-users"></i> Groups</a>
-          <a href="{% url "origin_blog" %}" class="aside-link"><i class="fas fa-newspaper"></i> Blog And Updates</a>
-          <div class="aside-section-lbl">Support</div>
-          <a href="https://wa.me/2347013687825" target="_blank" rel="noopener" class="aside-link"><i class="fab fa-whatsapp"></i> WhatsApp</a>
-          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link"><i class="fas fa-envelope"></i> Email</a>
+          <a href="{% url 'origin_dashboard' %}"    class="aside-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
+          <a href="{% url 'origin_relationship' %}" class="aside-link"><i class="fas fa-handshake"></i> Relationship</a>
+          <a href="{% url 'origin_profile' %}"      class="aside-link active" aria-current="page"><i class="fas fa-circle-user"></i> Profile</a>
+          <a href="{% url 'origin_commitments' %}"  class="aside-link"><i class="fas fa-fire-flame-curved"></i> My Commitments</a>
+          <div class="aside-section-lbl" style="margin-top:.4rem">Community</div>
+          <a href="{% url 'origin_leaderboard' %}"  class="aside-link"><i class="fas fa-ranking-star"></i> Leaderboard</a>
+          <a href="{% url 'origin_blog' %}"         class="aside-link"><i class="fas fa-newspaper"></i> Blog &amp; Updates</a>
+          <div class="aside-section-lbl" style="margin-top:.4rem">Others</div>
+          <a href="{% url 'origin_extra' %}#help"   class="aside-link"><i class="fas fa-circle-question"></i> Help</a>
+          <a href="{% url 'origin_extra' %}#policy" class="aside-link"><i class="fas fa-shield-halved"></i> Privacy Policy</a>
+          <a href="{% url 'origin_extra' %}#terms"  class="aside-link"><i class="fas fa-file-contract"></i> Terms</a>
+          <hr class="aside-sep">
+          <div class="aside-support-lbl">Support</div>
+          <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_blank" rel="noopener" class="aside-link"><i class="fab fa-whatsapp"></i> WhatsApp Support</a>
+          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link"><i class="fas fa-envelope"></i> Email Support</a>
+          <a href="tel:{{ customer_care_phone_number }}" class="aside-link"><i class="fas fa-phone"></i> {{ customer_care_phone_number }}</a>
         </nav>
+        {% if not tier or tier == 'free' %}
+        <div class="aside-upgrade">
+          <h4><i class="fas fa-gem"></i> Upgrade to Pro</h4>
+          <p>50 commitments, AI insights, WhatsApp reminders, profile pictures &amp; more.</p>
+          <a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm btn-full">Start 7-Day Trial</a>
+        </div>
+        {% endif %}
       </div>
-      <div class="aside-logout"><button class="aside-logout-btn" id="logoutBtn"><i class="fas fa-right-from-bracket"></i> Log Out</button></div>
+      <div class="aside-logout">
+        <button class="aside-logout-btn" id="logoutBtn"><i class="fas fa-right-from-bracket"></i> Log Out</button>
+      </div>
     </aside>
 
-    <div class="pf-wrap">
-      <header class="pf-header">
-        <h1 class="pf-title">Profile & Settings</h1>
-        <div class="pf-header-right">
-          <button class="hdr-btn" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
-          <button class="menu-toggle" id="menuToggle" aria-label="Menu"><span></span><span></span><span></span></button>
+    <!-- ================================================ HEADER -->
+    <header class="db-header no-print">
+      <div class="hdr-left">
+        <div class="hdr-avatar" id="hdrAvatarWrap" role="button" tabindex="0" title="Toggle menu">
+          <div class="sk sk-circle" style="width:32px;height:32px" id="hdrAvatarSk"></div>
         </div>
-      </header>
+        <span class="hdr-brand">STREAK &amp; DISCIPLINE</span>
+      </div>
+      <div class="hdr-right">
+        <button class="hdr-btn" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
+          <i class="fas fa-moon" id="themeIcon"></i>
+        </button>
+        <button class="hdr-btn hdr-hamburger" id="hamburgerBtn" aria-label="Open menu"><i class="fas fa-bars"></i></button>
+      </div>
+    </header>
 
+    <!-- ================================================ MAIN -->
+    <div class="pf-wrap">
       <main class="pf-main">
-        <div class="pf-grid">
 
-          <!-- SECTION 0: Profile Picture -->
-          <section class="pf-section">
-            <div class="pf-section-head"><i class="fas fa-camera"></i><h2>Profile Picture</h2></div>
-            <div class="pf-card">
-              <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
-                <div class="pf-avatar-large" id="pfAvatarLarge">
-                  <div class="sk sk-circle" style="width:96px;height:96px" id="pfAvatarLargeSk"></div>
-                </div>
-                <div style="flex:1;min-width:200px">
-                  {% if tier == 'free' %}
-                  <p class="pf-hint" style="margin-bottom:0.8rem"><i class="fas fa-lock"></i> Profile picture upload is a <strong>Premium & Gold</strong> feature.</p>
-                  <a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm">Upgrade to Upload</a>
-                  {% else %}
-                  <div class="pf-field">
-                    <label>Upload Profile Picture</label>
-                    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
-                      <input type="file" id="profilePicFile" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none">
-                      <button class="btn btn-outline btn-sm" id="chooseFileBtn"><i class="fas fa-folder-open"></i> Choose File</button>
-                      <span id="fileNameDisplay" style="font-size:0.78rem;color:var(--ink2)">No file chosen</span>
-                      <button class="btn btn-primary btn-sm" id="saveProfilePic" disabled>Upload</button>
-                    </div>
-                    <p class="pf-hint">JPEG, PNG, WebP, or GIF. Maximum 5MB. Image will be automatically compressed.</p>
-                  </div>
-                  <span class="pf-cooldown" id="cooldown-profile_picture"></span>
-                  {% endif %}
-                </div>
+        <!-- ══════════════════════════════════════════════
+             PROFILE HERO BANNER
+             ══════════════════════════════════════════════ -->
+        <div class="pf-hero" id="pfHero">
+
+          <!-- Avatar column -->
+          <div class="pf-hero-avatar-col">
+            <div class="pf-avatar-ring" id="pfAvatarRing"
+                 {% if tier != 'free' %}role="button" tabindex="0" title="Change profile picture"{% endif %}>
+              <div class="sk sk-circle" style="width:90px;height:90px" id="pfAvatarSk"></div>
+              {% if tier != 'free' %}
+              <div class="pf-avatar-edit"><i class="fas fa-camera"></i></div>
+              {% endif %}
+            </div>
+            {% if tier == 'free' %}
+            <span style="font-size:.58rem;color:var(--ink3);text-align:center;line-height:1.3">Premium+ to<br>upload photo</span>
+            {% endif %}
+          </div>
+
+          <!-- Info -->
+          <div class="pf-hero-info">
+            <div class="pf-hero-name">{{ request.user.username }}</div>
+            <div class="pf-hero-pubid">@<span>{{ public_id }}</span></div>
+            <div class="pf-hero-badges">
+              <span class="tier-badge tier-{{ tier|default:'free' }}">
+                {% if tier == 'gold' %}<i class="fas fa-crown"></i> Gold
+                {% elif tier == 'premium' %}<i class="fas fa-gem"></i> Premium
+                {% else %}<i class="fas fa-user"></i> Free{% endif %}
+              </span>
+              {% if social_mode == 'partner' %}
+              <span style="font-size:.62rem;padding:.18rem .5rem;border-radius:50px;background:rgba(34,197,94,.12);color:var(--ok);border:1px solid rgba(34,197,94,.25);font-weight:700">
+                <i class="fas fa-handshake"></i> Partner mode
+              </span>
+              {% endif %}
+              {% if leaderboard_optin %}
+              <span style="font-size:.62rem;padding:.18rem .5rem;border-radius:50px;background:rgba(245,158,11,.1);color:var(--gold);border:1px solid rgba(245,158,11,.2);font-weight:700">
+                <i class="fas fa-ranking-star"></i> On leaderboard
+              </span>
+              {% endif %}
+            </div>
+            <div class="pf-hero-meta">
+              <div class="pf-meta-item">
+                <div class="pf-meta-n" id="heroActiveCount"><div class="sk" style="width:28px;height:1.1rem;border-radius:4px"></div></div>
+                <div class="pf-meta-l">Commitments</div>
+              </div>
+              <div class="pf-meta-sep"></div>
+              <div class="pf-meta-item">
+                <div class="pf-meta-n" id="heroStreakSum"><div class="sk" style="width:36px;height:1.1rem;border-radius:4px"></div></div>
+                <div class="pf-meta-l">Total streak days</div>
+              </div>
+              <div class="pf-meta-sep"></div>
+              <div class="pf-meta-item">
+                <div class="pf-meta-n" id="heroMemberDays"><div class="sk" style="width:28px;height:1.1rem;border-radius:4px"></div></div>
+                <div class="pf-meta-l">Days active</div>
               </div>
             </div>
-          </section>
+          </div>
 
-          <!-- SECTION 1: Identity -->
-          <section class="pf-section">
-            <div class="pf-section-head"><i class="fas fa-id-card"></i><h2>Identity</h2></div>
-            <div class="pf-card">
-              <div class="pf-field"><label>Username</label><div class="pf-edit-row"><input type="text" class="pf-input" id="usernameInput" value="{{ request.user.username }}" maxlength="50"><button class="btn btn-primary btn-sm save-btn" data-field="username" data-input="usernameInput">Save</button></div><p class="pf-hint">Changing your username will prompt you to also update your Public User ID (currently <strong>{{ public_id }}</strong>). You can choose to keep your current ID or update it.</p><span class="pf-cooldown" id="cooldown-username"></span></div>
-              <div class="pf-field"><label>Public User ID</label><div class="pf-edit-row"><input type="text" class="pf-input" id="publicIdInput" value="{{ public_id }}" maxlength="50"><button class="btn btn-primary btn-sm save-btn" data-field="public_searchable_username" data-input="publicIdInput">Save</button></div><p class="pf-hint">This is how others find you for accountability partnerships. Changing it does not affect your login.</p><span class="pf-cooldown" id="cooldown-public_searchable_username"></span></div>
-              <div class="pf-field"><label>Email Address</label><div class="pf-readonly-row"><span class="pf-readonly-value">{{ request.user.email }}</span></div><p class="pf-hint">Your email is used for login and notifications. Contact support to change it.</p></div>
-              <div class="pf-field"><label>Account Created</label><div class="pf-readonly-row"><span class="pf-readonly-value">{{ request.user.date_joined|date:"F j, Y" }}</span></div></div>
+          <!-- Zeal score -->
+          <div class="pf-hero-right">
+            <div class="pf-zeal-orb">
+              <div class="pf-zeal-n" id="pfZealN" data-val="{{ zeal_score|default:0 }}">0</div>
+              <div class="pf-zeal-l">Zeal Score</div>
             </div>
-          </section>
+            <div class="pf-member-since">Member since {{ request.user.date_joined|date:"M Y" }}</div>
+          </div>
 
-          <!-- SECTION 2: Privacy & Visibility -->
-          <section class="pf-section">
-            <div class="pf-section-head"><i class="fas fa-shield-halved"></i><h2>Privacy & Visibility</h2></div>
-            <div class="pf-card">
-              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Appear on Weekly Leaderboard</span><p class="pf-hint">When enabled, your Public User ID and rank appear on the public weekly leaderboard. Your journal entries are never shown.</p></div><label class="pf-switch"><input type="checkbox" id="leaderboardOptin" {% if leaderboard_optin %}checked{% endif %} data-field="leaderboard_optin"><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-leaderboard_optin"></span>
-              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Show Zeal Score Publicly</span><p class="pf-hint">If leaderboard appearance is on, this controls whether your exact Zeal Score number is displayed or just your rank. <strong>Premium & Gold only.</strong></p></div><label class="pf-switch"><input type="checkbox" id="streakVisible" {% if streak_visible %}checked{% endif %} data-field="streak_count_is_public_visible" {% if tier == 'free' %}disabled{% endif %}><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-streak_count_is_public_visible"></span>
-              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Partner Mode</span><p class="pf-hint">Allow accountability partners to see your consistency score. Your journal entries remain private regardless.</p></div><label class="pf-switch"><input type="checkbox" id="socialMode" {% if social_mode == 'partner' %}checked{% endif %} data-field="social_mode" data-true="partner" data-false="solo"><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-social_mode"></span>
-            </div>
-          </section>
+        </div><!-- /pf-hero -->
 
-          <!-- SECTION 3: Notifications -->
-          <section class="pf-section">
-            <div class="pf-section-head"><i class="fas fa-bell"></i><h2>Notifications & Reports</h2></div>
-            <div class="pf-card">
-              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Weekly Truth Report</span><p class="pf-hint">Receive an honest breakdown of your week every Sunday via email.</p></div><label class="pf-switch"><input type="checkbox" id="weeklyReport" {% if weekly_report %}checked{% endif %} data-field="weekly_report_email_active"><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-weekly_report_email_active"></span>
-              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Custom Periodical Reports</span><p class="pf-hint">Receive reports every 3, 5, or 30 days. <strong>Pro feature.</strong></p></div><label class="pf-switch"><input type="checkbox" id="customReports" {% if custom_reports %}checked{% endif %} data-field="custom_report_email_active" {% if tier == 'free' %}disabled{% endif %}><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-custom_report_email_active"></span>
-              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Product Newsletter</span><p class="pf-hint">Occasional tips, new features, and discipline content.</p></div><label class="pf-switch"><input type="checkbox" id="newsletter" {% if newsletter %}checked{% endif %} data-field="receive_newsletter"><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-receive_newsletter"></span>
-            </div>
-          </section>
+        <!-- ══════════════════════════════════════════════
+             TWO-PANEL BODY
+             ══════════════════════════════════════════════ -->
+        <div class="pf-body">
 
-          <!-- SECTION 4: Appearance -->
-          <section class="pf-section"><div class="pf-section-head"><i class="fas fa-palette"></i><h2>Appearance</h2></div><div class="pf-card"><div class="pf-field"><label>Theme Mode</label><div class="theme-picker"><button class="theme-opt {% if theme == 'dark' %}on{% endif %}" data-theme="dark" data-field="theme"><span class="theme-swatch dark-swatch"></span> Dark</button><button class="theme-opt {% if theme == 'light' %}on{% endif %}" data-theme="light" data-field="theme"><span class="theme-swatch light-swatch"></span> Light</button></div></div></div></section>
+          <!-- ─── SECTION NAV ─────────────────────────── -->
+          <nav class="pf-snav no-print" id="pfSnav" aria-label="Settings sections">
+            <div class="pf-snav-title">Settings</div>
+            <a class="pf-snav-link active" href="#s-identity"     data-section="s-identity"><i class="fas fa-id-card"></i> Identity</a>
+            <a class="pf-snav-link"        href="#s-picture"      data-section="s-picture"><i class="fas fa-camera"></i> Picture</a>
+            <a class="pf-snav-link"        href="#s-privacy"      data-section="s-privacy"><i class="fas fa-shield-halved"></i> Privacy</a>
+            <a class="pf-snav-link"        href="#s-notifications" data-section="s-notifications"><i class="fas fa-bell"></i> Notifications</a>
+            <a class="pf-snav-link"        href="#s-appearance"   data-section="s-appearance"><i class="fas fa-palette"></i> Appearance</a>
+            <a class="pf-snav-link"        href="#s-ai"           data-section="s-ai"><i class="fas fa-microchip"></i> AI</a>
+            <a class="pf-snav-link"        href="#s-subscription" data-section="s-subscription"><i class="fas fa-gem"></i> Subscription</a>
+            <a class="pf-snav-link"        href="#s-partners"     data-section="s-partners"><i class="fas fa-handshake"></i> Partners</a>
+            <a class="pf-snav-link"        href="#s-data"         data-section="s-data"><i class="fas fa-database"></i> Data &amp; Export</a>
+            <a class="pf-snav-link"        href="#s-security"     data-section="s-security"><i class="fas fa-lock"></i> Security</a>
+            <div class="pf-snav-sep"></div>
+            <a class="pf-snav-link pf-snav-danger" href="#s-danger" data-section="s-danger"><i class="fas fa-triangle-exclamation"></i> Danger</a>
+          </nav>
 
-          <!-- SECTION 5: AI & Advanced -->
-          <section class="pf-section">
-            <div class="pf-section-head"><i class="fas fa-microchip"></i><h2>AI & Advanced Features</h2></div>
-            <div class="pf-card">
-              <div class="pf-toggle-row"><div><span class="pf-toggle-label">AI-Powered Weekly Insights</span><p class="pf-hint">Anonymous analysis of your entries for personalized recommendations.</p></div><label class="pf-switch"><input type="checkbox" id="aiInsights" {% if ai_insights %}checked{% endif %} data-field="ai_insight_active"><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-ai_insight_active"></span>
-              <div class="pf-toggle-row"><div><span class="pf-toggle-label">Advanced Predictive Analytics</span><p class="pf-hint">AI predicts future consistency trends and suggests optimal check-in times. <strong>Premium & Gold only.</strong></p></div><label class="pf-switch"><input type="checkbox" id="advancedAnalytics" {% if advanced_analytics %}checked{% endif %} data-field="advanced_analytics" {% if tier == 'free' %}disabled{% endif %}><span class="pf-sw-track"><span class="pf-sw-thumb"></span></span></label></div><span class="pf-cooldown" id="cooldown-advanced_analytics"></span>
-            </div>
-          </section>
+          <!-- ─── SECTIONS ────────────────────────────── -->
+          <div class="pf-sections">
 
-          <!-- SECTION 6: Subscription -->
-          <section class="pf-section">
-            <div class="pf-section-head"><i class="fas fa-gem"></i><h2>Subscription</h2></div>
-            <div class="pf-card">
-              <div class="pf-field"><label>Current Plan</label><div class="pf-readonly-row"><span class="pf-readonly-value" style="text-transform:capitalize">{{ tier }}</span></div></div>
-              {% if tier == 'free' %}<p class="pf-hint" style="margin-bottom:1rem">Upgrade to unlock 50 commitments, AI insights, custom reports, profile pictures, advanced analytics, and WhatsApp reminders.</p><a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm">Start 7-Day Pro Trial</a>{% elif tier == 'premium' %}<p class="pf-hint" style="margin-bottom:1rem">You're on Premium. Upgrade to Gold for unlimited everything.</p><a href="/v1/upgrade/" class="btn btn-outline btn-sm">Upgrade to Gold</a>{% else %}<p class="pf-hint">Gold plan — full access to everything. Thank you.</p>{% endif %}
-            </div>
-          </section>
+            <!-- ████ 1. IDENTITY ████ -->
+            <section class="pf-section" id="s-identity" style="--i:.05s">
+              <div class="pf-section-head"><i class="fas fa-id-card"></i> Identity</div>
+              <div class="pf-card">
 
-          <!-- SECTION 7: Data -->
-          <section class="pf-section"><div class="pf-section-head"><i class="fas fa-database"></i><h2>Data & Export</h2></div><div class="pf-card"><p class="pf-hint" style="margin-bottom:1rem">Download all your data.</p><div style="display:flex;gap:0.5rem"><button class="btn btn-outline btn-sm" id="exportJsonBtn"><i class="fas fa-file-code"></i> JSON</button><button class="btn btn-outline btn-sm" id="exportCsvBtn"><i class="fas fa-file-csv"></i> CSV</button></div></div></section>
+                <!-- Username -->
+                <div class="pf-card-row">
+                  <label class="pf-label" for="pfUsername">Display Name</label>
+                  <div class="pf-input-row">
+                    <input type="text" class="pf-input" id="pfUsername"
+                           value="{{ request.user.username }}" maxlength="50"
+                           autocomplete="username" aria-label="Display name">
+                    <button class="btn btn-primary btn-sm save-btn"
+                            data-field="username" data-input="pfUsername">
+                      <span class="btn-txt">Save</span><span class="btn-spin"></span>
+                    </button>
+                  </div>
+                  <p class="pf-hint">Your display name across the platform.</p>
+                  <div class="pf-cooldown" id="cooldown-username"><i class="fas fa-check-circle"></i> Saved</div>
+                </div>
 
-          <!-- SECTION 8: Partners -->
-          <section class="pf-section"><div class="pf-section-head"><i class="fas fa-user-group"></i><h2>Partners</h2></div><div class="pf-card"><div id="partnerListContainer"><p class="pf-hint">Loading partners…</p></div></div></section>
+                <div class="pf-card-sep"></div>
 
-          <!-- SECTION 9: Danger -->
-          <section class="pf-section pf-danger"><div class="pf-section-head"><i class="fas fa-triangle-exclamation"></i><h2>Danger Zone</h2></div><div class="pf-card"><p class="pf-hint" style="margin-bottom:1rem">Permanent. No undo.</p><button class="btn btn-outline btn-sm" id="deleteAccountBtn" style="border-color:#ef4444;color:#ef4444"><i class="fas fa-trash"></i> Delete My Account</button></div></section>
+                <!-- Public User ID -->
+                <div class="pf-card-row">
+                  <label class="pf-label" for="pfPublicId">Public User ID</label>
+                  <div class="pf-input-row">
+                    <input type="text" class="pf-input" id="pfPublicId"
+                           value="{{ public_id }}" maxlength="50"
+                           autocomplete="off" aria-label="Public user ID">
+                    <button class="btn btn-primary btn-sm save-btn"
+                            data-field="public_searchable_username" data-input="pfPublicId">
+                      <span class="btn-txt">Save</span><span class="btn-spin"></span>
+                    </button>
+                  </div>
+                  <p class="pf-hint">How partners find you. Changing this doesn't affect your login.</p>
+                  <div class="pf-cooldown" id="cooldown-public_searchable_username"><i class="fas fa-check-circle"></i> Saved</div>
+                </div>
 
-        </div>
-        <footer class="pf-footer"><p>&copy; {{ footer_copyright_note }}</p><p><a href="{% url 'origin_extra' %}#privacy">Privacy</a> · <a href="{% url 'origin_extra' %}#terms">Terms</a> · <a href="mailto:issaabdulsalamope11@gmail.com">Contact</a></p></footer>
+                <div class="pf-card-sep"></div>
+
+                <!-- Email (readonly) -->
+                <div class="pf-card-row">
+                  <span class="pf-label">Email Address</span>
+                  <div class="pf-readonly">{{ request.user.email }}</div>
+                  <p class="pf-hint">Used for login &amp; notifications. <a href="mailto:issaabdulsalamope11@gmail.com" style="color:var(--accL)">Contact support</a> to change it.</p>
+                </div>
+
+                <div class="pf-card-sep"></div>
+
+                <!-- Account created -->
+                <div class="pf-card-row">
+                  <span class="pf-label">Member Since</span>
+                  <div class="pf-readonly">{{ request.user.date_joined|date:"F j, Y" }}</div>
+                </div>
+
+              </div>
+            </section>
+
+            <!-- ████ 2. PROFILE PICTURE ████ -->
+            <section class="pf-section" id="s-picture" style="--i:.1s">
+              <div class="pf-section-head"><i class="fas fa-camera"></i> Profile Picture</div>
+              {% if tier == 'free' %}
+              <div class="pf-card" style="opacity:.55;pointer-events:none">
+                <div class="pf-pic-row">
+                  <div class="pf-pic-preview" id="pfPicPreview">
+                    <div class="sk sk-circle" style="width:72px;height:72px"></div>
+                  </div>
+                  <div class="pf-pic-controls">
+                    <div class="pf-drop-zone" style="opacity:.6">
+                      <i class="fas fa-cloud-arrow-up"></i>
+                      Drop or click to upload
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p class="pf-hint" style="margin-top:.5rem">
+                <span class="pf-gate-badge pf-gate-premium"><i class="fas fa-lock"></i> Premium &amp; Gold</span>
+                &nbsp;Upgrade to upload a custom profile picture.
+                <a href="/v1/signup/?trial=true" style="color:var(--accL)">Start free trial</a>
+              </p>
+              {% else %}
+              <div class="pf-card">
+                <div class="pf-pic-row">
+                  <div class="pf-pic-preview" id="pfPicPreview">
+                    <div class="sk sk-circle" style="width:72px;height:72px" id="pfPicPreviewSk"></div>
+                  </div>
+                  <div class="pf-pic-controls">
+                    <div class="pf-drop-zone" id="pfDropZone" role="button" tabindex="0"
+                         aria-label="Click or drop image to upload">
+                      <i class="fas fa-cloud-arrow-up"></i>
+                      <span id="pfDropLabel">Click or drag &amp; drop your photo</span>
+                    </div>
+                    <input type="file" id="pfFileInput" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none">
+                    <div class="pf-file-name" id="pfFileName">No file chosen</div>
+                    <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+                      <button class="btn btn-primary btn-sm" id="pfUploadBtn" disabled>
+                        <span class="btn-txt"><i class="fas fa-cloud-arrow-up"></i> Upload</span>
+                        <span class="btn-spin"></span>
+                      </button>
+                      <button class="btn btn-ghost btn-sm" id="pfRemovePicBtn"
+                              style="color:var(--bad)"><i class="fas fa-trash"></i> Remove</button>
+                    </div>
+                    <p class="pf-hint">JPEG, PNG, WebP or GIF · Max 5 MB</p>
+                    <div class="pf-cooldown" id="cooldown-profile_picture"><i class="fas fa-check-circle"></i> Photo updated</div>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+            </section>
+
+            <!-- ████ 3. PRIVACY & VISIBILITY ████ -->
+            <section class="pf-section" id="s-privacy" style="--i:.15s">
+              <div class="pf-section-head"><i class="fas fa-shield-halved"></i> Privacy &amp; Visibility</div>
+              <div class="pf-card">
+
+                <!-- Leaderboard optin -->
+                <div class="pf-toggle-row">
+                  <div class="pf-toggle-left">
+                    <div class="pf-toggle-label"><i class="fas fa-ranking-star" style="color:var(--ink3)"></i> Appear on Weekly Leaderboard</div>
+                    <p class="pf-hint">Your Public User ID and rank appear publicly. Journal entries are never shown.</p>
+                  </div>
+                  <label class="pf-switch" aria-label="Leaderboard opt-in">
+                    <input type="checkbox" id="pfLeaderboard"
+                           {% if leaderboard_optin %}checked{% endif %}
+                           data-field="leaderboard_optin">
+                    <span class="pf-sw-track"><span class="pf-sw-thumb"></span></span>
+                  </label>
+                </div>
+                <div class="pf-cooldown" id="cooldown-leaderboard_optin"><i class="fas fa-check-circle"></i> Saved</div>
+
+                <!-- Show Zeal Score (Premium+) -->
+                <div class="pf-toggle-row {% if tier == 'free' %}pf-locked-row{% endif %}"
+                     id="row-streak-visible">
+                  <div class="pf-toggle-left">
+                    <div class="pf-toggle-label">
+                      <i class="fas fa-eye" style="color:var(--ink3)"></i> Show Zeal Score Publicly
+                      {% if tier == 'free' %}<span class="pf-gate-badge pf-gate-premium"><i class="fas fa-lock"></i> Premium</span>{% endif %}
+                    </div>
+                    <p class="pf-hint">Show your exact Zeal Score on the leaderboard, not just your rank.</p>
+                  </div>
+                  <label class="pf-switch" aria-label="Show Zeal Score">
+                    <input type="checkbox" id="pfStreakVisible"
+                           {% if streak_visible %}checked{% endif %}
+                           data-field="streak_count_is_public_visible"
+                           {% if tier == 'free' %}disabled{% endif %}>
+                    <span class="pf-sw-track"><span class="pf-sw-thumb"></span></span>
+                  </label>
+                </div>
+                <div class="pf-cooldown" id="cooldown-streak_count_is_public_visible"><i class="fas fa-check-circle"></i> Saved</div>
+
+                <!-- Partner mode (Premium+) -->
+                <div class="pf-toggle-row {% if tier == 'free' %}pf-locked-row{% endif %}"
+                     id="row-social-mode">
+                  <div class="pf-toggle-left">
+                    <div class="pf-toggle-label">
+                      <i class="fas fa-handshake" style="color:var(--ink3)"></i> Partner Mode
+                      {% if tier == 'free' %}<span class="pf-gate-badge pf-gate-premium"><i class="fas fa-lock"></i> Premium</span>{% endif %}
+                    </div>
+                    <p class="pf-hint">Let accountability partners see your consistency score. Entries stay private.</p>
+                  </div>
+                  <label class="pf-switch" aria-label="Partner mode">
+                    <input type="checkbox" id="pfSocialMode"
+                           {% if social_mode == 'partner' %}checked{% endif %}
+                           data-field="social_mode" data-true="partner" data-false="solo"
+                           {% if tier == 'free' %}disabled{% endif %}>
+                    <span class="pf-sw-track"><span class="pf-sw-thumb"></span></span>
+                  </label>
+                </div>
+                <div class="pf-cooldown" id="cooldown-social_mode"><i class="fas fa-check-circle"></i> Saved</div>
+
+                <!-- AI data consent -->
+                <div class="pf-toggle-row">
+                  <div class="pf-toggle-left">
+                    <div class="pf-toggle-label"><i class="fas fa-microchip" style="color:var(--ink3)"></i> Allow AI Analysis</div>
+                    <p class="pf-hint">Anonymous analysis of your entries for personalized AI insights. No data is sold.</p>
+                  </div>
+                  <label class="pf-switch" aria-label="Allow AI analysis">
+                    <input type="checkbox" id="pfAiConsent"
+                           {% if ai_insights %}checked{% endif %}
+                           data-field="ai_insight_active">
+                    <span class="pf-sw-track"><span class="pf-sw-thumb"></span></span>
+                  </label>
+                </div>
+                <div class="pf-cooldown" id="cooldown-ai_insight_active"><i class="fas fa-check-circle"></i> Saved</div>
+
+              </div>
+            </section>
+
+            <!-- ████ 4. NOTIFICATIONS & REPORTS ████ -->
+            <section class="pf-section" id="s-notifications" style="--i:.2s">
+              <div class="pf-section-head"><i class="fas fa-bell"></i> Notifications &amp; Reports</div>
+              <div class="pf-card">
+
+                <!-- Weekly truth report -->
+                <div class="pf-toggle-row">
+                  <div class="pf-toggle-left">
+                    <div class="pf-toggle-label"><i class="fas fa-newspaper" style="color:var(--ink3)"></i> Weekly Truth Report</div>
+                    <p class="pf-hint">An honest breakdown of your week every Sunday via email. No fluff.</p>
+                  </div>
+                  <label class="pf-switch" aria-label="Weekly report">
+                    <input type="checkbox" id="pfWeeklyReport"
+                           {% if weekly_report %}checked{% endif %}
+                           data-field="weekly_report_email_active">
+                    <span class="pf-sw-track"><span class="pf-sw-thumb"></span></span>
+                  </label>
+                </div>
+                <div class="pf-cooldown" id="cooldown-weekly_report_email_active"><i class="fas fa-check-circle"></i> Saved</div>
+
+                <!-- Custom periodical (Premium+) -->
+                <div class="pf-toggle-row {% if tier == 'free' %}pf-locked-row{% endif %}"
+                     id="row-custom-reports">
+                  <div class="pf-toggle-left">
+                    <div class="pf-toggle-label">
+                      <i class="fas fa-calendar-check" style="color:var(--ink3)"></i> Custom Periodical Reports
+                      {% if tier == 'free' %}<span class="pf-gate-badge pf-gate-premium"><i class="fas fa-lock"></i> Premium</span>{% endif %}
+                    </div>
+                    <p class="pf-hint">Receive reports every 3, 5, or 30 days based on your preference.</p>
+                  </div>
+                  <label class="pf-switch" aria-label="Custom reports">
+                    <input type="checkbox" id="pfCustomReports"
+                           {% if custom_reports %}checked{% endif %}
+                           data-field="custom_report_email_active"
+                           {% if tier == 'free' %}disabled{% endif %}>
+                    <span class="pf-sw-track"><span class="pf-sw-thumb"></span></span>
+                  </label>
+                </div>
+                <div class="pf-cooldown" id="cooldown-custom_report_email_active"><i class="fas fa-check-circle"></i> Saved</div>
+
+                <!-- Newsletter -->
+                <div class="pf-toggle-row">
+                  <div class="pf-toggle-left">
+                    <div class="pf-toggle-label"><i class="fas fa-envelope" style="color:var(--ink3)"></i> Product Newsletter</div>
+                    <p class="pf-hint">Occasional tips, new features, and discipline content. Low volume.</p>
+                  </div>
+                  <label class="pf-switch" aria-label="Newsletter">
+                    <input type="checkbox" id="pfNewsletter"
+                           {% if newsletter %}checked{% endif %}
+                           data-field="receive_newsletter">
+                    <span class="pf-sw-track"><span class="pf-sw-thumb"></span></span>
+                  </label>
+                </div>
+                <div class="pf-cooldown" id="cooldown-receive_newsletter"><i class="fas fa-check-circle"></i> Saved</div>
+
+              </div>
+            </section>
+
+            <!-- ████ 5. APPEARANCE ████ -->
+            <section class="pf-section" id="s-appearance" style="--i:.25s">
+              <div class="pf-section-head"><i class="fas fa-palette"></i> Appearance</div>
+              <div class="pf-card">
+                <div class="pf-card-row">
+                  <span class="pf-label">Theme Mode</span>
+                  <div class="pf-theme-grid">
+                    <button class="pf-theme-opt {% if theme == 'dark' or not theme %}on{% endif %}"
+                            data-theme="dark" data-field="theme" type="button">
+                      <div class="pf-theme-swatch pf-theme-dark"></div>
+                      <span><i class="fas fa-moon"></i> Dark</span>
+                    </button>
+                    <button class="pf-theme-opt {% if theme == 'light' %}on{% endif %}"
+                            data-theme="light" data-field="theme" type="button">
+                      <div class="pf-theme-swatch pf-theme-light"></div>
+                      <span><i class="fas fa-sun"></i> Light</span>
+                    </button>
+                  </div>
+                  <div class="pf-cooldown" id="cooldown-theme"><i class="fas fa-check-circle"></i> Theme saved</div>
+                </div>
+              </div>
+            </section>
+
+            <!-- ████ 6. AI & ADVANCED FEATURES ████ -->
+            <section class="pf-section" id="s-ai" style="--i:.3s">
+              <div class="pf-section-head"><i class="fas fa-microchip"></i> AI &amp; Advanced Features</div>
+              <div class="pf-card">
+
+                <!-- AI weekly insights (all tiers) -->
+                <div class="pf-toggle-row">
+                  <div class="pf-toggle-left">
+                    <div class="pf-toggle-label"><i class="fas fa-brain" style="color:var(--ink3)"></i> AI-Powered Weekly Insights</div>
+                    <p class="pf-hint">Anonymous analysis of your entries for personalized recommendations.</p>
+                  </div>
+                  <label class="pf-switch" aria-label="AI insights">
+                    <input type="checkbox" id="pfAiInsights"
+                           {% if ai_insights %}checked{% endif %}
+                           data-field="ai_insight_active">
+                    <span class="pf-sw-track"><span class="pf-sw-thumb"></span></span>
+                  </label>
+                </div>
+
+                <!-- Predictive analytics (Premium+) -->
+                <div class="pf-toggle-row {% if tier == 'free' %}pf-locked-row{% endif %}"
+                     id="row-advanced-analytics">
+                  <div class="pf-toggle-left">
+                    <div class="pf-toggle-label">
+                      <i class="fas fa-chart-line" style="color:var(--ink3)"></i> Predictive Consistency Analytics
+                      {% if tier == 'free' %}<span class="pf-gate-badge pf-gate-premium"><i class="fas fa-lock"></i> Premium</span>{% endif %}
+                    </div>
+                    <p class="pf-hint">AI predicts future consistency trends and suggests optimal check-in times.</p>
+                  </div>
+                  <label class="pf-switch" aria-label="Advanced analytics">
+                    <input type="checkbox" id="pfAdvancedAnalytics"
+                           data-field="advanced_analytics"
+                           {% if tier == 'free' %}disabled{% endif %}>
+                    <span class="pf-sw-track"><span class="pf-sw-thumb"></span></span>
+                  </label>
+                </div>
+
+                <!-- Personalised coach (Gold only) -->
+                <div class="pf-toggle-row {% if tier != 'gold' %}pf-locked-row{% endif %}"
+                     id="row-coach">
+                  <div class="pf-toggle-left">
+                    <div class="pf-toggle-label">
+                      <i class="fas fa-user-tie" style="color:var(--ink3)"></i> Personalised AI Coach
+                      {% if tier != 'gold' %}<span class="pf-gate-badge pf-gate-gold"><i class="fas fa-crown"></i> Gold</span>{% endif %}
+                    </div>
+                    <p class="pf-hint">Daily coaching messages tailored to your commitment patterns and mood data.</p>
+                  </div>
+                  <label class="pf-switch" aria-label="AI Coach">
+                    <input type="checkbox" id="pfCoach"
+                           data-field="ai_coach_active"
+                           {% if tier != 'gold' %}disabled{% endif %}>
+                    <span class="pf-sw-track"><span class="pf-sw-thumb"></span></span>
+                  </label>
+                </div>
+
+              </div>
+            </section>
+
+            <!-- ████ 7. SUBSCRIPTION ████ -->
+            <section class="pf-section" id="s-subscription" style="--i:.35s">
+              <div class="pf-section-head"><i class="fas fa-gem"></i> Subscription</div>
+              <div class="pf-card">
+                <div class="pf-card-row">
+                  <span class="pf-label">Current Plan</span>
+                  <div class="pf-readonly" style="text-transform:capitalize">
+                    <span style="color:{% if tier == 'gold' %}var(--gold){% elif tier == 'premium' %}var(--accL){% else %}var(--ink2){% endif %}">
+                      {% if tier == 'gold' %}<i class="fas fa-crown"></i>{% elif tier == 'premium' %}<i class="fas fa-gem"></i>{% else %}<i class="fas fa-user"></i>{% endif %}
+                      {{ tier|default:"Free"|capfirst }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Tier comparison cards -->
+                <div class="pf-tier-cards">
+                  <div class="pf-tier-card {% if tier == 'free' or not tier %}current{% endif %}">
+                    <div class="pf-tier-card-name free">Free</div>
+                    {% if tier == 'free' or not tier %}<div class="pf-current-badge">Current</div>{% endif %}
+                    <ul class="pf-tier-features">
+                      <li>5 active commitments</li>
+                      <li>Email reminders</li>
+                      <li>Weekly summary</li>
+                      <li>Public leaderboard</li>
+                    </ul>
+                    {% if tier != 'free' and tier %}<div style="font-size:.7rem;color:var(--ink3);margin-top:.25rem">Downgrade to free</div>{% endif %}
+                  </div>
+                  <div class="pf-tier-card {% if tier == 'premium' %}current{% endif %}">
+                    <div class="pf-tier-card-name premium"><i class="fas fa-gem"></i> Premium</div>
+                    {% if tier == 'premium' %}<div class="pf-current-badge">Current</div>{% endif %}
+                    <ul class="pf-tier-features">
+                      <li>50 commitments</li>
+                      <li>WhatsApp + Push alerts</li>
+                      <li>Custom reports</li>
+                      <li>AI weekly insights</li>
+                      <li>1 accountability partner</li>
+                      <li>Profile picture</li>
+                    </ul>
+                    {% if tier == 'free' or not tier %}<a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm btn-full" style="margin-top:.4rem">Start Trial</a>{% endif %}
+                  </div>
+                  <div class="pf-tier-card {% if tier == 'gold' %}current{% endif %}">
+                    <div class="pf-tier-card-name gold"><i class="fas fa-crown"></i> Gold</div>
+                    {% if tier == 'gold' %}<div class="pf-current-badge">Current</div>{% endif %}
+                    <ul class="pf-tier-features">
+                      <li>Unlimited commitments</li>
+                      <li>All delivery methods</li>
+                      <li>Offline reminders</li>
+                      <li>AI Coach</li>
+                      <li>4 partners</li>
+                      <li>Create groups</li>
+                      <li>Advance analytics</li>
+                    </ul>
+                    {% if tier != 'gold' %}<a href="/v1/upgrade/" class="btn btn-outline btn-sm btn-full" style="margin-top:.4rem;border-color:var(--gold);color:var(--gold)">Upgrade to Gold</a>{% endif %}
+                  </div>
+                </div>
+
+                {% if tier == 'gold' %}
+                <p class="pf-hint" style="text-align:center">Gold plan — full access to everything. Thank you. 🙌</p>
+                {% endif %}
+              </div>
+            </section>
+
+            <!-- ████ 8. PARTNERS ████ -->
+            <section class="pf-section" id="s-partners" style="--i:.4s">
+              <div class="pf-section-head"><i class="fas fa-handshake"></i> Accountability Partners</div>
+              <div class="pf-card {% if tier == 'free' %}pf-locked-row{% endif %}">
+                {% if tier == 'free' %}
+                <p class="pf-hint">
+                  <span class="pf-gate-badge pf-gate-premium"><i class="fas fa-lock"></i> Premium</span>
+                  &nbsp;Partner mode requires Premium or Gold.
+                  <a href="/v1/signup/?trial=true" style="color:var(--accL)">Upgrade</a>
+                </p>
+                {% else %}
+                <div id="pfPartnerList">
+                  <div class="pf-partner-item">
+                    <div class="pf-partner-avatar"><i class="fas fa-circle-notch fa-spin"></i></div>
+                    <div class="pf-partner-info"><div class="sk sk-text" style="width:80px"></div></div>
+                  </div>
+                </div>
+                <div class="pf-card-sep"></div>
+                <div class="pf-card-row">
+                  <span class="pf-label">Add partner by Public User ID</span>
+                  <div class="pf-add-partner">
+                    <input type="text" class="pf-input" id="pfAddPartnerInput"
+                           placeholder="e.g. opeyemi01" autocomplete="off" maxlength="50">
+                    <button class="btn btn-primary btn-sm" id="pfAddPartnerBtn">
+                      <span class="btn-txt"><i class="fas fa-plus"></i> Add</span>
+                      <span class="btn-spin"></span>
+                    </button>
+                  </div>
+                  <p class="pf-partner-limit">
+                    Partner slots:
+                    {% if tier == 'premium' %}1 max (Premium)
+                    {% elif tier == 'gold' %}4 max (Gold){% endif %}
+                  </p>
+                </div>
+                {% endif %}
+              </div>
+            </section>
+
+            <!-- ████ 9. DATA & EXPORT ████ -->
+            <section class="pf-section" id="s-data" style="--i:.45s">
+              <div class="pf-section-head"><i class="fas fa-database"></i> Data &amp; Export</div>
+              <div class="pf-card">
+                <p class="pf-hint" style="margin-bottom:.5rem">
+                  Download everything we hold about you — commitments, entries, moods, streaks.
+                  Your data is yours.
+                </p>
+                <div class="pf-export-grid">
+                  <div class="pf-export-card" id="pfExportJson" role="button" tabindex="0">
+                    <i class="fas fa-file-code"></i>
+                    <div class="pf-export-name">JSON</div>
+                    <div class="pf-export-desc">Machine-readable. Best for developers or importing elsewhere.</div>
+                  </div>
+                  <div class="pf-export-card" id="pfExportCsv" role="button" tabindex="0">
+                    <i class="fas fa-file-csv"></i>
+                    <div class="pf-export-name">CSV</div>
+                    <div class="pf-export-desc">Open in Excel or Google Sheets. Great for personal analysis.</div>
+                  </div>
+                  <div class="pf-export-card {% if tier == 'free' %}locked-card{% endif %}"
+                       id="pfExportPdf" role="button" tabindex="0">
+                    <i class="fas fa-file-pdf"></i>
+                    <div class="pf-export-name">PDF Report
+                      {% if tier == 'free' %}<span class="pf-gate-badge pf-gate-premium" style="vertical-align:middle"><i class="fas fa-lock"></i></span>{% endif %}
+                    </div>
+                    <div class="pf-export-desc">Formatted report with charts. Great for sharing or printing.</div>
+                  </div>
+                  <div class="pf-export-card {% if tier != 'gold' %}locked-card{% endif %}"
+                       id="pfExportAi" role="button" tabindex="0">
+                    <i class="fas fa-brain"></i>
+                    <div class="pf-export-name">AI Insights Report
+                      {% if tier != 'gold' %}<span class="pf-gate-badge pf-gate-gold" style="vertical-align:middle"><i class="fas fa-crown"></i></span>{% endif %}
+                    </div>
+                    <div class="pf-export-desc">AI-generated narrative of your discipline journey. Gold only.</div>
+                  </div>
+                </div>
+                <div class="pf-cooldown" id="cooldown-export"><i class="fas fa-check-circle"></i> Export started — check your downloads</div>
+              </div>
+            </section>
+
+            <!-- ████ 10. SECURITY ████ -->
+            <section class="pf-section" id="s-security" style="--i:.5s">
+              <div class="pf-section-head"><i class="fas fa-lock"></i> Account Security</div>
+              <div class="pf-card">
+
+                <div class="pf-security-item">
+                  <div>
+                    <div class="pf-security-label">Password</div>
+                    <div class="pf-security-val">Last changed: unknown (contact support to verify)</div>
+                  </div>
+                  <a href="{% url 'origin_password_reset' %}" class="btn btn-outline btn-sm">
+                    <i class="fas fa-key"></i> Change Password
+                  </a>
+                </div>
+
+                <div class="pf-security-item">
+                  <div>
+                    <div class="pf-security-label">Login Email</div>
+                    <div class="pf-security-val">{{ request.user.email }}</div>
+                  </div>
+                  <a href="mailto:issaabdulsalamope11@gmail.com?subject=Change%20Login%20Email"
+                     class="btn btn-ghost btn-sm" target="_blank" rel="noopener">
+                    <i class="fas fa-envelope"></i> Request Change
+                  </a>
+                </div>
+
+                <div class="pf-security-item">
+                  <div>
+                    <div class="pf-security-label">Active Sessions</div>
+                    <div class="pf-security-val">Current session only (no multi-device tracking yet)</div>
+                  </div>
+                  <button class="btn btn-outline btn-sm" id="pfSignOutBtn">
+                    <i class="fas fa-right-from-bracket"></i> Sign Out
+                  </button>
+                </div>
+
+                <div class="pf-security-item">
+                  <div>
+                    <div class="pf-security-label">Account Status</div>
+                    <div class="pf-security-val" style="color:var(--ok)">
+                      <i class="fas fa-circle-check"></i> Active
+                    </div>
+                  </div>
+                  <span class="pf-hint" style="margin:0">in good standing</span>
+                </div>
+
+              </div>
+            </section>
+
+            <!-- ████ 11. DANGER ZONE ████ -->
+            <section class="pf-section" id="s-danger" style="--i:.55s">
+              <div class="pf-section-head danger"><i class="fas fa-triangle-exclamation"></i> Danger Zone</div>
+              <div class="pf-danger-card">
+
+                <!-- Archive all commitments -->
+                <div class="pf-danger-item">
+                  <div>
+                    <div class="pf-danger-label">Archive All Commitments</div>
+                    <div class="pf-danger-desc">Pauses all active commitments. Entries are preserved. You can reactivate them later.</div>
+                  </div>
+                  <button class="btn btn-outline btn-sm" id="pfArchiveAllBtn"
+                          style="border-color:var(--warn);color:var(--warn);flex-shrink:0">
+                    <span class="btn-txt"><i class="fas fa-box-archive"></i> Archive All</span>
+                    <span class="btn-spin"></span>
+                  </button>
+                </div>
+
+                <!-- Clear entries -->
+                <div class="pf-danger-item">
+                  <div>
+                    <div class="pf-danger-label">Clear All Journal Entries</div>
+                    <div class="pf-danger-desc">Permanently deletes all your written entries and mood logs. Commitments and streaks are kept. <strong>Cannot be undone.</strong></div>
+                  </div>
+                  <button class="btn btn-outline btn-sm" id="pfClearEntriesBtn"
+                          style="border-color:var(--bad);color:var(--bad);flex-shrink:0">
+                    <span class="btn-txt"><i class="fas fa-eraser"></i> Clear Entries</span>
+                    <span class="btn-spin"></span>
+                  </button>
+                </div>
+
+                <!-- Reset streaks -->
+                <div class="pf-danger-item">
+                  <div>
+                    <div class="pf-danger-label">Reset All Streaks</div>
+                    <div class="pf-danger-desc">Resets all streak counts to zero. Use this only to start fresh. <strong>Cannot be undone.</strong></div>
+                  </div>
+                  <button class="btn btn-outline btn-sm" id="pfResetStreaksBtn"
+                          style="border-color:var(--bad);color:var(--bad);flex-shrink:0">
+                    <span class="btn-txt"><i class="fas fa-rotate-left"></i> Reset Streaks</span>
+                    <span class="btn-spin"></span>
+                  </button>
+                </div>
+
+                <!-- Delete account -->
+                <div class="pf-danger-item">
+                  <div>
+                    <div class="pf-danger-label">Delete My Account</div>
+                    <div class="pf-danger-desc">Permanently deletes your account, all commitments, all entries, and all data. <strong>This is irreversible.</strong></div>
+                  </div>
+                  <button class="btn btn-bad btn-sm" id="pfDeleteAccountBtn" style="flex-shrink:0">
+                    <span class="btn-txt"><i class="fas fa-trash"></i> Delete Account</span>
+                    <span class="btn-spin"></span>
+                  </button>
+                </div>
+
+              </div>
+            </section>
+
+          </div><!-- /pf-sections -->
+        </div><!-- /pf-body -->
+
+        <footer class="pf-footer no-print">
+          <p>&copy; {{ footer_copyright_note }}</p>
+          <p>
+            <a href="{% url 'origin_extra' %}#policy">Privacy</a>
+            · <a href="{% url 'origin_extra' %}#terms">Terms</a>
+            · <a href="mailto:issaabdulsalamope11@gmail.com">Contact</a>
+          </p>
+        </footer>
+
       </main>
-    </div>
+    </div><!-- /pf-wrap -->
+
+  </div><!-- /pf-app -->
+
+  <!-- TOAST -->
+  <div class="pf-toast" id="pfToast" role="alert" aria-live="assertive" aria-atomic="true">
+    <i class="pf-toast-icon fas fa-check-circle" id="pfToastIcon" aria-hidden="true"></i>
+    <span class="pf-toast-msg" id="pfToastMsg"></span>
+    <button class="pf-toast-close" id="pfToastClose" aria-label="Dismiss"><i class="fas fa-xmark"></i></button>
   </div>
 
-  {% if request.user.is_authenticated %}<form method="POST" action="{% url 'origin_logout' %}" id="logoutForm" style="display:none">{% csrf_token %}</form>{% endif %}
+  {% if request.user.is_authenticated %}
+  <form method="POST" action="{% url 'origin_logout' %}" id="logoutForm" style="display:none">
+    {% csrf_token %}
+  </form>
+  {% endif %}
 
   <script>{% include "reusables/spinner.js" %}</script>
+
   <script>
-  (function(){'use strict';
-    var app=document.getElementById('pfApp'),heavyCss=document.getElementById('heavy-css');
-    function boot(){if(!app.classList.contains('loaded')){app.classList.add('loaded');init()}}
-    if(heavyCss){if(heavyCss.rel==='stylesheet')boot();else heavyCss.addEventListener('load',boot)}
-    setTimeout(boot,8000);
-    function $(s,c){return(c||document).querySelector(s)}
-    function $$(s,c){return(c||document).querySelectorAll(s)}
-    function getCookie(n){var v=document.cookie.match('(?:^|;) ?'+n+'=([^;]*)');return v?decodeURIComponent(v[1]):''}
-    function setCookie(n,v,d){var t=new Date();t.setDate(t.getDate()+(d||1));document.cookie=n+'='+encodeURIComponent(v)+';path=/;expires='+t.toUTCString()}
-    var cooldowns={};
-    function isOnCooldown(f){if(!cooldowns[f])return false;return(Date.now()-cooldowns[f])<10000}
-    function setCooldown(f){cooldowns[f]=Date.now();var el=$('#cooldown-'+f);if(el){el.textContent='Saved. Wait 10s.';el.classList.add('show');var r=10;var t=setInterval(function(){r--;if(r<=0){el.textContent='';el.classList.remove('show');clearInterval(t)}else{el.textContent='Saved. Wait '+r+'s.'}},1000)}}
+  (function(){
+    'use strict';
 
-    // Profile picture upload
-    var fileInput=$('#profilePicFile'),chooseBtn=$('#chooseFileBtn'),fileNameDisplay=$('#fileNameDisplay'),savePicBtn=$('#saveProfilePic'),selectedFile=null;
-    if(chooseBtn){chooseBtn.addEventListener('click',function(){fileInput.click()})}
-    if(fileInput){fileInput.addEventListener('change',function(){if(this.files&&this.files[0]){selectedFile=this.files[0];fileNameDisplay.textContent=selectedFile.name;savePicBtn.disabled=false}})}
-    if(savePicBtn){savePicBtn.addEventListener('click',function(){if(!selectedFile)return;if(isOnCooldown('profile_picture')){alert('Wait 10 seconds.');return}var fd=new FormData();fd.append('profile_picture',selectedFile);savePicBtn.disabled=true;fetch('/v1/update_profile_picture/',{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken')},body:fd}).then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})}).then(function(res){savePicBtn.disabled=false;if(!res.ok){alert(res.data.message||'Failed');return}setCooldown('profile_picture');updateAvatarDisplay(res.data.url);fileNameDisplay.textContent='No file chosen';selectedFile=null}).catch(function(){savePicBtn.disabled=false;alert('Network error.')})})}
+    /* ── Helpers ───────────────────────────────────────────────── */
+    function qs(s,c){return(c||document).querySelector(s)}
+    function qsa(s,c){return(c||document).querySelectorAll(s)}
+    function getCookie(n){var m=document.cookie.match('(?:^|;)\\s?'+n+'=([^;]*)');return m?decodeURIComponent(m[1]):''}
+    function setCookie(n,v,d){var t=new Date();t.setDate(t.getDate()+(d||365));document.cookie=n+'='+encodeURIComponent(v)+';path=/;expires='+t.toUTCString()}
+    function hide(el){if(el)el.classList.add('hidden')}
+    function show(el){if(el)el.classList.remove('hidden')}
 
-    function updateAvatarDisplay(url){var ts='?t='+Date.now();var largeWrap=$('#pfAvatarLarge'),asideWrap=$('#asideAvatarWrap');[largeWrap,asideWrap].forEach(function(w){if(!w)return;w.innerHTML='';var img=document.createElement('img');img.alt='{{request.user.username}}';img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%';img.onerror=function(){this.src='https://api.dicebear.com/7.x/initials/svg?seed='+encodeURIComponent('{{request.user.username}}')+'&backgroundColor=1e293b&textColor=60a5fa&size=64'};img.src=url?url+ts:'';w.appendChild(img)})}
+    /* ── Reveal ────────────────────────────────────────────────── */
+    var advCss=document.getElementById('advCss');
+    function reveal(){document.getElementById('pfApp').classList.add('pf-visible')}
+    if(advCss){if(advCss.rel==='stylesheet')reveal();else advCss.addEventListener('load',reveal)}
+    setTimeout(reveal,8000);
 
-    // Username change warning
-    $('#usernameInput').addEventListener('input',function(){var n=this.value.trim(),p=$('#publicIdInput').value;if(n&&p&&!p.startsWith(n.toLowerCase())){if(confirm('Update your Public User ID to "'+n.toLowerCase()+'" as well?')){$('#publicIdInput').value=n.toLowerCase()}}});
-
-    $$('.save-btn').forEach(function(b){b.addEventListener('click',function(){var f=this.dataset.field,i=$('#'+this.dataset.input);if(isOnCooldown(f)){alert('Wait 10 seconds.');return}fetch('/v1/update_profile/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},body:JSON.stringify({field:f,value:i.value.trim()})}).then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})}).then(function(res){if(!res.ok){alert(res.data.message||'Failed');return}setCooldown(f)}).catch(function(){alert('Network error.')})})});
-    $$('.pf-switch input[type="checkbox"]:not([disabled])').forEach(function(t){t.addEventListener('change',function(){var f=this.dataset.field;if(isOnCooldown(f)){this.checked=!this.checked;alert('Wait 10 seconds.');return}var v=this.dataset.true!==undefined?(this.checked?this.dataset.true:this.dataset.false):this.checked;fetch('/v1/update_profile/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},body:JSON.stringify({field:f,value:v})}).then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})}).then(function(res){if(!res.ok){t.checked=!t.checked;alert(res.data.message||'Failed');return}setCooldown(f)}).catch(function(){t.checked=!t.checked;alert('Network error.')})})});
-    $$('.theme-opt').forEach(function(b){b.addEventListener('click',function(){var f=this.dataset.field,v=this.dataset.theme;if(isOnCooldown(f)){alert('Wait 10 seconds.');return}fetch('/v1/update_profile/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},body:JSON.stringify({field:f,value:v})}).then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})}).then(function(res){if(!res.ok){alert(res.data.message||'Failed');return}$$('.theme-opt').forEach(function(x){x.classList.remove('on')});b.classList.add('on');setCooldown(f)}).catch(function(){alert('Network error.')})})});
-
-    $('#deleteAccountBtn').addEventListener('click',function(){if(confirm('Delete your account forever?')){if(confirm('Final confirmation: All data erased.')){fetch('/v1/delete_account/',{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken')}}).then(function(r){return r.json()}).then(function(d){if(d.ok){window.location.href='{% url "origin_login" %}'}else{alert(d.message||'Failed')}}).catch(function(){alert('Network error.')})}}});
-
-    function init(){
-      var tb=$('#themeToggle'),ti=tb.querySelector('i');
-      function setTheme(d){document.body.classList.toggle('sd-light',!d);ti.className=d?'fas fa-moon':'fas fa-sun';setCookie('sd-theme',d?'dark':'light',365)}
-      tb.addEventListener('click',function(){setTheme(document.body.classList.contains('sd-light'))});if(getCookie('sd-theme')==='dark'){document.body.classList.remove('sd-light');ti.className='fas fa-moon'}
-      var sidebar=$('#pfAside'),toggle=$('#menuToggle'),overlay=$('#asideOverlay');
-      function open(){sidebar.classList.add('open');overlay.classList.add('show')}function close(){sidebar.classList.remove('open');overlay.classList.remove('show')}
-      toggle.addEventListener('click',function(){sidebar.classList.contains('open')?close():open()});overlay.addEventListener('click',close);
-      sidebar.querySelectorAll('.aside-link').forEach(function(l){l.addEventListener('click',function(){if(window.innerWidth<1024)close()})});
-      var DEFAULT_AVATAR='https://api.dicebear.com/7.x/initials/svg?seed='+encodeURIComponent('{{ request.user.username }}')+'&backgroundColor=1e293b&textColor=60a5fa&size=64';
-      function loadAvatars(url){var ts=url?'?t='+Date.now():'';var largeWrap=$('#pfAvatarLarge'),asideWrap=$('#asideAvatarWrap');[largeWrap,asideWrap].forEach(function(w){if(!w)return;w.innerHTML='';var img=document.createElement('img');img.alt='{{request.user.username}}';img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%';img.onerror=function(){this.src=DEFAULT_AVATAR};img.onload=function(){var sk=w.querySelector('.sk');if(sk)sk.remove()};img.src=url?url+ts:DEFAULT_AVATAR;w.appendChild(img)})}
-      fetch("{% url 'origin_user_picture' %}",{headers:{'X-CSRFToken':getCookie('csrftoken')}}).then(function(r){return r.json()}).then(function(d){loadAvatars(d.url||'')}).catch(function(){loadAvatars('')});
-      fetch("{% url 'origin_parner_widget' %}",{headers:{'X-CSRFToken':getCookie('csrftoken')}}).then(function(r){return r.json()}).then(function(d){var c=$('#partnerListContainer');if(!d.partners||!d.partners.length){c.innerHTML='<p class="pf-hint">No partners yet.</p>';return}c.innerHTML=d.partners.map(function(p){return '<div class="pf-readonly-row" style="margin-bottom:0.5rem"><span class="pf-readonly-value">@'+p.public_id+'</span><span style="font-size:0.78rem;color:var(--ink3)">'+p.streak_count+' pts</span></div>'}).join('')}).catch(function(){$('#partnerListContainer').innerHTML='<p class="pf-hint">Could not load partners.</p>'});
-      var lb=$('#logoutBtn');if(lb)lb.addEventListener('click',function(){if(confirm('Log out?'))document.getElementById('logoutForm')?.submit()});
+    /* ── Toast ─────────────────────────────────────────────────── */
+    var toastEl=qs('#pfToast'),toastMsg=qs('#pfToastMsg'),toastIcon=qs('#pfToastIcon'),toastTimer=null;
+    var TICONS={success:'fa-check-circle',error:'fa-exclamation-circle',info:'fa-fire',load:'fa-circle-notch fa-spin'};
+    function showToast(msg,type,dur){
+      if(!toastEl)return;clearTimeout(toastTimer);
+      toastMsg.textContent=msg;
+      toastEl.className='pf-toast t-'+(type||'info');
+      toastIcon.className='pf-toast-icon fas '+(TICONS[type]||TICONS.info);
+      toastEl.classList.add('show');
+      if(dur!==0)toastTimer=setTimeout(function(){toastEl.classList.remove('show')},dur||3500);
     }
+    qs('#pfToastClose')&&qs('#pfToastClose').addEventListener('click',function(){toastEl.classList.remove('show')});
+
+    /* ── Cooldown system (10 s debounce per field) ─────────────── */
+    var cooldowns={};
+    function isOnCooldown(f){return cooldowns[f]&&(Date.now()-cooldowns[f])<10000}
+    function setCooldown(f){
+      cooldowns[f]=Date.now();
+      var el=qs('#cooldown-'+f);
+      if(!el)return;
+      el.classList.add('show');
+      var r=10;
+      var t=setInterval(function(){r--;if(r<=0){el.classList.remove('show');clearInterval(t)}},1000);
+    }
+
+    /* ── Aside + header ────────────────────────────────────────── */
+    var aside=qs('#dbAside'),asideOvly=qs('#asideOverlay');
+    function openAside(){aside&&aside.classList.add('open');asideOvly&&asideOvly.classList.add('show')}
+    function closeAside(){aside&&aside.classList.remove('open');asideOvly&&asideOvly.classList.remove('show')}
+    qs('#hamburgerBtn')&&qs('#hamburgerBtn').addEventListener('click',openAside);
+    asideOvly&&asideOvly.addEventListener('click',closeAside);
+    qs('#hdrAvatarWrap')&&qs('#hdrAvatarWrap').addEventListener('click',function(){
+      aside&&aside.classList.contains('open')?closeAside():openAside();
+    });
+
+    /* ── Theme ─────────────────────────────────────────────────── */
+    function applyTheme(mode){
+      document.body.classList.toggle('sd-light',mode==='light');
+      var icon=qs('#themeIcon');
+      if(icon)icon.className='fas '+(mode==='light'?'fa-sun':'fa-moon');
+      setCookie('sd-theme',mode,365);
+    }
+    (function(){var s=getCookie('sd-theme');if(s)applyTheme(s)})();
+    qs('#themeToggleBtn')&&qs('#themeToggleBtn').addEventListener('click',function(){
+      applyTheme(document.body.classList.contains('sd-light')?'dark':'light');
+    });
+
+    /* ── Logout ────────────────────────────────────────────────── */
+    function logout(){if(confirm('Log out of STREAK & DISCIPLINE?')){var f=qs('#logoutForm');if(f)f.submit()}}
+    qs('#logoutBtn')&&qs('#logoutBtn').addEventListener('click',logout);
+    qs('#pfSignOutBtn')&&qs('#pfSignOutBtn').addEventListener('click',logout);
+
+    /* ── Avatar loading ────────────────────────────────────────── */
+    var DEFAULT_AVATAR='https://api.dicebear.com/7.x/initials/svg?seed='
+      +encodeURIComponent('{{ request.user.username }}')+'&backgroundColor=1e293b&textColor=60a5fa&size=64';
+
+    function applyAvatar(url){
+      [['pfAvatarRing','pfAvatarSk'],['asideAvatarWrap','asideAvatarSk'],
+       ['pfPicPreview','pfPicPreviewSk'],['hdrAvatarWrap','hdrAvatarSk']].forEach(function(p){
+        var wrap=qs('#'+p[0]);if(!wrap)return;
+        var img=document.createElement('img');
+        img.alt='{{ request.user.username }}';
+        img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%;opacity:0;transition:opacity .3s ease';
+        img.onload=function(){img.style.opacity='1';var sk=qs('#'+p[1]);if(sk)sk.remove()};
+        img.onerror=function(){img.src=DEFAULT_AVATAR};
+        img.src=url||DEFAULT_AVATAR;
+        wrap.appendChild(img);
+      });
+    }
+    fetch("{% url 'origin_user_picture' %}",{credentials:'same-origin'})
+      .then(function(r){return r.ok?r.json():null})
+      .then(function(d){applyAvatar(d&&d.url?d.url:DEFAULT_AVATAR)})
+      .catch(function(){applyAvatar(DEFAULT_AVATAR)});
+
+    /* ── Dashboard stats for hero ──────────────────────────────── */
+    function countUp(el,target,dur){
+      if(!el)return;
+      el.innerHTML='';
+      var start=performance.now();
+      (function tick(now){
+        var t=Math.min((now-start)/(dur||700),1),ease=1-Math.pow(1-t,3);
+        el.textContent=Math.round(target*ease);
+        if(t<1)requestAnimationFrame(tick);
+      })(start);
+    }
+    fetch("{% url 'origin_commitment_data' %}",{credentials:'same-origin'})
+      .then(function(r){return r.ok?r.json():null})
+      .then(function(d){
+        if(!d)return;
+        countUp(qs('#heroActiveCount'),d.active_count||0);
+        countUp(qs('#heroStreakSum'),d.total_streak_sum||0);
+      })
+      .catch(function(){});
+    // Member days
+    (function(){
+      var joined=new Date('{{ request.user.date_joined|date:"Y-m-d" }}T00:00:00');
+      var days=Math.max(0,Math.round((Date.now()-joined)/(1000*60*60*24)));
+      countUp(qs('#heroMemberDays'),days);
+    })();
+    // Zeal score
+    (function(){
+      var el=qs('#pfZealN');
+      if(!el)return;
+      countUp(el,parseInt(el.getAttribute('data-val'))||0);
+      setTimeout(function(){if(el)el.classList.add('settled')},700);
+    })();
+
+    /* ── Save field (text inputs) ──────────────────────────────── */
+    function saveField(field,value,btn){
+      if(isOnCooldown(field)){showToast('Wait a moment before saving again.','error');return}
+      if(btn)btn.classList.add('pf-loading');
+      fetch('/v1/update_profile/',{
+        method:'POST',credentials:'same-origin',
+        headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
+        body:JSON.stringify({field:field,value:value})
+      })
+      .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
+      .then(function(res){
+        if(btn)btn.classList.remove('pf-loading');
+        if(!res.ok){showToast(res.data.message||'Could not save. Try again.','error');return}
+        setCooldown(field);showToast('Saved!','success');
+      })
+      .catch(function(){if(btn)btn.classList.remove('pf-loading');showToast('Network error. Try again.','error')});
+    }
+
+    qsa('.save-btn').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        var inputEl=qs('#'+this.dataset.input);
+        if(!inputEl)return;
+        saveField(this.dataset.field,inputEl.value.trim(),this);
+      });
+    });
+
+    /* Username sync with public ID hint */
+    qs('#pfUsername')&&qs('#pfUsername').addEventListener('input',function(){
+      var n=this.value.trim().toLowerCase();
+      var pid=qs('#pfPublicId');
+      if(pid&&pid.value&&!pid.value.toLowerCase().startsWith(n.slice(0,4))){
+        if(confirm('Also update your Public User ID to "'+n+'"?')){pid.value=n}
+      }
+    });
+
+    /* ── Toggle switches ───────────────────────────────────────── */
+    qsa('.pf-switch input[type="checkbox"]:not([disabled])').forEach(function(chk){
+      chk.addEventListener('change',function(){
+        var f=this.dataset.field;
+        if(!f)return;
+        if(isOnCooldown(f)){this.checked=!this.checked;showToast('Wait a moment.','error');return}
+        var v=this.dataset.true!==undefined
+          ?(this.checked?this.dataset.true:this.dataset.false)
+          :this.checked;
+        var orig=this.checked;
+        fetch('/v1/update_profile/',{
+          method:'POST',credentials:'same-origin',
+          headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
+          body:JSON.stringify({field:f,value:v})
+        })
+        .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
+        .then(function(res){
+          if(!res.ok){chk.checked=!orig;showToast(res.data.message||'Could not save.','error');return}
+          setCooldown(f);showToast('Saved!','success');
+        })
+        .catch(function(){chk.checked=!orig;showToast('Network error.','error')});
+      });
+    });
+
+    /* Locked row click — show upgrade toast */
+    qsa('.pf-locked-row').forEach(function(row){
+      row.addEventListener('click',function(e){
+        e.preventDefault();e.stopPropagation();
+        row.classList.remove('shake');void row.offsetWidth;row.classList.add('shake');
+        var badge=row.querySelector('.pf-gate-badge');
+        var tier=badge&&badge.classList.contains('pf-gate-gold')?'Gold':'Premium';
+        showToast('This feature requires '+tier+'. Upgrade to unlock.','info');
+        setTimeout(function(){row.classList.remove('shake')},500);
+      },true);
+    });
+
+    /* ── Theme picker ──────────────────────────────────────────── */
+    qsa('.pf-theme-opt').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        var f=this.dataset.field,v=this.dataset.theme;
+        if(isOnCooldown(f)){showToast('Wait a moment.','error');return}
+        fetch('/v1/update_profile/',{
+          method:'POST',credentials:'same-origin',
+          headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
+          body:JSON.stringify({field:f,value:v})
+        })
+        .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
+        .then(function(res){
+          if(!res.ok){showToast(res.data.message||'Could not save.','error');return}
+          qsa('.pf-theme-opt').forEach(function(b){b.classList.remove('on')});
+          btn.classList.add('on');
+          applyTheme(v);
+          setCooldown(f);showToast('Theme saved!','success');
+        })
+        .catch(function(){showToast('Network error.','error')});
+      });
+    });
+
+    /* ── Profile picture upload ────────────────────────────────── */
+    var dropZone=qs('#pfDropZone'),fileInput=qs('#pfFileInput');
+    var uploadBtn=qs('#pfUploadBtn'),fileNameEl=qs('#pfFileName');
+    var selectedFile=null;
+
+    function handleFile(file){
+      if(!file)return;
+      if(file.size>5*1024*1024){showToast('File too large. Max 5 MB.','error');return}
+      selectedFile=file;
+      if(fileNameEl)fileNameEl.textContent=file.name;
+      if(uploadBtn)uploadBtn.disabled=false;
+      // preview
+      var reader=new FileReader();
+      reader.onload=function(e){
+        var prev=qs('#pfPicPreview');
+        if(prev){prev.innerHTML='';var img=document.createElement('img');img.src=e.target.result;img.alt='preview';prev.appendChild(img)}
+      };
+      reader.readAsDataURL(file);
+    }
+
+    if(dropZone){
+      dropZone.addEventListener('click',function(){if(fileInput)fileInput.click()});
+      dropZone.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();if(fileInput)fileInput.click()}});
+      dropZone.addEventListener('dragover',function(e){e.preventDefault();dropZone.classList.add('drag-over')});
+      dropZone.addEventListener('dragleave',function(){dropZone.classList.remove('drag-over')});
+      dropZone.addEventListener('drop',function(e){
+        e.preventDefault();dropZone.classList.remove('drag-over');
+        var f=e.dataTransfer.files[0];if(f)handleFile(f);
+      });
+    }
+    if(fileInput)fileInput.addEventListener('change',function(){if(this.files[0])handleFile(this.files[0])});
+    if(qs('#pfAvatarRing')){
+      qs('#pfAvatarRing').addEventListener('click',function(){if(fileInput)fileInput.click()});
+    }
+
+    if(uploadBtn){
+      uploadBtn.addEventListener('click',function(){
+        if(!selectedFile){showToast('Choose a file first.','error');return}
+        if(isOnCooldown('profile_picture')){showToast('Wait a moment before uploading again.','error');return}
+        uploadBtn.classList.add('pf-loading');uploadBtn.disabled=true;
+        var fd=new FormData();fd.append('profile_picture',selectedFile);
+        fetch('/v1/update_profile_picture/',{
+          method:'POST',credentials:'same-origin',
+          headers:{'X-CSRFToken':getCookie('csrftoken')},body:fd
+        })
+        .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
+        .then(function(res){
+          uploadBtn.classList.remove('pf-loading');uploadBtn.disabled=true;
+          if(!res.ok){showToast(res.data.message||'Upload failed.','error');uploadBtn.disabled=false;return}
+          setCooldown('profile_picture');
+          selectedFile=null;
+          if(fileNameEl)fileNameEl.textContent='No file chosen';
+          applyAvatar(res.data.url);
+          showToast('Profile picture updated! 🎉','success');
+        })
+        .catch(function(){uploadBtn.classList.remove('pf-loading');uploadBtn.disabled=false;showToast('Network error.','error')});
+      });
+    }
+
+    if(qs('#pfRemovePicBtn')){
+      qs('#pfRemovePicBtn').addEventListener('click',function(){
+        if(!confirm('Remove your profile picture?'))return;
+        fetch('/v1/update_profile_picture/remove/',{
+          method:'POST',credentials:'same-origin',
+          headers:{'X-CSRFToken':getCookie('csrftoken')}
+        })
+        .then(function(r){return r.ok?r.json():{ok:false}})
+        .then(function(d){if(d.ok){applyAvatar(null);showToast('Picture removed.','info')}
+          else showToast(d.message||'Could not remove picture.','error')})
+        .catch(function(){showToast('Network error.','error')});
+      });
+    }
+
+    /* ── Partners ──────────────────────────────────────────────── */
+    function loadPartners(){
+      fetch("{% url 'origin_parner_widget' %}",{credentials:'same-origin'})
+      .then(function(r){return r.ok?r.json():null})
+      .then(function(d){
+        var c=qs('#pfPartnerList');if(!c)return;
+        if(!d||!d.partners||!d.partners.length){
+          c.innerHTML='<p class="pf-hint">No partners yet. Add one by their Public User ID.</p>';return;
+        }
+        c.innerHTML=d.partners.map(function(p,i){
+          return '<div class="pf-partner-item" style="--pi:'+i+'">'
+            +'<div class="pf-partner-avatar"><i class="fas fa-circle-user"></i></div>'
+            +'<div class="pf-partner-info">'
+              +'<div class="pf-partner-id">@'+p.public_id+'</div>'
+              +'<div class="pf-partner-stat">'+p.streak_count+' pts</div>'
+            +'</div>'
+            +'<button class="btn btn-ghost btn-sm" data-partner-id="'+p.id+'" onclick="removePartner(this)"'
+              +' style="color:var(--bad);flex-shrink:0"><i class="fas fa-xmark"></i></button>'
+          +'</div>';
+        }).join('');
+      })
+      .catch(function(){var c=qs('#pfPartnerList');if(c)c.innerHTML='<p class="pf-hint">Could not load partners.</p>'});
+    }
+    if(qs('#pfPartnerList'))loadPartners();
+
+    qs('#pfAddPartnerBtn')&&qs('#pfAddPartnerBtn').addEventListener('click',function(){
+      var inp=qs('#pfAddPartnerInput');
+      if(!inp||!inp.value.trim()){showToast('Enter a Public User ID.','error');return}
+      var btn=this;btn.classList.add('pf-loading');
+      fetch('{% url "origin_add_friend" %}',{
+        method:'POST',credentials:'same-origin',
+        headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
+        body:JSON.stringify({public_id:inp.value.trim()})
+      })
+      .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
+      .then(function(res){
+        btn.classList.remove('pf-loading');
+        if(!res.ok){showToast(res.data.message||'Could not add partner.','error');return}
+        inp.value='';showToast('Partner request sent!','success');loadPartners();
+      })
+      .catch(function(){btn.classList.remove('pf-loading');showToast('Network error.','error')});
+    });
+
+    window.removePartner=function(btn){
+      if(!confirm('Remove this partner?'))return;
+      var pid=btn.getAttribute('data-partner-id');
+      fetch('/v1/remove_partner/',{
+        method:'POST',credentials:'same-origin',
+        headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
+        body:JSON.stringify({partner_id:pid})
+      })
+      .then(function(r){return r.ok?r.json():{ok:false}})
+      .then(function(d){if(d.ok){showToast('Partner removed.','info');loadPartners()}
+        else showToast(d.message||'Could not remove.','error')})
+      .catch(function(){showToast('Network error.','error')});
+    };
+
+    /* ── Data export ───────────────────────────────────────────── */
+    function doExport(fmt){
+      showToast('Preparing your '+fmt.toUpperCase()+' export…','load',0);
+      fetch('/v1/export_data/?format='+fmt,{credentials:'same-origin'})
+      .then(function(r){
+        if(!r.ok)throw new Error('Export failed');
+        return r.blob();
+      })
+      .then(function(blob){
+        var a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download='streak_discipline_data.'+fmt;
+        document.body.appendChild(a);a.click();a.remove();
+        var c=qs('#cooldown-export');if(c){c.classList.add('show');setTimeout(function(){c.classList.remove('show')},4000)}
+        showToast('Download started!','success');
+      })
+      .catch(function(){showToast('Export failed. Try again.','error')});
+    }
+    qs('#pfExportJson')&&qs('#pfExportJson').addEventListener('click',function(){doExport('json')});
+    qs('#pfExportCsv')&&qs('#pfExportCsv').addEventListener('click',function(){doExport('csv')});
+    qs('#pfExportPdf')&&qs('#pfExportPdf').addEventListener('click',function(){
+      if(document.querySelector('.locked-card#pfExportPdf'))return;
+      doExport('pdf');
+    });
+
+    /* ── Danger zone ───────────────────────────────────────────── */
+    qs('#pfArchiveAllBtn')&&qs('#pfArchiveAllBtn').addEventListener('click',function(){
+      if(!confirm('Archive ALL active commitments? You can reactivate them from My Commitments.'))return;
+      var btn=this;btn.classList.add('pf-loading');
+      fetch('/v1/archive_all_commitments/',{
+        method:'POST',credentials:'same-origin',
+        headers:{'X-CSRFToken':getCookie('csrftoken')}
+      })
+      .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
+      .then(function(res){
+        btn.classList.remove('pf-loading');
+        if(!res.ok){showToast(res.data.message||'Could not archive.','error');return}
+        showToast('All commitments archived.','info');
+      })
+      .catch(function(){btn.classList.remove('pf-loading');showToast('Network error.','error')});
+    });
+
+    qs('#pfClearEntriesBtn')&&qs('#pfClearEntriesBtn').addEventListener('click',function(){
+      if(!confirm('Permanently delete ALL journal entries?\nThis cannot be undone.'))return;
+      if(!confirm('Final confirmation: all entry content and mood logs will be gone forever.'))return;
+      var btn=this;btn.classList.add('pf-loading');
+      fetch('/v1/clear_entries/',{
+        method:'POST',credentials:'same-origin',
+        headers:{'X-CSRFToken':getCookie('csrftoken')}
+      })
+      .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
+      .then(function(res){
+        btn.classList.remove('pf-loading');
+        if(!res.ok){showToast(res.data.message||'Could not clear entries.','error');return}
+        showToast('All entries cleared.','info');
+      })
+      .catch(function(){btn.classList.remove('pf-loading');showToast('Network error.','error')});
+    });
+
+    qs('#pfResetStreaksBtn')&&qs('#pfResetStreaksBtn').addEventListener('click',function(){
+      if(!confirm('Reset ALL streak counts to zero?\nThis cannot be undone.'))return;
+      var btn=this;btn.classList.add('pf-loading');
+      fetch('/v1/reset_streaks/',{
+        method:'POST',credentials:'same-origin',
+        headers:{'X-CSRFToken':getCookie('csrftoken')}
+      })
+      .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
+      .then(function(res){
+        btn.classList.remove('pf-loading');
+        if(!res.ok){showToast(res.data.message||'Could not reset.','error');return}
+        showToast('All streaks reset to zero.','info');
+      })
+      .catch(function(){btn.classList.remove('pf-loading');showToast('Network error.','error')});
+    });
+
+    qs('#pfDeleteAccountBtn')&&qs('#pfDeleteAccountBtn').addEventListener('click',function(){
+      if(!confirm('Delete your account PERMANENTLY?\nAll data will be erased. This cannot be undone.'))return;
+      if(!confirm('Final confirmation — type YES in the next prompt.'))return;
+      var answer=window.prompt('Type YES to confirm permanent deletion:');
+      if(answer!=='YES'){showToast('Deletion cancelled.','info');return}
+      var btn=this;btn.classList.add('pf-loading');
+      fetch('/v1/delete_account/',{
+        method:'POST',credentials:'same-origin',
+        headers:{'X-CSRFToken':getCookie('csrftoken')}
+      })
+      .then(function(r){return r.json()})
+      .then(function(d){
+        btn.classList.remove('pf-loading');
+        if(d.ok){showToast('Account deleted. Redirecting…','info',0);setTimeout(function(){window.location.href="{% url 'origin_login' %}"},2000)}
+        else showToast(d.message||'Could not delete account.','error');
+      })
+      .catch(function(){btn.classList.remove('pf-loading');showToast('Network error.','error')});
+    });
+
+    /* ── Section nav IntersectionObserver ──────────────────────── */
+    (function(){
+      var links=qsa('.pf-snav-link');
+      var sections=qsa('.pf-section');
+      if(!sections.length||!links.length)return;
+      var observer=new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if(entry.isIntersecting){
+            var id=entry.target.id;
+            links.forEach(function(l){
+              l.classList.toggle('active',l.getAttribute('data-section')===id);
+            });
+          }
+        });
+      },{rootMargin:'-30% 0px -60% 0px',threshold:0});
+      sections.forEach(function(s){observer.observe(s)});
+      // Smooth scroll on nav link click
+      links.forEach(function(link){
+        link.addEventListener('click',function(e){
+          e.preventDefault();
+          var target=qs('#'+this.getAttribute('data-section'));
+          if(target)target.scrollIntoView({behavior:'smooth',block:'start'});
+        });
+      });
+    })();
+
   })();
   </script>
 </body>

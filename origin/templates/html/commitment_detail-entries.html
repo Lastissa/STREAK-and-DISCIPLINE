@@ -51,9 +51,10 @@
         </div>
         <nav class="aside-nav" aria-label="Main navigation">
           <div class="aside-section-lbl">Navigation</div>
-          <a href="/v1/dashboard/"    class="aside-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
-          <a href="/v1/profile/"      class="aside-link"><i class="fas fa-circle-user"></i> Profile</a>
-          <a href="/v1/commitments/"  class="aside-link active" aria-current="page">
+          <a href="{% url "origin_dashboard" %}"    class="aside-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
+          <a href="{% url "origin_relationship" %}"    class="aside-link"><i class="fas fa-gauge-high"></i> Relationship</a>
+          <a href="{% url "origin_profile" %}"      class="aside-link"><i class="fas fa-circle-user"></i> Profile</a>
+          <a href="{% url "origin_commitments" %}"  class="aside-link active" aria-current="page">
             <i class="fas fa-fire-flame-curved"></i> My Commitments</a>
           <div class="aside-section-lbl" style="margin-top:.5rem">Community</div>
           <a href="/v1/groups/"       class="aside-link"><i class="fas fa-users"></i> Groups</a>

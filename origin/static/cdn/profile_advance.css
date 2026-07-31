@@ -1,19 +1,145 @@
-:root{--spring:cubic-bezier(0.34,1.56,0.64,1);--spring-soft:cubic-bezier(0.22,1,0.36,1);--elastic:cubic-bezier(0.68,-0.55,0.265,1.55)}
-body{background:radial-gradient(ellipse 800px 500px at 18% 0%,rgba(59,130,246,0.07),transparent 60%),radial-gradient(ellipse 600px 400px at 82% 15%,rgba(96,165,250,0.05),transparent 55%),var(--bg);animation:ambientDrift 22s ease-in-out infinite alternate}
-@keyframes ambientDrift{0%{background-position:0% 0%,100% 0%}50%{background-position:2% 3%,97% 2%}100%{background-position:-1% 1%,101% -1%}}
-.pf-app.loaded{animation:appReveal 0.5s var(--spring-soft) both}
-@keyframes appReveal{from{opacity:0;transform:scale(0.98)}to{opacity:1;transform:scale(1)}}
-.pf-aside{box-shadow:4px 0 40px rgba(0,0,0,0.45);transition:transform 0.45s var(--spring-soft)}
-.aside-avatar-wrap{box-shadow:0 0 0 2px var(--bg),0 0 0 3px rgba(59,130,246,0.45);transition:transform 0.35s var(--spring),box-shadow 0.35s}.aside-avatar-wrap:hover{transform:scale(1.08);box-shadow:0 0 0 2px var(--bg),0 0 0 4px rgba(59,130,246,0.7),0 0 20px rgba(59,130,246,0.3)}
-.aside-link{transition:all 0.25s var(--spring-soft);position:relative;overflow:hidden}
-.aside-link::before{content:'';position:absolute;inset:0;background:rgba(59,130,246,0.08);transform:scaleX(0);transform-origin:left;transition:transform 0.3s var(--spring-soft);border-radius:inherit;z-index:-1}
-.aside-link:hover::before,.aside-link.active::before{transform:scaleX(1)}.aside-link:hover,.aside-link.active{color:var(--accL);transform:translateX(4px)}.aside-link i{transition:transform 0.25s var(--spring)}.aside-link:hover i{transform:scale(1.2)}
-.aside-logout-btn{transition:all 0.25s var(--spring-soft)}.aside-logout-btn:hover{transform:translateX(4px)}
-.pf-header{box-shadow:0 4px 20px rgba(0,0,0,0.3)}.hdr-btn{transition:all 0.3s var(--spring)}.hdr-btn:hover{color:var(--accL);transform:scale(1.15)}
-.pf-card{transition:transform 0.4s var(--spring),box-shadow 0.4s var(--spring-soft)}.pf-card:hover{transform:translateY(-4px);box-shadow:0 20px 50px rgba(0,0,0,0.4)}
-.pf-input{transition:border-color 0.2s ease,box-shadow 0.3s var(--spring),transform 0.25s var(--spring)}.pf-input:focus{box-shadow:0 0 0 3px rgba(59,130,246,0.18);transform:translateY(-1px)}
-.pf-switch input:checked+.pf-sw-track .pf-sw-thumb{animation:thumbSlam 0.42s var(--elastic) forwards}
-@keyframes thumbSlam{0%{transform:translateX(0)}55%{transform:translateX(23px)}75%{transform:translateX(17px)}100%{transform:translateX(19px)}}
-.theme-opt{transition:all 0.3s var(--spring)}.theme-opt:hover{transform:scale(1.03)}.theme-opt:active{transform:scale(0.96)}
-.btn{transition:transform 0.28s var(--spring),box-shadow 0.28s ease,background 0.18s ease}.btn-primary:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 8px 24px rgba(59,130,246,0.4)}.btn-primary:active{transform:scale(0.96)}.btn-outline:hover{transform:translateY(-2px)}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.1s!important}}
+/* ================================================================
+   PROFILE — ADVANCE CSS  (deferred / non-blocking)
+   origin/static/cdn/profile_advance.css
+   ================================================================ */
+
+:root {
+  --spring:      cubic-bezier(0.34,1.56,0.64,1);
+  --spring-soft: cubic-bezier(0.22,1,0.36,1);
+  --elastic:     cubic-bezier(0.68,-0.55,0.265,1.55);
+}
+
+@keyframes shimmer { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
+.sk {
+  background: linear-gradient(90deg,var(--surf2) 25%,var(--surf3) 50%,var(--surf2) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+body::before {
+  content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(ellipse 700px 500px at 10% 90%,rgba(59,130,246,.05) 0%,transparent 60%),
+    radial-gradient(ellipse 500px 400px at 90% 5%, rgba(129,140,248,.04) 0%,transparent 55%);
+  animation: orbDrift 30s ease-in-out infinite alternate;
+}
+@keyframes orbDrift {
+  0%  {transform:scale(1) translate(0,0)}
+  50% {transform:scale(1.04) translate(-6px,10px)}
+  100%{transform:scale(1) translate(4px,-6px)}
+}
+
+.pf-app{transition:opacity .55s var(--spring-soft),visibility .55s ease}
+.pf-app.pf-visible{opacity:1!important;visibility:visible!important}
+
+@keyframes headerIn{from{opacity:0;transform:translateY(-100%)}to{opacity:1;transform:translateY(0)}}
+.db-header{animation:headerIn .5s var(--spring-soft) both}
+@keyframes asideIn{from{opacity:0;transform:translateX(-100%)}to{opacity:1;transform:translateX(0)}}
+@media(min-width:900px){.db-aside{animation:asideIn .5s var(--spring-soft) both}}
+@media(max-width:899px){
+  .db-aside{transition:transform .4s var(--spring-soft),box-shadow .4s ease}
+  .db-aside.open{box-shadow:8px 0 40px rgba(0,0,0,.5)}
+}
+.aside-link{transition:color .2s ease,background .2s ease,border-color .2s ease,transform .25s var(--spring-soft)}
+.aside-link:hover{transform:translateX(3px)}
+.aside-link i{transition:transform .25s var(--spring)}
+.aside-link:hover i{transform:scale(1.15)}
+
+@keyframes heroIn{
+  0%{opacity:0;transform:translateY(28px) scale(.97)}
+  60%{opacity:1;transform:translateY(-4px) scale(1.005)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
+}
+.pf-hero{animation:heroIn .6s var(--spring-soft) .08s both}
+.pf-avatar-ring{transition:transform .35s var(--spring),box-shadow .35s ease}
+.pf-avatar-ring:hover{transform:scale(1.06);box-shadow:0 0 0 3px var(--bg),0 0 0 5px rgba(59,130,246,.5),0 8px 24px rgba(0,0,0,.3)}
+
+@keyframes zealSettle{0%{transform:scale(1.3)}60%{transform:scale(.95)}100%{transform:scale(1)}}
+.pf-zeal-n.settled{animation:zealSettle .5s var(--spring) both}
+.pf-meta-item{transition:transform .3s var(--spring)}
+.pf-meta-item:hover{transform:translateY(-2px)}
+
+.pf-snav-link{transition:color .2s ease,background .2s ease,border-color .2s ease,transform .25s var(--spring-soft)}
+.pf-snav-link:hover{transform:translateX(2px)}
+@media(max-width:759px){.pf-snav-link:hover{transform:none}}
+
+@keyframes cardIn{
+  0%{opacity:0;transform:translateY(24px) scale(.96)}
+  65%{opacity:1;transform:translateY(-4px) scale(1.005)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
+}
+.pf-card,.pf-danger-card{
+  animation:cardIn .5s var(--spring-soft) calc(var(--i,.1s) + .15s) both;
+  transition:box-shadow .3s ease,border-color .25s ease;
+}
+.pf-card:hover{box-shadow:0 6px 24px rgba(0,0,0,.2)}
+
+.pf-input{transition:border-color .2s ease,box-shadow .3s var(--spring),transform .2s var(--spring)}
+.pf-input:focus{box-shadow:0 0 0 3px rgba(59,130,246,.14);transform:translateY(-1px)}
+
+.pf-sw-thumb{transition:transform .3s var(--spring)}
+.pf-switch input:checked + .pf-sw-track .pf-sw-thumb{animation:thumbSnap .4s var(--elastic) forwards}
+@keyframes thumbSnap{0%{transform:translateX(0)}55%{transform:translateX(22px)}75%{transform:translateX(15px)}100%{transform:translateX(18px)}}
+.pf-sw-track{transition:background .2s ease,box-shadow .2s ease}
+.pf-switch input:checked + .pf-sw-track{box-shadow:0 0 8px rgba(59,130,246,.35)}
+
+@keyframes lockShake{0%,100%{transform:translateX(0)}15%{transform:translateX(-6px)}35%{transform:translateX(5px)}55%{transform:translateX(-4px)}75%{transform:translateX(3px)}90%{transform:translateX(-2px)}}
+.pf-locked-row.shake{animation:lockShake .45s ease both}
+
+.pf-drop-zone{transition:border-color .2s ease,background .2s ease,transform .25s var(--spring-soft)}
+.pf-drop-zone:hover{transform:scale(1.01)}
+.pf-drop-zone.drag-over{transform:scale(1.03)}
+
+.pf-theme-opt{transition:border-color .2s ease,background .2s ease,color .2s ease,transform .3s var(--spring),box-shadow .3s ease}
+.pf-theme-opt:hover{transform:translateY(-3px);box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.pf-theme-opt:active{transform:scale(.94)}
+.pf-theme-opt.on{box-shadow:0 4px 16px rgba(59,130,246,.25)}
+
+.pf-tier-card{transition:border-color .2s ease,transform .3s var(--spring),box-shadow .3s ease}
+.pf-tier-card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.2)}
+.pf-tier-card.current{box-shadow:0 4px 16px rgba(59,130,246,.2)}
+
+.pf-export-card{transition:border-color .25s ease,transform .3s var(--spring),box-shadow .3s ease}
+.pf-export-card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.2)}
+.pf-export-card:active{transform:scale(.95)}
+
+.btn{transition:background .2s ease,border-color .2s ease,color .2s ease,transform .3s var(--spring),box-shadow .3s ease}
+.btn:hover{transform:translateY(-2px);box-shadow:0 5px 18px rgba(0,0,0,.18)}
+.btn:active{transform:scale(.95)}
+.btn-primary:hover{box-shadow:0 6px 20px rgba(59,130,246,.35)}
+.btn-bad:hover{box-shadow:0 4px 14px rgba(239,68,68,.25);transform:translateY(-1px)}
+
+.hdr-btn{transition:color .2s ease,transform .25s var(--spring)}
+.hdr-btn:hover{transform:scale(1.15)}
+.hdr-btn:active{transform:scale(.9)}
+
+@keyframes toastIn{
+  0%{opacity:0;transform:translateX(-50%) translateY(80px) scale(.9)}
+  65%{opacity:1;transform:translateX(-50%) translateY(-5px) scale(1.01)}
+  100%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+}
+.pf-toast.show{animation:toastIn .5s var(--spring-soft) both;transform:translateX(-50%) translateY(0)!important;opacity:1!important}
+.pf-toast-close{transition:color .2s ease,transform .2s ease}
+.pf-toast-close:hover{transform:scale(1.15) rotate(90deg)}
+
+@keyframes fadeUpIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.pf-cooldown.show{animation:fadeUpIn .25s ease both}
+
+@keyframes partnerIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+.pf-partner-item{animation:partnerIn .35s var(--spring-soft) calc(var(--pi,0) * 60ms) both}
+
+@keyframes shine{0%{background-position:-200% center}100%{background-position:200% center}}
+.tier-gold{background:linear-gradient(90deg,rgba(245,158,11,.1),rgba(251,191,36,.2),rgba(245,158,11,.1));background-size:200% 100%;animation:shine 3s ease-in-out infinite}
+.tier-premium{background:linear-gradient(90deg,rgba(59,130,246,.08),rgba(99,102,241,.15),rgba(59,130,246,.08));background-size:200% 100%;animation:shine 4s ease-in-out infinite}
+
+body.sd-light .pf-card,body.sd-light .pf-danger-card{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+body.sd-light .pf-hero{background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+body.sd-light .pf-card:hover{box-shadow:0 6px 24px rgba(0,0,0,.1)}
+body.sd-light .db-header{box-shadow:0 1px 0 #e2e8f0}
+body.sd-light .pf-toast{background:#fff;box-shadow:0 8px 32px rgba(0,0,0,.12)}
+body.sd-light .pf-snav{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.1s!important}
+  .pf-card:hover,.btn:hover,.pf-tier-card:hover,.pf-export-card:hover,.pf-theme-opt:hover{transform:none}
+}

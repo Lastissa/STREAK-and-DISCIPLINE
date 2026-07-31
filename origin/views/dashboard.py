@@ -23,15 +23,27 @@ class Onboarding(LoginRequiredMixin, View):
 
 
 class ProfileSettings(LoginRequiredMixin, View):
-    """FOR PROFILE IN THE ASIDE"""
+    """FOR PROFILE IN THE DASHBOARD ASIDE"""
     def get(self, request):
         user_profile = Profile.objects.filter(user = request.user).order_by('tier').first()
         if user_profile is None:
             #incase user does not have tier configured and want to access this page, dont allow
             messages.warning(request, message="Please Finish your onboarding before accessing this page, head to login and sigin in with you creedentials and you will be taken to onboarding")
             return render(request, 'html/full_screen_message.html')
+        
+        #user exist with tier configured
         return render(request, 'html/profile.html', {
             'tier': user_profile.tier,
+            'theme': request.COOKIES.get('sd-theme', 'dark'),
+            'public_id': user_profile.public_searchable_username,
+            'leaderboard_optin': user_profile.leaderboard_optin,
+            'streak_visible': user_profile.streak_count_is_public_visible,
+            'social_mode': user_profile.streak_count_is_public_visible,
+            'ai_insights': user_profile.ai_insight_active,
+            'weekly_report': user_profile.weekly_report_email_active,
+            'custom_reports': user_profile.custom_report_email_active,
+            'newsletter': user_profile.receive_newsletter,
+            'zeal_score': user_profile.zeal_score,
         })    
   
 class Dashboard(LoginRequiredMixin, View):
@@ -56,7 +68,7 @@ class Dashboard(LoginRequiredMixin, View):
             'total_active_commitments': commitment_istance.count(),
             'consistency_pct': c_pct,  
              'total_entries': Entries.objects.filter(commitment_key__user = request.user).count(),       #Hold usr current tier
-             'theme_mode': request.COOKIES.get("sd-theme", user_profile.theme.lower()),
+             'theme_mode': request.COOKIES.get("sd-theme", 'dark'),
             
             'public_searchable_username ' : user_profile.public_searchable_username,
             
@@ -77,7 +89,7 @@ class EachCommitmentView(LoginRequiredMixin, View):
         
         
         return render(request, 'html/commitment_detail-entries.html',{
-            'theme-mode': request.COOKIES['sd-theme'],
+            'theme-mode': request.COOKIES.get('sd-theme', 'dark'),
             'tier': profile_istance.tier,
             'ai_insight_active': profile_istance.ai_insight_active,
             'commitment':    commitment_istance,        # full model instance,
@@ -90,7 +102,7 @@ class EachCommitmentView(LoginRequiredMixin, View):
    
 class Relationship(LoginRequiredMixin, View):
     def get(self, request):
-        return render(request, 'html/relationship.html', {'theme_mode': request.COOKIES['sd-theme']})
+        return render(request, 'html/relationship.html', {'theme_mode': request.COOKIES.get('sd-theme', 'dark')})
 
 
 

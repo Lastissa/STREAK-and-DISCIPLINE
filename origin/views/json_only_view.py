@@ -341,7 +341,7 @@ class RelationshipReceived(LoginRequiredMixin, View):
         #i dont want to make another call for each friend_istance to get reciever profile so i wil just recreate the formula again which is username + CustomUser pk
         results = [
             {
-                'userid': f"{i.from_user.username}{i.to_user.pk:02d}",
+                'userid': f"{i.from_user.username}{i.from_user.pk:02d}",
                 'username': i.from_user.username,
                 'profile_image': '',
                 'updated_at': i.updated_at
@@ -389,6 +389,83 @@ class RelationshipUnpair(LoginRequiredMixin, View):
         return JsonResponse({
             'message': f'Successfully unpaired with @{user_to_unpair}.',
         }, status=200)
+
+
+class RelationshipAcccept(LoginRequiredMixin, View):
+    """This handle accepting partner request SENT to user if user want to accept"""
+    def get(self, request):
+            user_to_unpair = request.GET.get('userid', '').strip()
+            
+            if not user_to_unpair:
+                return JsonResponse({'message': 'No user specified.'}, status=400)
+            
+            
+            # Find the partner's profile
+            partner_profile = Profile.objects.filter(
+                public_searchable_username__iexact=user_to_unpair
+            ).first()
+            
+            if not partner_profile:
+                return JsonResponse({'message': 'User not found.'}, status=404)
+            
+            partner_user = partner_profile.user
+            
+            # make sure the current state is pending
+            friendship = Friendship.objects.filter(
+                models.Q(from_user=request.user, to_user=partner_user) |
+                models.Q(from_user=partner_user, to_user=request.user),
+                status='pending'
+            ).first()
+            
+            if not friendship:
+                return JsonResponse({'message': 'No active friend request from this user.'}, status=404)
+            
+            # Update status to accepted as per there was na active friend request
+            friendship.status = 'accepted'
+            friendship.save()
+            
+            return JsonResponse({
+                'message': f'Successfully accepetd the friend request',
+            }, status=200)
+        
+
+class RelationshipDecline(LoginRequiredMixin, View):
+    """This handle DECLINING partner request SENT to user if user want to decline"""
+    def get(self, request):
+            user_to_unpair = request.GET.get('userid', '').strip()
+            
+            if not user_to_unpair:
+                return JsonResponse({'message': 'No user specified.'}, status=400)
+            
+            
+            # Find the partner's profile
+            partner_profile = Profile.objects.filter(
+                public_searchable_username__iexact=user_to_unpair
+            ).first()
+            
+            if not partner_profile:
+                return JsonResponse({'message': 'User not found.'}, status=404)
+            
+            partner_user = partner_profile.user
+            
+            # make sure the current state is pending
+            friendship = Friendship.objects.filter(
+                models.Q(from_user=request.user, to_user=partner_user) |
+                models.Q(from_user=partner_user, to_user=request.user),
+                status='pending'
+            ).first()
+            
+            if not friendship:
+                return JsonResponse({'message': 'No active friend request from this user.'}, status=404)
+            
+            # Update status to accepted as per there was na active friend request
+            friendship.status = 'rejected'
+            friendship.save()
+            
+            return JsonResponse({
+                'message': f'Successfully accepetd the friend request',
+            }, status=200)
+                
     
 class CommiementReceiveCommitment(LoginRequiredMixin, View):
     """THIS ENDPOITT IS IN CHARGE OF SERVING THE COMMITMENT PAGE IN DASHBOARD THE DATA IT NEEDS"""
@@ -485,3 +562,8 @@ class CreateCommitment(LoginRequiredMixin, View):
             return JsonResponse({'message': 'Profile not found. Please complete onboarding first.'}, status=400)
         except Exception as e:
             return JsonResponse({'message': f'Error creating commitment. Please try again.'}, status=500)
+        
+# class ProfileData(LoginRequiredMixin, View):
+#     """This send the required json data to the dashboard profile page"""
+#     def post(self, request):
+        
