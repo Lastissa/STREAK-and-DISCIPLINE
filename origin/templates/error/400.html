@@ -77,6 +77,8 @@
             .mobile-toggle{display:none}
             .mobile-only{display:none!important}
         }
+
+        {% include "reusables/custom_message.css" %}
     </style>
 </head>
 <body>
@@ -104,6 +106,7 @@
 
     <main>
         <div class="container">
+            {% include "reusables/custom_message.html" %}
             <div class="error-code">400</div>
             <h1 class="error-title">Rare Page. We're sorry about this.</h1>
 
@@ -148,6 +151,7 @@
     </main>
 
     <script>
+        {% include "reusables/custom_message.js" %}
         (function(){
             var c=document.cookie.match('(^|;)\\s*sd-theme\\s*=\\s*([^;]+)');
             if(c&&c.pop()==='light')document.body.classList.add('light-mode');

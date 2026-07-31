@@ -48,11 +48,15 @@
             el.classList.remove("active", "exit");
             if (i === 0) el.classList.add("active");
         });
+
         msgIndex = 0;
     }
 
-    // Hide on page load
+    // Hide on normal page load
     window.addEventListener("load", hideLoader);
+
+    // Hide when returning with the Back/Forward button
+    window.addEventListener("pageshow", hideLoader);
 
     // Show for internal navigation links
     document.addEventListener("click", function (e) {
@@ -72,13 +76,8 @@
     });
 
     // Show for form submissions
-    document.addEventListener("submit", function () {
-        showLoader();
-    });
+    document.addEventListener("submit", showLoader);
 
-    // Browser refresh / navigation away
+    // Show while leaving the page
     window.addEventListener("beforeunload", showLoader);
-
-    // Hide if page is restored from bfcache
-    window.addEventListener("pageshow", hide);
 })();

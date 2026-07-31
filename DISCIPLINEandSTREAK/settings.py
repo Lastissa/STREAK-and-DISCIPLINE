@@ -17,7 +17,7 @@ SOCIAL_AUTH_RAISE_EXCEPTIONS = False # for django_social to not debug, it should
 
 AUTH_USER_MODEL = 'origin.CustomeUser'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,esta-sensate-unquickly.ngrok-free.dev').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -135,6 +135,6 @@ SOCIAL_AUTH_ALREADY_ASSOCIATED_URL = 'v1/login/?error=already_linked' #if user i
 
 
 
-CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8002').split(',')
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8002,https://esta-sensate-unquickly.ngrok-free.dev').split(',')
 
 CSRF_FAILURE_VIEW  = 'origin.urls.csrf_failure' #for handling the boring forbidden that constantly show if used form is reused

@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 class RedirectHandler(View):
     """handling redirect from one page to another"""
     def post(self, request, raw_url):
+        print("Seen")
         if request.GET.get('login_account'):
             """Proceed to login user and create session"""
             try:
@@ -33,7 +34,7 @@ class RedirectHandler(View):
                 logger.info(msg= user_istance)
                 if user_istance or user_exist:
                     #set a key in cache to rate limit after 3 attempt
-                    the_key = f"attemp_login_{email}"
+                    the_key = f"attempt_login_{email}"
                     rate_limit = cache.get(the_key) or ""
                     if len(rate_limit)  <2:
                         messages.info( request=request,message= f"Incorrect password or Email.")
