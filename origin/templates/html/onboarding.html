@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  {% include "reusables/web_icon.html" %}
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
@@ -742,6 +743,15 @@
       setTimeout(reveal, TIMEOUT);
     })();
   </script>
+
+  <!--THIS HANDLES END OF LIFE OF PAGE TO AVOID FREEZING ON SLOW INTERNET OR HIGH TRAFFIC, IT CREATE ILLUSION OF A SPINNER LOADING NEXT PAGE-->
+{% include "reusables/navigation_loader.html" %}
+<style rel="stylesheet">
+  {% include 'reusables/navigation_loader.css' %}
+</style>
+<script>
+  {% include 'reusables/navigation_loader.js' %}
+</script>
 
   <!-- ==============================================================
        FULL APP SCRIPT — phase engine, physics, particles

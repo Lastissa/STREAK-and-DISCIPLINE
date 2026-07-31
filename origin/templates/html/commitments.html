@@ -589,6 +589,16 @@
        ============================================================ -->
   <script>{% include "reusables/spinner.js" %}</script>
 
+<!--THIS HANDLES END OF LIFE OF PAGE TO AVOID FREEZING ON SLOW INTERNET OR HIGH TRAFFIC, IT CREATE ILLUSION OF A SPINNER LOADING NEXT PAGE-->
+{% include "reusables/navigation_loader.html" %}
+<style rel="stylesheet">
+  {% include 'reusables/navigation_loader.css' %}
+</style>
+<script>
+  {% include 'reusables/navigation_loader.js' %}
+</script>
+
+
 
   <!-- ============================================================
        COMMITMENT PAGE — FULL APPLICATION SCRIPT
@@ -603,9 +613,9 @@
     var AUTO_OPEN = {% if add %}true{% else %}false{% endif %};
 
     var API = {
-      list:    '{% url "origin_commitment_page_commitment_data" %}',
+      list:    '{% url "origin_commitment_data" %}',
       create:  '{% url "origin_commitment_create_json" %}',
-      checkin: function (id) { return '{% url "origin_commitments" %}' + id + '/checkin/'; },
+      checkin: function (id) { return '{% url "quick_commitment_check_in" commitment_key="__id__" %}'.replace("__id__", id); },
       archive: function (id) { return '/api/v1/commitments/' + id + '/archive/'; }
     };
 
@@ -1061,7 +1071,7 @@
                   + daysLeft + ' day' + (daysLeft !== 1 ? 's' : '') + ' left</span>',
             '<div class="cm-card__actions">',
               '<button class="cm-action-btn" data-id="' + c.id + '" data-action="checkin"',
-                ' title="' + (checkedIn ? 'Already checked in' : 'Check in now') + '"',
+                ' title="' + (checkedIn ? 'Already checked in' : 'Quick checkin') + '"',
                 ' aria-label="' + (checkedIn ? 'Already checked in today' : 'Check in now') + '"',
                 (checkedIn ? ' disabled' : '') + '>',
                 '<i class="fas ' + (checkedIn ? 'fa-check' : 'fa-pen-to-square') + '" aria-hidden="true"></i>',
@@ -1125,7 +1135,7 @@
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
       .then(function (res) {
         if (res.ok || res.data.success || res.data.ok) {
-          showToast('Check-in recorded! 🔥 Keep the streak alive.', 'success');
+          showToast('Check-in recorded!.  Keep the streak alive.', 'success');
           loadCommitments();
         } else {
           showToast(res.data.message || 'Could not check in. Try again.', 'error');
@@ -1665,7 +1675,7 @@
         })
         .then(function (res) {
           if (res.ok) {
-            showToast('Commitment created! 🔥 Day 1 starts now.', 'success', 4500);
+            showToast('Commitment created!  Day 1 starts now.', 'success', 4500);
             /* Reset form state */
             FORM.what = ''; FORM.category = 'other'; FORM.why = '';
             FORM.minimum_effort = ''; FORM.goal_days = 365;

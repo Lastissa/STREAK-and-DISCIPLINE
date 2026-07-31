@@ -1,0 +1,361 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include "reusables/web_icon.html" %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Reactivate Your Account — STREAK & DISCIPLINE</title>
+
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="stylesheet" href="{{font_awesome_all_min_css}}" />
+
+    <style>
+        :root {
+            --bg: #0a0e17;
+            --surface: #111827;
+            --text: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent: #3b82f6;
+            --accent-light: #60a5fa;
+            --accent-glow: rgba(59,130,246,0.3);
+            --border: #1e293b;
+            --border-light: #334155;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            --transition: 0.2s ease;
+            --error: #ef4444;
+        }
+        body.light-mode {
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --text-secondary: #475569;
+            --border: #e2e8f0;
+            --border-light: #cbd5e1;
+        }
+
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        html{height:100%}
+        body{
+            font-family:var(--font-sans);
+            background:var(--bg);
+            color:var(--text);
+            line-height:1.5;
+            -webkit-font-smoothing:antialiased;
+            min-height:100vh;
+            display:flex;
+            flex-direction:column;
+            overflow-x:hidden;
+        }
+
+        {% include "reusables/spinner.css" %}
+        {% include "reusables/custom_message.css" %}
+
+        /* Header */
+        .site-header{
+            position:fixed;top:12px;left:50%;transform:translateX(-50%);
+            width:calc(100% - 24px);max-width:1100px;z-index:100;
+            border-radius:var(--radius-lg);
+            background:rgba(10,14,23,0.78);
+            backdrop-filter:blur(16px);
+            -webkit-backdrop-filter:blur(16px);
+            border:1px solid rgba(255,255,255,0.06);
+            box-shadow:0 8px 32px rgba(0,0,0,0.3);
+        }
+        body.light-mode .site-header{
+            background:rgba(248,250,252,0.85);
+            border-color:rgba(0,0,0,0.06);
+        }
+        .header-inner{
+            display:flex;justify-content:space-between;align-items:center;
+            padding:0.5rem 1.2rem;gap:1rem;
+        }
+        .logo-link{
+            display:flex;align-items:center;gap:0.5rem;
+            text-decoration:none;color:var(--text);flex-shrink:0;
+        }
+        .logo-img{width:36px;height:36px;border-radius:8px;background:var(--surface)}
+        .logo-text{
+            font-size:1rem;font-weight:700;color:var(--accent-light);white-space:nowrap;
+        }
+        .nav-links{display:flex;gap:0.3rem;align-items:center}
+        .nav-links a{
+            color:var(--text-secondary);text-decoration:none;font-weight:500;
+            padding:0.3rem 0.6rem;border-radius:8px;font-size:0.78rem;
+            transition:var(--transition);display:flex;align-items:center;gap:0.3rem;white-space:nowrap;
+        }
+        .nav-links a:hover{color:#fff;background:rgba(255,255,255,0.04)}
+        .nav-actions{display:flex;align-items:center;gap:0.5rem;flex-shrink:0}
+        .theme-toggle{
+            background:none;border:none;cursor:pointer;padding:0.4rem;
+            border-radius:50%;display:flex;align-items:center;justify-content:center;
+            transition:var(--transition);
+        }
+        .theme-toggle i{color:var(--text-secondary);font-size:1.1rem}
+        .theme-toggle:hover{background:rgba(255,255,255,0.08)}
+        .theme-toggle:hover i{color:var(--accent-light)}
+
+        /* Buttons */
+        .btn{
+            display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;
+            padding:0.75rem 1.5rem;border-radius:var(--radius);
+            font-weight:600;font-size:0.9rem;text-decoration:none;
+            cursor:pointer;transition:var(--transition);
+            border:2px solid transparent;white-space:nowrap;
+            font-family:var(--font-sans);width:100%;
+        }
+        .btn-primary{
+            background:var(--accent);color:#fff;
+            box-shadow:0 4px 15px var(--accent-glow);
+        }
+        .btn-primary:hover{background:var(--accent-light);transform:translateY(-1px)}
+        .btn-primary:disabled{
+            opacity:0.5;cursor:not-allowed;transform:none;
+        }
+        .btn-ghost{
+            background:transparent;color:var(--text-secondary);
+            border-color:var(--border-light);
+        }
+        .btn-ghost:hover{
+            border-color:var(--accent);color:var(--accent-light);
+            background:rgba(59,130,246,0.04);
+        }
+
+        /* Main */
+        main{
+            flex:1;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:6rem 1.2rem 2rem;
+        }
+        .card{
+            width:100%;
+            max-width:400px;
+            text-align:center;
+        }
+        .card-icon{
+            font-size:2.5rem;
+            margin-bottom:1rem;
+            color:var(--accent-light);
+        }
+        .card h1{
+            font-size:1.3rem;
+            font-weight:700;
+            margin-bottom:0.4rem;
+        }
+        .card .email{
+            font-size:0.9rem;
+            color:var(--text-secondary);
+            word-break:break-all;
+            margin-bottom:0.5rem;
+        }
+        .card .note{
+            font-size:0.82rem;
+            color:var(--text-secondary);
+            line-height:1.5;
+            margin-bottom:1.8rem;
+        }
+        .card .note strong{
+            color:#f59e0b;
+            font-weight:600;
+        }
+        .card .actions{
+            display:flex;
+            flex-direction:column;
+            gap:0.6rem;
+        }
+
+        /* Error message */
+        .error-msg{
+            display:none;
+            background:rgba(239,68,68,0.08);
+            border:1px solid rgba(239,68,68,0.25);
+            color:var(--error);
+            font-size:0.8rem;
+            padding:0.7rem 1rem;
+            border-radius:var(--radius);
+            margin-bottom:1rem;
+            text-align:center;
+        }
+        .error-msg.show{display:block}
+
+        /* Mini spinner */
+        .mini-spinner{
+            display:none;width:16px;height:16px;
+            border:2px solid rgba(255,255,255,0.2);
+            border-top-color:#fff;border-radius:50%;
+            animation:spin 0.6s linear infinite;
+        }
+        @keyframes spin{to{transform:rotate(360deg)}}
+
+        /* Footer */
+        footer{
+            text-align:center;padding:0.8rem;
+            font-size:0.7rem;color:var(--text-secondary);
+            flex-shrink:0;
+        }
+        footer a{color:var(--accent-light);text-decoration:none}
+        footer a:hover{text-decoration:underline}
+
+        @media(max-width:639px){
+            .nav-links{display:none}
+            .logo-text{display:none}
+            main{padding-top:5rem}
+            .card h1{font-size:1.15rem}
+        }
+    </style>
+</head>
+<body>
+    {% include "reusables/spinner.html" %}
+    {% include "reusables/custom_message.html" %}
+
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="/" class="logo-link">
+                <img src="{{logo_url}}" alt="Logo" class="logo-img" width="36" height="36"
+                     onerror="this.src='data:image/svg+xml,...'">
+                <span class="logo-text">STREAK & DISCIPLINE</span>
+            </a>
+            <nav class="nav-links">
+                <a href="{% url 'origin_extra' %}#help"><i class="fas fa-question-circle"></i> Help</a>
+                <a href="{% url 'origin_extra' %}#terms"><i class="fas fa-file-contract"></i> Terms</a>
+                <a href="{% url 'origin_extra' %}#privacy"><i class="fas fa-shield"></i> Privacy</a>
+            </nav>
+            <div class="nav-actions">
+                <a href="{% url 'origin_signup' %}" class="btn btn-ghost" style="width:auto;padding:0.4rem 1rem;font-size:0.78rem">Sign Up</a>
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="card">
+            <div class="card-icon">
+                <i class="fas fa-rotate-left"></i>
+            </div>
+            <h1>Reactivate your account?</h1>
+            <div class="email">{{ email }}</div>
+            <p class="note">
+                Deactivated 
+                <strong>
+                    {% if days_left == 0 %}today{% elif days_left == 1 %}yesterday{% else %}{{ days_left }} days ago{% endif %}
+                </strong>. 
+                Permanently deleted in <strong>{{ days_until_deletion }} day{{ days_until_deletion|pluralize }}</strong>.
+            </p>
+
+            <div class="error-msg" id="errorMsg"></div>
+
+            <div class="actions">
+                <form id="reactivateForm" method="POST" action="{% url 'origin_reactivate_account' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary" id="reactivateBtn">
+                        <span class="mini-spinner" id="spinner"></span>
+                        <span class="btn-text" id="btnText">Yes, Reactivate</span>
+                    </button>
+                </form>
+                <a href="{% url 'origin_login' %}" class="btn btn-ghost">No, Leave It</a>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <a href="mailto:issaabdulsalamope11@gmail.com">issaabdulsalamope11@gmail.com</a>
+    </footer>
+
+    <script>
+        {% include "reusables/spinner.js" %}
+        {% include "reusables/custom_message.js" %}
+    </script>
+    <script>
+        // Theme toggle
+        (function() {
+            function getCookie(n){var v='; '+document.cookie;var p=v.split('; '+n+'=');if(p.length===2)return p.pop().split(';').shift();return null}
+            function setCookie(n,v,d){var t=new Date();t.setTime(t.getTime()+(d*86400000));document.cookie=n+'='+v+';expires='+t.toUTCString()+';path=/;SameSite=Lax'}
+            var body=document.body,btn=document.getElementById('themeToggle'),saved=getCookie('sd-theme');
+            btn.style.display = 'flex';
+            if(saved==='light'){body.classList.add('light-mode');btn.innerHTML='<i class="fas fa-sun"></i>'}
+            btn.addEventListener('click',function(){
+                if(body.classList.contains('light-mode')){body.classList.remove('light-mode');setCookie('sd-theme','dark',365);btn.innerHTML='<i class="fas fa-moon"></i>'}
+                else{body.classList.add('light-mode');setCookie('sd-theme','light',365);btn.innerHTML='<i class="fas fa-sun"></i>'}
+            });
+        })();
+
+        // Reactivate form — AJAX POST with error handling
+(function () {
+    function getCookie(name) {
+        var value = '; ' + document.cookie;
+        var parts = value.split('; ' + name + '=');
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return '';
+    }
+
+    var form = document.getElementById('reactivateForm');
+    var btn = document.getElementById('reactivateBtn');
+    var btnText = document.getElementById('btnText');
+    var spinner = document.getElementById('spinner');
+    var errorMsg = document.getElementById('errorMsg');
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        // Loading state
+        btn.disabled = true;
+        spinner.style.display = 'inline-block';
+        btnText.textContent = 'Reactivating...';
+
+        errorMsg.classList.remove('show');
+        errorMsg.textContent = '';
+
+        var email = window.location.pathname
+            .split('/')
+            .filter(Boolean)
+            .pop();
+
+        fetch(form.action, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                email: email
+            })
+        })
+        .then(async function (response) {
+            // Always try to read the JSON response
+            let data = {};
+            try {
+                data = await response.json();
+            } catch (e) {
+                data = { message: 'Invalid server response.' };
+            }
+
+            // Success
+            if (response.ok) {
+                window.location.href = "{% url 'origin_onboarding' %}";
+                return;
+            }
+
+            // Error from backend
+            throw new Error(data.message || 'Something went wrong. Please try again.');
+        })
+        .catch(function (err) {
+            errorMsg.textContent = err.message;
+            errorMsg.classList.add('show');
+
+            btn.disabled = false;
+            spinner.style.display = 'none';
+            btnText.textContent = 'Yes, Reactivate';
+        });
+    });
+})();
+
+    </script>
+</body>
+</html>

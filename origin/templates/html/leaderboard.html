@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  {% include "reusables/web_icon.html" %}
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Weekly leaderboard — top 10 most disciplined members on STREAK & DISCIPLINE.">
@@ -506,6 +507,15 @@
     </footer>
 
   </div><!-- /lbApp -->
+
+<!--THIS HANDLES END OF LIFE OF PAGE TO AVOID FREEZING ON SLOW INTERNET OR HIGH TRAFFIC, IT CREATE ILLUSION OF A SPINNER LOADING NEXT PAGE-->
+{% include "reusables/navigation_loader.html" %}
+<style rel="stylesheet">
+  {% include 'reusables/navigation_loader.css' %}
+</style>
+<script>
+  {% include 'reusables/navigation_loader.js' %}
+</script>
 
   <!-- ============================================================
        JAVASCRIPT — split into labelled segments

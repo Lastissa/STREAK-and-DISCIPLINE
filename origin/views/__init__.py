@@ -4,6 +4,6 @@ from .dashboard import *            # Handles anything that have to do with user
 from .debug_purpose import *        # Only for debugging purpose only currently;
 from .normal_view import *          # The regs, return html and UI's
 from .json_only_view import *       # Handles anything tht returns only json
-
+from .danger import *               #handles dangerous zone
 from .normal_view import *
 

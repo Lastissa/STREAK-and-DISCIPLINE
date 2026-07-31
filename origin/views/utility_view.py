@@ -9,6 +9,8 @@ from django.shortcuts import render, reverse
 from django.http import JsonResponse
 from django.db import IntegrityError
 
+from django.http import Http404
+from django.utils import timezone
 from utility.config import custom_date_formatter
 from utility.email_sending import send_partner_request_notification
 
@@ -23,13 +25,16 @@ class RedirectHandler(View):
         if request.GET.get('login_account'):
             """Proceed to login user and create session"""
             try:
-                user_exist = get_user_model().objects.filter(email__iexact = request.POST["email"]).first() is not None
-                user_istance = authenticate(request=request, email = request.POST["email"].upper(), password = request.POST["password"])
+                email = request.POST["email"]
+                user_status = get_user_model().objects.filter(email__iexact = email).first()
+                user_exist = user_status is not None
+                user_istance = authenticate(request=request, email = email.upper(), password = request.POST["password"])    #i wou;d have remove this but i need it along the custom user model 
+                
                 logger.info(msg= user_istance)
                 if user_istance or user_exist:
                     #set a key in cache to rate limit after 3 attempt
-                    the_key = f"attemp_login_{request.POST["email"]}".upper()
-                    rate_limit = cache.get(the_key) if cache.get(the_key) is not None else ""
+                    the_key = f"attemp_login_{email}"
+                    rate_limit = cache.get(the_key) or ""
                     if len(rate_limit)  <2:
                         messages.info( request=request,message= f"Incorrect password or Email.")
                         cache.set(the_key, rate_limit+"x", timeout=120)
@@ -41,10 +46,15 @@ class RedirectHandler(View):
                         cache.set(the_key, "banned", timeout=120)
                         return redirect('origin_login')
                     
+                    #Check the user and the user password, if its valid but the account status is FALSE, redirect them to where they willa ctivate it
+                    if user_status is not None and user_status.check_password(request.POST["password"]) and user_status.is_active is False:
+                        return redirect(reverse('origin_deactivated', kwargs={'email' : user_status.email, 'days_left': (timezone.now().date() - user_status.last_is_active_false_date).days}))
+                    
                     #user found but user password is wrong
                     if not user_istance:
                         logout(request)
-                        return redirect('origin_login') 
+                        return redirect('origin_login')
+                         
                         
                     #user found, create a session and direct onboarding to handle wether it should direct user to dashboard or stay
                     login(request=request, user=user_istance, backend='django.contrib.auth.backends.ModelBackend')  #i currently have three login style set up, hence why i need to specify which i wan to use
@@ -110,7 +120,6 @@ def helper_with_friendship_request_answer(request, to_user_id : str):
     #add rate limiting here blocking the request for 30 secodns if user keep spamming me 3 times
     key = f"{from_user}-{to_user_id}"
     cache_does_exist = cache.get(key)
-    print(key, cache_does_exist)
     if cache_does_exist is None:
         cache.set(key ,"x", timeout=60)
     elif cache_does_exist: 

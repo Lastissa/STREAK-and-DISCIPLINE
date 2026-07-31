@@ -9,6 +9,7 @@ from django.views import View
 from django.db import transaction
 from ..models import Profile, Commitment, ChoicesValidatorInModels, PasswordResetToken
 from django.core.validators import validate_email
+from django.core.exceptions import ValidationError as V_Error
 from django.shortcuts import redirect, render
 from resend.exceptions import ResendError, ValidationError
 from django.http import JsonResponse
@@ -26,6 +27,7 @@ logger= logging.getLogger(__name__)
 
 #this handle save user""" data during onboarding
 class DbSave(LoginRequiredMixin,View):
+    """WHERE ONBOARDING PAGE SEND ITS DATA TO FOR VERIFICATION"""
     def post(self, request):
         data = json.loads(request.body)
         #first create a unique user id using customeUser username + pk
@@ -109,7 +111,7 @@ class DbSave(LoginRequiredMixin,View):
 
 class PasswordReset(View):
     def post(self, request):
-        """To send a jsonresponse for the password reset pageback saying, email have been sent and on any error, send maybe status 500"""
+        """To send a jsonresponse for the password reset pageback saying, email have been sentbut if user is inactive, tell them account is active and ask them to reactivate accountt first and on any error, send maybe status 500"""
         try:
             #create a ticket for user if user exist
             fetched_email = request.POST["email"]
@@ -135,8 +137,8 @@ class PasswordReset(View):
             return JsonResponse({'message': 'Oops, you dont seem to have internet connection, please try again when you are connected.-Refresh page to resend link'})
         except ValidationError as e: return JsonResponse({"message" : "Invalid Email, Refresh page to try again"})
         except Exception as e:
-            logger.error(msg=f"user {fetched_email} tried to reset password and eperience error  : {e}")
-            return JsonResponse({"message" : "Please refresh page and retry again but if message persiste, contact customer support as we might be experiencing internal issue"})
+            logger.error(msg=f"user tried to reset password and eperience error  : {e}")
+            return JsonResponse({"message" : "Please refresh page and retry again but if message persiste, contact customer support as we might be experiencing internal issue"}, status = 500)
        
     """To show user the password reset link """     
     def get(self, view): return render(self.request, 'html/password_reset.html')
@@ -183,4 +185,36 @@ class PasswordValidate(View):
             return redirect('origin_login')
 
         return JsonResponse({'user': email, 'token' : token, 'still_valid' : token_still_valid_in_db is not None, 'token_have_not_expired': token_have_not_expired, 'password1' : request.POST['password1']}, safe=False)
+        
+
+class AccountDeactivated(View):
+    def get(self, request, email, days_left):
+        return render(request, 'html/reactivate_page.html', {
+                'email': email,
+                'days_left': int(days_left),
+                'days_until_deletion': 7- int(days_left)
+            })
+        
+class ReactivateAccountJson(View):
+    """Handle the reactivation pf user isactive is false account by sending json back and that json determine wherre teh user is refirected to"""
+    def post(self, request):
+        try:
+            #first check if the account is truly deactivated or exist
+            data = json.loads(request.body).get('email', None)
+            validate_email(data)
+            if data is None : return JsonResponse({'message'}, status = 500)
+            istance = get_user_model().objects.filter(email__iexact = data).first()
+            if istance is None:
+                return JsonResponse({'message': 'Invalid credentials'}, status = 400)   #watch for the s
+            if istance.is_active != False:
+                return JsonResponse({'message': 'Invalid credential'}, status =  400)
+            
+            #if user is truly deactivated, update
+            istance.is_active = True
+            istance.last_is_active_false_date = None
+            istance.save()
+        except V_Error as e: return JsonResponse({'message': 'please go to our official website'}, status = 404)
+        except Exception as e: return JsonResponse({'message': 'error'}, status = 404)
+        
+        return JsonResponse({'message': 'success'}, status = 200)
         

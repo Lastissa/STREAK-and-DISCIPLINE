@@ -8,10 +8,16 @@ import logging
 urlpatterns = [
     path('', views.OriginHome.as_view(),name='origin_home'),
     
+    #danger!!!! follow by antitiode
+    path('delete_account/', views.DeleteUserEntireAccount.as_view(), name = "origin_delete_account"),
+    path('reactivate_account/', views.ReactivateAccountJson.as_view(), name = "origin_reactivate_account"),   #Handles the final account reactivation
+    
+    
     path('db_save', views.DbSave.as_view(), name = "origin_database"),
     path('redirect_url/<str:raw_url>/', views.RedirectHandler.as_view(), name='origin_redirect_handler'),
     path('in-progress/', views.InProgress.as_view(), name = 'in_progess'),
     path('onboarding/', views.Onboarding.as_view(),name='origin_onboarding'),
+    path('dashboard/<str:days_left>/<str:email>/', views.AccountDeactivated.as_view(), name = 'origin_deactivated'),
 
     #leaderboard ui and json
     path('leaderboard/', views.Leaderboard.as_view(), name= "origin_leaderboard"),
@@ -52,10 +58,8 @@ urlpatterns = [
     path('user_picture_data/', views.ProfilePicture.as_view(), name = "origin_user_picture"),                           # Load Picture if user have one(GLOBAL JSON)
     path('user_partner_widget/', views.PartnerWidget.as_view(), name = "origin_parner_widget"),                         # for dashboard loading partner for partner mode users
     path('user_heat_map/', views.HeatMap.as_view(), name = "origin_user_HeatMap"),                                      # Also for dashboard
-    path('user_commitment_data/', views.CommiementReceiveCommitment.as_view(), name = "origin_commitment_page_commitment_data"),# Handles commitment data for commitment page
-    path('user_commitment_data/create/', views.CreateCommitment.as_view(), name = "origin_commitment_create_json"),     # same
-    path('user_commitment_data/<str:commitment_key>/checkin', views.CreateCommitment.as_view(), name = "origin_commitment_create_json"),# same
-    path('user_commitment_data/<str:commitment_key>/archive/', views.CreateCommitment.as_view(), name = "origin_commitment_create_json"),# same
+    path('user_commitment_data/create_commitment/', views.CreateCommitment.as_view(), name = "origin_commitment_create_json"),     # Create another commitment for user
+    path('user_commitment_data/quick_checkin/<str:commitment_key>/', views.CommitmentQuickCheckin.as_view(), name= 'quick_commitment_check_in'),    #This is for when user just want  a quick check in on their minimum day, it skips the write entrie and just log in user minimum words from their commitment
     path('relationship/sent/<str:status>/', views.RelationshipSent.as_view(), name = 'origin_relationship_sent'),         # Handles dashboard relationship friend / partner request sent
     path('relationship/received/<str:status>/', views.RelationshipReceived.as_view(), name = 'origin_relationship_received'),         # Handles dashboard relationship friend / partner request sent
     path('relationship/unpartner/', views.RelationshipUnpair.as_view(), name = 'origin_relationship_unpair'),                            #This handle user that have the accepetd in their relationship status to remove it and delete it

@@ -797,6 +797,17 @@
 
   <script>{% include "reusables/spinner.js" %}</script>
 
+<!--THIS HANDLES END OF LIFE OF PAGE TO AVOID FREEZING ON SLOW INTERNET OR HIGH TRAFFIC, IT CREATE ILLUSION OF A SPINNER LOADING NEXT PAGE-->
+{% include "reusables/navigation_loader.html" %}
+<style rel="stylesheet">
+  {% include 'reusables/navigation_loader.css' %}
+</style>
+<script>
+  {% include 'reusables/navigation_loader.js' %}
+</script>
+
+
+
   <script>
   (function(){
     'use strict';
@@ -1222,13 +1233,15 @@
 
     qs('#pfDeleteAccountBtn')&&qs('#pfDeleteAccountBtn').addEventListener('click',function(){
       if(!confirm('Delete your account PERMANENTLY?\nAll data will be erased. This cannot be undone.'))return;
-      if(!confirm('Final confirmation — type YES in the next prompt.'))return;
-      var answer=window.prompt('Type YES to confirm permanent deletion:');
-      if(answer!=='YES'){showToast('Deletion cancelled.','info');return}
+      if(!confirm('Are YOU REALLY SURE??. This cannot be undone.'))return;
+      if(!confirm('Final confirmation — type {{request.user.email.upper}} in the next prompt.'))return;
+      var answer=window.prompt('Type {{request.user.email.upper}} to confirm permanent deletion: NB; it is case sensitive');
+      if(answer!=='{{request.user.email.upper}}'){showToast('Deletion cancelled.','info');return}
       var btn=this;btn.classList.add('pf-loading');
-      fetch('/v1/delete_account/',{
+      fetch('{% url "origin_delete_account"%}',{
         method:'POST',credentials:'same-origin',
-        headers:{'X-CSRFToken':getCookie('csrftoken')}
+        headers:{'X-CSRFToken':getCookie('csrftoken')},
+        body: JSON.stringify({'username': "{{request.user.username|escapejs}}"})
       })
       .then(function(r){return r.json()})
       .then(function(d){

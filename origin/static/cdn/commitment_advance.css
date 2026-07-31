@@ -634,12 +634,9 @@
 }
 
 /* ================================================================
-   LIGHT MODE OVERRIDES
+   LIGHT MODE OVERRIDES - FOR THE TOAST AND TO GIVE  A LITTLE STYLE TO EACH COMMITMENT VALUE
    ================================================================ */
-body.sd-light .cm-card {
-  background: #ffffff;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}
+
 body.sd-light .cm-card:hover {
   box-shadow: 0 8px 28px rgba(0,0,0,0.12);
 }

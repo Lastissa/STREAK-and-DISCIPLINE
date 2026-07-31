@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    {% include "reusables/web_icon.html" %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In — STREAK & DISCIPLINE</title>
@@ -48,6 +49,7 @@
                 <a href="{% url 'origin_extra' %}#help"><i class="fas fa-question-circle"></i> Help Center</a>
                 <a href="{% url 'origin_extra' %}#terms"><i class="fas fa-file-contract"></i> Terms</a>
                 <a href="{% url 'origin_extra' %}#privacy"><i class="fas fa-shield"></i> Privacy</a>
+
             </nav>
             <div class="nav-actions">
                 <a href="{% url 'origin_signup' %}" class="btn btn-outline btn-sm">Sign Up</a>
@@ -174,10 +176,21 @@
                     <p class="form-footer">
                         Don't have an account? <a href="{% url 'origin_signup' %}">Sign Up</a>
                     </p>
+                    
                 </div>
             </div>
         </div>
     </main>
+
+
+    <!--THIS HANDLES END OF LIFE OF PAGE TO AVOID FREEZING ON SLOW INTERNET OR HIGH TRAFFIC, IT CREATE ILLUSION OF A SPINNER LOADING NEXT PAGE-->
+{% include "reusables/navigation_loader.html" %}
+<style rel="stylesheet">
+  {% include 'reusables/navigation_loader.css' %}
+</style>
+<script>
+  {% include 'reusables/navigation_loader.js' %}
+</script>
 
     <script>
         {% include "reusables/spinner.js" %}

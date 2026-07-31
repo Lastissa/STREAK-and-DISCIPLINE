@@ -479,6 +479,16 @@
     {% csrf_token %}
   </form>
 
+<!--THIS HANDLES END OF LIFE OF PAGE TO AVOID FREEZING ON SLOW INTERNET OR HIGH TRAFFIC, IT CREATE ILLUSION OF A SPINNER LOADING NEXT PAGE-->
+{% include "reusables/navigation_loader.html" %}
+<style rel="stylesheet">
+  {% include 'reusables/navigation_loader.css' %}
+</style>
+<script>
+  {% include 'reusables/navigation_loader.js' %}
+</script>
+
+
   <!-- ====================================================
        FULL APP JAVASCRIPT
        At bottom of body — no defer needed

@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    {% include "reusables/web_icon.html" %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Message — STREAK & DISCIPLINE</title>
@@ -77,6 +78,7 @@
         <a href="mailto:issaabdulsalamope11@gmail.com"><i class="fas fa-envelope"></i> support@streakanddiscipline.com</a>
     </footer>
 
+    
     <script>
         {% include "reusables/spinner.js" %}
         (function(){function g(n){var v='; '+document.cookie,p=v.split('; '+n+'=');return p.length===2?p.pop().split(';').shift():null}function s(n,v,d){var t=new Date();t.setTime(t.getTime()+d*86400000);document.cookie=n+'='+v+';expires='+t.toUTCString()+';path=/;SameSite=Lax'}var b=document.body,btn=document.getElementById('themeToggle'),sv=g('sd-theme');btn.style.display='flex';if(sv==='light'){b.classList.add('light-mode');btn.innerHTML='<i class="fas fa-sun"></i>'}btn.addEventListener('click',function(){if(b.classList.contains('light-mode')){b.classList.remove('light-mode');s('sd-theme','dark',365);btn.innerHTML='<i class="fas fa-moon"></i>'}else{b.classList.add('light-mode');s('sd-theme','light',365);btn.innerHTML='<i class="fas fa-sun"></i>'}})})();

@@ -45,15 +45,12 @@ class Signup(View):
     
     def post(self, request):
         email, username, password = [request.POST.get('email'), request.POST.get('username'), request.POST.get('password1')]
-        print(email, username, password)
         #check if the username and email is 'integrity_error' meaning user already have another an account
         if username == 'integrity_error' or email == 'integrity_error':
             messages.info(request=request, message= 'Existing account found with your email and you have been redirected to login istead')
             return redirect('origin_login')
         #else, just create account with the provided data, ----- check for validity first
         user_is_not_new = authenticate(request=request, email = email.upper(), password = password)
-        print(user_is_not_new)
-        for i in range(10000): x = 0
         if user_is_not_new:
             #user is not new, redirect them to login page
             messages.info(request=request, message="Account Created, Login.")

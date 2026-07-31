@@ -13,6 +13,7 @@ class ChoicesValidatorInModels:
         self.commitment_category = ['other', 'fitness', 'study', 'work', 'health', 'mindset', 'growth']
         self.report_delivery_mode = ['email', 'whatsapp', 'push']
         self.mood = [
+            'minimum', #On days when user check in with minimum effort
             'proud', 'accomplished', 'confident', 'determined', 'focused',
             'motivated', 'disciplined', 'strong', 'unstoppable', 'excited',
             'energetic', 'optimistic', 'inspired', 'passionate', 'courageous',
@@ -61,7 +62,8 @@ class CustomeUser(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=50, null=False)
     email = models.EmailField(null=False,unique=True)
     url = models.URLField(blank=True, null=True) #for storing user own domain, just temp
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)#for deactivating user account istead of deleting and them delete 7 days later if user really want to delete account
+    last_is_active_false_date = models.DateField(auto_now=True)#to know when user deactivated their account and how many days left
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
     
@@ -116,7 +118,7 @@ class Profile(models.Model):
 class Commitment(models.Model):
     user = models.ForeignKey(CustomeUser, on_delete=models.CASCADE) # a user can have more than one commitment
     is_active =  models.BooleanField(default=True) #This tell the current state of a commitment wether its active or not
-    streak_count = models.IntegerField(null=False,default=1)#this tell the consequtive rows in a day user have showed up, reset on each day miss
+    streak_count = models.IntegerField(null=False,default=0)#this tell the consequtive rows in a day user have showed up, reset on each day miss
     checkin_time = models.TimeField(blank=False, null=False,default='21:00') #time user is expected to have checked in for that day -send email if they have not check in at that time
     what = models.CharField(blank= False, null= False,max_length=120) #what this commitment is about?
     category = models.CharField(max_length=20, default = custom_val.commitment_category[0]) #under which category does this commitment fall under?
@@ -147,7 +149,7 @@ class Entries(models.Model):
     commitment_key = models.ForeignKey(Commitment, on_delete=models.CASCADE) #hold each day entry attached to their respective commitment
     commit_at = models.DateField(auto_now_add=True) #the full datetime user wrote this commitment, used for abalytics and also to prevent user from creating new commit on that same dat
     content = models.TextField(blank=True)  #the note for that partiular commit
-    mood = models.CharField(max_length=50, blank=True)
+    mood = models.CharField(max_length=50, blank=True, default= custom_val.mood[0])
     word_count = models.PositiveIntegerField(default=0) #this will be for analysis purpose later
     
     class Meta:

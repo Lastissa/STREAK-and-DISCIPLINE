@@ -17,7 +17,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class CommitmentData(LoginRequiredMixin, View):
-    """RETURNS DATA FOR THE DASHBOARD HOME TO USE TO DISPLAY A QUICK VIEW OF USER COMMITMENTS WITH THE LINK THAT REDIRECT USER TO VIEW ACTUAL FULL DATA"""
+    """RETURNS DATA FOR THE DASHBOARD HOME AND THE DASHBOARD COMMITMENT PAGE USE TO DISPLAY A QUICK VIEW OF USER COMMITMENTS WITH THE LINK THAT REDIRECT USER TO VIEW ACTUAL FULL DATA"""
     def get(self, request):
         commitment_istance = Commitment.objects.filter(user = request.user).all()
         if not commitment_istance.exists(): data = [
@@ -51,8 +51,10 @@ class CommitmentData(LoginRequiredMixin, View):
             }
             for i in commitment_istance 
             ]
-            
-        return JsonResponse({'commitments' : data}, status = 200)
+            consistency_pct = [0 for i in commitment_istance if i.streak_count > 0]    #Find the amount of streak score > 0 / total commitment (i use the tenchique of all ocnsistncy must have a streak score but are they all greater than zero?) ; that give the consistency_cpt
+            c_pct = (consistency_pct.count(0)/len(commitment_istance))*100
+            stats = {'consistency_pct': c_pct}      #commitment page inside the dashboard commitment need this
+        return JsonResponse({'commitments' : data, 'stats': stats}, status = 200)
 
 
 class HeatMap(LoginRequiredMixin, View):
@@ -196,6 +198,7 @@ class PartnerWidget(LoginRequiredMixin, View):
     
     
 class DashboardJson(LoginRequiredMixin, View):
+    login_url = '/v1/login/'
     """RETURN THE JSON FORMAT OF USER DATA BY JUST DOING /JSON ON THEIR DASHBOARD"""
     def get(self, request):
         profile_istance = Profile.objects.filter(user = request.user).first()
@@ -466,34 +469,10 @@ class RelationshipDecline(LoginRequiredMixin, View):
                 'message': f'Successfully accepetd the friend request',
             }, status=200)
                 
-    
-class CommiementReceiveCommitment(LoginRequiredMixin, View):
-    """THIS ENDPOITT IS IN CHARGE OF SERVING THE COMMITMENT PAGE IN DASHBOARD THE DATA IT NEEDS"""
-    login_url = '/v1/login/'
-    def get(self, request):
-        commitment_istance = Entries.objects.filter(commitment_key__user = request.user,).select_related('commitment_key').all() #to get all the commitment key data at once avoaiding the N+1 problem
-        commitment_list = [
-            {
-                'id': i.pk,
-                'what': i.commitment_key.what,
-                'why': i.commitment_key.why,
-                'category': i.commitment_key.category,
-                'streak_count': i.commitment_key.streak_count,
-                'goal_days': i.commitment_key.goal_days,
-                'checked_in_today': i.commitment_key.last_check_in.date().day == timezone.now().day,
-                'created_at': i.commitment_key.created_at
-            }
-            for i in commitment_istance
-        ]
-        consistency_pct = [i.streak_count for i in  commitment_istance] #different from zeal score --- loop through streak; sum them all and divide by all
-        c_pct = sum(consistency_pct) / (len(consistency_pct)+1) #i added one to curb the issue of division by zero
-        stats = {'consistency_pct': c_pct}
-        
-        return JsonResponse({'message': 'success', 'commitments': commitment_list, **stats})
 
 
 class CreateCommitment(LoginRequiredMixin, View):
-    """This create commitments"""
+    """THIS CREATE COMMITMENT BY COLLECTING JSON DATA AND ATTACHING IT TO THE REQUEST.USER IDENTITY"""
     login_url = '/v1/login/'
     def get(self, request): return self.post(request)
     def post(self, request):
@@ -563,7 +542,47 @@ class CreateCommitment(LoginRequiredMixin, View):
         except Exception as e:
             return JsonResponse({'message': f'Error creating commitment. Please try again.'}, status=500)
         
-# class ProfileData(LoginRequiredMixin, View):
-#     """This send the required json data to the dashboard profile page"""
-#     def post(self, request):
+class CommitmentQuickCheckin(LoginRequiredMixin, View):
+    """On days when user is tired but still have to checkin, they jsut press the "Quick checkin" on their account commitment page and the user minimum words is logged"""
+    def post(self, request, commitment_key):
+        current_commitment_istance = Commitment.objects.filter(user = request.user, pk = commitment_key).first()
+        if not current_commitment_istance: return JsonResponse({'message': 'No commitment found with this details'}, status = 400)
+        
+        #commitment exist, proceed to check and update datas along entries
+        last_entry = Entries.objects.filter(commitment_key = commitment_key).last()
+        #updating the streak count
+        if not last_entry:
+            #user have not written anything before so this is their first entry
+            streak = 1                         #Set the commitment streak to one as day 1
+            print("commitment_reset")
+        elif (timezone.now().date()  - last_entry.commit_at).days == 1:
+            # a day at max diff mean the streak should increase
+            streak = current_commitment_istance.streak_count + 1
+            print('commitment_plus_one')
+        elif  (timezone.now().date()  - last_entry.commit_at).days == 0:
+            #same day? break the code istantly and tell them they have commit
+            streak = current_commitment_istance.streak_count
+            return JsonResponse({'message': 'You have checked in today'}, status = 400)
+        else:
+            #the diff between last entry and current entry is more than more day so RESET
+            streak = 1
+            print('gap btwn current entry and last entry is too far')
+            
+        current_commitment_istance.streak_count = streak
+        #also update the last check in
+        current_commitment_istance.last_check_in = timezone.now()
+        current_commitment_istance.save()
+        
+            
+
+        #user have not checked in today, Create a new entry for them with the mimium data since this is a quick entry not the long one
+        content = current_commitment_istance.minimum_effort
+        content_count = len(content)
+        Entries.objects.create(
+            commitment_key = current_commitment_istance,
+            content = content,
+            word_count = content_count
+        )
+        return JsonResponse({'message': 'weldome, onto the next one'}, status = 200)
+            
         
