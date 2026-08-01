@@ -18,7 +18,7 @@ urlpatterns = [
     path('redirect_url/<str:raw_url>/', views.RedirectHandler.as_view(), name='origin_redirect_handler'),
     path('in-progress/', views.InProgress.as_view(), name = 'in_progess'),
     path('onboarding/', views.Onboarding.as_view(),name='origin_onboarding'),
-    path('dashboard/<str:days_left>/<str:email>/', views.AccountDeactivated.as_view(), name = 'origin_deactivated'),
+    path('dashboard/account_inactive/<str:days_left>/<str:email>/', views.AccountDeactivated.as_view(), name = 'origin_deactivated'),
 
     #leaderboard ui and json
     path('leaderboard/', views.Leaderboard.as_view(), name= "origin_leaderboard"),
@@ -32,6 +32,7 @@ urlpatterns = [
     path('dashboard/commitment/<str:commitment_key>/', views.EachCommitmentView.as_view(), name = 'origin_each_commitment_view'),
     path('dashboard/profile/', views.ProfileSettings.as_view(), name = 'origin_profile'),
     path('dashboard/relationship/', views.Relationship.as_view(), name = 'origin_relationship'),
+    path('dashboard/reports/', views.DashbaordAnalytics.as_view(), name = 'origin_reports'),
     
     
     #public accesible
@@ -57,6 +58,7 @@ urlpatterns = [
     #json only
     path('user_commitment_data/', views.CommitmentData.as_view(), name = "origin_commitment_data"),                     # Handles dashboard.html commitment summary
     path('user_picture_data/', views.ProfilePicture.as_view(), name = "origin_user_picture"),                           # Load Picture if user have one(GLOBAL JSON)
+    path('user_profile_picture_delete/', views.ProfilePictureRemove.as_view(), name = 'origin_delete_user_picture'),
     path('user_partner_widget/', views.PartnerWidget.as_view(), name = "origin_parner_widget"),                         # for dashboard loading partner for partner mode users
     path('user_heat_map/', views.HeatMap.as_view(), name = "origin_user_HeatMap"),                                      # Also for dashboard
     path('user_commitment_data/create_commitment/', views.CreateCommitment.as_view(), name = "origin_commitment_create_json"),     # Create another commitment for user
@@ -64,18 +66,19 @@ urlpatterns = [
     path('relationship/sent/<str:status>/', views.RelationshipSent.as_view(), name = 'origin_relationship_sent'),         # Handles dashboard relationship friend / partner request sent
     path('relationship/received/<str:status>/', views.RelationshipReceived.as_view(), name = 'origin_relationship_received'),         # Handles dashboard relationship friend / partner request sent
     path('relationship/unpartner/', views.RelationshipUnpair.as_view(), name = 'origin_relationship_unpair'),                            #This handle user that have the accepetd in their relationship status to remove it and delete it
-    path('relationship/accept_partner/', views.RelationshipAcccept.as_view(), name = 'origin_relationship_accept_partner'),           #handle updating from request receved to you are now partners                         #This handle user that have the accepetd in their relationship status to remove it and delete it
-    path('relationship/decline_partner/', views.RelationshipDecline.as_view(), name = 'origin_relationship_decline_partner')           #handle updating from request receved to you are NOT partners                         #This handle user that have the accepetd in their relationship status to remove it and delete it
-    # path('profile_data/', views.xxx.as_view(), name = 'origin_profile_data')                            #rent the needed json file to the profile page dashboard
-    
-
-    
-    
-    
+    path('relationship/accept_partner/', views.RelationshipAcccept.as_view(), name = 'origin_relationship_accept_partner'),           #handle updating from request receved to you are now partners
+    path('relationship/decline_partner/', views.RelationshipDecline.as_view(), name = 'origin_relationship_decline_partner'),           #handle updating from request receved to you are NOT partners
+    path('profile_data/update_username/', views.ProfileUpdateUsernameORUserid.as_view(), name = 'origin_profile_update_first_part'),     #return the needed json file to the profile page dashboardpage uspdate username, userid 
+    path('profile_data/update_profile/', views.ProfileUpdateToggles.as_view(), name = 'origin_profile_update_second_part'),     #return the needed json file to the profile page dashboardpage leaderboard optn in, show zeal score etc
+    path('profile_data/update_theme/', views.ProfileUpdateTheme.as_view(), name = 'origin_profile_update_theme'),     #return the needed json file to the profile page dashboardpage uspdate username, userid 
+    path('reports_data/', views.ReportsData.as_view(), name = 'origin_reports_data'),     #return the needed json for the user reports page, this is the one that will be used to load the report data in the reports page
 
 
 
 ]
+
+
+
 
 
 
@@ -86,10 +89,9 @@ def _error_context(request, status_code, *args, **kwargs):
         "status_code": status_code,
         "method": request.method,
         "path": request.path,
-        "get_params": request.GET.dict(),
-        # Never log raw POST values; they may contain passwords or tokens.
-        "post_keys": list(request.POST.keys()),
-        "body_preview": request.body[:500].decode(errors="replace") if request.body else "",
+        # "get_params": request.GET.dict(),
+        # "post_keys": list(request.POST.keys()),
+        # "body_preview": request.body[:500].decode(errors="replace") if request.body else "",
         "request_user": str(request.user) if hasattr(request, "user") else "anonymous",
         "client_ip": request.META.get("REMOTE_ADDR"),
         "user_agent": request.META.get("HTTP_USER_AGENT"),

@@ -244,6 +244,33 @@ body.sd-light .db-header{background:rgba(240,244,250,0.9)}
 .db-greeting-sub{font-size:0.82rem;color:var(--ink2);margin-top:0.35rem}
 @media(max-width:479px){.db-greeting-text{font-size:1.35rem}}
 
+/* ---- Welcome hero (zero-commitment first-time state) ---------- */
+.db-welcome-hero{
+  text-align:center;padding:2.5rem 1.5rem;
+  background:var(--surf);border:1px dashed var(--edgeL);
+  border-radius:var(--rXL);margin-bottom:1.75rem;
+}
+.db-welcome-icon{
+  width:64px;height:64px;border-radius:50%;
+  background:var(--surf2);color:var(--accL);
+  font-size:1.6rem;display:flex;align-items:center;justify-content:center;
+  margin:0 auto 1.1rem;
+}
+.db-welcome-title{font-size:1.25rem;font-weight:800;letter-spacing:-0.01em;margin-bottom:0.6rem}
+.db-welcome-sub{
+  font-size:0.85rem;color:var(--ink2);line-height:1.65;
+  max-width:480px;margin:0 auto 1.25rem;
+}
+.db-welcome-hero .btn-primary{padding:0.65rem 1.4rem;font-size:0.85rem}
+.db-welcome-hint{
+  font-size:0.72rem;color:var(--ink3);margin-top:1rem;
+  display:flex;align-items:center;justify-content:center;gap:0.4rem;
+}
+@media(max-width:479px){
+  .db-welcome-hero{padding:2rem 1rem}
+  .db-welcome-title{font-size:1.05rem}
+}
+
 /* ---- Stats row ----------------------------------------------- */
 .db-stats{
   display:grid;gap:0.65rem;margin-bottom:1.5rem;

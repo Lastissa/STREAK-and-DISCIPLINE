@@ -486,3 +486,14 @@ body.sd-light .db-header{background:#f0f4fa}
 .hidden{display:none!important}
 .no-print{}
 @media print{.no-print{display:none!important}}
+
+
+/* ================================================================
+   GATE COMING SOON - REMOVE THIS WHEN ALL FEATURE ARE DONE
+   ================================================================ */
+
+.pf-gate-coming{
+  background: var(--surf3);
+  color: var(--ink1);
+  border: 1px solid var(--edge);
+}

@@ -78,7 +78,7 @@ class RedirectHandler(View):
             """proceed to create account"""
             try:
                 user = get_user_model().objects.create_user(
-                    username= request.POST['username'],
+                    username= request.POST['username'].lower(),
                     email = request.POST['email'],
                     password= request.POST['password1']
                     )

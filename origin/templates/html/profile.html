@@ -57,6 +57,8 @@
           <a href="{% url 'origin_extra' %}#policy" class="aside-link"><i class="fas fa-shield-halved"></i> Privacy Policy</a>
           <a href="{% url 'origin_extra' %}#terms"  class="aside-link"><i class="fas fa-file-contract"></i> Terms</a>
           <hr class="aside-sep">
+          <div class="aside-section-lbl" style="margin-top:.4rem">Insights</div>
+          <a href="#"  class="aside-link">-------</a>
           <div class="aside-support-lbl">Support</div>
           <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_blank" rel="noopener" class="aside-link"><i class="fab fa-whatsapp"></i> WhatsApp Support</a>
           <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link"><i class="fas fa-envelope"></i> Email Support</a>
@@ -220,12 +222,12 @@
                            value="{{ public_id }}" maxlength="50"
                            autocomplete="off" aria-label="Public user ID">
                     <button class="btn btn-primary btn-sm save-btn"
-                            data-field="public_searchable_username" data-input="pfPublicId">
+                            data-field="user_id" data-input="pfPublicId">
                       <span class="btn-txt">Save</span><span class="btn-spin"></span>
                     </button>
                   </div>
                   <p class="pf-hint">How partners find you. Changing this doesn't affect your login.</p>
-                  <div class="pf-cooldown" id="cooldown-public_searchable_username"><i class="fas fa-check-circle"></i> Saved</div>
+                  <div class="pf-cooldown" id="cooldown-user_id"><i class="fas fa-check-circle"></i> Saved</div>
                 </div>
 
                 <div class="pf-card-sep"></div>
@@ -364,11 +366,11 @@
                 <div class="pf-toggle-row">
                   <div class="pf-toggle-left">
                     <div class="pf-toggle-label"><i class="fas fa-microchip" style="color:var(--ink3)"></i> Allow AI Analysis</div>
-                    <p class="pf-hint">Anonymous analysis of your entries for personalized AI insights. No data is sold.</p>
+                    <p class="pf-hint">Anonymous analysis of your entries for personalized AI insights. No data is sold. If enabled it shows in the navigation bar under insights.</p>
                   </div>
                   <label class="pf-switch" aria-label="Allow AI analysis">
                     <input type="checkbox" id="pfAiConsent"
-                           {% if ai_insights %}checked{% endif %}
+                           {% if ai_insight_active %}checked{% endif %}
                            data-field="ai_insight_active">
                     <span class="pf-sw-track"><span class="pf-sw-thumb"></span></span>
                   </label>
@@ -387,7 +389,7 @@
                 <div class="pf-toggle-row">
                   <div class="pf-toggle-left">
                     <div class="pf-toggle-label"><i class="fas fa-newspaper" style="color:var(--ink3)"></i> Weekly Truth Report</div>
-                    <p class="pf-hint">An honest breakdown of your week every Sunday via email. No fluff.</p>
+                    <p class="pf-hint">An honest breakdown of your week every Sunday via email.</p>
                   </div>
                   <label class="pf-switch" aria-label="Weekly report">
                     <input type="checkbox" id="pfWeeklyReport"
@@ -399,12 +401,16 @@
                 <div class="pf-cooldown" id="cooldown-weekly_report_email_active"><i class="fas fa-check-circle"></i> Saved</div>
 
                 <!-- Custom periodical (Premium+) -->
-                <div class="pf-toggle-row {% if tier == 'free' %}pf-locked-row{% endif %}"
+                <div class="pf-toggle-row {% if 'ISCOMING' == 'ISCOMING' %}pf-locked-row{% endif %}"
                      id="row-custom-reports">
                   <div class="pf-toggle-left">
                     <div class="pf-toggle-label">
                       <i class="fas fa-calendar-check" style="color:var(--ink3)"></i> Custom Periodical Reports
-                      {% if tier == 'free' %}<span class="pf-gate-badge pf-gate-premium"><i class="fas fa-lock"></i> Premium</span>{% endif %}
+                      {% comment %} ENable the below line if its not coming son again {% endcomment %}
+                      {% comment %} {% if tier == 'free' %}<span class="pf-gate-badge pf-gate-premium"><i class="fas fa-lock"></i> Premium</span>{% endif %} {% endcomment %}
+                      <span class="pf-gate-badge pf-gate-coming">
+                      <i class="fas fa-clock"></i> Coming Soon
+                    </span>
                     </div>
                     <p class="pf-hint">Receive reports every 3, 5, or 30 days based on your preference.</p>
                   </div>
@@ -479,12 +485,16 @@
                 </div>
 
                 <!-- Predictive analytics (Premium+) -->
-                <div class="pf-toggle-row {% if tier == 'free' %}pf-locked-row{% endif %}"
+                <div class="pf-toggle-row {% if "iscoming" == 'iscoming' %}pf-locked-row{% endif %}"
                      id="row-advanced-analytics">
                   <div class="pf-toggle-left">
                     <div class="pf-toggle-label">
                       <i class="fas fa-chart-line" style="color:var(--ink3)"></i> Predictive Consistency Analytics
-                      {% if tier == 'free' %}<span class="pf-gate-badge pf-gate-premium"><i class="fas fa-lock"></i> Premium</span>{% endif %}
+                      {% comment %} ENable the below line if its not coming son again {% endcomment %}
+                      {% comment %} {% if tier == 'free' %}<span class="pf-gate-badge pf-gate-premium"><i class="fas fa-lock"></i> Premium</span>{% endif %} {% endcomment %}
+                      <span class="pf-gate-badge pf-gate-coming">
+                      <i class="fas fa-clock"></i> Coming Soon
+                    </span>
                     </div>
                     <p class="pf-hint">AI predicts future consistency trends and suggests optimal check-in times.</p>
                   </div>
@@ -574,7 +584,7 @@
                 </div>
 
                 {% if tier == 'gold' %}
-                <p class="pf-hint" style="text-align:center">Gold plan — full access to everything. Thank you. 🙌</p>
+                <p class="pf-hint" style="text-align:center">Gold plan. full access to everything. Thank you.</p>
                 {% endif %}
               </div>
             </section>
@@ -609,8 +619,8 @@
                   </div>
                   <p class="pf-partner-limit">
                     Partner slots:
-                    {% if tier == 'premium' %}1 max (Premium)
-                    {% elif tier == 'gold' %}4 max (Gold){% endif %}
+                    {% if tier == 'premium' %}5 max (Premium)
+                    {% elif tier == 'gold' %}20 max (Gold){% endif %}
                   </p>
                 </div>
                 {% endif %}
@@ -700,7 +710,7 @@
                       <i class="fas fa-circle-check"></i> Active
                     </div>
                   </div>
-                  <span class="pf-hint" style="margin:0">in good standing</span>
+                  <span class="pf-hint" style="margin:0">In good standing</span>
                 </div>
 
               </div>
@@ -715,7 +725,7 @@
                 <div class="pf-danger-item">
                   <div>
                     <div class="pf-danger-label">Archive All Commitments</div>
-                    <div class="pf-danger-desc">Pauses all active commitments. Entries are preserved. You can reactivate them later.</div>
+                    <div class="pf-danger-desc">Mute All Notifivation. Streaks still reset if you miss a period. Reactivate anytime.</div>
                   </div>
                   <button class="btn btn-outline btn-sm" id="pfArchiveAllBtn"
                           style="border-color:var(--warn);color:var(--warn);flex-shrink:0">
@@ -937,7 +947,7 @@
     function saveField(field,value,btn){
       if(isOnCooldown(field)){showToast('Wait a moment before saving again.','error');return}
       if(btn)btn.classList.add('pf-loading');
-      fetch('/v1/update_profile/',{
+      fetch('{% url "origin_profile_update_first_part" %}',{
         method:'POST',credentials:'same-origin',
         headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
         body:JSON.stringify({field:field,value:value})
@@ -960,14 +970,30 @@
     });
 
     /* Username sync with public ID hint */
-    qs('#pfUsername')&&qs('#pfUsername').addEventListener('input',function(){
-      var n=this.value.trim().toLowerCase();
-      var pid=qs('#pfPublicId');
-      if(pid&&pid.value&&!pid.value.toLowerCase().startsWith(n.slice(0,4))){
-        if(confirm('Also update your Public User ID to "'+n+'"?')){pid.value=n}
-      }
-    });
+    (function () {
+      var usernameInput = qs('#pfUsername');
+      var publicIdInput = qs('#pfPublicId');
 
+      if (!usernameInput || !publicIdInput) return;
+
+      var originalUsername = usernameInput.value.trim().toLowerCase();
+      var prompted = false;
+
+      usernameInput.addEventListener('blur', function () {
+        var newUsername = this.value.trim().toLowerCase();
+
+        if (!newUsername || newUsername === originalUsername || prompted) return;
+
+        // Only suggest updating if the Public ID still matches the original username
+        if (publicIdInput.value.trim().toLowerCase() === originalUsername) {
+          prompted = true;
+
+          if (confirm('Also update your Public User ID to "' + newUsername + '"?')) {
+            publicIdInput.value = newUsername;
+          }
+        }
+      });
+    })();
     /* ── Toggle switches ───────────────────────────────────────── */
     qsa('.pf-switch input[type="checkbox"]:not([disabled])').forEach(function(chk){
       chk.addEventListener('change',function(){
@@ -978,7 +1004,7 @@
           ?(this.checked?this.dataset.true:this.dataset.false)
           :this.checked;
         var orig=this.checked;
-        fetch('/v1/update_profile/',{
+        fetch('{% url "origin_profile_update_second_part" %}',{
           method:'POST',credentials:'same-origin',
           headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
           body:JSON.stringify({field:f,value:v})
@@ -1009,7 +1035,7 @@
       btn.addEventListener('click',function(){
         var f=this.dataset.field,v=this.dataset.theme;
         if(isOnCooldown(f)){showToast('Wait a moment.','error');return}
-        fetch('/v1/update_profile/',{
+        fetch('{% url "origin_profile_update_theme" %}',{
           method:'POST',credentials:'same-origin',
           headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
           body:JSON.stringify({field:f,value:v})
@@ -1067,7 +1093,7 @@
         if(isOnCooldown('profile_picture')){showToast('Wait a moment before uploading again.','error');return}
         uploadBtn.classList.add('pf-loading');uploadBtn.disabled=true;
         var fd=new FormData();fd.append('profile_picture',selectedFile);
-        fetch('/v1/update_profile_picture/',{
+        fetch('{% url "origin_user_picture" %}',{
           method:'POST',credentials:'same-origin',
           headers:{'X-CSRFToken':getCookie('csrftoken')},body:fd
         })
@@ -1079,7 +1105,7 @@
           selectedFile=null;
           if(fileNameEl)fileNameEl.textContent='No file chosen';
           applyAvatar(res.data.url);
-          showToast('Profile picture updated! 🎉','success');
+          showToast('Profile picture updated!','success');
         })
         .catch(function(){uploadBtn.classList.remove('pf-loading');uploadBtn.disabled=false;showToast('Network error.','error')});
       });
@@ -1088,7 +1114,7 @@
     if(qs('#pfRemovePicBtn')){
       qs('#pfRemovePicBtn').addEventListener('click',function(){
         if(!confirm('Remove your profile picture?'))return;
-        fetch('/v1/update_profile_picture/remove/',{
+        fetch('{% url "origin_delete_user_picture" %}',{
           method:'POST',credentials:'same-origin',
           headers:{'X-CSRFToken':getCookie('csrftoken')}
         })
@@ -1124,22 +1150,46 @@
     }
     if(qs('#pfPartnerList'))loadPartners();
 
-    qs('#pfAddPartnerBtn')&&qs('#pfAddPartnerBtn').addEventListener('click',function(){
-      var inp=qs('#pfAddPartnerInput');
-      if(!inp||!inp.value.trim()){showToast('Enter a Public User ID.','error');return}
-      var btn=this;btn.classList.add('pf-loading');
-      fetch('{% url "origin_add_friend" %}',{
-        method:'POST',credentials:'same-origin',
-        headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
-        body:JSON.stringify({public_id:inp.value.trim()})
+    qs('#pfAddPartnerBtn') && qs('#pfAddPartnerBtn').addEventListener('click', function () {
+      var inp = qs('#pfAddPartnerInput');
+      if (!inp || !inp.value.trim()) {
+        showToast('Enter a Public User ID.', 'error');
+        return;
+      }
+
+      var btn = this;
+      btn.classList.add('pf-loading');
+
+      fetch('{% url "origin_add_friend" %}', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: new URLSearchParams({
+          userid: inp.value.trim()
+        })
       })
-      .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
-      .then(function(res){
+      .then(function (r) {
+        return r.json().then(function (d) {
+          return { ok: r.ok, data: d };
+        });
+      })
+      .then(function (res) {
         btn.classList.remove('pf-loading');
-        if(!res.ok){showToast(res.data.message||'Could not add partner.','error');return}
-        inp.value='';showToast('Partner request sent!','success');loadPartners();
+        if (!res.ok) {
+          showToast(res.data.message || 'Could not add partner.', 'error');
+          return;
+        }
+        inp.value = '';
+        showToast('Partner request sent!', 'success');
+        loadPartners();
       })
-      .catch(function(){btn.classList.remove('pf-loading');showToast('Network error.','error')});
+      .catch(function () {
+        btn.classList.remove('pf-loading');
+        showToast('Network error.', 'error');
+      });
     });
 
     window.removePartner=function(btn){

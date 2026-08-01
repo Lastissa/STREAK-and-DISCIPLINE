@@ -189,10 +189,18 @@ class PasswordValidate(View):
 
 class AccountDeactivated(View):
     def get(self, request, email, days_left):
+        if days_left.isdigit is False:
+            days_left = days_left
+            days_until_deletion = "NA"
+        else:
+            days_left = days_left
+            days_until_deletion = 7 - int(days_left)
+            
+            
         return render(request, 'html/reactivate_page.html', {
                 'email': email,
-                'days_left': int(days_left),
-                'days_until_deletion': 7- int(days_left)
+                'days_left': days_left,
+                'days_until_deletion': days_until_deletion
             })
         
 class ReactivateAccountJson(View):

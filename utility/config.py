@@ -125,9 +125,9 @@ class Static:
     @classmethod
     def tier(self, tier : int) -> list:
         """returns the features shown in a tier"""
-        if tier == 0: return ['5 active commitment','Daily check-in reminder via email','Weekly report summary']
-        elif tier == 1: return ['50 active commitments', 'Daily check-in reminder via whatsapp or email and push', 'Advance weekly report summary','Personalized coach','1 partner']
-        elif tier == 2: return ['unlimited commitments', 'Daily check-in reminder via whatsapp or email and push + offline reminders','Custom periodical summary','Personalized coach', '4 partners' , 'Advance analytics includes what you should do istead of just data visualization','create Groups']
+        if tier == 0: return ['5 active commitment','Daily check-in reminder via email','Weekly report summary', '1 partner']
+        elif tier == 1: return ['50 active commitments', 'Daily check-in reminder via whatsapp or email and push', 'Advance weekly report summary','Personalized coach','5 partner']
+        elif tier == 2: return ['unlimited commitments', 'Daily check-in reminder via whatsapp or email and push + offline reminders','Custom periodical summary','Personalized coach', '20 partners' , 'Advance analytics includes what you should do istead of just data visualization','create Groups']
         
     @classmethod
     def emoji_translator(self):

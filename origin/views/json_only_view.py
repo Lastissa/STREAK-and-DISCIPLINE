@@ -2,8 +2,11 @@
 
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.cache import cache
 
+from django.db import IntegrityError
 from origin.views.utility_view import helper_with_friendship_request_answer
+from utility.config import Static
 from ..models import Commitment, Entries, Profile, ChoicesValidatorInModels, Friendship
 from django.shortcuts import reverse
 from django.http import JsonResponse
@@ -14,27 +17,17 @@ from django.db import models
 import json
 import logging
 
+from utility.file_upload import upload_profile_picture, delete_profile_picture
+
 logger = logging.getLogger(__name__)
 
 class CommitmentData(LoginRequiredMixin, View):
     """RETURNS DATA FOR THE DASHBOARD HOME AND THE DASHBOARD COMMITMENT PAGE USE TO DISPLAY A QUICK VIEW OF USER COMMITMENTS WITH THE LINK THAT REDIRECT USER TO VIEW ACTUAL FULL DATA"""
     def get(self, request):
         commitment_istance = Commitment.objects.filter(user = request.user).all()
-        if not commitment_istance.exists(): data = [
-            {
-                'id' : 0,                               #datakey is very important as without it , the current ui wont load
-                'url' : '',                             #datakey is very important as without it , the current ui wont load
-                "what": "No commitment",                #datakey is very important as without it , the current ui wont load
-                "category": 'other',                    #datakey is very important as without it , the current ui wont load
-                "streak_count": 0,                      #datakey is very important as without it , the current ui wont load
-                "goal_days": 0,                         #datakey is very important as without it , the current ui wont load
-                "days_since_start": 0,                  #datakey is very important as without it , the current ui wont load 
-                "checkin_time": "00:00",                #datakey is very important as without it , the current ui wont load
-                'is_active': False,                     #datakey is very important as without it , the current ui wont load
-                "checked_in_today": False,              #datakey is very important as without it , the current ui wont load
-                'message' : 'no commitment yet'         #datakey is very important as without it , the current ui wont load
-            }
-        ]
+        if not commitment_istance.exists(): 
+            data = []
+            stats = {'consistency_pct': 0}
         else:
             data = [
             {
@@ -118,16 +111,6 @@ class HeatMap(LoginRequiredMixin, View):
             })
 
 
-class ProfilePicture(LoginRequiredMixin, View):
-    """INCHARGE OF ALWAYS BRINNGIN BACK THE URL FOR USER PICTIRE(get) OR UPDATING THE PROFILE PICTURE (post) IN THE DB"""
-    def get(self, request):
-        """find url from db and return it to clien"""
-        istance = Profile.objects.filter(user = request.user).first().profile_img_url
-        return JsonResponse({'message': "success", 'url' :istance}, status = 404)
-    
-    def post(self, request):
-        """take url from user and save it in the db or cloudinary; nt sure fr now"""
-        
 
 class PartnerWidget(LoginRequiredMixin, View):
     """#this handles a situation where a user wan to call up his friends and view them  --ONLY WORK IF USER social_mode IS PARTNER NOT SOLO       
@@ -271,7 +254,7 @@ class SearchFriend(LoginRequiredMixin,View):
         if friend_search:
             userid = friend_search.public_searchable_username
             username = friend_search.user.username
-            profile_image = ''
+            profile_image = str(friend_search.profile_img_url)
             status_code = 200
         else:
             userid, username, profile_image = None, None, ''
@@ -583,6 +566,371 @@ class CommitmentQuickCheckin(LoginRequiredMixin, View):
             content = content,
             word_count = content_count
         )
-        return JsonResponse({'message': 'weldome, onto the next one'}, status = 200)
+        return JsonResponse({'message': 'weldone, onto the next one'}, status = 200)
             
+
+
+class ProfilePicture(LoginRequiredMixin, View):
+    """INCHARGE OF ALWAYS BRINNGIN BACK THE URL FOR USER PICTIRE(get) OR UPDATING THE PROFILE PICTURE (post) IN THE DB"""
+    def get(self, request):
+        """find url from db and return it to clien"""
+        istance = Profile.objects.filter(user = request.user).first()
+        print(str(istance))
+        return JsonResponse({'message': "success", 'url' :str(istance.profile_img_url)}, status = 200)
+    
+    def post(self, request):
+        data = request.FILES
+        key = data.get('profile_picture', None)
+        if key is None: return JsonResponse({'message': 'please select a picture'}, status= 500)
+         #key exist, grab it.
+        #check the filesize in bytes
+        if key.size >= 5 * 1024 *1024: return JsonResponse({'message': 'Error, file too large'}, status = 400)
+        try:    result = upload_profile_picture(user_email=request.user.email, uploaded_file= key.read())
+        except Exception as e: 
+            print(str(e))
+            return JsonResponse({'message': 'Server Error, Our partner are slow today.'}, status = 500)
+        #everyting went successfuly, update the user profile link and done
+        istance = Profile.objects.get(user = request.user)
+        istance.profile_img_url = result['url']
+        istance.save()
         
+        return JsonResponse({'message': 'success'})
+        
+        
+        
+        
+        
+        
+        return JsonResponse({'message': f'{key.read()}'}, status = 500)
+ 
+class ProfilePictureRemove(LoginRequiredMixin, View):
+    """REMOVE USER PROFILE PICTURE BY DELETING THE DATA FROM CLOUDINARY AND SETTING PROFILE URLFEILD TO EMPTY"""
+    def post(self, request):
+        try: delete_profile_picture(user_email=request.user.email)
+        except Exception as e:
+            logger.error(f"user encountered enrror while removing picture : {e}")
+            return JsonResponse({'message': 'Error but Not Our Fault'}, status = 500)
+        
+        #delete was successful, update profile
+        istance = Profile.objects.get(user = request.user)
+        istance.profile_img_url = ''
+        istance.save()
+        return JsonResponse({'message': 'success'}, status = 200)
+    
+    
+        
+class ProfileUpdateUsernameORUserid(LoginRequiredMixin, View):
+    """Handles the UPDATE OF THE USER USERNAME, USER_ID VIA JSON POST"""
+    def post(self, request):
+        data = json.loads(request.body)
+        field = data.get('field', None)
+        value = data.get('value', None)
+        
+        #make sure none of the value is none
+        if field is None or value is None: return JsonResponse({'message':'invalid request'}, status = 400) 
+        
+        #Verify that the value is just number and letter or underscore
+        if value.strip().isalnum() == False: return JsonResponse({'message': f'invalid {field}. Number AND/OR Letter Only'}, status = 400)
+        
+        istance = Profile.objects.filter(user = request.user).select_related('user').first()
+        try:
+            #check if user is sending too much request at once
+            cached_key = 'last username or userid update for ' + request.META.get("REMOTE_ADDR")
+            if cache.get(cached_key) is not None:
+                #reset the cache since user is too frequent
+                cache.set(key=cached_key, value="i dey here", timeout=60)
+                return JsonResponse({'message': 'Request to frequent, please wait 30 seconds, NB; retry before wait period will reset the wait period'}, status = 403)
+                    
+            #username or user_id is valid number and letter, now update
+            #Lowercase as that will be the standard aside email that will be upper
+            if field == 'username':
+                istance.user.username = value.lower()                     
+                istance.user.save()
+            elif field == 'user_id':
+                istance.public_searchable_username = value.lower()
+                istance.save()
+            
+            cache.set(key=cached_key, value="i dey here", timeout=60)       #set a cache to rate limit user from too many request
+            return JsonResponse({'message': 'success'}, status = 201)
+        except IntegrityError:return JsonResponse({'message': 'ERROR. user with this ID exists'}, status = 403)
+    
+        
+        
+       
+class ProfileUpdateToggles(LoginRequiredMixin, View):
+    """HANDLE UPDATING PROFILE SETTING THAT THE ProfileUpdateUsernameORUserid HAVE NT HANDLED"""
+    def post(self, request):
+           data = json.loads(request.body)
+           value = data.get('value')
+           field = data.get('field')
+           print(data)
+           
+           # HANDLE ERROR AND CLEANING
+           if field is None or value is None: return JsonResponse({'message': 'invalid'}, status = 400)
+           
+           #CLEAN DATA - OMO BUT I AM TAKING A RISK, I AM ONLY DEPENDING ON BOOLEAN VALUE AND NT ACTUALLY CHECKING THE VALUE E.G IF USER SNED TRUE, I JSUT SAVE FALSE, I DONT CHECK IF ITS TRUE
+           istance = Profile.objects.filter(user = request.user).first()
+           #HANDLE LEADEROARD OPT IN
+           if field == 'leaderboard_optin':
+               istance.leaderboard_optin = not istance.leaderboard_optin
+               istance.save()
+               return JsonResponse({'message': 'success'}, status = 200)
+           elif field == 'streak_count_is_public_visible':
+               istance.streak_count_is_public_visible = not istance.streak_count_is_public_visible
+               istance.save()
+               return JsonResponse({'message': 'success'}, status = 200)
+           elif field == 'ai_insight_active':
+                istance.ai_insight_active = not istance.ai_insight_active
+                istance.save()
+                return JsonResponse({'message': 'success'}, status = 200)
+           elif field == 'social_mode':
+                istance.social_mode = not istance.social_mode
+                istance.save()
+                return JsonResponse({'message': 'success'}, status = 200)
+           elif field == 'weekly_report_email_active':
+                istance.weekly_report_email_active = not istance.weekly_report_email_active
+                istance.save()
+                return JsonResponse({'message': 'success'}, status = 200)
+           elif field == 'custom_report_email_active':
+                #istance.custom_report_email_active = not istance.custom_report_email_active
+                #istance.save()
+                return JsonResponse({'message': 'COMING SOON...'}, status = 404)
+           elif field == 'receive_newsletter':
+                istance.receive_newsletter = not istance.receive_newsletter
+                istance.save()
+                return JsonResponse({'message': 'success'}, status = 200)
+           elif field == 'ai_coach_active':
+                return JsonResponse({'message': 'COMING SOON...'}, status = 404)
+            
+            
+           #IF COMMAND IS NOT KNOWN
+           else:    return JsonResponse({'message': 'unknown'}, status = 500)
+           
+class ProfileUpdateTheme(LoginRequiredMixin, View):
+    """HANDLE UPDATING PROFILE THEME - i have scope of extending th theme from just black and white to more themes in the future"""
+    def post(self, request):
+        data = json.loads(request.body)
+        value = data.get('value')
+        field = data.get('field')
+        print(data)
+        
+        # HANDLE ERROR AND CLEANING
+        if field is None or value is None: return JsonResponse({'message': 'invalid'}, status = 400)
+        
+        #CLEAN DATA - OMO BUT I AM TAKING A RISK, I AM ONLY DEPENDING ON BOOLEAN VALUE AND NT ACTUALLY CHECKING THE VALUE E.G IF USER SNED TRUE, I JSUT SAVE FALSE, I DONT CHECK IF ITS TRUE
+        istance = Profile.objects.filter(user = request.user).first()
+        #HANDLE LEADEROARD OPT IN
+        if field == 'theme':
+            istance.theme = not istance.theme
+            istance.save()
+            return JsonResponse({'message': 'success'}, status = 200)
+        
+        #raise issue
+        return JsonResponse({'message': 'unknown theme'}, status = 500)
+
+
+
+
+
+
+class ReportsData(LoginRequiredMixin, View):
+    """
+    RETURNS EVERYTHING html/reports.html (Analytics & Reports page) NEEDS -- ONE CALL, ONE ROUND TRIP.
+    This is intentionally the ONLY place that page touches the database from; the template itself
+    ships with zero server-rendered numbers so this endpoint (or whatever replaces it later) is the
+    single source of truth for the report.
+
+    GET params:
+        offset -> int, how many weeks back from THIS week to report on. 0 = current week (default).
+                  1 = last week, 2 = two weeks ago, etc. Capped at 52.
+
+    Response shape:
+    {
+      "message": "success",
+      "week_label": "Jul 21 - Jul 27, 2026",
+      "week_number": 30,
+      "offset": 0,
+      "can_go_back": true,
+      "can_go_forward": false,
+      "has_any_entries": true,
+      "stats": {
+          "consistency_pct": 86, "prior_consistency_pct": 77, "trend_delta": 9,
+          "current_streak": 34, "entries_this_week": 6, "possible_days": 7,
+          "avg_words_per_entry": 47
+      },
+      "daily": [ {date, day_name, has_entry, is_future, word_count, entries:[{commitment, mood, mood_emoji, content, word_count}]} , ... x7 ],
+      "mood_distribution": [ {mood, emoji, count}, ... ],
+      "commitments": [ {id, what, category, checked_in_days, possible_days, streak_count}, ... ],
+      "word_cloud": [ {word, weight(2-9)}, ... ],
+      "best_day": {...same shape as a `daily` item...} | null,
+      "toughest_day": {...same shape as a `daily` item...} | null,
+      "group_compare": [ {public_id, consistency_pct, is_you?}, ... ]   // empty unless social_mode == 'partner'
+    }
+    """
+    login_url = '/v1/login/'
+
+    def get(self, request):
+        try:
+            offset = int(float(request.GET.get('offset', '0')))
+        except (TypeError, ValueError):
+            offset = 0
+        offset = max(0, min(offset, 1))
+
+        today = timezone.now().date()
+        week_start = today - timezone.timedelta(days=today.weekday()) - timezone.timedelta(weeks=offset)
+        week_end = week_start + timezone.timedelta(days=6)
+        prev_week_start = week_start - timezone.timedelta(weeks=1)
+        prev_week_end = week_start - timezone.timedelta(days=1)
+
+        entries_this_week = list(
+            Entries.objects.filter(
+                commitment_key__user=request.user, commit_at__gte=week_start, commit_at__lte=week_end
+            ).select_related('commitment_key').order_by('commit_at')
+        )
+        entries_last_week = Entries.objects.filter(
+            commitment_key__user=request.user, commit_at__gte=prev_week_start, commit_at__lte=prev_week_end
+        )
+
+        active_commitments = Commitment.objects.filter(user=request.user, is_active=True)
+        emoji_map = Static.emoji_translator()
+
+        if week_end <= today:
+            days_elapsed = 7
+        elif week_start > today:
+            days_elapsed = 0
+        else:
+            days_elapsed = (today - week_start).days + 1
+
+        day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        daily = []
+        days_checked = set()
+        for i in range(7):
+            d = week_start + timezone.timedelta(days=i)
+            day_entries = [e for e in entries_this_week if e.commit_at == d]
+            if day_entries:
+                days_checked.add(d)
+            daily.append({
+                'date': str(d),
+                'day_name': day_names[i],
+                'has_entry': len(day_entries) > 0,
+                'is_future': d > today,
+                'word_count': sum(e.word_count for e in day_entries),
+                'entries': [
+                    {
+                        'commitment': e.commitment_key.what,
+                        'mood': e.mood,
+                        'mood_emoji': emoji_map.get(e.mood, '🙂'),
+                        'content': e.content,
+                        'word_count': e.word_count,
+                    }
+                    for e in day_entries
+                ],
+            })
+
+        denom = days_elapsed or 1
+        entries_count = len(days_checked)
+        consistency_pct = min(100, round((entries_count / denom) * 100))
+
+        prior_days_checked = set(entries_last_week.values_list('commit_at', flat=True))
+        prior_consistency_pct = min(100, round((len(prior_days_checked) / 7) * 100)) if prior_days_checked else 0
+        # Same Mon..Sun shape as `daily`, just booleans -- cheap, and lets the frontend draw a real
+        # day-by-day "this week vs last week" trend chart instead of a single aggregate number.
+        prior_daily_checked = [
+            (prev_week_start + timezone.timedelta(days=i)) in prior_days_checked for i in range(7)
+        ]
+
+        total_words = sum(e.word_count for e in entries_this_week)
+        avg_words = round(total_words / len(entries_this_week)) if entries_this_week else 0
+        current_streak = max([c.streak_count for c in active_commitments], default=0)
+
+        mood_counter = {}
+        for e in entries_this_week:
+            mood_counter[e.mood] = mood_counter.get(e.mood, 0) + 1
+        mood_distribution = [
+            {'mood': m, 'emoji': emoji_map.get(m, '🙂'), 'count': c}
+            for m, c in sorted(mood_counter.items(), key=lambda x: -x[1])
+        ]
+
+        commitments_breakdown = []
+        for c in active_commitments:
+            c_entries = [e for e in entries_this_week if e.commitment_key_id == c.pk]
+            commitments_breakdown.append({
+                'id': c.pk,
+                'what': c.what,
+                'category': c.category,
+                'checked_in_days': len(c_entries),
+                'possible_days': denom,
+                'streak_count': c.streak_count,
+            })
+
+        stopwords = {
+            'the', 'a', 'an', 'and', 'or', 'but', 'to', 'of', 'in', 'on', 'for', 'is', 'it', 'i',
+            'my', 'me', 'was', 'be', 'with', 'that', 'this', 'so', 'at', 'as', 'im', "i'm", 'today',
+            'day', 'am', 'pm', 'just', 'have', 'had', 'has', 'not', 'are', 'were', 'been', 'still',
+        }
+        word_freq = {}
+        for e in entries_this_week:
+            for raw_word in (e.content or '').lower().split():
+                w = ''.join(ch for ch in raw_word if ch.isalnum())
+                if len(w) < 3 or w in stopwords:
+                    continue
+                word_freq[w] = word_freq.get(w, 0) + 1
+        top_words = sorted(word_freq.items(), key=lambda x: -x[1])[:16]
+        max_freq = top_words[0][1] if top_words else 1
+        word_cloud = [
+            {'word': w, 'weight': min(9, max(2, round((c / max_freq) * 9)))}
+            for w, c in top_words
+        ]
+
+        entered_days = [d for d in daily if d['has_entry']]
+        best_day = max(entered_days, key=lambda d: d['word_count']) if entered_days else None
+        missed_days = [d for d in daily if not d['has_entry'] and not d['is_future']]
+        toughest_day = missed_days[0] if missed_days else None
+
+        group_compare = []
+        profile_istance = Profile.objects.filter(user=request.user).first()
+        if profile_istance and profile_istance.social_mode == 'partner':
+            partner_links = Friendship.objects.filter(
+                models.Q(from_user=request.user) | models.Q(to_user=request.user), status='accepted'
+            ).select_related('from_user', 'to_user')
+            for f in partner_links:
+                partner_uid = f.to_user_id if f.from_user_id == request.user.pk else f.from_user_id
+                p_profile = Profile.objects.filter(user_id=partner_uid).first()
+                if not p_profile or not p_profile.streak_count_is_public_visible:
+                    continue
+                p_days = Entries.objects.filter(
+                    commitment_key__user_id=partner_uid, commit_at__gte=week_start, commit_at__lte=week_end
+                ).values('commit_at').distinct().count()
+                group_compare.append({
+                    'public_id': p_profile.public_searchable_username or 'member',
+                    'consistency_pct': min(100, round((p_days / denom) * 100)),
+                })
+            group_compare.append({'public_id': 'You', 'consistency_pct': consistency_pct, 'is_you': True})
+            group_compare.sort(key=lambda x: -x['consistency_pct'])
+
+        return JsonResponse({
+            'message': 'success',
+            'week_label': week_start.strftime('%b %d') + ' \u2013 ' + week_end.strftime('%b %d, %Y'),
+            'week_number': week_start.isocalendar()[1],
+            'offset': offset,
+            'can_go_back': True,
+            'can_go_forward': offset > 0,
+            'has_any_entries': Entries.objects.filter(commitment_key__user=request.user).exists(),
+            'stats': {
+                'consistency_pct': consistency_pct,
+                'prior_consistency_pct': prior_consistency_pct,
+                'trend_delta': consistency_pct - prior_consistency_pct,
+                'current_streak': current_streak,
+                'entries_this_week': entries_count,
+                'possible_days': denom,
+                'avg_words_per_entry': avg_words,
+            },
+            'daily': daily,
+            'prior_daily_checked': prior_daily_checked,
+            'mood_distribution': mood_distribution,
+            'commitments': commitments_breakdown,
+            'word_cloud': word_cloud,
+            'best_day': best_day,
+            'toughest_day': toughest_day,
+            'group_compare': group_compare,
+        }, status=200)

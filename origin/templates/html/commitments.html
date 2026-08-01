@@ -29,6 +29,255 @@
   <link rel="preload" href="{% static 'cdn/commitment_advance.css' %}" as="style"
         onload="this.onload=null;this.rel='stylesheet'" id="adv-css">
   <noscript><link rel="stylesheet" href="{% static 'cdn/commitment_advance.css' %}"></noscript>
+
+  <!-- ── MOBILE BEAUTY + TOUR + BUTTON TIPS ── -->
+  <style>
+    /* ================================================================
+       MOBILE BEAUTY IMPROVEMENTS
+       ================================================================ */
+    @media (max-width: 599px) {
+      .cm-main { padding: 1rem 0.85rem 5rem; }
+      .cm-page-title { font-size: 1.15rem; }
+      .cm-page-sub { font-size: 0.74rem; }
+      .cm-hero {
+        flex-direction: column; align-items: flex-start;
+        gap: 0.8rem; margin-bottom: 1.1rem;
+      }
+      .cm-hero .btn { width: 100%; justify-content: center; padding: 0.7rem 1rem; font-size: 0.85rem; }
+      .cm-stats-bar {
+        padding: 0.7rem 0.9rem; gap: 0.4rem;
+        margin-bottom: 1.1rem; border-radius: 12px;
+      }
+      .cm-stat-n { font-size: 1.2rem; }
+      .cm-stat-l { font-size: 0.6rem; }
+      .cm-stat-sep { height: 28px; }
+      .cm-filter-bar { flex-direction: column; gap: 0.55rem; margin-bottom: 1.1rem; }
+      .cm-search-wrap { width: 100%; }
+      .cm-cats {
+        flex-wrap: nowrap; overflow-x: auto; width: 100%;
+        padding-bottom: 0.2rem; scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+      }
+      .cm-cats::-webkit-scrollbar { display: none; }
+      .cm-sort { width: 100%; }
+      .cm-grid { gap: 0.8rem; }
+      .cm-card__body { padding: 0.9rem 0.9rem 0.85rem 0.8rem; gap: 0.6rem; }
+      .cm-card__what { font-size: 0.87rem; line-height: 1.45; }
+      .cm-streak-num { font-size: 1.1rem; }
+      .cm-card__top { margin-bottom: 0; }
+    }
+
+    /* ================================================================
+       CARD ACTION BUTTONS — labeled on mobile, icon-only on desktop
+       ================================================================ */
+    .cm-card__actions { display: flex; gap: 0.35rem; align-items: center; }
+
+    .cm-action-btn-wrap {
+      position: relative;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Mobile: pill buttons with icon + text label */
+    @media (max-width: 599px) {
+      .cm-action-btn {
+        width: auto !important;
+        height: auto !important;
+        padding: 0.42rem 0.72rem !important;
+        border-radius: 10px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.32rem !important;
+        font-size: 0.71rem !important;
+        min-height: 34px;
+      }
+      .cm-action-lbl {
+        display: inline !important;
+        font-size: 0.69rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+      }
+      .cm-card__foot {
+        padding-top: 0.7rem;
+        flex-wrap: nowrap;
+        gap: 0.4rem;
+      }
+      .cm-goal-lbl { font-size: 0.65rem; min-width: 0; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    }
+    /* Desktop: hide the text label, show only icon with hover tooltip */
+    @media (min-width: 600px) {
+      .cm-action-lbl { display: none; }
+    }
+
+    /* ================================================================
+       BUTTON TOOLTIP — CSS hover on desktop, JS toggle on mobile
+       ================================================================ */
+    .cm-btn-tip {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      background: var(--surf);
+      border: 1px solid var(--edgeL);
+      border-radius: 10px;
+      padding: 0.55rem 0.8rem;
+      font-size: 0.71rem;
+      color: var(--ink2);
+      line-height: 1.55;
+      white-space: normal;
+      min-width: 180px;
+      max-width: 230px;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.28);
+      pointer-events: none;
+      opacity: 0;
+      z-index: 600;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      text-align: left;
+    }
+    .cm-btn-tip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: var(--edgeL);
+    }
+    /* Desktop: show on wrapper hover */
+    @media (min-width: 600px) {
+      .cm-action-btn-wrap:hover .cm-btn-tip {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+    /* Mobile: show when wrapper has .tip-open */
+    .cm-action-btn-wrap.tip-open .cm-btn-tip {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    /* Keep tip above viewport on mobile if needed */
+    @media (max-width: 599px) {
+      .cm-btn-tip { min-width: 160px; max-width: 200px; font-size: 0.69rem; }
+    }
+
+    /* ================================================================
+       HELP / TOUR BUTTON — visible on all screen sizes
+       ================================================================ */
+    .hdr-tour-btn {
+      color: var(--accL) !important;
+      opacity: 0.8;
+      font-size: 1.05rem !important;
+    }
+    .hdr-tour-btn:hover { opacity: 1; }
+
+    /* ================================================================
+       TOUR OVERLAY
+       ================================================================ */
+    .cm-tour-bd {
+      position: fixed; inset: 0; z-index: 9000;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .cm-tour-bd.active {
+      opacity: 1; pointer-events: auto;
+    }
+    /* Spotlight — the "hole" in the dark overlay */
+    .cm-tour-spot {
+      position: fixed;
+      border-radius: 12px;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.68), 0 0 0 2.5px var(--acc), 0 0 20px rgba(59,130,246,0.4);
+      z-index: 9001;
+      transition: left 0.42s cubic-bezier(0.22,1,0.36,1),
+                  top  0.42s cubic-bezier(0.22,1,0.36,1),
+                  width 0.42s cubic-bezier(0.22,1,0.36,1),
+                  height 0.42s cubic-bezier(0.22,1,0.36,1);
+      pointer-events: none;
+    }
+    /* Tour card */
+    .cm-tour-card {
+      position: fixed;
+      z-index: 9002;
+      background: var(--surf);
+      border: 1px solid var(--edgeL);
+      border-radius: 16px;
+      padding: 1.25rem 1.35rem 1.1rem;
+      width: min(340px, calc(100vw - 2rem));
+      box-shadow: 0 20px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(59,130,246,0.12);
+      transition: top 0.38s cubic-bezier(0.22,1,0.36,1),
+                  left 0.38s cubic-bezier(0.22,1,0.36,1),
+                  transform 0.38s cubic-bezier(0.22,1,0.36,1);
+    }
+    .cm-tour-badge {
+      display: inline-flex; align-items: center;
+      background: rgba(59,130,246,0.12); color: var(--accL);
+      font-size: 0.6rem; font-weight: 800; letter-spacing: 0.1em;
+      padding: 0.18rem 0.6rem; border-radius: 50px;
+      margin-bottom: 0.6rem; text-transform: uppercase;
+    }
+    .cm-tour-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: 10px;
+      background: rgba(59,130,246,0.1); color: var(--accL);
+      font-size: 1rem; margin-bottom: 0.55rem;
+    }
+    .cm-tour-h {
+      font-size: 0.97rem; font-weight: 800; color: var(--ink);
+      margin-bottom: 0.45rem; line-height: 1.3;
+    }
+    .cm-tour-p {
+      font-size: 0.78rem; color: var(--ink2); line-height: 1.65;
+      margin-bottom: 0.9rem;
+    }
+    .cm-tour-foot {
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 0.5rem;
+    }
+    .cm-tour-skip {
+      background: none; border: none; cursor: pointer;
+      font-size: 0.73rem; color: var(--ink3); padding: 0.3rem 0;
+      font-family: inherit;
+    }
+    .cm-tour-skip:hover { color: var(--bad); }
+    .cm-tour-dots {
+      display: flex; gap: 0.3rem; align-items: center;
+    }
+    .cm-tour-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--edge); transition: background 0.2s ease, transform 0.2s ease;
+    }
+    .cm-tour-dot.active { background: var(--acc); transform: scale(1.3); }
+    .cm-tour-nav { display: flex; gap: 0.4rem; }
+    .cm-tour-prev, .cm-tour-next {
+      padding: 0.42rem 0.9rem;
+      border-radius: 8px; font-size: 0.78rem; font-weight: 600;
+      cursor: pointer; border: 1.5px solid var(--edge);
+      background: var(--surf2); color: var(--ink2);
+      font-family: inherit;
+      transition: background 0.18s ease, color 0.18s ease, transform 0.2s ease;
+    }
+    .cm-tour-next {
+      background: var(--acc); border-color: var(--acc); color: #fff;
+    }
+    .cm-tour-prev:hover:not(:disabled) { background: var(--surf3); color: var(--ink); transform: translateX(-1px); }
+    .cm-tour-next:hover { filter: brightness(1.1); transform: translateX(1px); }
+    .cm-tour-prev:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* Pulse ring on spotlight */
+    @keyframes tourPulse {
+      0%,100% { box-shadow: 0 0 0 9999px rgba(0,0,0,0.68), 0 0 0 2.5px var(--acc), 0 0 20px rgba(59,130,246,0.3); }
+      50%      { box-shadow: 0 0 0 9999px rgba(0,0,0,0.68), 0 0 0 4px var(--acc),   0 0 32px rgba(59,130,246,0.55); }
+    }
+    .cm-tour-spot { animation: tourPulse 2.2s ease-in-out infinite; }
+
+    /* ================================================================
+       FAB label tooltip on mobile
+       ================================================================ */
+    @media (max-width: 599px) {
+      .cm-fab { width: 50px; height: 50px; font-size: 1.2rem; }
+    }
+  </style>
 </head>
 <body class="sd-{{theme_mode}}">
 
@@ -79,7 +328,7 @@
           <a href="{% url 'origin_blog' %}" class="aside-link"><i class="fas fa-newspaper"></i> Blog &amp; Updates</a>
 
           <div class="aside-section-lbl" style="margin-top:0.5rem">Insights</div>
-          <a href="/v1/reports/" class="aside-link"><i class="fas fa-chart-line"></i> Analytics &amp; Reports</a>
+          <a href="{% url "origin_reports" %}" class="aside-link"><i class="fas fa-chart-line"></i> Analytics &amp; Reports</a>
           {% if ai_insight_active %}
           <a href="/v1/insights/" class="aside-link"><i class="fas fa-microchip"></i> AI Insights</a>
           {% endif %}
@@ -131,6 +380,9 @@
       </div>
       <div class="hdr-quote" id="hdrQuote" aria-live="polite"></div>
       <div class="hdr-right">
+        <button class="hdr-btn hdr-tour-btn" id="tourBtn" title="Page tour & help" aria-label="Take a guided page tour">
+          <i class="fas fa-circle-question"></i>
+        </button>
         <button class="hdr-btn" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
           <i class="fas fa-moon" id="themeIcon"></i>
         </button>
@@ -283,6 +535,36 @@
     </button>
 
   </div><!-- /cm-app -->
+
+  <!-- ============================================================
+       GUIDED TOUR OVERLAY
+       ============================================================ -->
+  <div class="cm-tour-bd" id="cmTourBd" role="dialog" aria-modal="true" aria-label="Page tour">
+
+    <!-- Spotlight highlight box -->
+    <div class="cm-tour-spot" id="cmTourSpot" aria-hidden="true"></div>
+
+    <!-- Tour card -->
+    <div class="cm-tour-card" id="cmTourCard">
+      <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.55rem">
+        <div class="cm-tour-icon" id="cmTourIcon"><i class="fas fa-fire-flame-curved" id="cmTourIconI"></i></div>
+        <span class="cm-tour-badge" id="cmTourBadge">Step 1 of 7</span>
+      </div>
+      <div class="cm-tour-h" id="cmTourH">Welcome to My Commitments</div>
+      <div class="cm-tour-p" id="cmTourP">Let's take a quick tour of this page.</div>
+      <div class="cm-tour-foot">
+        <button class="cm-tour-skip" id="cmTourSkip">Skip tour</button>
+        <div style="display:flex;align-items:center;gap:0.75rem">
+          <div class="cm-tour-dots" id="cmTourDots"></div>
+          <div class="cm-tour-nav">
+            <button class="cm-tour-prev" id="cmTourPrev" disabled aria-label="Previous step">‹</button>
+            <button class="cm-tour-next" id="cmTourNext" aria-label="Next step">Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /cm-tour-bd -->
 
 
   <!-- ============================================================
@@ -724,7 +1006,7 @@
       });
     }
 
-    fetch('/get_user_picture/', { credentials: 'same-origin' })
+    fetch('{% url "origin_user_picture" %}', { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) { applyAvatar(d && d.url ? d.url : FALLBACK_AVATAR); })
       .catch(function ()  { applyAvatar(FALLBACK_AVATAR); });
@@ -1070,16 +1352,34 @@
               : '<span class="cm-goal-lbl"><i class="fas fa-flag-checkered" aria-hidden="true"></i> '
                   + daysLeft + ' day' + (daysLeft !== 1 ? 's' : '') + ' left</span>',
             '<div class="cm-card__actions">',
-              '<button class="cm-action-btn" data-id="' + c.id + '" data-action="checkin"',
-                ' title="' + (checkedIn ? 'Already checked in' : 'Quick checkin') + '"',
-                ' aria-label="' + (checkedIn ? 'Already checked in today' : 'Check in now') + '"',
-                (checkedIn ? ' disabled' : '') + '>',
-                '<i class="fas ' + (checkedIn ? 'fa-check' : 'fa-pen-to-square') + '" aria-hidden="true"></i>',
-              '</button>',
-              '<button class="cm-action-btn cm-action-archive" data-id="' + c.id + '" data-action="archive"',
-                ' title="Archive this commitment" aria-label="Archive this commitment">',
-                '<i class="fas fa-box-archive" aria-hidden="true"></i>',
-              '</button>',
+
+              /* ── Check-in button with wrap + tooltip ── */
+              '<div class="cm-action-btn-wrap">',
+                '<button class="cm-action-btn" data-id="' + c.id + '" data-action="checkin"',
+                  ' aria-label="' + (checkedIn ? 'Already checked in today' : 'Check in now') + '"',
+                  (checkedIn ? ' disabled' : '') + '>',
+                  '<i class="fas ' + (checkedIn ? 'fa-check' : 'fa-pen-to-square') + '" aria-hidden="true"></i>',
+                  '<span class="cm-action-lbl">' + (checkedIn ? 'Done' : 'Check in') + '</span>',
+                '</button>',
+                '<div class="cm-btn-tip">',
+                  checkedIn
+                    ? '✅Already checked in today! Come back tomorrow to keep your streak going.'
+                    : 'Tap to log today\'s win and keep your streak alive. One check-in per day.',
+                '</div>',
+              '</div>',
+
+              /* ── Archive button with wrap + tooltip ── */
+              '<div class="cm-action-btn-wrap">',
+                '<button class="cm-action-btn cm-action-archive" data-id="' + c.id + '" data-action="archive"',
+                  ' aria-label="Archive this commitment">',
+                  '<i class="fas fa-box-archive" aria-hidden="true"></i>',
+                  '<span class="cm-action-lbl">Archive</span>',
+                '</button>',
+                '<div class="cm-btn-tip">',
+                  '📦 Move to archive. Your streak is saved. Restore anytime from Profile → My Archive.',
+                '</div>',
+              '</div>',
+
             '</div>',
           '</div>',
 
@@ -1709,6 +2009,278 @@
         if (si) si.focus();
       }
     });
+
+    /* ============================================================
+       MOBILE BUTTON TOOLTIP — tap-to-reveal on touch devices
+       ============================================================ */
+    (function () {
+      /* Close all open tips */
+      function closeAllTips () {
+        qsa('.cm-action-btn-wrap.tip-open').forEach(function (w) {
+          w.classList.remove('tip-open');
+        });
+      }
+
+      /* Detect touch-primary device */
+      var isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+      if (isTouch) {
+        /* On mobile, prevent the action from firing on first tap if tip is closed;
+           instead open the tip. Subsequent tap fires the action. */
+        document.addEventListener('click', function (e) {
+          var wrap = e.target.closest('.cm-action-btn-wrap');
+          var btn  = e.target.closest('.cm-action-btn');
+
+          if (!wrap) { closeAllTips(); return; }
+
+          if (!wrap.classList.contains('tip-open')) {
+            /* First tap → show tip, don't fire action */
+            if (btn && btn.getAttribute('data-action')) {
+              e.stopImmediatePropagation();
+              e.preventDefault();
+              closeAllTips();
+              wrap.classList.add('tip-open');
+              /* Auto-close after 3.5 s */
+              setTimeout(function () { wrap.classList.remove('tip-open'); }, 3500);
+            }
+          } else {
+            /* Already open → allow action to proceed, close tip */
+            wrap.classList.remove('tip-open');
+          }
+        }, true /* capture phase so it runs before the action listener */);
+      }
+
+      /* Escape closes tips */
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeAllTips();
+      });
+    })();
+
+    /* ============================================================
+       GUIDED PAGE TOUR
+       ============================================================ */
+    (function () {
+      var STEPS = [
+        {
+          targetId:  null,
+          icon:      'fa-fire-flame-curved',
+          title:     'Welcome to My Commitments.',
+          text:      'This is your habit command center. Track every promise you\'ve made to yourself — streaks, progress rings, daily check-ins. Let\'s explore the key features!'
+        },
+        {
+          targetId:  'cmStatsBar',
+          icon:      'fa-chart-simple',
+          title:     'Your Progress at a Glance',
+          text:      'See how many commitments are active, your average streak, and your overall consistency rate. These numbers update every time you check in.'
+        },
+        {
+          targetId:  'cmFilterBar',
+          icon:      'fa-magnifying-glass',
+          title:     'Search & Filter',
+          text:      'Search commitments by name, filter by category (Fitness, Study, Health…), or sort by streak, newest, or goal progress. Tip: Ctrl+K jumps straight to search.'
+        },
+        {
+          targetId:  'cmGrid',
+          icon:      'fa-id-card',
+          title:     'Your Commitment Cards ',
+          text:      'Each card shows the commitment name, current streak, category icon, a progress ring toward your goal, and today\'s check-in status. Tap any card to see its full history.'
+        },
+        {
+          targetClass: 'cm-action-btn-wrap',
+          icon:        'fa-pen-to-square',
+          title:       'Quick Check-in',
+          text:        'Tap the Check in button to log today\'s win, it does so by logging your minimum days text as the entry! It marks the day as done and keeps your streak alive. You can only check in once per day — the button greys out after you do.',
+          useFirst:    true
+        },
+        {
+          targetClass: 'cm-action-archive',
+          icon:        'fa-box-archive',
+          title:       'Archive a Commitment.',
+          text:        'Not ready for this commitment anymore? Tap Archive to move it to your archive. Your streak and history are will be reset if you dont restore it within a day. Restore it anytimefrpm ...',
+          useFirst:    true
+        },
+        {
+          targetId:  'cmFab',
+          icon:      'fa-plus',
+          title:     'Add a New Commitment.',
+          text:      'Tap the blue button to open the 6-step creation wizard. You\'ll define what to commit to, why it matters, the minimum effort that counts, duration, check-in time, and a motivation word.'
+        }
+      ];
+
+      var tourStep   = 0;
+      var tourActive = false;
+
+      var bd    = document.getElementById('cmTourBd');
+      var spot  = document.getElementById('cmTourSpot');
+      var card  = document.getElementById('cmTourCard');
+      var badgeEl = document.getElementById('cmTourBadge');
+      var iconEl  = document.getElementById('cmTourIconI');
+      var hEl     = document.getElementById('cmTourH');
+      var pEl     = document.getElementById('cmTourP');
+      var prevBtn = document.getElementById('cmTourPrev');
+      var nextBtn = document.getElementById('cmTourNext');
+      var skipBtn = document.getElementById('cmTourSkip');
+      var dotsEl  = document.getElementById('cmTourDots');
+
+      /* Build dots */
+      if (dotsEl) {
+        for (var di = 0; di < STEPS.length; di++) {
+          var dot = document.createElement('div');
+          dot.className = 'cm-tour-dot' + (di === 0 ? ' active' : '');
+          dot.setAttribute('data-dot', di);
+          dotsEl.appendChild(dot);
+        }
+      }
+
+      function updateDots (idx) {
+        if (!dotsEl) return;
+        qsa('.cm-tour-dot', dotsEl).forEach(function (d, i) {
+          d.classList.toggle('active', i === idx);
+        });
+      }
+
+      function getTarget (step) {
+        if (step.targetId)    return document.getElementById(step.targetId);
+        if (step.targetClass) {
+          /* targetClass is a plain CSS class name (no dot prefix) */
+          try { return document.querySelector('.' + step.targetClass); } catch (e) {
+            return document.querySelector('.cm-action-btn');
+          }
+        }
+        return null;
+      }
+
+      function positionSpot (el) {
+        if (!spot) return;
+        if (!el) {
+          spot.style.cssText =
+            'left:50%;top:50%;width:0;height:0;opacity:0;border-radius:0;';
+          return;
+        }
+        var r   = el.getBoundingClientRect();
+        var pad = 8;
+        spot.style.cssText =
+          'left:'   + (r.left - pad) + 'px;' +
+          'top:'    + (r.top  - pad) + 'px;' +
+          'width:'  + (r.width  + pad * 2) + 'px;' +
+          'height:' + (r.height + pad * 2) + 'px;' +
+          'opacity:1;border-radius:12px;';
+      }
+
+      function positionCard (el) {
+        if (!card) return;
+        var vw  = window.innerWidth;
+        var vh  = window.innerHeight;
+        var cw  = Math.min(340, vw - 32);
+        card.style.width = cw + 'px';
+
+        if (!el) {
+          /* Center */
+          card.style.left      = ((vw - cw) / 2) + 'px';
+          card.style.top       = ((vh - 220) / 2) + 'px';
+          card.style.transform = '';
+          return;
+        }
+
+        var r       = el.getBoundingClientRect();
+        var cardH   = 220;
+        var pad     = 14;
+
+        /* Horizontal centering on element */
+        var leftRaw = r.left + r.width / 2 - cw / 2;
+        var left    = Math.max(16, Math.min(leftRaw, vw - cw - 16));
+
+        /* Prefer placing card BELOW target; flip above if no room */
+        var topBelow = r.bottom + pad;
+        var topAbove = r.top - cardH - pad;
+
+        var top;
+        if (topBelow + cardH + 20 <= vh) {
+          top = topBelow;
+        } else if (topAbove >= 60) {
+          top = topAbove;
+        } else {
+          /* Fallback: near bottom of viewport */
+          top = vh - cardH - 24;
+        }
+
+        card.style.left      = left + 'px';
+        card.style.top       = top  + 'px';
+        card.style.transform = '';
+      }
+
+      function showStep (idx) {
+        if (idx < 0 || idx >= STEPS.length) { endTour(); return; }
+        tourStep = idx;
+        var step = STEPS[idx];
+
+        /* Update content */
+        if (badgeEl) badgeEl.textContent = 'Step ' + (idx + 1) + ' of ' + STEPS.length;
+        if (iconEl)  iconEl.className    = 'fas ' + (step.icon || 'fa-circle-info');
+        if (hEl)     hEl.textContent     = step.title;
+        if (pEl)     pEl.textContent     = step.text;
+        if (prevBtn) prevBtn.disabled    = idx === 0;
+        if (nextBtn) nextBtn.textContent = idx === STEPS.length - 1 ? '🎉 Done!' : 'Next →';
+        updateDots(idx);
+
+        var target = getTarget(step);
+
+        /* Scroll target into view if needed */
+        if (target) {
+          var tr = target.getBoundingClientRect();
+          if (tr.top < 80 || tr.bottom > window.innerHeight - 80) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(function () {
+              positionSpot(target);
+              positionCard(target);
+            }, 420);
+            return;
+          }
+        }
+
+        positionSpot(target);
+        positionCard(target);
+      }
+
+      function startTour () {
+        tourActive = true;
+        if (bd) bd.classList.add('active');
+        showStep(0);
+      }
+
+      function endTour () {
+        tourActive = false;
+        if (bd)   bd.classList.remove('active');
+        if (spot) spot.style.cssText = 'opacity:0;width:0;height:0;';
+      }
+
+      /* ── Listeners ── */
+      var tourBtn = document.getElementById('tourBtn');
+      tourBtn && tourBtn.addEventListener('click', startTour);
+
+      skipBtn && skipBtn.addEventListener('click', endTour);
+      prevBtn && prevBtn.addEventListener('click', function () { showStep(tourStep - 1); });
+      nextBtn && nextBtn.addEventListener('click', function () {
+        if (tourStep >= STEPS.length - 1) endTour();
+        else showStep(tourStep + 1);
+      });
+
+      /* Close on backdrop click (outside spotlight + card) */
+      bd && bd.addEventListener('click', function (e) {
+        if (e.target === bd) endTour();
+      });
+
+      /* Escape closes tour */
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && tourActive) endTour();
+      });
+
+      /* Reposition on resize */
+      window.addEventListener('resize', function () {
+        if (tourActive) showStep(tourStep);
+      });
+
+    })(); /* /GUIDED TOUR */
 
     /* ============================================================
        INIT

@@ -106,7 +106,6 @@ class Profile(models.Model):
     custom_report_email_active = models.BooleanField(default=False) #send custom emails to user based on prefrence, maybe every three days o 5 days or montly ---not available to free tier 
     social_mode = models.CharField(max_length=10, default=custom_val.social_mode[0]) #to get status of user wether they have partner mode enabled or no one can see their streak
     zeal_score = models.PositiveIntegerField(default=0)  #this look at the active commitments and evaluate a fire count = commitment count * avergae streek of all active streak, purpose is to give user a quick overview on the dashboard
-    # partner_list = models.JSONField() #this will store only the userid in a list, the downslide if user change their username, their user id in this list might be useless, maybe i will inform user to upsate their partner that they have updated their username and their partner should look it up again and delete the old one
     
     
     def __str__(self):

@@ -138,3 +138,7 @@ SOCIAL_AUTH_ALREADY_ASSOCIATED_URL = 'v1/login/?error=already_linked' #if user i
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8002,https://esta-sensate-unquickly.ngrok-free.dev').split(',')
 
 CSRF_FAILURE_VIEW  = 'origin.urls.csrf_failure' #for handling the boring forbidden that constantly show if used form is reused
+
+CLOUDINARY_CLOUD_NAME = os.getenv('CLOUD_NAME')
+CLOUDINARY_API_KEY = os.getenv('CLOUDINARY_API_KEY')
+CLOUDINARY_API_SECRET = os.getenv('CLOUDINARY_API_SECRET')

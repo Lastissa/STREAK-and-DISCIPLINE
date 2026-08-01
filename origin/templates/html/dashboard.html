@@ -101,7 +101,7 @@
           </a>
 
           <div class="aside-section-lbl" style="margin-top:0.5rem">Insights</div>
-          <a href="/v1/reports/" class="aside-link">
+          <a href="{% url "origin_reports" %}" class="aside-link">
             <i class="fas fa-chart-line"></i> Analytics &amp; Reports
           </a>
           {% if ai_insight_active %}
@@ -206,6 +206,30 @@
             {% endif %}
           </p>
         </div>
+
+        <!-- 1b. FIRST-TIME WELCOME HERO — only when the user has zero
+             active commitments. Server-rendered (Django, not JS) so it
+             is on-screen instantly and the page never feels empty/dead
+             for a brand-new user. Mirrors the hero + empty-state pattern
+             from commitments.html. -->
+        {% if not total_active_commitments %}
+        <div class="db-welcome-hero no-print" id="dbWelcomeHero">
+          <div class="db-welcome-icon"><i class="fas fa-fire-flame-curved"></i></div>
+          <h2 class="db-welcome-title">Welcome to STREAK &amp; DISCIPLINE, {{ request.user.username }}.</h2>
+          <p class="db-welcome-sub">
+            This dashboard tracks the promises you keep to yourself — but right now
+            it's empty, because you haven't made one yet. Add a commitment,
+            check in daily, and this page fills in around you.
+          </p>
+          <a href="{% url "origin_commitments" %}?add=true" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Make Your First Commitment
+          </a>
+          <div class="db-welcome-hint">
+            <i class="fas fa-circle-info"></i>
+            Your Zeal Score, streak heatmap and stats below activate the moment you do.
+          </div>
+        </div>
+        {% endif %}
 
         <!-- 2. STATS ROW (from Django context — instant) -->
         <div class="db-stats">

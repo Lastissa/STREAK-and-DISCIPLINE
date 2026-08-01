@@ -93,7 +93,7 @@
           </a>
 
           <div class="aside-section-lbl" style="margin-top:0.5rem">Insights</div>
-          <a href="{% url "origin_weekly_analysis" %}" class="aside-link">
+          <a href="{% url "origin_reports" %}" class="aside-link">
             <i class="fas fa-chart-line"></i> Analytics &amp; Reports
           </a>
           {% if ai_insight_active %}
@@ -704,7 +704,7 @@
       var actions = el('div', 'rel-card-actions');
       var btn = el('a', 'btn btn-outline btn-sm', 'View Records');
       // TODO: point this at your real per-partner records view once it exists
-      btn.href = '/v1/relationship/partner/' + encodeURIComponent(item.userid) + '/records/';
+      btn.href = '/v1/relationship/partner-record/' + encodeURIComponent(item.userid);
       actions.appendChild(btn);
       b.card.appendChild(actions);
       return b.card;

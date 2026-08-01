@@ -1,0 +1,916 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include "reusables/web_icon.html" %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Your private weekly discipline report — consistency score, daily reflections, moods and trend analysis, pulled live from your own check-ins.">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Analytics &amp; Reports — STREAK &amp; DISCIPLINE</title>
+
+  <!-- Font Awesome (local) -->
+  <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
+
+  <!--
+    CRITICAL INLINE STYLES — background + spinner.
+    Nothing blocks first pixel; the report itself is 100% fetched after paint.
+  -->
+  <style>
+    {% include "reusables/spinner.css" %}
+    html, body { margin:0; padding:0; background:#060b14; }
+    body.sd-light { background:#f0f4fa; }
+    .db-app { opacity:0; visibility:hidden; transition:opacity 0.6s ease, visibility 0.6s ease; }
+    .db-app.db-visible { opacity:1; visibility:visible; }
+  </style>
+
+  <!-- Shared dashboard shell CSS -- gives us the aside/header/skeleton system for free -->
+  <link rel="stylesheet" href="{% static 'css/dashboard_light.css' %}">
+  <link rel="preload" href="{% static 'cdn/dashboard_advance.css' %}" as="style"
+        onload="this.onload=null;this.rel='stylesheet'" id="adv-css">
+  <noscript><link rel="stylesheet" href="{% static 'cdn/dashboard_advance.css' %}"></noscript>
+
+  <!-- Report-specific content styles -->
+  <link rel="stylesheet" href="{% static 'css/reports.css' %}">
+</head>
+<body class="sd-{{ theme_mode }}">
+
+  <!-- ====================================================
+       SPINNER
+       ==================================================== -->
+  {% include "reusables/spinner.html" %}
+
+  <!-- ====================================================
+       APP SHELL
+       ==================================================== -->
+  <div class="db-app" id="dbApp">
+
+    <div class="aside-overlay no-print" id="asideOverlay"></div>
+
+    <!-- ================================================
+         ASIDE (left sidebar) — same shell as the dashboard
+         ================================================ -->
+    <aside class="db-aside no-print" id="dbAside">
+      <div class="aside-scroll">
+
+        <div class="aside-top">
+          <div class="aside-avatar-wrap" id="asideAvatarWrap">
+            <div class="sk sk-circle" style="width:52px;height:52px" id="asideAvatarSk"></div>
+          </div>
+          <div class="aside-username">{{ request.user.username }}</div>
+          <div class="aside-email">{{ request.user.email }}</div>
+          <span class="tier-badge tier-{{ tier|default:'free' }}">
+            {% if tier == 'gold' %}<i class="fas fa-crown"></i> Gold
+            {% elif tier == 'premium' %}<i class="fas fa-gem"></i> Premium
+            {% else %}<i class="fas fa-user"></i> Free{% endif %}
+          </span>
+        </div>
+
+        <nav class="aside-nav" aria-label="Dashboard navigation">
+          <div class="aside-section-lbl">Navigation</div>
+          <a href="{% url "origin_dashboard" %}" class="aside-link">
+            <i class="fas fa-gauge-high"></i> Dashboard
+          </a>
+          <a href="{% url "origin_relationship" %}" class="aside-link">
+            <i class="fas fa-user-group"></i> Relationship
+          </a>
+          <a href="{% url "origin_profile" %}" class="aside-link">
+            <i class="fas fa-circle-user"></i> Profile
+          </a>
+          <a href="{% url "origin_commitments" %}" class="aside-link">
+            <i class="fas fa-fire-flame-curved"></i> My Commitments
+          </a>
+
+          <div class="aside-section-lbl" style="margin-top:0.5rem">Community</div>
+          <a href="{% url "origin_leaderboard" %}" class="aside-link">
+            <i class="fas fa-ranking-star"></i> Leaderboard
+          </a>
+          <a href="{% url "origin_blog" %}" class="aside-link">
+            <i class="fas fa-newspaper"></i> Blog &amp; Updates
+          </a>
+
+          <div class="aside-section-lbl" style="margin-top:0.5rem">Insights</div>
+          <a href="{% url "origin_reports" %}" class="aside-link active">
+            <i class="fas fa-chart-line"></i> Analytics &amp; Reports
+          </a>
+          {% if ai_insight_active %}
+          <a href="/v1/insights/" class="aside-link">
+            <i class="fas fa-microchip"></i> AI Insights
+          </a>
+          {% endif %}
+
+          <div class="aside-section-lbl" style="margin-top:0.5rem">Others</div>
+          <a href="{% url "origin_extra" %}#help" class="aside-link"><i class="fas fa-circle-question"></i> Help</a>
+          <a href="{% url "origin_extra" %}#privacy" class="aside-link"><i class="fas fa-shield"></i> Privacy Policy</a>
+          <a href="{% url "origin_extra" %}#terms" class="aside-link"><i class="fas fa-file-contract"></i> Terms of use</a>
+
+          <hr class="aside-sep">
+
+          <div class="aside-support-lbl">Support</div>
+          <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_self" rel="noopener" class="aside-link">
+            <i class="fab fa-whatsapp"></i> WhatsApp Support
+          </a>
+          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link">
+            <i class="fas fa-envelope"></i> Email Support
+          </a>
+        </nav>
+
+      </div><!-- /aside-scroll -->
+
+      <div class="aside-logout">
+        <button class="aside-logout-btn" id="logoutBtn">
+          <i class="fas fa-right-from-bracket"></i> Log Out
+        </button>
+      </div>
+    </aside><!-- /db-aside -->
+
+    <!-- ================================================
+         HEADER
+         ================================================ -->
+    <header class="db-header no-print">
+      <div class="hdr-left">
+        <div class="hdr-avatar" id="hdrAvatarWrap" title="Open sidebar">
+          <div class="sk sk-circle" style="width:32px;height:32px" id="hdrAvatarSk"></div>
+        </div>
+        <span class="hdr-brand">Analytics &amp; Reports</span>
+      </div>
+
+      <div class="hdr-quote" id="hdrQuote" aria-live="polite"></div>
+
+      <div class="hdr-right">
+        <button class="hdr-btn" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
+          <i class="fas fa-moon" id="themeIcon"></i>
+        </button>
+        <button class="hdr-btn hdr-hamburger" id="hamburgerBtn" aria-label="Open menu">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+    </header><!-- /db-header -->
+
+    <!-- ================================================
+         MAIN CONTENT
+         ================================================ -->
+    <div class="db-wrap">
+      <main class="db-main" id="dbMain">
+
+        <!-- Print-only banner (screen never sees this) -->
+        <div class="print-only" style="margin-bottom:1rem">
+          <div class="print-brand">STREAK &amp; DISCIPLINE — Weekly Truth Report</div>
+          <div class="print-title" id="printTitle">{{ request.user.username }}'s week</div>
+        </div>
+
+        <!-- 1. GREETING -->
+        <div class="db-greeting no-print">
+          <div class="db-greeting-time" id="greetTime">—</div>
+          <h1 class="db-greeting-text">
+            <span id="greetWord">Good day</span>,
+            <span style="color:var(--accL)">{{ request.user.username }}</span> — here's your report
+          </h1>
+          <p class="db-greeting-sub">Every number below is read live from your own check-ins, not a sample.</p>
+        </div>
+
+        <!-- 2. TOOLBAR: week switcher + actions -->
+        <div class="rp-toolbar no-print">
+          <div class="rp-week-switch">
+            <button class="rp-week-nav" id="rpPrevWeek" aria-label="Previous week"><i class="fas fa-chevron-left"></i></button>
+            <span class="rp-week-label">
+              <i class="fas fa-calendar-week"></i>
+              <span id="rpWeekLabel">Loading…</span>
+              <span class="rp-week-badge" id="rpWeekBadge"></span>
+            </span>
+            <button class="rp-week-nav" id="rpNextWeek" aria-label="Next week" disabled><i class="fas fa-chevron-right"></i></button>
+          </div>
+          <div class="rp-actions">
+            <button class="rp-btn" id="rpRefreshBtn" title="Reload this week's data"><i class="fas fa-rotate"></i> Refresh</button>
+            <button class="rp-btn" id="rpExportBtn" title="Download raw data as CSV"><i class="fas fa-file-csv"></i> Export CSV</button>
+            <button class="rp-btn" id="rpShareBtn" title="Share your consistency score"><i class="fas fa-share-nodes"></i> Share</button>
+            <button class="rp-btn" id="rpPrintBtn" title="Print this report"><i class="fas fa-print"></i> Print</button>
+            <button class="rp-btn rp-btn-primary" id="rpPdfBtn" title="Save this report as a PDF"><i class="fas fa-file-pdf"></i> Download PDF</button>
+          </div>
+        </div>
+
+        <!-- 3. LOADING SKELETON -->
+        <div id="rpSkeleton">
+          <div class="rp-stats">
+            <div class="rp-stat-card rp-center"><div class="sk sk-ring" style="width:88px;height:88px;border-radius:50%;margin:0 auto 0.6rem"></div><div class="sk sk-text w70" style="margin:0 auto"></div></div>
+            <div class="rp-stat-card"><div class="sk sk-text w50"></div><div class="sk sk-text w30"></div></div>
+            <div class="rp-stat-card"><div class="sk sk-text w50"></div><div class="sk sk-text w30"></div></div>
+            <div class="rp-stat-card"><div class="sk sk-text w50"></div><div class="sk sk-text w30"></div></div>
+          </div>
+          <div class="rp-card" style="margin-bottom:1.5rem">
+            <div class="rp-sk-row"><div class="sk" style="width:26px;height:26px;border-radius:50%"></div><div class="sk sk-text w70" style="flex:1"></div></div>
+            <div class="rp-sk-row"><div class="sk" style="width:26px;height:26px;border-radius:50%"></div><div class="sk sk-text w50" style="flex:1"></div></div>
+            <div class="rp-sk-row"><div class="sk" style="width:26px;height:26px;border-radius:50%"></div><div class="sk sk-text w70" style="flex:1"></div></div>
+          </div>
+        </div>
+
+        <!-- 4. EMPTY STATE (account has never checked in at all) -->
+        <div class="rp-state no-print" id="rpEmpty" style="display:none">
+          <i class="fas fa-seedling"></i>
+          <h3>No entries yet</h3>
+          <p>Your report fills up the moment you check in on a commitment. Do your first check-in and come back — this page will have real numbers waiting.</p>
+          <a href="{% url "origin_commitments" %}" class="btn btn-primary btn-sm" style="display:inline-flex;padding:0.6rem 1.2rem;border-radius:var(--r);background:var(--acc);color:#fff;text-decoration:none;font-weight:700;font-size:0.82rem">
+            <i class="fas fa-plus" style="margin-right:0.4rem"></i> Go make a commitment
+          </a>
+        </div>
+
+        <!-- 5. ERROR STATE -->
+        <div class="rp-state rp-error no-print" id="rpError" style="display:none">
+          <i class="fas fa-triangle-exclamation"></i>
+          <h3>Couldn't load your report</h3>
+          <p id="rpErrorMsg">Something went wrong talking to the server. Check your connection and try again.</p>
+          <button class="rp-btn rp-btn-primary" id="rpRetryBtn"><i class="fas fa-rotate"></i> Try again</button>
+        </div>
+
+        <!-- 6. REPORT CONTENT (built entirely from the API response) -->
+        <div id="rpContent" style="display:none">
+
+          <!-- STAT OVERVIEW -->
+          <section class="rp-stats" id="rpStats">
+            <div class="rp-stat-card rp-center">
+              <div class="rp-ring" id="rpRing" style="--pct:0">
+                <div class="rp-ring-center">
+                  <span class="rp-ring-val" id="rpConsistencyVal">0</span><span class="rp-ring-unit">%</span>
+                </div>
+              </div>
+              <span class="rp-stat-label">Consistency Score</span>
+              <span class="rp-stat-sub" id="rpConsistencyTrend"></span>
+            </div>
+            <div class="rp-stat-card">
+              <i class="fas fa-fire rp-stat-icon"></i>
+              <span class="rp-stat-num" id="rpStreakVal">0</span>
+              <span class="rp-stat-label">Current Streak (days)</span>
+              <span class="rp-stat-sub">Your longest active commitment</span>
+            </div>
+            <div class="rp-stat-card">
+              <i class="fas fa-clipboard-check rp-stat-icon"></i>
+              <span class="rp-stat-num" id="rpEntriesVal">0/7</span>
+              <span class="rp-stat-label">Entries This Week</span>
+              <span class="rp-stat-sub" id="rpEntriesSub"></span>
+            </div>
+            <div class="rp-stat-card">
+              <i class="fas fa-feather-pointed rp-stat-icon"></i>
+              <span class="rp-stat-num" id="rpAvgWordsVal">0</span>
+              <span class="rp-stat-label">Avg Words / Entry</span>
+              <span class="rp-stat-sub">Across every check-in this week</span>
+            </div>
+          </section>
+
+          <!-- HIGHLIGHTS: best / toughest day -->
+          <section class="rp-section" id="rpHighlightSection" style="display:none">
+            <div class="rp-section-head">
+              <span class="rp-eyebrow"><i class="fas fa-star"></i> The Week At a Glance</span>
+              <h2>Best &amp; toughest day</h2>
+            </div>
+            <div class="rp-highlight-grid">
+              <div class="rp-card rp-highlight-best" id="rpBestDayCard" style="display:none">
+                <span class="rp-highlight-tag"><i class="fas fa-trophy"></i> Best Day</span>
+                <h3 id="rpBestDayName">—</h3>
+                <p id="rpBestDayText"></p>
+              </div>
+              <div class="rp-card rp-highlight-tough" id="rpToughDayCard" style="display:none">
+                <span class="rp-highlight-tag"><i class="fas fa-cloud-rain"></i> Toughest Day</span>
+                <h3 id="rpToughDayName">—</h3>
+                <p id="rpToughDayText">No entry recorded this day.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- DAILY BREAKDOWN -->
+          <section class="rp-section">
+            <div class="rp-section-head">
+              <span class="rp-eyebrow"><i class="fas fa-list-check"></i> Day by Day</span>
+              <h2>Nothing smoothed over</h2>
+              <p class="rp-sub">Tap any day to read what you actually wrote — missed days show too.</p>
+            </div>
+            <ul class="rp-day-list" id="rpDayList"></ul>
+          </section>
+
+          <!-- TREND: this week vs last week -->
+          <section class="rp-section">
+            <div class="rp-card">
+              <div class="rp-section-head">
+                <span class="rp-eyebrow"><i class="fas fa-scale-balanced"></i> This Week vs Last Week</span>
+                <h2>Are you actually improving?</h2>
+              </div>
+              <div class="rp-trend-chart" id="rpTrendChart"></div>
+              <div class="rp-legend">
+                <span><i class="rp-legend-dot rp-last"></i> Last week</span>
+                <span><i class="rp-legend-dot rp-now"></i> This week</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- COMMITMENTS BREAKDOWN -->
+          <section class="rp-section" id="rpCommitSection" style="display:none">
+            <div class="rp-section-head">
+              <span class="rp-eyebrow"><i class="fas fa-list-ol"></i> By Commitment</span>
+              <h2>Which promises held</h2>
+            </div>
+            <div class="rp-card">
+              <ul class="rp-bar-list" id="rpCommitList"></ul>
+            </div>
+          </section>
+
+          <!-- MOOD DISTRIBUTION -->
+          <section class="rp-section" id="rpMoodSection" style="display:none">
+            <div class="rp-section-head">
+              <span class="rp-eyebrow"><i class="fas fa-face-smile"></i> How You Felt</span>
+              <h2>Mood across the week</h2>
+            </div>
+            <div class="rp-card">
+              <ul class="rp-bar-list" id="rpMoodList"></ul>
+            </div>
+          </section>
+
+          <!-- WORD CLOUD -->
+          <section class="rp-section no-print" id="rpWordSection" style="display:none">
+            <div class="rp-section-head">
+              <span class="rp-eyebrow"><i class="fas fa-quote-left"></i> Your Own Language</span>
+              <h2>Words you kept coming back to</h2>
+              <p class="rp-sub">Pulled straight from this week's entries. Only you ever see the sentences behind them.</p>
+            </div>
+            <div class="rp-card">
+              <ul class="rp-word-cloud" id="rpWordCloud"></ul>
+            </div>
+          </section>
+
+          <!-- GROUP / PARTNER COMPARISON (only rendered if you're in partner mode) -->
+          <section class="rp-section" id="rpGroupSection" style="display:none">
+            <div class="rp-section-head">
+              <span class="rp-eyebrow"><i class="fas fa-user-group"></i> Optional Context</span>
+              <h2>How your partners did this week</h2>
+              <p class="rp-sub">Only partners who've made their streak publicly visible appear here.</p>
+            </div>
+            <div class="rp-card">
+              <ul class="rp-group-list" id="rpGroupList"></ul>
+            </div>
+          </section>
+
+          <!-- METHODOLOGY (static text, no API needed) -->
+          <section class="rp-section no-print">
+            <div class="rp-section-head">
+              <span class="rp-eyebrow"><i class="fas fa-calculator"></i> Under the Hood</span>
+              <h2>How this report is calculated</h2>
+            </div>
+            <ul class="rp-accordion" id="rpAccordion">
+              <li class="rp-acc-item open">
+                <button class="rp-acc-trigger" type="button" aria-expanded="true">
+                  <span><i class="fas fa-percent"></i> Consistency Score</span>
+                  <i class="fas fa-chevron-down rp-acc-caret"></i>
+                </button>
+                <div class="rp-acc-panel">
+                  <p>Days you checked in, divided by days elapsed so far in the period. Today only counts once it has ended in your local timezone.</p>
+                </div>
+              </li>
+              <li class="rp-acc-item">
+                <button class="rp-acc-trigger" type="button" aria-expanded="false">
+                  <span><i class="fas fa-fire"></i> Streak</span>
+                  <i class="fas fa-chevron-down rp-acc-caret"></i>
+                </button>
+                <div class="rp-acc-panel">
+                  <p>Consecutive days with at least one completed check-in on an active commitment, counting backward from your most recent entry.</p>
+                </div>
+              </li>
+              <li class="rp-acc-item">
+                <button class="rp-acc-trigger" type="button" aria-expanded="false">
+                  <span><i class="fas fa-face-smile"></i> Mood</span>
+                  <i class="fas fa-chevron-down rp-acc-caret"></i>
+                </button>
+                <div class="rp-acc-panel">
+                  <p>The single mood you pick when you check in — nothing inferred from your writing. We never run sentiment analysis on your private notes.</p>
+                </div>
+              </li>
+              <li class="rp-acc-item">
+                <button class="rp-acc-trigger" type="button" aria-expanded="false">
+                  <span><i class="fas fa-feather-pointed"></i> Word Count &amp; Trends</span>
+                  <i class="fas fa-chevron-down rp-acc-caret"></i>
+                </button>
+                <div class="rp-acc-panel">
+                  <p>Plain word count on your entry text. "This week vs last week" is a simple comparison against your own history — never against other users.</p>
+                </div>
+              </li>
+            </ul>
+          </section>
+
+        </div><!-- /rpContent -->
+
+      </main>
+    </div>
+
+  </div><!-- /db-app -->
+
+  <!-- Toast for copy / export confirmations -->
+  <div class="rp-toast no-print" id="rpToast"><i class="fas fa-check-circle"></i> <span id="rpToastText"></span></div>
+
+  <!-- LOGOUT FORM (hidden, submitted by JS) -->
+  <form method="POST" action="{% url 'origin_logout' %}" id="logoutForm" style="display:none">
+    {% csrf_token %}
+  </form>
+
+  {% include "reusables/navigation_loader.html" %}
+  <style rel="stylesheet">
+    {% include 'reusables/navigation_loader.css' %}
+  </style>
+  <script>
+    {% include 'reusables/navigation_loader.js' %}
+  </script>
+
+  <!-- ====================================================
+       FULL APP JAVASCRIPT
+       ==================================================== -->
+  <script>
+  (function() {
+    'use strict';
+
+    /* ============================================================
+       HELPERS
+       ============================================================ */
+    function getCookie(name) {
+      var v = document.cookie.match('(?:^|;) ?' + name + '=([^;]*)(;|$)');
+      return v ? decodeURIComponent(v[1]) : '';
+    }
+    function setCookie(name, value, days) {
+      var d = new Date(); d.setDate(d.getDate() + (days || 1));
+      document.cookie = name + '=' + encodeURIComponent(value) + ';path=/;expires=' + d.toUTCString();
+    }
+    function qs(sel, ctx) { return (ctx || document).querySelector(sel); }
+    function qsa(sel, ctx) { return (ctx || document).querySelectorAll(sel); }
+    function show(el) { if (el) { el.style.display = ''; el.classList.remove('hidden'); } }
+    function hide(el) { if (el) { el.style.display = 'none'; } }
+    function esc(s) {
+      return (s === null || s === undefined ? '' : String(s))
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    var QUOTES = [
+      'Motivation fades. Discipline stays.',
+      'One honest sentence a day is all it takes.',
+      'The person you want to be is built on days like today.',
+      "The streak doesn't care about your feelings. It just counts.",
+      'One day or day one. You decide.'
+    ];
+    function startQuoteTicker(el) {
+      if (!el) return;
+      var day = new Date().getDate() + new Date().getMonth() * 31;
+      el.textContent = QUOTES[day % QUOTES.length];
+      el.style.fontStyle = 'italic';
+    }
+    function setGreeting() {
+      var h = new Date().getHours();
+      var word = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+      var greetWord = document.getElementById('greetWord');
+      var greetTime = document.getElementById('greetTime');
+      if (greetWord) greetWord.textContent = word;
+      if (greetTime) {
+        var now = new Date();
+        greetTime.textContent = now.toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' });
+      }
+    }
+
+    /* ============================================================
+       ASIDE TOGGLE / THEME / LOGOUT  (identical pattern to dashboard.html)
+       ============================================================ */
+    var aside     = document.getElementById('dbAside');
+    var overlay   = document.getElementById('asideOverlay');
+    var hamburger = document.getElementById('hamburgerBtn');
+    var hdrAvatar = document.getElementById('hdrAvatarWrap');
+
+    function openAside()  { aside && aside.classList.add('open'); overlay && overlay.classList.add('show'); }
+    function closeAside() { aside && aside.classList.remove('open'); overlay && overlay.classList.remove('show'); }
+    hamburger && hamburger.addEventListener('click', openAside);
+    hdrAvatar && hdrAvatar.addEventListener('click', function() {
+      if (window.innerWidth < 900) openAside();
+      else window.location.href = '{% url "origin_profile" %}';
+    });
+    overlay && overlay.addEventListener('click', closeAside);
+    aside && aside.querySelectorAll('.aside-link').forEach(function(a) {
+      a.addEventListener('click', function() { if (window.innerWidth < 900) closeAside(); });
+    });
+
+    var themeBtn = document.getElementById('themeToggleBtn');
+    var themeIcon = document.getElementById('themeIcon');
+    (function() {
+      var saved = getCookie('sd-theme');
+      if (saved === 'light' && themeIcon) themeIcon.className = 'fas fa-sun';
+    })();
+    themeBtn && themeBtn.addEventListener('click', function() {
+      var dark = document.body.classList.contains('sd-light');
+      document.body.classList.toggle('sd-light', !dark);
+      if (themeIcon) themeIcon.className = dark ? 'fas fa-moon' : 'fas fa-sun';
+      setCookie('sd-theme', dark ? 'dark' : 'light', 365);
+    });
+
+    var logoutBtn = document.getElementById('logoutBtn');
+    logoutBtn && logoutBtn.addEventListener('click', function() {
+      if (confirm('Log out of STREAK & DISCIPLINE?')) document.getElementById('logoutForm').submit();
+    });
+
+    /* ============================================================
+       TOAST
+       ============================================================ */
+    var toastTimer = null;
+    function toast(msg) {
+      var t = document.getElementById('rpToast');
+      var txt = document.getElementById('rpToastText');
+      if (!t || !txt) return;
+      txt.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function() { t.classList.remove('show'); }, 2600);
+    }
+
+    /* ============================================================
+       REPORT STATE + DATA FETCH
+       This is the ONLY place this page talks to the server for real data.
+       Endpoint: {% url "origin_reports_data" %}?offset=N
+       ============================================================ */
+    var RP = { offset: 0, data: null, loading: false };
+    var DATA_URL = '{% url "origin_reports_data" %}';
+
+    function loadReport(offset) {
+      if (RP.loading) return;
+      RP.loading = true;
+      RP.offset = offset;
+
+      hide(document.getElementById('rpEmpty'));
+      hide(document.getElementById('rpError'));
+      hide(document.getElementById('rpContent'));
+      show(document.getElementById('rpSkeleton'));
+      var weekLabel = document.getElementById('rpWeekLabel');
+      if (weekLabel) weekLabel.textContent = 'Loading…';
+      document.getElementById('rpPrevWeek').disabled = true;
+      document.getElementById('rpNextWeek').disabled = true;
+
+      fetch(DATA_URL + '?offset=' + encodeURIComponent(offset), { credentials: 'include' })
+        .then(function(r) {
+          return r.json().then(function(d) { return { ok: r.ok, status: r.status, d: d }; });
+        })
+        .then(function(res) {
+          RP.loading = false;
+          if (!res.ok || !res.d || res.d.message !== 'success') {
+            hide(document.getElementById('rpSkeleton'));
+            var msg = document.getElementById('rpErrorMsg');
+            if (msg) msg.textContent = (res.d && res.d.message) || 'Could not load your report. Please try again.';
+            show(document.getElementById('rpError'));
+            return;
+          }
+          RP.data = res.d;
+          hide(document.getElementById('rpSkeleton'));
+
+          if (!res.d.has_any_entries) {
+            show(document.getElementById('rpEmpty'));
+            var wl = document.getElementById('rpWeekLabel');
+            if (wl) wl.textContent = res.d.week_label || '—';
+            document.getElementById('rpPrevWeek').disabled = false;
+            document.getElementById('rpNextWeek').disabled = res.d.offset === 0;
+            return;
+          }
+
+          renderReport(res.d);
+          show(document.getElementById('rpContent'));
+          document.getElementById('rpPrevWeek').disabled = !res.d.can_go_back;
+          document.getElementById('rpNextWeek').disabled = !res.d.can_go_forward;
+        })
+        .catch(function() {
+          RP.loading = false;
+          hide(document.getElementById('rpSkeleton'));
+          var msg = document.getElementById('rpErrorMsg');
+          if (msg) msg.textContent = 'Network error. Check your connection and try again.';
+          show(document.getElementById('rpError'));
+          document.getElementById('rpPrevWeek').disabled = false;
+          document.getElementById('rpNextWeek').disabled = false;
+        });
+    }
+
+    /* ============================================================
+       RENDER FUNCTIONS — pure DOM writes from the fetched JSON
+       ============================================================ */
+    function renderReport(d) {
+      var wl = document.getElementById('rpWeekLabel');
+      var wb = document.getElementById('rpWeekBadge');
+      if (wl) wl.textContent = d.week_label || '—';
+      if (wb) wb.textContent = d.week_number ? ('Week ' + d.week_number) : '';
+      var pt = document.getElementById('printTitle');
+      if (pt) pt.textContent = "{{ request.user.username }}'s week — " + (d.week_label || '');
+
+      renderStats(d.stats);
+      renderHighlights(d.best_day, d.toughest_day);
+      renderDaily(d.daily);
+      renderTrend(d.daily, d.prior_daily_checked);
+      renderCommitments(d.commitments);
+      renderMood(d.mood_distribution);
+      renderWordCloud(d.word_cloud);
+      renderGroup(d.group_compare);
+    }
+
+    function renderStats(stats) {
+      stats = stats || {};
+      var ring = document.getElementById('rpRing');
+      var val = document.getElementById('rpConsistencyVal');
+      var trendEl = document.getElementById('rpConsistencyTrend');
+      var pct = stats.consistency_pct || 0;
+      if (ring) ring.style.setProperty('--pct', pct);
+      if (val) val.textContent = pct;
+      if (trendEl) {
+        var delta = stats.trend_delta || 0;
+        if (delta > 0) trendEl.innerHTML = '<i class="fas fa-arrow-trend-up" style="color:var(--ok)"></i> Up ' + delta + ' pts from last week';
+        else if (delta < 0) trendEl.innerHTML = '<i class="fas fa-arrow-trend-down" style="color:var(--bad)"></i> Down ' + Math.abs(delta) + ' pts from last week';
+        else trendEl.innerHTML = '<i class="fas fa-minus" style="color:var(--ink3)"></i> Same as last week';
+      }
+
+      var streakVal = document.getElementById('rpStreakVal');
+      if (streakVal) streakVal.textContent = stats.current_streak || 0;
+
+      var entriesVal = document.getElementById('rpEntriesVal');
+      var entriesSub = document.getElementById('rpEntriesSub');
+      if (entriesVal) entriesVal.textContent = (stats.entries_this_week || 0) + '/' + (stats.possible_days || 7);
+      if (entriesSub) {
+        var missed = (stats.possible_days || 7) - (stats.entries_this_week || 0);
+        entriesSub.textContent = missed > 0 ? (missed + ' day' + (missed > 1 ? 's' : '') + ' missed so far') : 'Perfect so far this week';
+      }
+
+      var avgVal = document.getElementById('rpAvgWordsVal');
+      if (avgVal) avgVal.textContent = stats.avg_words_per_entry || 0;
+    }
+
+    function renderHighlights(best, tough) {
+      var section = document.getElementById('rpHighlightSection');
+      var bestCard = document.getElementById('rpBestDayCard');
+      var toughCard = document.getElementById('rpToughDayCard');
+      var anyShown = false;
+
+      if (best) {
+        anyShown = true;
+        show(bestCard);
+        document.getElementById('rpBestDayName').textContent = best.day_name;
+        document.getElementById('rpBestDayText').textContent =
+          'Your longest entry this week at ' + best.word_count + ' word' + (best.word_count === 1 ? '' : 's') + '.';
+      } else hide(bestCard);
+
+      if (tough) {
+        anyShown = true;
+        show(toughCard);
+        document.getElementById('rpToughDayName').textContent = tough.day_name;
+      } else hide(toughCard);
+
+      if (section) section.style.display = anyShown ? '' : 'none';
+    }
+
+    function renderDaily(daily) {
+      var list = document.getElementById('rpDayList');
+      if (!list) return;
+      list.innerHTML = '';
+      (daily || []).forEach(function(day) {
+        var li = document.createElement('li');
+        li.className = 'rp-day-card' + (!day.has_entry && !day.is_future ? ' rp-missed' : '') + (day.is_future ? ' rp-future' : '');
+
+        var statusClass = day.is_future ? 'future' : (day.has_entry ? 'good' : 'missed');
+        var statusIcon = day.is_future ? 'fa-clock' : (day.has_entry ? 'fa-check' : 'fa-xmark');
+        var dateNice = new Date(day.date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+        var bodyHtml = '';
+        if (day.entries && day.entries.length) {
+          day.entries.forEach(function(e) {
+            bodyHtml += '<div class="rp-day-entry">' +
+              '<div class="rp-day-entry-head">' + esc(e.commitment) + ' ' + (e.mood_emoji || '') + ' ' + esc(e.mood) + '</div>' +
+              '<p class="rp-note-paper">' + (e.content ? esc(e.content) : '<span class="rp-note-empty">No note written for this check-in.</span>') + '</p>' +
+              '</div>';
+          });
+        } else if (!day.is_future) {
+          bodyHtml = '<div class="rp-day-entry"><p class="rp-note-paper rp-note-empty">No check-in recorded. We show the gap honestly instead of hiding it.</p></div>';
+        } else {
+          bodyHtml = '<div class="rp-day-entry"><p class="rp-note-paper rp-note-empty">This day hasn\'t happened yet.</p></div>';
+        }
+
+        li.innerHTML =
+          '<button class="rp-day-head" type="button" aria-expanded="false">' +
+            '<span class="rp-day-status ' + statusClass + '"><i class="fas ' + statusIcon + '"></i></span>' +
+            '<span class="rp-day-meta">' +
+              '<span class="rp-day-name">' + day.day_name + '<em>' + dateNice + '</em></span>' +
+              '<span class="rp-day-sub">' + (day.is_future ? 'Upcoming' : (day.has_entry ? day.entries.length + ' check-in' + (day.entries.length > 1 ? 's' : '') : 'No check-in')) + '</span>' +
+            '</span>' +
+            '<span class="rp-day-words">' + (day.word_count ? day.word_count + ' words' : '') + '</span>' +
+            '<i class="fas fa-chevron-down rp-day-caret"></i>' +
+          '</button>' +
+          '<div class="rp-day-body">' + bodyHtml + '</div>';
+
+        var head = li.querySelector('.rp-day-head');
+        head.addEventListener('click', function() {
+          var open = li.classList.toggle('open');
+          head.setAttribute('aria-expanded', String(open));
+        });
+
+        list.appendChild(li);
+      });
+    }
+
+    function renderTrend(daily, priorChecked) {
+      var chart = document.getElementById('rpTrendChart');
+      if (!chart) return;
+      chart.innerHTML = '';
+      (daily || []).forEach(function(day, i) {
+        var lastH = (priorChecked && priorChecked[i]) ? 100 : 6;
+        var nowH = day.is_future ? 0 : (day.has_entry ? 100 : 6);
+        var col = document.createElement('div');
+        col.className = 'rp-trend-day';
+        col.innerHTML =
+          '<div class="rp-trend-bars">' +
+            '<span class="rp-trend-bar rp-last" style="height:' + lastH + '%"></span>' +
+            '<span class="rp-trend-bar rp-now" style="height:' + nowH + '%"></span>' +
+          '</div>' +
+          '<span class="rp-trend-label">' + day.day_name.slice(0, 3) + '</span>';
+        chart.appendChild(col);
+      });
+    }
+
+    function renderCommitments(commitments) {
+      var section = document.getElementById('rpCommitSection');
+      var list = document.getElementById('rpCommitList');
+      if (!list) return;
+      list.innerHTML = '';
+      if (!commitments || !commitments.length) { hide(section); return; }
+      show(section);
+      commitments.forEach(function(c) {
+        var pct = c.possible_days ? Math.min(100, Math.round((c.checked_in_days / c.possible_days) * 100)) : 0;
+        var li = document.createElement('li');
+        li.className = 'rp-bar-row';
+        li.innerHTML =
+          '<span class="rp-bar-label" title="' + esc(c.what) + '">' + esc(c.what) + '</span>' +
+          '<span class="rp-bar-track"><span class="rp-bar-fill" style="width:' + pct + '%"></span></span>' +
+          '<span class="rp-bar-frac">' + c.checked_in_days + '/' + c.possible_days + '</span>';
+        list.appendChild(li);
+      });
+    }
+
+    function renderMood(moods) {
+      var section = document.getElementById('rpMoodSection');
+      var list = document.getElementById('rpMoodList');
+      if (!list) return;
+      list.innerHTML = '';
+      if (!moods || !moods.length) { hide(section); return; }
+      show(section);
+      var max = moods.reduce(function(m, x) { return Math.max(m, x.count); }, 1);
+      moods.forEach(function(m) {
+        var pct = Math.round((m.count / max) * 100);
+        var li = document.createElement('li');
+        li.className = 'rp-bar-row';
+        li.innerHTML =
+          '<span class="rp-bar-emoji">' + (m.emoji || '') + '</span>' +
+          '<span class="rp-bar-label" style="text-transform:capitalize">' + esc(m.mood.replace(/_/g, ' ')) + '</span>' +
+          '<span class="rp-bar-track"><span class="rp-bar-fill" style="width:' + pct + '%"></span></span>' +
+          '<span class="rp-bar-frac">' + m.count + ' day' + (m.count > 1 ? 's' : '') + '</span>';
+        list.appendChild(li);
+      });
+    }
+
+    function renderWordCloud(words) {
+      var section = document.getElementById('rpWordSection');
+      var cloud = document.getElementById('rpWordCloud');
+      if (!cloud) return;
+      cloud.innerHTML = '';
+      if (!words || !words.length) { hide(section); return; }
+      show(section);
+      words.forEach(function(w) {
+        var li = document.createElement('li');
+        li.className = 'rp-word-chip';
+        li.style.setProperty('--w', w.weight || 3);
+        li.textContent = w.word;
+        cloud.appendChild(li);
+      });
+    }
+
+    function renderGroup(rows) {
+      var section = document.getElementById('rpGroupSection');
+      var list = document.getElementById('rpGroupList');
+      if (!list) return;
+      list.innerHTML = '';
+      if (!rows || !rows.length) { hide(section); return; }
+      show(section);
+      rows.forEach(function(row, i) {
+        var li = document.createElement('li');
+        li.className = 'rp-group-row' + (row.is_you ? ' rp-you' : '');
+        var initials = (row.public_id || '?').slice(0, 2).toUpperCase();
+        li.innerHTML =
+          '<span class="rp-group-rank">' + (i + 1) + '</span>' +
+          '<span class="rp-group-avatar">' + esc(initials) + '</span>' +
+          '<span class="rp-group-name">' + esc(row.is_you ? 'You' : row.public_id) + '</span>' +
+          '<span class="rp-group-bar"><span style="width:' + row.consistency_pct + '%"></span></span>' +
+          '<span class="rp-group-pct">' + row.consistency_pct + '%</span>';
+        list.appendChild(li);
+      });
+    }
+
+    /* ============================================================
+       WEEK NAVIGATION
+       ============================================================ */
+    document.getElementById('rpPrevWeek').addEventListener('click', function() { loadReport(RP.offset + 1); });
+    document.getElementById('rpNextWeek').addEventListener('click', function() { if (RP.offset > 0) loadReport(RP.offset - 1); });
+    document.getElementById('rpRefreshBtn').addEventListener('click', function() { loadReport(RP.offset); toast('Refreshing…'); });
+    document.getElementById('rpRetryBtn').addEventListener('click', function() { loadReport(RP.offset); });
+
+    /* ============================================================
+       PRINT / DOWNLOAD PDF
+       Browsers turn "Print" into "Save as PDF" natively -- both
+       buttons trigger the same print flow, styled by @media print
+       in reports.css, so no extra library is needed.
+       ============================================================ */
+    function triggerPrint() { window.print(); }
+    document.getElementById('rpPrintBtn').addEventListener('click', triggerPrint);
+    document.getElementById('rpPdfBtn').addEventListener('click', function() {
+      toast('Choose "Save as PDF" in the print dialog');
+      setTimeout(triggerPrint, 400);
+    });
+
+    /* ============================================================
+       SHARE
+       ============================================================ */
+    document.getElementById('rpShareBtn').addEventListener('click', function() {
+      var pct = RP.data && RP.data.stats ? RP.data.stats.consistency_pct : 0;
+      var text = 'My consistency score this week on STREAK & DISCIPLINE: ' + pct + '%.';
+      if (navigator.share) {
+        navigator.share({ title: 'My Weekly Truth Report', text: text, url: window.location.href }).catch(function() {});
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(text + ' ' + window.location.href).then(function() { toast('Link copied to clipboard'); });
+      } else {
+        toast('Sharing is not supported on this browser');
+      }
+    });
+
+    /* ============================================================
+       EXPORT CSV — built client-side from data already in memory,
+       zero extra network round trip.
+       ============================================================ */
+    document.getElementById('rpExportBtn').addEventListener('click', function() {
+      if (!RP.data) { toast('Nothing to export yet'); return; }
+      var rows = [['Date', 'Day', 'Checked In', 'Word Count', 'Mood', 'Commitment', 'Note']];
+      (RP.data.daily || []).forEach(function(day) {
+        if (day.entries && day.entries.length) {
+          day.entries.forEach(function(e) {
+            rows.push([day.date, day.day_name, 'Yes', e.word_count, e.mood, e.commitment, (e.content || '').replace(/\n/g, ' ')]);
+          });
+        } else {
+          rows.push([day.date, day.day_name, 'No', 0, '', '', '']);
+        }
+      });
+      var csv = rows.map(function(r) {
+        return r.map(function(cell) {
+          var s = String(cell === undefined || cell === null ? '' : cell);
+          return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+        }).join(',');
+      }).join('\n');
+      var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'streak-discipline-report-' + (RP.data.week_label || 'week').replace(/[^\w-]+/g, '_') + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast('CSV downloaded');
+    });
+
+    /* ============================================================
+       METHODOLOGY ACCORDION
+       ============================================================ */
+    qsa('#rpAccordion .rp-acc-item').forEach(function(item) {
+      var trigger = item.querySelector('.rp-acc-trigger');
+      trigger.addEventListener('click', function() {
+        var willOpen = !item.classList.contains('open');
+        qsa('#rpAccordion .rp-acc-item').forEach(function(other) {
+          other.classList.remove('open');
+          other.querySelector('.rp-acc-trigger').setAttribute('aria-expanded', 'false');
+        });
+        if (willOpen) { item.classList.add('open'); trigger.setAttribute('aria-expanded', 'true'); }
+      });
+    });
+
+    /* ============================================================
+       INIT
+       ============================================================ */
+    function reveal() {
+      var app = document.getElementById('dbApp');
+      if (app) app.classList.add('db-visible');
+    }
+    function init() {
+      setGreeting();
+      startQuoteTicker(document.getElementById('hdrQuote'));
+      loadReport(0);
+    }
+
+    if (document.readyState === 'complete') {
+      reveal(); init();
+    } else {
+      window.addEventListener('load', function() { reveal(); init(); });
+      setTimeout(function() { reveal(); init(); }, 8000);
+    }
+
+  })();
+  </script>
+
+  <!-- Spinner JS (handles its own hide on window.load + 8s fallback) -->
+  <script>{% include "reusables/spinner.js" %}</script>
+
+</body>
+</html>

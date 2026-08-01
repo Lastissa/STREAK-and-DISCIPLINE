@@ -23,7 +23,8 @@ class Onboarding(LoginRequiredMixin, View):
 
 
 class ProfileSettings(LoginRequiredMixin, View):
-    """FOR PROFILE IN THE DASHBOARD ASIDE"""
+    """FOR PROFILE IN THE DASHBOARD ASIDE USER INTERFACE"""
+    login_url = '/v1/login/'
     def get(self, request):
         user_profile = Profile.objects.filter(user = request.user).order_by('tier').first()
         if user_profile is None:
@@ -39,11 +40,12 @@ class ProfileSettings(LoginRequiredMixin, View):
             'leaderboard_optin': user_profile.leaderboard_optin,
             'streak_visible': user_profile.streak_count_is_public_visible,
             'social_mode': user_profile.streak_count_is_public_visible,
-            'ai_insights': user_profile.ai_insight_active,
+            'ai_insight_active': user_profile.ai_insight_active,
             'weekly_report': user_profile.weekly_report_email_active,
             'custom_reports': user_profile.custom_report_email_active,
             'newsletter': user_profile.receive_newsletter,
             'zeal_score': user_profile.zeal_score,
+            'social_mode': user_profile.social_mode
         })    
   
 class Dashboard(LoginRequiredMixin, View):
@@ -77,6 +79,7 @@ class Dashboard(LoginRequiredMixin, View):
 
 
 class EachCommitmentView(LoginRequiredMixin, View):
+    login_url = '/v1/login/'
     """This is for viewing each commitment data, note and every other details based on X commitment(ENTRIES)"""
     def get(self, request, commitment_key): return self.post(request, commitment_key=commitment_key)
     def post(self, request, commitment_key):
@@ -101,8 +104,16 @@ class EachCommitmentView(LoginRequiredMixin, View):
         })
    
 class Relationship(LoginRequiredMixin, View):
+    """This is for the relationship page on dashboard"""
+    login_url = '/v1/login/'
     def get(self, request):
-        return render(request, 'html/relationship.html', {'theme_mode': request.COOKIES.get('sd-theme', 'dark')})
+        istance = Profile.objects.filter(user = request.user).first()
+        
+        return render(request, 'html/relationship.html', {
+            'theme_mode': request.COOKIES.get('sd-theme', 'dark'),
+            'tier': istance.tier,
+            'ai_insight_active' : istance.ai_insight_active,
+            })
 
 
 
@@ -120,10 +131,19 @@ class DashboardCommitmentView(LoginRequiredMixin, View):
         
         open_add_commitment = request.GET.get('add', False)
         return render(request, 'html/commitments.html', {
-            'tier' : istance,
+            'tier' : istance.tier,
             'ai_insight_active': istance.ai_insight_active,
             'add': open_add_commitment,
             'motion_list': ['Happy', 'Sad', 'more happy', 'more sad', 'mix of balance']
             })
     
     
+class DashbaordAnalytics(LoginRequiredMixin, View):
+    """This is for the analytics page on dashboard"""
+    login_url = '/v1/login/'
+    def get(self, request):
+        istance = Profile.objects.filter(user = request.user).first()
+        
+        return render(request, 'html/reports.html', {
+            'theme_mode': request.COOKIES.get('sd-theme', 'dark'),
+            })
