@@ -29,6 +29,7 @@
 
   <!-- LIGHT CSS: blocking, critical layout only, tiny -->
   <link rel="stylesheet" href="{% static 'css/dashboard_light.css' %}">
+  
 
   <!-- ADVANCE CSS: non-blocking, loads after paint -->
   <link rel="preload" href="{% static 'cdn/dashboard_advance.css' %}" as="style"
@@ -37,24 +38,24 @@
 </head>
 <body class="sd-{{theme_mode}}">
 
-  <!-- ====================================================
+  <!-- 
        SPINNER — shows instantly, hides after window.load
-       ==================================================== -->
+        -->
   {% include "reusables/spinner.html" %}
 
-  <!-- ====================================================
+  <!-- 
        APP SHELL — hidden until reveal()
-       ==================================================== -->
+        -->
   <div class="db-app" id="dbApp">
 
-    <!-- ================================================
+    <!-- 
          MOBILE ASIDE OVERLAY
-         ================================================ -->
+          -->
     <div class="aside-overlay" id="asideOverlay"></div>
 
-    <!-- ================================================
+    <!-- 
          ASIDE (left sidebar)
-         ================================================ -->
+          -->
     <aside class="db-aside no-print" id="dbAside">
       <div class="aside-scroll">
 
@@ -154,9 +155,9 @@
 
     </aside><!-- /db-aside -->
 
-    <!-- ================================================
+    <!-- 
          HEADER
-         ================================================ -->
+          -->
     <header class="db-header no-print">
       <div class="hdr-left">
         <!-- Profile pic replaces logo after /get_user_picture/ -->
@@ -183,9 +184,9 @@
       </div>
     </header><!-- /db-header -->
 
-    <!-- ================================================
+    <!-- 
          MAIN CONTENT
-         ================================================ -->
+          -->
     <div class="db-wrap">
       <main class="db-main" id="dbMain">
 
@@ -386,17 +387,17 @@
       </main>
     </div><!-- /db-wrap -->
 
-    <!-- ================================================
+    <!-- 
          FAB — quick-add commitment (goes to commitments page)
-         ================================================ -->
+          -->
     <a href="{% url "origin_commitments" %}?add=true" class="db-fab no-print"
        title="Add new commitment" aria-label="Add new commitment">
       <i class="fas fa-plus"></i>
     </a>
 
-    <!-- ================================================
+    <!-- 
          SHARE MODAL
-         ================================================ -->
+          -->
     <div class="db-modal-overlay" id="shareModal" role="dialog" aria-modal="true" aria-label="Share your progress">
       <div class="db-modal">
         <div class="db-modal-header">
@@ -462,9 +463,9 @@
       </div>
     </div><!-- /shareModal -->
 
-    <!-- ================================================
+    <!-- 
          PRINT CARD (hidden on screen, prints cleanly)
-         ================================================ -->
+          -->
     <div class="print-only">
       <div class="print-card" id="printCard">
         <div class="print-brand">STREAK &amp; DISCIPLINE — Progress Report</div>
@@ -496,9 +497,9 @@
 
   </div><!-- /db-app -->
 
-  <!-- ====================================================
+  <!-- 
        LOGOUT FORM (hidden, submitted by JS)
-       ==================================================== -->
+        -->
   <form method="POST" action="{% url 'origin_logout' %}" id="logoutForm" style="display:none">
     {% csrf_token %}
   </form>
@@ -512,18 +513,10 @@
   {% include 'reusables/navigation_loader.js' %}
 </script>
 
-
-  <!-- ====================================================
-       FULL APP JAVASCRIPT
-       At bottom of body — no defer needed
-       ==================================================== -->
   <script>
     (function() {
     'use strict';
-  
-    /* ============================================================
-       HELPERS
-       ============================================================ */
+
     function getCookie(name) {
       var v = document.cookie.match('(?:^|;) ?' + name + '=([^;]*)(;|$)');
       return v ? decodeURIComponent(v[1]) : '';
@@ -543,9 +536,6 @@
     function show(el) { if (el) { el.style.display = ''; el.classList.remove('hidden'); } }
     function hide(el) { if (el) { el.classList.add('hidden'); } }
 
-    /* ============================================================
-       DAILY DISCIPLINE QUOTES  (zero network cost)
-       ============================================================ */
     var QUOTES = [
       'Motivation fades. Discipline stays.',
       'One honest sentence a day is all it takes.',
@@ -579,9 +569,6 @@
       el.style.fontStyle = 'italic';
     }
 
-    /* ============================================================
-       GREETING
-       ============================================================ */
     function setGreeting() {
       var h = new Date().getHours();
       var word = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
@@ -595,9 +582,6 @@
       }
     }
 
-    /* ============================================================
-       STAT COUNTER ANIMATION
-       ============================================================ */
     function countUp(el, to, suffix, delay) {
       if (!el || isNaN(to)) return;
       var orig = el.textContent;
@@ -613,9 +597,6 @@
       }, delay || 0);
     }
 
-    /* ============================================================
-       PROFILE PICTURE — /get_user_picture/
-       ============================================================ */
     var DEFAULT_AVATAR = 'https://api.dicebear.com/7.x/initials/svg?seed=' +
                          encodeURIComponent('{{ request.user.username }}') +
                          '&backgroundColor=1e293b&textColor=60a5fa&size=64';
@@ -651,9 +632,6 @@
         .catch(function()  { applyAvatar(DEFAULT_AVATAR); });
     }
 
-    /* ============================================================
-       HEATMAP — /heatmap/
-       ============================================================ */
     var heatmapData = null;
 
     function loadHeatmap() {
@@ -709,9 +687,6 @@
       loadHeatmap();
     });
 
-    /* ============================================================
-       STATUS BANNER — updates from heatmap response
-       ============================================================ */
     function updateStatusBanner(doneToday, total) {
       var banner = document.getElementById('dbStatusBanner');
       if (!banner) return;
@@ -750,9 +725,7 @@
       banner.appendChild(textGroup);
     }
 
-    /* ============================================================
-       COMMITMENT CARDS — /get_commitment_data/
-       ============================================================ */
+/*  COMMITMENT CARDS — /get_commitment_data*/
     var commitmentData = [];
 
     var CAT_ICONS = {
@@ -871,9 +844,9 @@
       return d.innerHTML;
     }
 
-    /* ============================================================
+    /* 
        PARTNER WIDGET — /partner-widget/
-       ============================================================ */
+        */
     function loadPartners() {
       var section = document.getElementById('dbPartners');
       if (!section) return; // social_mode !== 'partner'
@@ -942,9 +915,9 @@
       return d + ' day' + (d > 1 ? 's' : '') + ' ago';
     }
 
-    /* ============================================================
+    /* 
        ASIDE TOGGLE
-       ============================================================ */
+        */
     var aside    = document.getElementById('dbAside');
     var overlay  = document.getElementById('asideOverlay');
     var hamburger = document.getElementById('hamburgerBtn');
@@ -967,9 +940,9 @@
       });
     });
 
-    /* ============================================================
+    /* 
        THEME TOGGLE
-       ============================================================ */
+        */
     var themeBtn  = document.getElementById('themeToggleBtn');
     var themeIcon = document.getElementById('themeIcon');
 
@@ -992,9 +965,9 @@
       setTheme(document.body.classList.contains('sd-light'));
     });
 
-    /* ============================================================
+    /* 
        ZEAL SCORE TOOLTIP
-       ============================================================ */
+        */
     var zealBtn     = document.getElementById('zealInfoBtn');
     var zealTooltip = document.getElementById('zealTooltip');
     var zealStat    = zealTooltip && zealTooltip.parentElement;
@@ -1012,9 +985,9 @@
       document.addEventListener('click', function() { zealTooltip.classList.remove('open'); });
     }
 
-    /* ============================================================
+    /* 
        SHARE MODAL
-       ============================================================ */
+        */
     function openShareModal() {
       var modal = document.getElementById('shareModal');
       if (modal) modal.classList.add('open');
@@ -1107,9 +1080,9 @@
       window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(tweet), '_self', 'noopener');
     });
 
-    /* ============================================================
+    /* 
        PRINT
-       ============================================================ */
+        */
     function triggerPrint() {
       updateSharePreview(0); // ensure print card is filled
       window.print();
@@ -1119,9 +1092,9 @@
       closeShareModal(); setTimeout(triggerPrint, 300);
     });
 
-    /* ============================================================
+    /* 
        LOGOUT
-       ============================================================ */
+        */
     var logoutBtn  = document.getElementById('logoutBtn');
     var logoutForm = document.getElementById('logoutForm');
     logoutBtn && logoutBtn.addEventListener('click', function() {
@@ -1131,9 +1104,9 @@
       }
     });
 
-    /* ============================================================
+    /* 
        PARTICLE BURST on FAB  (desktop cosmetic)
-       ============================================================ */
+        */
     var fab = qs('.db-fab');
     fab && fab.addEventListener('click', function(e) {
       var colors = ['#60a5fa','#818cf8','#a78bfa'];
@@ -1156,21 +1129,28 @@
       }
     });
 
-    /* ============================================================
+    /* 
        INIT SEQUENCE
        The spinner already handles window.load hide timing.
        We reveal the app shell and fire all fetches in parallel.
-       ============================================================ */
+        */
+    var _dbInitDone = false;
+    var _dbRevealed = false;
+
     function reveal() {
+      if (_dbRevealed) return;
+      _dbRevealed = true;
       var app = document.getElementById('dbApp');
       if (app) app.classList.add('db-visible');
     }
 
     function init() {
+      if (_dbInitDone) return;
+      _dbInitDone = true;
+
       setGreeting();
       startQuoteTicker(document.getElementById('hdrQuote'));
 
-      // Stat number animations
       var zealEl    = document.getElementById('zealNum');
       var consistEl = document.getElementById('consistNum');
       var entriesEl = document.getElementById('entriesNum');
@@ -1181,24 +1161,28 @@
       countUp(consistEl, conVal, '%', 500);
       countUp(entriesEl, entVal, '', 600);
 
-      // Fire all lazy fetches in parallel
       loadProfilePicture();
       loadHeatmap();
       loadCommitments();
-      loadPartners(); // no-op if social_mode != partner (section doesn't exist)
+      loadPartners();
     }
 
-    // Reveal app shell once spinner clears (spinner.js fires on window.load)
-    // We piggyback window.load too for the app reveal
+    // Trigger
     if (document.readyState === 'complete') {
-      reveal(); init();
+      reveal();
+      init();
     } else {
       window.addEventListener('load', function() {
-        reveal(); init();
+        reveal();
+        init();
       });
-      // 8-second safety net
-      setTimeout(function() { reveal(); init(); }, 8000);
     }
+
+    // 8-second safety net (won't re-execute due to guard flags)
+    setTimeout(function() {
+      reveal();
+      init();
+    }, 8000);
 
   })();
   </script>

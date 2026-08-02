@@ -1,30 +1,25 @@
-/* ================================================================
-   REPORT — LIGHT CSS  (critical path, render-blocking)
-   Place at: origin/static/css/report.css
-   Loads synchronously. Zero animations. Zero backdrop-filter.
-   Everything here paints before the first byte of JS runs.
-   ================================================================ */
-
-/* ---- Variables ------------------------------------------------ */
 :root {
-  /* ---- palette copied verbatim from demo_weekly_analysis.css ---- */
   --bg:        #0a0e17;
   --surf:      #111827;
   --surf2:     #1a2332;
   --surf3:     #161f2d;
   --ink:       #e2e8f0;
   --ink2:      #94a3b8;
-  --ink3:      #64748b;
-  --acc:       #3b82f6;
-  --accL:      #60a5fa;
-  --accXL:     #93c5fd;
+  --ink3:      #5f7c99;
   --glow:      rgba(59,130,246,0.3);
-  --ok:        #22c55e;
-  --warn:      #f59e0b;
-  --bad:       #ef4444;
-  --gold:      #f59e0b;
   --edge:      #1e293b;
   --edgeL:     #334155;
+
+  --accent:          var(--acc);
+  --accent-light:    var(--accL);
+  --accent-glow:     var(--glow);
+  --text:            var(--ink);
+  --text-secondary:  var(--ink2);
+  --border:          var(--edge);
+  --border-light:    var(--edgeL);
+  --surface:         var(--surf);
+  --surface-hover:   var(--surf2);
+  --good:            var(--ok);
 
   --aside-w:   248px;
   --header-h:  56px;
@@ -33,19 +28,53 @@
   --rXL:       22px;
   --font:      system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
   --ease:      0.2s ease;
+
+  --acc:   #3b82f6;
+  --accL:  #60a5fa;
+  --accXL: #93c5fd;
+  --ok:   #22c55e;
+  --warn: #f59e0b;
+  --bad:  #ef4444;
+  --gold: #f59e0b;
+  --paper: #f4ecd8;
+
+  --radius-sm: var(--r);
+  --radius: var(--rL);
+  --radius-lg: var(--rXL);
+  --max-width: 1180px;
+  --font-sans: var(--font);
 }
 
-body.sd-light {
-  /* ---- palette copied verbatim from demo_weekly_analysis.css body.light-mode ---- */
-  --bg:    #f8fafc; --surf: #ffffff; --surf2: #f1f5f9; --surf3: #eef2f7;
-  --ink:   #0f172a; --ink2: #475569; --ink3: #94a3b8;
-  --acc:   #2563eb; --accL: #3b82f6; --accXL: #60a5fa;
+body.sd-light,
+body.light-mode {
+  --bg:    #f8fafc;
+  --surf:  #ffffff;
+  --surf2: #f1f5f9;
+  --surf3: #eef2f7;
+  --ink:   #0f172a;
+  --ink2:  #475569;
+  --ink3:  #64738c;
+  --acc:   #2563eb;
+  --accL:  #3b82f6;
+  --accXL: #60a5fa;
   --glow:  rgba(37,99,235,0.25);
-  --ok:    #16a34a; --gold: #d97706;
-  --edge:  #e2e8f0; --edgeL: #cbd5e1;
+  --ok:    #16a34a;
+  --gold:  #d97706;
+  --edge:  #e2e8f0;
+  --edgeL: #cbd5e1;
+
+  --accent:          var(--acc);
+  --accent-light:    var(--accL);
+  --accent-glow:     var(--glow);
+  --text:            var(--ink);
+  --text-secondary:  var(--ink2);
+  --border:          var(--edge);
+  --border-light:    var(--edgeL);
+  --surface:         var(--surf);
+  --surface-hover:   var(--surf2);
+  --good:            var(--ok);
 }
 
-/* ---- Reset ---------------------------------------------------- */
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html{height:100%;scroll-behavior:smooth}
 body{
@@ -57,10 +86,8 @@ a{color:inherit;text-decoration:none}
 img,svg{display:block;max-width:100%}
 button,select,input,textarea{font-family:inherit}
 
-/* ---- Outer layout --------------------------------------------- */
 .db-wrap{display:flex;min-height:100vh;padding-top:var(--header-h)}
 
-/* ---- ASIDE ---------------------------------------------------- */
 .db-aside{
   width:var(--aside-w);flex-shrink:0;
   position:fixed;top:0;left:0;bottom:0;
@@ -68,7 +95,7 @@ button,select,input,textarea{font-family:inherit}
   display:flex;flex-direction:column;z-index:300;
   overflow:hidden;
 }
-/* Mobile: hidden off-screen until toggled */
+
 @media(max-width:899px){
   .db-aside{
     width:min(var(--aside-w),80vw);
@@ -89,7 +116,6 @@ button,select,input,textarea{font-family:inherit}
 .aside-scroll::-webkit-scrollbar-track{background:transparent}
 .aside-scroll::-webkit-scrollbar-thumb{background:var(--edgeL);border-radius:2px}
 
-/* Aside top: avatar + name + tier */
 .aside-top{
   padding:1.25rem 1rem 1rem;
   border-bottom:1px solid var(--edge);flex-shrink:0;
@@ -113,7 +139,6 @@ button,select,input,textarea{font-family:inherit}
 .tier-premium{background:rgba(59,130,246,0.12);color:var(--accL);border:1px solid rgba(59,130,246,0.3)}
 .tier-gold   {background:rgba(245,158,11,0.12);color:var(--gold);border:1px solid rgba(245,158,11,0.3)}
 
-/* Aside nav */
 .aside-nav{padding:0.75rem 0}
 .aside-section-lbl{
   font-size:0.58rem;text-transform:uppercase;letter-spacing:0.12em;
@@ -132,7 +157,6 @@ button,select,input,textarea{font-family:inherit}
 .aside-link.active i{color:var(--accL)}
 .aside-sep{border:none;border-top:1px solid var(--edge);margin:0.6rem 1rem}
 
-/* Aside upgrade banner (free tier only) */
 .aside-upgrade{
   margin:0.75rem;border-radius:var(--r);
   background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.2);
@@ -141,14 +165,12 @@ button,select,input,textarea{font-family:inherit}
 .aside-upgrade h4{font-size:0.8rem;color:var(--accL);margin-bottom:0.3rem}
 .aside-upgrade p{font-size:0.7rem;color:var(--ink2);line-height:1.5;margin-bottom:0.65rem}
 
-/* Aside support block */
 .aside-support{padding:0 0 0.5rem}
 .aside-support-lbl{
   font-size:0.58rem;text-transform:uppercase;letter-spacing:0.12em;
   color:var(--ink3);padding:0.5rem 1rem 0.25rem;
 }
 
-/* Aside logout — sticky bottom */
 .aside-logout{
   flex-shrink:0;border-top:1px solid var(--edge);
   padding:0.5rem 0;
@@ -163,14 +185,12 @@ button,select,input,textarea{font-family:inherit}
 .aside-logout-btn:hover{background:rgba(239,68,68,0.06)}
 .aside-logout-btn i{width:16px;text-align:center}
 
-/* Mobile overlay */
 .aside-overlay{
   display:none;position:fixed;inset:0;z-index:399;
   background:rgba(0,0,0,0.55);
 }
 .aside-overlay.show{display:block}
 
-/* ---- HEADER --------------------------------------------------- */
 .db-header{
   position:fixed;top:0;left:0;right:0;z-index:200;
   height:var(--header-h);
@@ -216,11 +236,9 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 }
 .hdr-btn:hover{color:var(--accL)}
 
-/* Hamburger (mobile only) */
 .hdr-hamburger{display:flex}
 @media(min-width:900px){.hdr-hamburger{display:none}}
 
-/* ---- MAIN CONTENT AREA --------------------------------------- */
 .db-main{
   flex:1;min-width:0;
   padding:1.5rem 1.25rem 4rem;
@@ -230,7 +248,6 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 }
 @media(max-width:479px){.db-main{padding:1rem 0.9rem 4rem}}
 
-/* ---- Section labels ------------------------------------------ */
 .db-section-label{
   font-size:0.6rem;text-transform:uppercase;letter-spacing:0.12em;
   color:var(--ink3);margin-bottom:0.75rem;display:flex;align-items:center;gap:0.4rem;
@@ -239,7 +256,6 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
   content:'';flex:1;height:1px;background:var(--edge);
 }
 
-/* ---- Greeting ------------------------------------------------ */
 .db-greeting{margin-bottom:1.75rem}
 .db-greeting-time{
   font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;
@@ -249,7 +265,6 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 .db-greeting-sub{font-size:0.82rem;color:var(--ink2);margin-top:0.35rem}
 @media(max-width:479px){.db-greeting-text{font-size:1.35rem}}
 
-/* ---- Welcome hero (zero-commitment first-time state) ---------- */
 .db-welcome-hero{
   text-align:center;padding:2.5rem 1.5rem;
   background:var(--surf);border:1px dashed var(--edgeL);
@@ -276,7 +291,6 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
   .db-welcome-title{font-size:1.05rem}
 }
 
-/* ---- Stats row ----------------------------------------------- */
 .db-stats{
   display:grid;gap:0.65rem;margin-bottom:1.5rem;
   grid-template-columns:repeat(3,1fr);
@@ -303,17 +317,14 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
   .stat-icon{font-size:0.95rem;margin-bottom:0.3rem}
 }
 
-/* Zeal score: accent colour */
 .stat-card.zeal .stat-num{color:var(--accL)}
 .stat-card.zeal .stat-icon{color:var(--acc)}
 
-/* Zeal tooltip trigger */
 .zeal-info{
   position:absolute;top:0.6rem;right:0.7rem;
   font-size:0.7rem;color:var(--ink3);cursor:pointer;
 }
 
-/* ---- Status banner ------------------------------------------- */
 .db-status{
   background:var(--surf);border:1px solid var(--edge);
   border-radius:var(--rL);padding:0.85rem 1.1rem;
@@ -331,7 +342,6 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 .db-status-text{font-size:0.83rem;color:var(--ink);flex:1}
 .db-status-detail{font-size:0.7rem;color:var(--ink2)}
 
-/* ---- Milestone ----------------------------------------------- */
 .db-milestone{
   background:var(--surf2);border:1px solid var(--edge);
   border-left:3px solid var(--acc);
@@ -341,7 +351,6 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 }
 .db-milestone i{color:var(--accL);flex-shrink:0}
 
-/* ---- Heatmap ------------------------------------------------- */
 .db-heatmap-wrap{margin-bottom:1.75rem}
 .hm-grid{
   display:grid;grid-template-columns:repeat(7,1fr);
@@ -361,14 +370,12 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
   margin-top:0.4rem;font-size:0.58rem;color:var(--ink3);
 }
 
-/* ---- Commitment grid ----------------------------------------- */
 .db-commitments{margin-bottom:1.75rem}
 .commit-grid{
   display:grid;gap:0.75rem;
   grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
 }
 
-/* Commitment card */
 .commit-card{
   background:var(--surf);border:1px solid var(--edge);
   border-radius:var(--rL);padding:1.1rem;
@@ -408,7 +415,6 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 .checkin-done{color:var(--ok)}
 .checkin-pending{color:var(--warn)}
 
-/* Commitment error / retry state */
 .commit-error{
   padding:1.5rem;text-align:center;
   border:1px dashed var(--edgeL);border-radius:var(--rL);
@@ -416,7 +422,6 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 }
 .commit-error.show{display:block}
 
-/* ---- Partner widget ------------------------------------------ */
 .db-partners{margin-bottom:1.75rem}
 .partner-list{display:flex;flex-direction:column;gap:0.5rem}
 .partner-card{
@@ -428,10 +433,8 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 .partner-streak{font-size:0.78rem;color:var(--accL);font-weight:700}
 .partner-last{font-size:0.65rem;color:var(--ink3)}
 
-/* ---- Skeleton base ------------------------------------------- */
 .sk{
   background:var(--surf2);border-radius:var(--r);
-  /* shimmer added in advance CSS */
 }
 .sk-text{height:0.8rem;border-radius:4px;margin-bottom:0.4rem}
 .sk-text.w30{width:30%} .sk-text.w50{width:50%}
@@ -443,7 +446,6 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 }
 .sk-ring{width:44px;height:44px;border-radius:50%;background:var(--surf2);flex-shrink:0}
 
-/* ---- Buttons ------------------------------------------------- */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:0.4rem;
   padding:0.55rem 1.2rem;border-radius:var(--r);
@@ -464,7 +466,6 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 .btn-full{width:100%;justify-content:center}
 .btn-danger{background:var(--bad);color:#fff;border-color:transparent}
 
-/* mini spinner in button */
 .btn-spin{
   width:13px;height:13px;border:2px solid rgba(255,255,255,0.3);
   border-top-color:#fff;border-radius:50%;
@@ -474,7 +475,6 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 .btn.ob-loading .btn-txt{display:none}
 @keyframes dbSpin{to{transform:rotate(360deg)}}
 
-/* ---- Share / Print modal ------------------------------------- */
 .db-modal-overlay{
   display:none;position:fixed;inset:0;z-index:500;
   background:rgba(0,0,0,0.6);align-items:center;justify-content:center;
@@ -499,7 +499,6 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
   display:flex;gap:0.5rem;justify-content:flex-end;flex-shrink:0;
 }
 
-/* Share card preview */
 .share-preview{
   background:var(--bg);border:1px solid var(--edge);
   border-radius:var(--rL);padding:1.25rem;margin-bottom:1rem;
@@ -531,7 +530,6 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 .share-x     {background:#000;color:#fff}
 .share-copied{background:var(--ok);color:#fff}
 
-/* ---- Zeal tooltip -------------------------------------------- */
 .zeal-tooltip{
   position:absolute;z-index:400;
   background:var(--surf2);border:1px solid var(--edgeL);
@@ -543,7 +541,6 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 .zeal-tooltip.open{display:block}
 .zeal-tooltip strong{color:var(--accL);display:block;margin-bottom:0.3rem}
 
-/* ---- FAB (floating action button) ---------------------------- */
 .db-fab{
   position:fixed;bottom:1.5rem;right:1.5rem;z-index:300;
   width:52px;height:52px;border-radius:50%;
@@ -555,7 +552,6 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 }
 @media(min-width:900px){.db-fab{bottom:2rem;right:2rem}}
 
-/* ---- Print card (hidden until print) ------------------------- */
 @media not print{.print-only{display:none!important}}
 @media print{
   .no-print{display:none!important}
@@ -573,60 +569,9 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
   .print-footer{font-size:0.7rem;color:#64748b;margin-top:1.5rem;border-top:1px solid #e2e8f0;padding-top:0.75rem}
 }
 
-/* ---- Utility ------------------------------------------------- */
 .hidden{display:none!important}
 .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
-/* ================================================================
-   REPORT-SPECIFIC ADDITIONS BELOW
-   ================================================================ */
-/* ================================================================
-   WEEKLY REPORT — LIGHT / CRITICAL-PATH CSS  (render-blocking)
-   Place at: origin/static/css/report_light.css
 
-   This file intentionally contains ONLY what's needed to avoid a
-   flash of unstyled content on first paint: the shared report
-   app-shell (aside + header, copied verbatim from
-   report_light.css so the report matches the rest of the app),
-   plus the bare-bones, unpainted skeleton for every report section.
-
-   All "wow" visuals (3D tilt, painted meters, spring physics,
-   flame/ring/constellation animation) live in report_advance.css
-   and are swapped in once that file finishes downloading — this
-   file just has to render fast and never look broken.
-   ================================================================ */
-
-/* ----------------------------------------------------------------
-   TOKEN BRIDGE
-   The report app-shell below uses --acc / --surf / --ink / --edge
-   naming. The report sections (ported from the standalone report
-   demo) use --accent / --surface / --text / --border naming. Rather
-   than rewrite every report rule, we alias one set onto the other
-   so both vocabularies resolve to the same design tokens.
-   ---------------------------------------------------------------- */
-:root{
-    --surface: var(--surf);
-    --surface-hover: var(--surf2);
-    --text: var(--ink);
-    --text-secondary: var(--ink2);
-    --accent: var(--acc);
-    --accent-light: var(--accL);
-    --accent-glow: var(--glow);
-    --good: var(--ok);
-    --border: var(--edge);
-    --border-light: var(--edgeL);
-    --radius-sm: var(--r);
-    --radius: var(--rL);
-    --radius-lg: var(--rXL);
-    --max-width: 1180px;
-    --font-sans: var(--font);
-}
-
-/* Report-only surfaces sit inside db-main, so they don't need their
-   own <body> background/reset rules — report_light.css above
-   already handles those for the whole app shell. */
-
-/* ===== REPORT LAYOUT SKELETON (unpainted, pre-engine-CSS) ===== */
-/* ===== CONTAINER / GRID SKELETON ===== */
 .container{width:100%;max-width:var(--max-width);margin:0 auto;padding:0 5vw}
 .report-section{padding:2.6rem 0;border-top:1px solid var(--border)}
 .report-section:first-of-type{border-top:none}
@@ -643,7 +588,6 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 }
 .section-sub{font-size:.85rem;color:var(--text-secondary)}
 
-/* ===== BASIC CARD (unpainted, pre-CDN) ===== */
 .card{
     background:var(--surface);
     border:1px solid var(--border);
@@ -652,11 +596,8 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
     min-width:0;
 }
 
-
-/* ===== SCROLL PROGRESS (base stub, animated version overridden by cdn css) ===== */
 .scroll-progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:10000}
 
-/* ===== BACK TO TOP ===== */
 .back-to-top{
     position:fixed;right:16px;bottom:16px;z-index:900;
     opacity:0;visibility:hidden;transform:translateY(10px);
@@ -664,19 +605,16 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 }
 .back-to-top.visible{opacity:1;visibility:visible;transform:translateY(0)}
 
-/* ===== PULSE MONITOR (functional base, pre-CDN) ===== */
 .pulse-monitor{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.3rem 1.1rem}
 .pulse-bars{display:flex;align-items:flex-end;gap:4px;height:60px}
 .pulse-bars span{flex:1;min-width:0;height:40%;background:var(--border-light);border-radius:3px 3px 0 0}
 .pulse-readout{display:flex;align-items:center;gap:.5rem;margin-top:1rem;font-size:.78rem;color:var(--text-secondary)}
 .pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--good);flex-shrink:0}
 
-/* ===== CHECKLIST (reused pattern) ===== */
 .checklist{margin:1rem 0;display:flex;flex-direction:column;gap:.5rem}
 .checklist li{display:flex;align-items:flex-start;gap:.5rem;font-size:.85rem;color:var(--text-secondary)}
 .checklist li i{color:var(--accent);margin-top:.2rem;flex-shrink:0}
 
-/* ===== PHONE NOTIFICATION MOCK (functional, pre-CDN) ===== */
 .notify-preview-visual{display:flex;align-items:center;justify-content:center}
 .phone-mock{
     width:100%;max-width:300px;background:var(--surface);border:1px solid var(--border);
@@ -700,14 +638,12 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 .phone-notif-body span{font-size:.75rem;color:var(--text-secondary);line-height:1.4}
 .phone-notif-time{font-size:.65rem;color:var(--text-secondary);flex-shrink:0}
 
-/* ===== WORD CLOUD (functional, pre-CDN) ===== */
 .word-cloud{display:flex;flex-wrap:wrap;gap:.5rem}
 .word-chip{
     background:var(--surface);border:1px solid var(--border);border-radius:50px;
     padding:.4rem .9rem;font-size:calc(.72rem + (var(--w,1) * .05rem));color:var(--text-secondary);
 }
 
-/* ===== ACCORDION (functional collapse, pre-CDN) ===== */
 .accordion{display:flex;flex-direction:column;gap:.6rem}
 .accordion-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
 .accordion-trigger{
@@ -717,7 +653,6 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 .accordion-panel{display:none;padding:0 1rem 1rem;font-size:.85rem}
 .accordion-item.is-open .accordion-panel{display:block}
 
-/* ===== GROUP COMPARE LIST (functional, pre-CDN) ===== */
 .group-compare-list{display:flex;flex-direction:column;gap:.5rem}
 .group-compare-row{
     display:flex;align-items:center;gap:.6rem;background:var(--surface);
@@ -734,7 +669,6 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 .gc-rank{font-size:.75rem;font-weight:700;color:var(--text-secondary);width:16px}
 .group-compare-footnote{font-size:.75rem;color:var(--text-secondary);margin-top:.8rem;display:flex;gap:.4rem;align-items:flex-start}
 
-/* ===== PRIVACY NOTE ===== */
 .privacy-note{
     display:flex;align-items:flex-start;gap:.8rem;background:var(--surface);
     border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.1rem 1.3rem;
@@ -743,26 +677,22 @@ body.sd-light .db-header{background:rgba(248,250,252,0.9)}
 .privacy-note p{font-size:.82rem}
 .privacy-note strong{color:var(--text)}
 
-/* ===== BASE CHART / METER PLACEHOLDERS (unpainted) ===== */
 .ring-meter{width:150px;height:150px;border-radius:50%;background:conic-gradient(var(--accent) 0deg,var(--border) 0deg)}
 .bar-row{display:flex;align-items:flex-end;gap:6px;height:150px}
 .bar{flex:1;background:var(--border-light);border-radius:4px 4px 0 0;min-height:4px}
 
-/* ===== RESPONSIVE: MOBILE (<640px) — differs deliberately from desktop ===== */
 @media(max-width:639px){
     .grid-4{grid-template-columns:1fr 1fr}
     .grid-7{grid-template-columns:repeat(4,1fr)}
     .container{padding:0 4.5vw}
 }
 
-/* ===== RESPONSIVE: TABLET (640–1023px) ===== */
 @media(min-width:640px) and (max-width:1023px){
     .grid-2{grid-template-columns:1fr 1fr}
     .grid-4{grid-template-columns:repeat(4,1fr)}
     .grid-7{grid-template-columns:repeat(7,1fr)}
 }
 
-/* ===== RESPONSIVE: DESKTOP (1024px+) — full inline nav, no hamburger ===== */
 @media(min-width:1024px){
     .grid-2{grid-template-columns:1fr 1fr}
     .grid-3{grid-template-columns:repeat(3,1fr)}

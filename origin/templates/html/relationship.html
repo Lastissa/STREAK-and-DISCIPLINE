@@ -32,24 +32,24 @@
 </head>
 <body class="sd-{{theme_mode}}">
 
-  <!-- ============================================================
+  <!-- 
        LOADER — shows instantly, removed after window.load
-       ============================================================ -->
+        -->
   {% include "reusables/spinner.html" %}
 
   <div id="relToastWrap"></div>
 
-  <!-- ============================================================
+  <!-- 
        APP SHELL — hidden until JS reveal()
-       ============================================================ -->
+        -->
   <div class="rel-app" id="relApp">
 
     <div class="aside-overlay" id="asideOverlay"></div>
 
-    <!-- ================================================
+    <!-- ====
          ASIDE — identical structure to dashboard.html,
          "Relationship" marked active
-         ================================================ -->
+         ==== -->
     <aside class="db-aside no-print" id="dbAside">
       <div class="aside-scroll">
 
@@ -142,9 +142,9 @@
 
     </aside><!-- /db-aside -->
 
-    <!-- ================================================
+    <!-- ====
          HEADER — identical to dashboard.html
-         ================================================ -->
+         ==== -->
     <header class="db-header no-print">
       <div class="hdr-left">
         <div class="hdr-avatar" id="hdrAvatarWrap" title="Open sidebar">
@@ -165,9 +165,9 @@
       </div>
     </header><!-- /db-header -->
 
-    <!-- ================================================
+    <!-- ====
          MAIN CONTENT
-         ================================================ -->
+         ==== -->
     <div class="db-wrap">
       <main class="db-main" id="relMain">
 
@@ -176,11 +176,11 @@
           <p class="db-greeting-sub">Find a partner, and manage every request you've sent or received.</p>
         </div>
 
-        <!-- ============================================
+        <!-- 
              FIND A PARTNER — mirrors onboarding.html's
              friend-search flow exactly (same endpoints,
              same POST fields, same states).
-             ============================================ -->
+              -->
         <div class="rel-search">
           <div class="db-section-label"><i class="fas fa-user-plus"></i> Find a Partner</div>
 
@@ -211,9 +211,9 @@
           <div class="rel-msg bad"  id="relSearchError"><i class="fas fa-exclamation-circle"></i> <span id="relSearchErrMsg">Something went wrong.</span></div>
         </div>
 
-        <!-- ============================================
+        <!-- 
              REQUEST TABS
-             ============================================ -->
+              -->
         <div class="db-commitments">
           <div class="db-section-label"><i class="fas fa-user-group"></i> Friend Requests</div>
 
@@ -266,16 +266,16 @@
   {% include 'reusables/navigation_loader.js' %}
 </script>
 
-  <!-- ============================================================
+  <!-- 
        FULL APP JAVASCRIPT — at bottom, no defer needed
-       ============================================================ -->
+        -->
   <script>
     (function() {
     'use strict';
 
-    /* ============================================================
+    /* 
        HELPERS — identical set to dashboard.html
-       ============================================================ */
+        */
     function getCookie(name) {
       var v = document.cookie.match('(?:^|;) ?' + name + '=([^;]*)(;|$)');
       return v ? decodeURIComponent(v[1]) : '';
@@ -313,9 +313,9 @@
                          encodeURIComponent('{{ request.user.username }}') +
                          '&backgroundColor=1e293b&textColor=60a5fa&size=64';
 
-    /* ============================================================
+    /* 
        TOAST
-       ============================================================ */
+        */
     function toast(msg, kind) {
       var wrap = document.getElementById('relToastWrap');
       if (!wrap) return;
@@ -329,9 +329,9 @@
       }, 4000);
     }
 
-    /* ============================================================
+    /* 
        ASIDE TOGGLE — identical behavior to dashboard.html
-       ============================================================ */
+        */
     var aside     = document.getElementById('dbAside');
     var overlay   = document.getElementById('asideOverlay');
     var hamburger = document.getElementById('hamburgerBtn');
@@ -353,9 +353,9 @@
       });
     });
 
-    /* ============================================================
+    /* 
        THEME TOGGLE — identical to dashboard.html
-       ============================================================ */
+        */
     var themeBtn  = document.getElementById('themeToggleBtn');
     var themeIcon = document.getElementById('themeIcon');
 
@@ -373,9 +373,9 @@
       setTheme(document.body.classList.contains('sd-light'));
     });
 
-    /* ============================================================
+    /* 
        LOGOUT — identical to dashboard.html
-       ============================================================ */
+        */
     var logoutBtn = document.getElementById('logoutBtn');
     logoutBtn && logoutBtn.addEventListener('click', function() {
       if (confirm('Log out of STREAK & DISCIPLINE?')) {
@@ -383,9 +383,9 @@
       }
     });
 
-    /* ============================================================
+    /* 
        PROFILE PICTURE — /user_picture_data/, identical to dashboard.html
-       ============================================================ */
+        */
     function loadProfilePicture() {
       var hdrSk    = document.getElementById('hdrAvatarSk');
       var asideSk  = document.getElementById('asideAvatarSk');
@@ -417,15 +417,10 @@
         .catch(function()  { applyAvatar(DEFAULT_AVATAR); });
     }
 
-    /* ============================================================
+    /* 
        FIND A PARTNER — same endpoints/fields as onboarding.html:
-       POST {% url "origin_search_friend" %}  body: uuid=<public_searchable_username>
-       POST {% url "origin_add_friend" %}     body: userid=<public_searchable_username>
 
-       NOTE: SearchFriend.get() forwards to .post() and reads
-       request.POST — so this must stay a POST, not a real GET,
-       or request.POST['uuid'] will raise a KeyError server-side.
-       ============================================================ */
+        */
     function relSearchState(which) {
       ['relSearchLoading','relSearchFound','relSearchSent','relSearchNone','relSearchError'].forEach(function(id) {
         var e = document.getElementById(id);
@@ -509,9 +504,9 @@
       });
     });
 
-    /* ============================================================
+    /* 
        TABS
-       ============================================================ */
+        */
     var tabs = qsa('.rel-tab');
     tabs.forEach(function(btn) {
       btn.addEventListener('click', function() {
@@ -524,15 +519,6 @@
       });
     });
 
-    /* ============================================================
-       REQUEST SECTIONS
-       These 6 endpoints don't exist in urls.py yet — add matching
-       path()/name entries pointing at Friendship queries filtered by
-       from_user/to_user + status. Each must accept ?limit= & ?after_id=
-       and return JSON shaped:
-         { "results": [{ "userid", "username", "profile_image", "updated_at" }, ...],
-           "next_id": <id or null>, "total": <int> }
-       ============================================================ */
     var PAGE_SIZE = 10;
 
     var SECTIONS = {
@@ -710,10 +696,9 @@
       return b.card;
     }
 
-    /* ============================================================
+    /* 
        UNPARTNER — GET request with query param, per spec.
-       TODO: add path('relationship/unpartner/', ..., name='origin_relationship_unpartner')
-       ============================================================ */
+        */
     function requestUnpartner(item, btn) {
       if (!confirm('Unpartner with @' + (item.userid || '') + '? This cannot be undone.')) return;
       btn.disabled = true;
@@ -741,9 +726,9 @@
       });
     }
 
-    /* ============================================================
+    /* 
        QUOTE TICKER — same list/behavior as dashboard.html
-       ============================================================ */
+        */
     var QUOTES = [
       'Motivation fades. Discipline stays.',
       'One honest sentence a day is all it takes.',
@@ -763,27 +748,35 @@
       setInterval(tick, 6000);
     }
 
-    /* ============================================================
-       INIT / REVEAL — same pattern as dashboard.html.
-       Spinner already handles window.load hide timing.
-       ============================================================ */
-    function reveal() {
-      var app = document.getElementById('relApp');
-      if (app) app.classList.add('rel-visible');
-    }
+        /* 
+       INIT / REVEAL — guard flags prevent duplicate calls
+        */
+      var _relInitDone = false;
+      var _relRevealed = false;
 
-    function init() {
-      startQuoteTicker(document.getElementById('hdrQuote'));
-      loadProfilePicture();
-      ensureLoaded('outPending'); // first visible tab
-    }
+      function reveal() {
+        if (_relRevealed) return;
+        _relRevealed = true;
+        var app = document.getElementById('relApp');
+        if (app) app.classList.add('rel-visible');
+      }
 
-    if (document.readyState === 'complete') {
-      reveal(); init();
-    } else {
-      window.addEventListener('load', function() { reveal(); init(); });
+      function init() {
+        if (_relInitDone) return;
+        _relInitDone = true;
+        startQuoteTicker(document.getElementById('hdrQuote'));
+        loadProfilePicture();
+        ensureLoaded('outPending'); // first visible tab
+      }
+
+      if (document.readyState === 'complete') {
+        reveal(); init();
+      } else {
+        window.addEventListener('load', function() { reveal(); init(); });
+      }
+
+      // 8-second safety net — won't re-execute due to guard flags
       setTimeout(function() { reveal(); init(); }, 8000);
-    }
 
     //ADDITIONAL JS FOR THE ACCEPT AND DECLINE  REQUEST
       

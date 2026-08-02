@@ -828,12 +828,11 @@
     function hide(el){if(el)el.classList.add('hidden')}
     function show(el){if(el)el.classList.remove('hidden')}
 
-    /* ── Reveal ────────────────────────────────────────────────── */
-    var advCss=document.getElementById('advCss');
-    function reveal(){document.getElementById('pfApp').classList.add('pf-visible')}
-    if(advCss){if(advCss.rel==='stylesheet')reveal();else advCss.addEventListener('load',reveal)}
-    setTimeout(reveal,8000);
-
+      var advCss=document.getElementById('advCss');
+      var _pfRevealed=false;
+      function reveal(){if(_pfRevealed)return;_pfRevealed=true;document.getElementById('pfApp').classList.add('pf-visible')}
+      if(advCss){if(advCss.rel==='stylesheet')reveal();else advCss.addEventListener('load',reveal)}
+      setTimeout(reveal,8000);
     /* ── Toast ─────────────────────────────────────────────────── */
     var toastEl=qs('#pfToast'),toastMsg=qs('#pfToastMsg'),toastIcon=qs('#pfToastIcon'),toastTimer=null;
     var TICONS={success:'fa-check-circle',error:'fa-exclamation-circle',info:'fa-fire',load:'fa-circle-notch fa-spin'};

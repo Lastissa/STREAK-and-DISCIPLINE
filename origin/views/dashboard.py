@@ -7,6 +7,8 @@ from ..models import Profile, Commitment, Entries
 from django.contrib import messages
 from django.http import JsonResponse
 
+from django.db import connection
+
 from ..models import ChoicesValidatorInModels
 
 class Onboarding(LoginRequiredMixin, View):
@@ -75,9 +77,19 @@ class Dashboard(LoginRequiredMixin, View):
             'public_searchable_username ' : user_profile.public_searchable_username,
             
         }
+        
+        optimization() #this is for debugging and optimization, it will print the query count and the sql query in the console
         return render(request, 'html/dashboard.html', data)
 
-
+def optimization():
+    """This is for optimization and debugging"""
+    print(f"Query count: {len(connection.queries)}")
+    for q in connection.queries:
+        print(f"  {q['time']}s - {q['sql'][:100]}")
+        print("")  # Add a newline for better readability
+        
+        
+        
 class EachCommitmentView(LoginRequiredMixin, View):
     login_url = '/v1/login/'
     """This is for viewing each commitment data, note and every other details based on X commitment(ENTRIES)"""
@@ -108,7 +120,9 @@ class Relationship(LoginRequiredMixin, View):
     login_url = '/v1/login/'
     def get(self, request):
         istance = Profile.objects.filter(user = request.user).first()
-        
+
+        optimization() #this is for debugging and optimization, it will print the query count and the sql query in the console
+
         return render(request, 'html/relationship.html', {
             'theme_mode': request.COOKIES.get('sd-theme', 'dark'),
             'tier': istance.tier,

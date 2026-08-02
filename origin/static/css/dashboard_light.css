@@ -291,7 +291,7 @@ body.sd-light .db-header{background:rgba(240,244,250,0.9)}
   display:block;line-height:1;margin-bottom:0.25rem;
 }
 .stat-label{font-size:0.65rem;color:var(--ink);text-transform:uppercase;letter-spacing:0.06em}
-.stat-sub{font-size:0.7rem;color:var(--in3);margin-top:0.35rem}
+.stat-sub{font-size:0.7rem;color:var(--ink3);margin-top:0.35rem}
 @media(max-width:479px){
   .stat-card{padding:0.75rem 0.6rem}
   .stat-num{font-size:1.25rem}

@@ -117,18 +117,32 @@ body.sd-light .db-header{background:#f0f4fa}
 /* ================================================================
    PROFILE HERO BANNER
    ================================================================ */
+
 .pf-hero{
   background:var(--surf);border:1px solid var(--edge);border-radius:var(--rXL);
   padding:1.5rem 1.5rem 1.25rem;margin-bottom:1.5rem;
   display:flex;align-items:flex-start;gap:1.25rem;flex-wrap:wrap;
   position:relative;overflow:hidden;
 }
-/* Solid accent strip top-left */
 .pf-hero::before{
   content:'';position:absolute;top:0;left:0;right:0;height:3px;
   background:linear-gradient(90deg,var(--acc),var(--accXL),var(--acc));
 }
-.pf-hero-avatar-col{display:flex;flex-direction:column;align-items:center;gap:.65rem;flex-shrink:0}
+
+/* ── Mobile: stack everything vertically, centered ── */
+@media(max-width:600px){
+  .pf-hero{
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    padding:1.5rem 1rem 1.25rem;
+    gap:1rem;
+  }
+}
+
+.pf-hero-avatar-col{
+  display:flex;flex-direction:column;align-items:center;gap:.65rem;flex-shrink:0;
+}
 .pf-avatar-ring{
   width:90px;height:90px;border-radius:50%;
   background:var(--surf2);border:3px solid var(--edgeL);
@@ -143,19 +157,62 @@ body.sd-light .db-header{background:#f0f4fa}
 }
 .pf-avatar-ring:hover .pf-avatar-edit{opacity:1}
 
+/* ── Mobile: avatar smaller ── */
+@media(max-width:600px){
+  .pf-avatar-ring{width:72px;height:72px}
+  .pf-hero-avatar-col{gap:.4rem}
+}
+
 .pf-hero-info{flex:1;min-width:0}
+/* ── Mobile: center text ── */
+@media(max-width:600px){
+  .pf-hero-info{
+    display:flex;flex-direction:column;align-items:center;
+    text-align:center;
+  }
+}
+
 .pf-hero-name{font-size:1.25rem;font-weight:800;line-height:1.2;margin-bottom:.3rem;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pf-hero-pubid{font-size:.8rem;color:var(--ink3);margin-bottom:.6rem}
 .pf-hero-pubid span{color:var(--accL);font-weight:600}
 .pf-hero-badges{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.85rem}
+/* ── Mobile: center badges ── */
+@media(max-width:600px){
+  .pf-hero-badges{justify-content:center}
+}
+
 .pf-hero-meta{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+/* ── Mobile: center stats row ── */
+@media(max-width:600px){
+  .pf-hero-meta{
+    justify-content:center;
+    gap:1.25rem;
+  }
+}
+
 .pf-meta-item{display:flex;flex-direction:column;align-items:center}
 .pf-meta-n{font-size:1.2rem;font-weight:800;color:var(--accL);line-height:1}
 .pf-meta-l{font-size:.58rem;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3)}
 .pf-meta-sep{width:1px;height:32px;background:var(--edge);flex-shrink:0}
+/* ── Mobile: separator shorter ── */
+@media(max-width:600px){
+  .pf-meta-sep{height:24px}
+}
 
 .pf-hero-right{display:flex;flex-direction:column;align-items:flex-end;gap:.65rem;flex-shrink:0}
+/* ── Mobile: center zeal score and member since ── */
+@media(max-width:600px){
+  .pf-hero-right{
+    align-items:center;
+    width:100%;
+    flex-direction:row;
+    justify-content:center;
+    gap:1rem;
+    flex-wrap:wrap;
+  }
+}
+
 .pf-zeal-orb{
   background:var(--surf2);border:1px solid var(--edge);
   border-radius:var(--rL);padding:.65rem .9rem;text-align:center;min-width:90px;
@@ -163,7 +220,6 @@ body.sd-light .db-header{background:#f0f4fa}
 .pf-zeal-n{font-size:1.6rem;font-weight:900;color:var(--accL);line-height:1}
 .pf-zeal-l{font-size:.58rem;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);margin-top:.2rem}
 .pf-member-since{font-size:.67rem;color:var(--ink3)}
-
 /* ================================================================
    TWO-PANEL BODY
    ================================================================ */

@@ -1,4 +1,4 @@
-/* ===== MESSAGES CONTAINER ===== */
+/*  MESSAGES CONTAINER  */
 .messages-container {
     position: fixed;
     top: 0;
@@ -14,7 +14,7 @@
     pointer-events: none;
 }
 
-/* ===== INDIVIDUAL MESSAGE ===== */
+/*  INDIVIDUAL MESSAGE  */
 .msg {
     display: flex;
     align-items: flex-start;
@@ -86,7 +86,7 @@
     line-height: 1.5;
 }
 
-/* ===== MESSAGE ACTIONS (per message) ===== */
+/*  MESSAGE ACTIONS (per message)  */
 .msg-actions {
     display: flex;
     align-items: center;
@@ -137,7 +137,7 @@
     opacity: 1;
 }
 
-/* ===== COPY ALL BUTTON (bottom of container) ===== */
+/*  COPY ALL BUTTON (bottom of container)  */
 .msg-copy-all {
     align-self: center;
     display: inline-flex;
@@ -191,7 +191,7 @@
     100% { transform: scale(1); }
 }
 
-/* ===== SUCCESS ===== */
+/*  SUCCESS  */
 .msg-success {
     background: rgba(22,101,52,0.75);
     border-color: rgba(34,197,94,0.4);
@@ -199,7 +199,7 @@
 }
 .msg-success .msg-icon { color: #4ade80; }
 
-/* ===== ERROR ===== */
+/*  ERROR  */
 .msg-error {
     background: rgba(127,29,29,0.75);
     border-color: rgba(239,68,68,0.4);
@@ -207,7 +207,7 @@
 }
 .msg-error .msg-icon { color: #f87171; }
 
-/* ===== WARNING ===== */
+/*  WARNING  */
 .msg-warning {
     background: rgba(113,63,18,0.75);
     border-color: rgba(251,191,36,0.4);
@@ -215,7 +215,7 @@
 }
 .msg-warning .msg-icon { color: #fbbf24; }
 
-/* ===== INFO ===== */
+/*  INFO  */
 .msg-info {
     background: rgba(30,58,138,0.75);
     border-color: rgba(59,130,246,0.4);
@@ -223,7 +223,7 @@
 }
 .msg-info .msg-icon { color: #60a5fa; }
 
-/* ===== LIGHT MODE ===== */
+/*  LIGHT MODE  */
 body.light-mode .msg-success {
     background: rgba(240,253,244,0.85);
     border-color: rgba(34,197,94,0.3);
@@ -250,7 +250,7 @@ body.light-mode .msg-copy-all {
     color: #475569;
 }
 
-/* ===== MOBILE ===== */
+/*  MOBILE  */
 @media (max-width: 767px) {
     .messages-container {
         top: 60px;
