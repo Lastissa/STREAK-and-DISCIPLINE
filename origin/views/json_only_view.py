@@ -4,12 +4,12 @@ from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from origin.views.utility_view import helper_with_friendship_request_answer
 from utility.config import Static
 from ..models import Commitment, Entries, Profile, ChoicesValidatorInModels, Friendship
 from django.shortcuts import reverse
-from django.http import JsonResponse
+from django.http import JsonResponse, request
 from django.utils import timezone
 
 
@@ -500,6 +500,13 @@ class CreateCommitment(LoginRequiredMixin, View):
             if not whatsapp_number.startswith('+'):
                 return JsonResponse({'message': 'invalid watsappp number; +xxxxx.. where x are number are the only allowed'})
                 
+                
+                
+        #check if existing commitment exist with the same what for the user
+        existing_commitment = Commitment.objects.filter(user=request.user, what__iexact=what).first()
+        if existing_commitment:
+            return JsonResponse({'message': 'You already have a commitment with the same description. Please choose a different one.'}, status=400)
+        
         # Create the commitment
         try:
             commitment = Commitment.objects.create(
@@ -537,11 +544,9 @@ class CommitmentQuickCheckin(LoginRequiredMixin, View):
         if not last_entry:
             #user have not written anything before so this is their first entry
             streak = 1                         #Set the commitment streak to one as day 1
-            print("commitment_reset")
         elif (timezone.now().date()  - last_entry.commit_at).days == 1:
             # a day at max diff mean the streak should increase
             streak = current_commitment_istance.streak_count + 1
-            print('commitment_plus_one')
         elif  (timezone.now().date()  - last_entry.commit_at).days == 0:
             #same day? break the code istantly and tell them they have commit
             streak = current_commitment_istance.streak_count
@@ -549,7 +554,6 @@ class CommitmentQuickCheckin(LoginRequiredMixin, View):
         else:
             #the diff between last entry and current entry is more than more day so RESET
             streak = 1
-            print('gap btwn current entry and last entry is too far')
             
         current_commitment_istance.streak_count = streak
         #also update the last check in
@@ -575,7 +579,6 @@ class ProfilePicture(LoginRequiredMixin, View):
     def get(self, request):
         """find url from db and return it to clien"""
         istance = Profile.objects.filter(user = request.user).first()
-        print(str(istance))
         return JsonResponse({'message': "success", 'url' :str(istance.profile_img_url)}, status = 200)
     
     def post(self, request):
@@ -587,7 +590,6 @@ class ProfilePicture(LoginRequiredMixin, View):
         if key.size >= 5 * 1024 *1024: return JsonResponse({'message': 'Error, file too large'}, status = 400)
         try:    result = upload_profile_picture(user_email=request.user.email, uploaded_file= key.read())
         except Exception as e: 
-            print(str(e))
             return JsonResponse({'message': 'Server Error, Our partner are slow today.'}, status = 500)
         #everyting went successfuly, update the user profile link and done
         istance = Profile.objects.get(user = request.user)
@@ -663,7 +665,6 @@ class ProfileUpdateToggles(LoginRequiredMixin, View):
            data = json.loads(request.body)
            value = data.get('value')
            field = data.get('field')
-           print(data)
            
            # HANDLE ERROR AND CLEANING
            if field is None or value is None: return JsonResponse({'message': 'invalid'}, status = 400)
@@ -684,9 +685,12 @@ class ProfileUpdateToggles(LoginRequiredMixin, View):
                 istance.save()
                 return JsonResponse({'message': 'success'}, status = 200)
            elif field == 'social_mode':
-                istance.social_mode = not istance.social_mode
-                istance.save()
-                return JsonResponse({'message': 'success'}, status = 200)
+               if value == 'partner':
+                   istance.social_mode = 'partner'
+               elif value == 'solo':
+                   istance.social_mode = 'solo'
+               istance.save()
+               return JsonResponse({'message': 'success'}, status = 200)
            elif field == 'weekly_report_email_active':
                 istance.weekly_report_email_active = not istance.weekly_report_email_active
                 istance.save()
@@ -712,7 +716,7 @@ class ProfileUpdateTheme(LoginRequiredMixin, View):
         data = json.loads(request.body)
         value = data.get('value')
         field = data.get('field')
-        print(data)
+        logger.info(f"User {request.user} is trying to update theme with field: {field} and value: {value}")
         
         # HANDLE ERROR AND CLEANING
         if field is None or value is None: return JsonResponse({'message': 'invalid'}, status = 400)
@@ -729,208 +733,215 @@ class ProfileUpdateTheme(LoginRequiredMixin, View):
         return JsonResponse({'message': 'unknown theme'}, status = 500)
 
 
+class EachCommitmentViewSettings(LoginRequiredMixin, View):
+    """THIS HANDLE UpDATE IN EACH COMMITMENT SETTINGS, LIKE REMINDER TIME, REMINDER METHOD, CHECKIN TIME"""
+    def patch(self, request, commitment_key):
+        key = "updated mode of delivery for " + request.META.get("REMOTE_ADDR")
+        if cache.get(key=key):  # Check if the user has made a recent request within one minute
+            cache.set(key=key, value="i dey here", timeout=60)  # Reset the cache to extend the wait time
+            return JsonResponse({'message': 'You are making requests too frequently. wait for 60 seconds.'}, status=429)
 
+        data = json.loads(request.body)
+        mode_of_delivery = data['mode_of_delivery']                         #email or whatsapp
+        checkin_time = data['user_selected_reminder_time']                  #time to update xx:xx
+        whatsapp_number = data.get('whatsapp_number')                              #only if mode_of_delivery is whatsapp
 
+        # Validate mode_of_delivery
+        if mode_of_delivery not in ChoicesValidatorInModels().report_delivery_mode: return JsonResponse({'message': 'Invalid mode of delivery.'}, status=400)
+       
+        #input valid, Now update the data
+        db_istance = Commitment.objects.filter(user=request.user, pk=commitment_key).first()
+        
 
+        #cleaning whatsap number if mode_of_delivery is whatsapp, make sure it starts with + and is a valid number
+        if mode_of_delivery == 'whatsapp':
+            #verify that whatsap number is valid
+            if (mode_of_delivery == 'whatsapp' and not whatsapp_number):    return JsonResponse({'message': 'WhatsApp number is required when WhatsApp reminders are selected.'}, status=400)
+            elif (mode_of_delivery == 'whatsapp' and whatsapp_number[0] != '+'): return JsonResponse({'message': 'Invalid WhatsApp number. It should start with + followed by the country code and number.'}, status=400)
+              
+         #saving data
+        db_istance.mode_of_delivery = mode_of_delivery.strip().lower()
+        db_istance.whatsapp_number = whatsapp_number if mode_of_delivery == 'whatsapp' else ''
+        db_istance.user_selected_reminder_time = checkin_time
+        db_istance.save()
+        
+        #rate limit user for 60 seconds to avoid endpoint abuse 
+        
+        cache.set(key=key, value="i dey here", timeout=60)
+        return JsonResponse({'message': 'update successful.'}, status=200)     
+    
+class EachCommitementHeatMap(LoginRequiredMixin, View):
+    """Return heat map for a simgle commitment most likely in the entry page to show the user how they have been doing in the past 7 entries"""
+    def get(self, request, commitment_key):
+        entries_istance = Entries.objects.filter(commitment_key__pk=commitment_key).select_related('commitment_key').order_by('commit_at')[:7]  # Limit to the last 7 entries
+        if entries_istance is None: return JsonResponse({'message': 'No Entries found.'}, status=403)
+        
+        #entries exist with the said user, return needed data
+        heatmap_data = [
+            {
+                "date": i.commit_at.isoformat(),
+                "checked_in": True,
+                "word_count": i.word_count,
+                "mood": i.mood
+            }
+            for i in entries_istance
+        ]
+        if len(heatmap_data) < 7:
+            # Pad the list with empty entries if there are fewer than 7
+            for _ in range(7 - len(heatmap_data)):
+                heatmap_data.insert(0, {
+                    "date": None,
+                    "checked_in": False,
+                    "word_count": 0,
+                    "mood": None
+                })
+        
+        
+        return JsonResponse({
+            'message': 'success',
+            'days': heatmap_data
+        }, status=200)
+
+class EachCommitementEntries(LoginRequiredMixin, View):
+    """SAVE TODAY ENTRIES , INCHARGE OF THE LONG ONE, the actual entry point not the quick one in the commitment page even though both are can be used to save entries"""
+    def post(self, request, commitment_key):
+        data = json.loads(request.body)
+        content = data.get('content', '').strip()
+        mood = data.get('mood', 'minimum').strip()
+        
+        if not content: return JsonResponse({'message': 'Content cannot be empty.'}, status=400)
+        
+        # Fetch the commitment instance
+        commitment_instance = Commitment.objects.filter(user=request.user, pk=commitment_key).first()
+        if not commitment_instance: return JsonResponse({'message': 'Commitment not found.'}, status=404)
+        
+        #check if user have already checked in today, if yes, return error
+        last_entry = Entries.objects.filter(commitment_key=commitment_key).order_by('-commit_at').first()
+        if last_entry and last_entry.commit_at.isoformat() == timezone.now().date().isoformat():
+            return JsonResponse({'message': 'You have already checked in today.'}, status=400)
+        
+        # Create a new entry since commitment dey and user have not mad entry today
+        with transaction.atomic():
+            entry = Entries.objects.create(
+                commitment_key=commitment_instance,
+                content=content,
+                word_count=len(content.split()),
+                mood=mood
+                )
+            
+            # Update streak count and last check-in
+            last_entry = Entries.objects.filter(commitment_key=commitment_key).order_by('-commit_at').first()
+            print(last_entry and (timezone.now().date() - last_entry.commit_at).days)
+            if last_entry and (timezone.now().date() - last_entry.commit_at).days == 1:
+                commitment_instance.streak_count += 1   #Streak count increase by 1 if last entry was yesterday
+            else:
+                commitment_instance.streak_count = 1 # Reset streak count to 1 if last entry was not yesterday
+            
+            commitment_instance.last_check_in = timezone.now()
+            commitment_instance.save()
+        
+        return JsonResponse({'message': 'Entry saved successfully.', 'entry_id': entry.pk}, status=201)
 
 class ReportsData(LoginRequiredMixin, View):
-    """
-    RETURNS EVERYTHING html/reports.html (Analytics & Reports page) NEEDS -- ONE CALL, ONE ROUND TRIP.
-    This is intentionally the ONLY place that page touches the database from; the template itself
-    ships with zero server-rendered numbers so this endpoint (or whatever replaces it later) is the
-    single source of truth for the report.
-
-    GET params:
-        offset -> int, how many weeks back from THIS week to report on. 0 = current week (default).
-                  1 = last week, 2 = two weeks ago, etc. Capped at 52.
-
-    Response shape:
-    {
-      "message": "success",
-      "week_label": "Jul 21 - Jul 27, 2026",
-      "week_number": 30,
-      "offset": 0,
-      "can_go_back": true,
-      "can_go_forward": false,
-      "has_any_entries": true,
-      "stats": {
-          "consistency_pct": 86, "prior_consistency_pct": 77, "trend_delta": 9,
-          "current_streak": 34, "entries_this_week": 6, "possible_days": 7,
-          "avg_words_per_entry": 47
-      },
-      "daily": [ {date, day_name, has_entry, is_future, word_count, entries:[{commitment, mood, mood_emoji, content, word_count}]} , ... x7 ],
-      "mood_distribution": [ {mood, emoji, count}, ... ],
-      "commitments": [ {id, what, category, checked_in_days, possible_days, streak_count}, ... ],
-      "word_cloud": [ {word, weight(2-9)}, ... ],
-      "best_day": {...same shape as a `daily` item...} | null,
-      "toughest_day": {...same shape as a `daily` item...} | null,
-      "group_compare": [ {public_id, consistency_pct, is_you?}, ... ]   // empty unless social_mode == 'partner'
-    }
-    """
+    """THIS IS THE JSON DATA THAT WILL BE USED TO RENDER THE REPORTS PAGE, IT WILL BE USED BY THE FRONTEND TO RENDER THE REPORTS PAGE"""
     login_url = '/v1/login/'
 
     def get(self, request):
-        try:
-            offset = int(float(request.GET.get('offset', '0')))
-        except (TypeError, ValueError):
-            offset = 0
-        offset = max(0, min(offset, 1))
+        data = {
+            # ---- HERO ----
+            "week_range_label": "Jul 13 – Jul 19, 2026",
+            "week_number_label": "Week 29",
+            "generated_note": "Generated from 6 of 7 check-ins.",
+            "current_week_iso": "2026-07-13",
+            "prev_week_iso": "2026-07-06",   # null/omit to disable the "prev" button
+            "next_week_iso": None,           # null/omit to disable the "next" button (e.g. current week)
 
-        today = timezone.now().date()
-        week_start = today - timezone.timedelta(days=today.weekday()) - timezone.timedelta(weeks=offset)
-        week_end = week_start + timezone.timedelta(days=6)
-        prev_week_start = week_start - timezone.timedelta(weeks=1)
-        prev_week_end = week_start - timezone.timedelta(days=1)
+            # ---- STAT OVERVIEW ----
+            "consistency_pct": 86,
+            "consistency_note": "Up 9 points from last week",
+            "current_streak": 34,
+            "longest_streak": 61,
+            "entries_this_week": 6,
+            "entries_note": "Missed Wednesday",
+            "avg_words": 47,
+            "avg_words_note": "Your longest week yet",
 
-        entries_this_week = list(
-            Entries.objects.filter(
-                commitment_key__user=request.user, commit_at__gte=week_start, commit_at__lte=week_end
-            ).select_related('commitment_key').order_by('commit_at')
-        )
-        entries_last_week = Entries.objects.filter(
-            commitment_key__user=request.user, commit_at__gte=prev_week_start, commit_at__lte=prev_week_end
-        )
-
-        active_commitments = Commitment.objects.filter(user=request.user, is_active=True)
-        emoji_map = Static.emoji_translator()
-
-        if week_end <= today:
-            days_elapsed = 7
-        elif week_start > today:
-            days_elapsed = 0
-        else:
-            days_elapsed = (today - week_start).days + 1
-
-        day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-        daily = []
-        days_checked = set()
-        for i in range(7):
-            d = week_start + timezone.timedelta(days=i)
-            day_entries = [e for e in entries_this_week if e.commit_at == d]
-            if day_entries:
-                days_checked.add(d)
-            daily.append({
-                'date': str(d),
-                'day_name': day_names[i],
-                'has_entry': len(day_entries) > 0,
-                'is_future': d > today,
-                'word_count': sum(e.word_count for e in day_entries),
-                'entries': [
-                    {
-                        'commitment': e.commitment_key.what,
-                        'mood': e.mood,
-                        'mood_emoji': emoji_map.get(e.mood, '🙂'),
-                        'content': e.content,
-                        'word_count': e.word_count,
-                    }
-                    for e in day_entries
-                ],
-            })
-
-        denom = days_elapsed or 1
-        entries_count = len(days_checked)
-        consistency_pct = min(100, round((entries_count / denom) * 100))
-
-        prior_days_checked = set(entries_last_week.values_list('commit_at', flat=True))
-        prior_consistency_pct = min(100, round((len(prior_days_checked) / 7) * 100)) if prior_days_checked else 0
-        # Same Mon..Sun shape as `daily`, just booleans -- cheap, and lets the frontend draw a real
-        # day-by-day "this week vs last week" trend chart instead of a single aggregate number.
-        prior_daily_checked = [
-            (prev_week_start + timezone.timedelta(days=i)) in prior_days_checked for i in range(7)
-        ]
-
-        total_words = sum(e.word_count for e in entries_this_week)
-        avg_words = round(total_words / len(entries_this_week)) if entries_this_week else 0
-        current_streak = max([c.streak_count for c in active_commitments], default=0)
-
-        mood_counter = {}
-        for e in entries_this_week:
-            mood_counter[e.mood] = mood_counter.get(e.mood, 0) + 1
-        mood_distribution = [
-            {'mood': m, 'emoji': emoji_map.get(m, '🙂'), 'count': c}
-            for m, c in sorted(mood_counter.items(), key=lambda x: -x[1])
-        ]
-
-        commitments_breakdown = []
-        for c in active_commitments:
-            c_entries = [e for e in entries_this_week if e.commitment_key_id == c.pk]
-            commitments_breakdown.append({
-                'id': c.pk,
-                'what': c.what,
-                'category': c.category,
-                'checked_in_days': len(c_entries),
-                'possible_days': denom,
-                'streak_count': c.streak_count,
-            })
-
-        stopwords = {
-            'the', 'a', 'an', 'and', 'or', 'but', 'to', 'of', 'in', 'on', 'for', 'is', 'it', 'i',
-            'my', 'me', 'was', 'be', 'with', 'that', 'this', 'so', 'at', 'as', 'im', "i'm", 'today',
-            'day', 'am', 'pm', 'just', 'have', 'had', 'has', 'not', 'are', 'were', 'been', 'still',
-        }
-        word_freq = {}
-        for e in entries_this_week:
-            for raw_word in (e.content or '').lower().split():
-                w = ''.join(ch for ch in raw_word if ch.isalnum())
-                if len(w) < 3 or w in stopwords:
-                    continue
-                word_freq[w] = word_freq.get(w, 0) + 1
-        top_words = sorted(word_freq.items(), key=lambda x: -x[1])[:16]
-        max_freq = top_words[0][1] if top_words else 1
-        word_cloud = [
-            {'word': w, 'weight': min(9, max(2, round((c / max_freq) * 9)))}
-            for w, c in top_words
-        ]
-
-        entered_days = [d for d in daily if d['has_entry']]
-        best_day = max(entered_days, key=lambda d: d['word_count']) if entered_days else None
-        missed_days = [d for d in daily if not d['has_entry'] and not d['is_future']]
-        toughest_day = missed_days[0] if missed_days else None
-
-        group_compare = []
-        profile_istance = Profile.objects.filter(user=request.user).first()
-        if profile_istance and profile_istance.social_mode == 'partner':
-            partner_links = Friendship.objects.filter(
-                models.Q(from_user=request.user) | models.Q(to_user=request.user), status='accepted'
-            ).select_related('from_user', 'to_user')
-            for f in partner_links:
-                partner_uid = f.to_user_id if f.from_user_id == request.user.pk else f.from_user_id
-                p_profile = Profile.objects.filter(user_id=partner_uid).first()
-                if not p_profile or not p_profile.streak_count_is_public_visible:
-                    continue
-                p_days = Entries.objects.filter(
-                    commitment_key__user_id=partner_uid, commit_at__gte=week_start, commit_at__lte=week_end
-                ).values('commit_at').distinct().count()
-                group_compare.append({
-                    'public_id': p_profile.public_searchable_username or 'member',
-                    'consistency_pct': min(100, round((p_days / denom) * 100)),
-                })
-            group_compare.append({'public_id': 'You', 'consistency_pct': consistency_pct, 'is_you': True})
-            group_compare.sort(key=lambda x: -x['consistency_pct'])
-
-        return JsonResponse({
-            'message': 'success',
-            'week_label': week_start.strftime('%b %d') + ' \u2013 ' + week_end.strftime('%b %d, %Y'),
-            'week_number': week_start.isocalendar()[1],
-            'offset': offset,
-            'can_go_back': True,
-            'can_go_forward': offset > 0,
-            'has_any_entries': Entries.objects.filter(commitment_key__user=request.user).exists(),
-            'stats': {
-                'consistency_pct': consistency_pct,
-                'prior_consistency_pct': prior_consistency_pct,
-                'trend_delta': consistency_pct - prior_consistency_pct,
-                'current_streak': current_streak,
-                'entries_this_week': entries_count,
-                'possible_days': denom,
-                'avg_words_per_entry': avg_words,
+            # ---- PULSE ----
+            "pulse": {
+                "readout_text": "86% signal strength — steadiest between Thursday and Saturday",
+                "bar_heights": [40, 62, 55, 70, 30, 80, 65, 90, 45, 60, 75, 50, 85, 40, 70, 55, 60, 80, 65, 90]  # % height, 20 bars
             },
-            'daily': daily,
-            'prior_daily_checked': prior_daily_checked,
-            'mood_distribution': mood_distribution,
-            'commitments': commitments_breakdown,
-            'word_cloud': word_cloud,
-            'best_day': best_day,
-            'toughest_day': toughest_day,
-            'group_compare': group_compare,
-        }, status=200)
+
+            # ---- DAYS (drives constellation + daily breakdown) ----
+            # Always 7 entries, Sunday -> Saturday for the selected week.
+            "days": [
+                {
+                    "day_short": "Sun",
+                    "day_name": "Sunday",
+                    "date_label": "Jul 13",
+                    "missed": False,
+                    "status": "good",              # "good" | "ok" | "missed"
+                    "strength": "strong",          # "strong" | "mid" | "missed" (constellation star size)
+                    "mood_color": "#22c55e",       # constellation star glow color
+                    "mood_emoji": "🙂",
+                    "mood_label": "Calm",
+                    "time_label": "Checked in 9:04 PM",
+                    "word_count": 61,
+                    "note": "Went to bed on time and it felt like a small miracle..."
+                }
+                # ...6 more
+            ],
+
+            # ---- REFLECTIONS (top 3 pinned quotes) ----
+            "reflections": [
+                {"text": "Discipline is mostly just protecting tomorrow-me from tonight-me.", "day": "Sunday"}
+                # up to 3
+            ],
+
+            # ---- TREND ----
+            "trend": {
+                "compare": [
+                    {"day_short": "Sun", "last_pct": 64, "now_pct": 100}
+                    # 7 entries, Sun -> Sat. Use now_pct: 6 (or similar near-zero) to represent a missed day.
+                ],
+                "sparkline": [58, 64, 52, 70, 66, 77, 71, 86],  # last 8 weeks, oldest -> newest, 0-100
+                "sparkline_note": "You've climbed 28 points since the week you started."
+            },
+
+            # ---- HIGHLIGHTS ----
+            "highlights": {
+                "best": {"day_name": "Saturday", "note": "Longest entry of the week at 73 words..."},
+                "toughest": {"day_name": "Wednesday", "note": "Missed entirely — first gap in 33 days..."}
+            },
+
+            # ---- COMMITMENTS ----
+            "commitments": [
+                {"what": "Wake up by 6:00 AM", "icon": "sun", "pct": 86, "frac": "6/7"}
+                # icon = any Font Awesome solid icon name (without "fa-")
+            ],
+
+            # ---- MOOD DISTRIBUTION ----
+            "moods": [
+                {"emoji": "😄", "label": "Proud", "pct": 14, "count": 1}
+            ],
+
+            # ---- INSIGHTS ----
+            "insights": [
+                {"icon": "sun", "title": "Mornings win", "text": "Entries logged before 9 AM average 52 words..."}
+            ],
+
+            # ---- WORD CLOUD ----
+            "word_cloud": [
+                {"word": "showed up", "weight": 9}   # weight ~1-10, drives chip font-size
+            ],
+
+            # ---- GROUP COMPARE (only rendered if the section exists,
+            #      i.e. Django's social_mode context var is 'partner' or 'group') ----
+            "group_name": "Morning People",
+            "group_compare": [
+                {"name": "You", "initials": "AO", "pct": 86, "is_you": True}
+                # ranked, is_you row gets the highlighted style
+            ]
+        }
+
+        return JsonResponse(data, status=200)

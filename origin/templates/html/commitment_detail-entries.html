@@ -215,9 +215,9 @@
               <div class="cd-entry-done" id="cdEntryDone">
                 <div class="cd-done-header">
                   <div class="cd-done-badge"><i class="fas fa-check"></i> Logged today</div>
-                  <button class="btn btn-ghost btn-sm" id="cdEditBtn">
+                  {% comment %} <button class="btn btn-ghost btn-sm" id="cdEditBtn">
                     <i class="fas fa-pen"></i> Edit
-                  </button>
+                  </button> {% endcomment %}
                 </div>
                 <p class="cd-done-content" id="cdDoneContent">{{ today_entry.content }}</p>
                 <div class="cd-done-meta">
@@ -559,13 +559,13 @@
     var IS_EDITING       = false;  /* tracks whether we're editing an existing entry */
 
     /* ============================================================
-       API ENDPOINTS  (dummy — change later)
+       API ENDPOINTS
        ============================================================ */
     var API = {
-      heatmap:      '/api/v1/commitments/' + CID + '/heatmap/',
-      entryCreate:  '/api/v1/commitments/' + CID + '/entry/create/',
+      heatmap:      '{% url "origin_each_commitment_entries_needed_data" commitment_key="pk"%}'.replace('pk', CID),
+      entryCreate:  '{% url "origin_each_commitment_entries_save_entry" commitment_key="pk"%}'.replace('pk', CID),
       entryUpdate:  function(id){ return '/api/v1/commitments/' + CID + '/entry/' + id + '/update/'; },
-      settings:     '/api/v1/commitments/' + CID + '/settings/'
+      settings:     '{% url "origin_each_commitment_view_settings" commitment_key="pk"%}'.replace('pk', CID)
     };
 
     /* ============================================================
@@ -671,7 +671,7 @@
         img.src=url; wrap.appendChild(img);
       });
     }
-    fetch('/get_user_picture/',{credentials:'same-origin'})
+    fetch('{% url "origin_user_picture" %}',{credentials:'same-origin'})
       .then(function(r){ return r.ok?r.json():null; })
       .then(function(d){ applyAvatar(d&&d.url?d.url:FALLBACK_AVT); })
       .catch(function(){ applyAvatar(FALLBACK_AVT); });
@@ -1020,7 +1020,7 @@
         /* Tooltip */
         var tipLines=[''];
         if(day.checked_in){
-          tipLines=[ day.mood ? '😌 '+day.mood : '✓ Checked in' ];
+          tipLines=[ day.mood ? +day.mood : '✓ Checked in' ];
           if(day.word_count>0) tipLines.push(day.word_count+' words');
         } else {
           tipLines=['Missed'];

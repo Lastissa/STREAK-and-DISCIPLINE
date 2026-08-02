@@ -90,3 +90,6 @@ class DisciplineUser(HttpUser):
     @task(2)
     def user_picture(self):
         self.client.get("/v1/user_picture_data/")
+    @task(5)
+    def dashboard(self):
+        self.client.get("/v1/dashboard/")

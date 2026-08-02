@@ -350,7 +350,7 @@
                       <i class="fas fa-handshake" style="color:var(--ink3)"></i> Partner Mode
                       {% if tier == 'free' %}<span class="pf-gate-badge pf-gate-premium"><i class="fas fa-lock"></i> Premium</span>{% endif %}
                     </div>
-                    <p class="pf-hint">Let accountability partners see your consistency score. Entries stay private.</p>
+                    <p class="pf-hint">Let potential partner be able to send you partner requests. Entries stay private.</p>
                   </div>
                   <label class="pf-switch" aria-label="Partner mode">
                     <input type="checkbox" id="pfSocialMode"
@@ -547,10 +547,11 @@
                     <div class="pf-tier-card-name free">Free</div>
                     {% if tier == 'free' or not tier %}<div class="pf-current-badge">Current</div>{% endif %}
                     <ul class="pf-tier-features">
-                      <li>5 active commitments</li>
-                      <li>Email reminders</li>
-                      <li>Weekly summary</li>
-                      <li>Public leaderboard</li>
+
+                      {% for i in  free_tier_member%}
+                      <li>{{i}}</li>
+                      {% endfor %}
+
                     </ul>
                     {% if tier != 'free' and tier %}<div style="font-size:.7rem;color:var(--ink3);margin-top:.25rem">Downgrade to free</div>{% endif %}
                   </div>
@@ -558,12 +559,11 @@
                     <div class="pf-tier-card-name premium"><i class="fas fa-gem"></i> Premium</div>
                     {% if tier == 'premium' %}<div class="pf-current-badge">Current</div>{% endif %}
                     <ul class="pf-tier-features">
-                      <li>50 commitments</li>
-                      <li>WhatsApp + Push alerts</li>
-                      <li>Custom reports</li>
-                      <li>AI weekly insights</li>
-                      <li>1 accountability partner</li>
-                      <li>Profile picture</li>
+                      
+                      {% for i in  premium_tier_member%}
+                      <li>{{i}}</li>
+                      {% endfor %}
+                      
                     </ul>
                     {% if tier == 'free' or not tier %}<a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm btn-full" style="margin-top:.4rem">Start Trial</a>{% endif %}
                   </div>
@@ -571,13 +571,11 @@
                     <div class="pf-tier-card-name gold"><i class="fas fa-crown"></i> Gold</div>
                     {% if tier == 'gold' %}<div class="pf-current-badge">Current</div>{% endif %}
                     <ul class="pf-tier-features">
-                      <li>Unlimited commitments</li>
-                      <li>All delivery methods</li>
-                      <li>Offline reminders</li>
-                      <li>AI Coach</li>
-                      <li>4 partners</li>
-                      <li>Create groups</li>
-                      <li>Advance analytics</li>
+                      
+                      {% for i in  gold_tier_member%}
+                      <li>{{i}}</li>
+                      {% endfor %}
+                      
                     </ul>
                     {% if tier != 'gold' %}<a href="/v1/upgrade/" class="btn btn-outline btn-sm btn-full" style="margin-top:.4rem;border-color:var(--gold);color:var(--gold)">Upgrade to Gold</a>{% endif %}
                   </div>

@@ -88,8 +88,8 @@ class EachCommitmentView(LoginRequiredMixin, View):
         if profile_istance is None: return JsonResponse({'message': 'no profile attached to this account, please contact customer support ASAP'}, statu = 400)
         commitment_istance = Commitment.objects.filter(user = request.user, pk = commitment_key).first()
         
-        today_entry_istance = Entries.objects.filter(commitment_key__user = request.user, commit_at = timezone.datetime.now().date()).select_related('commitment_key').first()
-        
+        today_entry_istance = Entries.objects.filter(commitment_key__user = request.user, commitment_key__pk = commitment_key, commit_at = timezone.datetime.now().date()).select_related('commitment_key').first()
+        print(today_entry_istance)
         
         return render(request, 'html/commitment_detail-entries.html',{
             'theme-mode': request.COOKIES.get('sd-theme', 'dark'),
