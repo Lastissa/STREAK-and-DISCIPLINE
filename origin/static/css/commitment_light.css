@@ -235,8 +235,10 @@ body.sd-light .db-header { background:#f0f4fa }
   border-radius:var(--rL); padding:0.85rem 1.25rem;
   margin-bottom:1.5rem; flex-wrap:wrap;
 }
-.cm-stat-chip { display:flex; flex-direction:column; align-items:center; flex:1; min-width:80px }
-.cm-stat-n { font-size:1.4rem; font-weight:800; color:var(--accL); line-height:1 }
+.cm-stat-chip { display:flex; flex-direction:column; align-items:center; flex:1; min-width:0px }
+.cm-stat-n { font-size:1.4rem; font-weight:800; color:var(--accL); white-space:nowrap;line-height:1 }
+
+
 .cm-stat-l { font-size:0.65rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--ink3); margin-top:0.2rem }
 .cm-stat-sep { width:1px; height:36px; background:var(--edge); flex-shrink:0 }
 
@@ -744,3 +746,5 @@ body.sd-light .db-header { background:#f0f4fa }
 .hidden { display:none !important }
 .no-print { }
 @media print { .no-print { display:none !important } }
+
+

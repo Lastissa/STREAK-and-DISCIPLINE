@@ -617,7 +617,7 @@ class ProfilePictureRemove(LoginRequiredMixin, View):
         istance = Profile.objects.get(user = request.user)
         istance.profile_img_url = ''
         istance.save()
-        return JsonResponse({'message': 'success'}, status = 200)
+        return JsonResponse({'message': 'deleted successfully'}, status = 200)
     
     
         
@@ -665,12 +665,13 @@ class ProfileUpdateToggles(LoginRequiredMixin, View):
            data = json.loads(request.body)
            value = data.get('value')
            field = data.get('field')
-           
            # HANDLE ERROR AND CLEANING
            if field is None or value is None: return JsonResponse({'message': 'invalid'}, status = 400)
            
            #CLEAN DATA - OMO BUT I AM TAKING A RISK, I AM ONLY DEPENDING ON BOOLEAN VALUE AND NT ACTUALLY CHECKING THE VALUE E.G IF USER SNED TRUE, I JSUT SAVE FALSE, I DONT CHECK IF ITS TRUE
            istance = Profile.objects.filter(user = request.user).first()
+           print(data)
+           print(istance.ai_insight_active)
            #HANDLE LEADEROARD OPT IN
            if field == 'leaderboard_optin':
                istance.leaderboard_optin = not istance.leaderboard_optin
@@ -734,17 +735,20 @@ class ProfileUpdateTheme(LoginRequiredMixin, View):
 
 
 class EachCommitmentViewSettings(LoginRequiredMixin, View):
-    """THIS HANDLE UpDATE IN EACH COMMITMENT SETTINGS, LIKE REMINDER TIME, REMINDER METHOD, CHECKIN TIME"""
+    """THIS HANDLE UpDATE IN EACH COMMITMENT SETTINGS, LIKE REMINDER TIME, REMINDER METHOD, CHECKIN TIME, And is active"""
     def patch(self, request, commitment_key):
         key = "updated mode of delivery for " + request.META.get("REMOTE_ADDR")
-        if cache.get(key=key):  # Check if the user has made a recent request within one minute
-            cache.set(key=key, value="i dey here", timeout=60)  # Reset the cache to extend the wait time
-            return JsonResponse({'message': 'You are making requests too frequently. wait for 60 seconds.'}, status=429)
+        if cache.get(key=key):  # Check if the user has made a recent request within 10 sec
+            cache.set(key=key, value="i dey here", timeout=1)  # Reset the cache to extend the wait time
+            return JsonResponse({'message': 'You are making requests too frequently. wait for 10 seconds.'}, status=429)
 
         data = json.loads(request.body)
         mode_of_delivery = data['mode_of_delivery']                         #email or whatsapp
         checkin_time = data['user_selected_reminder_time']                  #time to update xx:xx
-        whatsapp_number = data.get('whatsapp_number')                              #only if mode_of_delivery is whatsapp
+        whatsapp_number = data.get('whatsapp_number')                       #only if mode_of_delivery is whatsapp
+        reminder_active = data.get('reminder_active')                       #Check if the user want to stop receviing reminders
+        
+        print(data)
 
         # Validate mode_of_delivery
         if mode_of_delivery not in ChoicesValidatorInModels().report_delivery_mode: return JsonResponse({'message': 'Invalid mode of delivery.'}, status=400)
@@ -763,12 +767,24 @@ class EachCommitmentViewSettings(LoginRequiredMixin, View):
         db_istance.mode_of_delivery = mode_of_delivery.strip().lower()
         db_istance.whatsapp_number = whatsapp_number if mode_of_delivery == 'whatsapp' else ''
         db_istance.user_selected_reminder_time = checkin_time
+        db_istance.reminder_active = reminder_active
         db_istance.save()
         
         #rate limit user for 60 seconds to avoid endpoint abuse 
         
         cache.set(key=key, value="i dey here", timeout=60)
         return JsonResponse({'message': 'update successful.'}, status=200)     
+    
+class EachCommitmentArchive(LoginRequiredMixin, View):
+    """ARCHIVE A COMMITMNET BY CHANGING THE IS_ACTIVE TO FALSE"""
+    def post(self, request,id):
+        return JsonResponse({'message': 'coming soon'}, status = 503)
+        #THE LIEN BELOW ARE ACUTALLY THE REAL SOLUTION TO THIS CODE BUT I COMMENT IT COS I WAS NOT ABLE TO MANAGE ARCHIVE IN COMMITMENT YET
+        # istance = Commitment.objects.filter(user= request.user, pk= id).first()
+        # if istance.is_active is False: return JsonResponse({'message': 'Account already inactive'}, status = 400)
+        # istance.is_active = False
+        # istance.save()
+        # return JsonResponse({'message': 'Archive successfull'}, status = 200)
     
 class EachCommitementHeatMap(LoginRequiredMixin, View):
     """Return heat map for a simgle commitment most likely in the entry page to show the user how they have been doing in the past 7 entries"""

@@ -8,7 +8,8 @@
   <meta name="robots" content="noindex, nofollow">
   <title>My Commitments — STREAK &amp; DISCIPLINE</title>
 
-  <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
+  <link rel="preload" href="{{ font_awesome_all_min_css }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="{{ font_awesome_all_min_css }}"></noscript>
 
   <!--
     CRITICAL INLINE — background + spinner.
@@ -30,265 +31,18 @@
         onload="this.onload=null;this.rel='stylesheet'" id="adv-css">
   <noscript><link rel="stylesheet" href="{% static 'cdn/commitment_advance.css' %}"></noscript>
 
-  <!-- ── MOBILE BEAUTY + TOUR + BUTTON TIPS ── -->
-  <style>
-    /* ================================================================
-       MOBILE BEAUTY IMPROVEMENTS
-       ================================================================ */
-    @media (max-width: 599px) {
-      .cm-main { padding: 1rem 0.85rem 5rem; }
-      .cm-page-title { font-size: 1.15rem; }
-      .cm-page-sub { font-size: 0.74rem; }
-      .cm-hero {
-        flex-direction: column; align-items: flex-start;
-        gap: 0.8rem; margin-bottom: 1.1rem;
-      }
-      .cm-hero .btn { width: 100%; justify-content: center; padding: 0.7rem 1rem; font-size: 0.85rem; }
-      .cm-stats-bar {
-        padding: 0.7rem 0.9rem; gap: 0.4rem;
-        margin-bottom: 1.1rem; border-radius: 12px;
-      }
-      .cm-stat-n { font-size: 1.2rem; }
-      .cm-stat-l { font-size: 0.6rem; }
-      .cm-stat-sep { height: 28px; }
-      .cm-filter-bar { flex-direction: column; gap: 0.55rem; margin-bottom: 1.1rem; }
-      .cm-search-wrap { width: 100%; }
-      .cm-cats {
-        flex-wrap: nowrap; overflow-x: auto; width: 100%;
-        padding-bottom: 0.2rem; scrollbar-width: none;
-        -webkit-overflow-scrolling: touch;
-      }
-      .cm-cats::-webkit-scrollbar { display: none; }
-      .cm-sort { width: 100%; }
-      .cm-grid { gap: 0.8rem; }
-      .cm-card__body { padding: 0.9rem 0.9rem 0.85rem 0.8rem; gap: 0.6rem; }
-      .cm-card__what { font-size: 0.87rem; line-height: 1.45; }
-      .cm-streak-num { font-size: 1.1rem; }
-      .cm-card__top { margin-bottom: 0; }
-    }
 
-    /* ================================================================
-       CARD ACTION BUTTONS — labeled on mobile, icon-only on desktop
-       ================================================================ */
-    .cm-card__actions { display: flex; gap: 0.35rem; align-items: center; }
-
-    .cm-action-btn-wrap {
-      position: relative;
-      display: inline-flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    /* Mobile: pill buttons with icon + text label */
-    @media (max-width: 599px) {
-      .cm-action-btn {
-        width: auto !important;
-        height: auto !important;
-        padding: 0.42rem 0.72rem !important;
-        border-radius: 10px !important;
-        display: flex !important;
-        align-items: center !important;
-        gap: 0.32rem !important;
-        font-size: 0.71rem !important;
-        min-height: 34px;
-      }
-      .cm-action-lbl {
-        display: inline !important;
-        font-size: 0.69rem;
-        font-weight: 600;
-        letter-spacing: 0.01em;
-        white-space: nowrap;
-      }
-      .cm-card__foot {
-        padding-top: 0.7rem;
-        flex-wrap: nowrap;
-        gap: 0.4rem;
-      }
-      .cm-goal-lbl { font-size: 0.65rem; min-width: 0; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    }
-    /* Desktop: hide the text label, show only icon with hover tooltip */
-    @media (min-width: 600px) {
-      .cm-action-lbl { display: none; }
-    }
-
-    /* ================================================================
-       BUTTON TOOLTIP — CSS hover on desktop, JS toggle on mobile
-       ================================================================ */
-    .cm-btn-tip {
-      position: absolute;
-      bottom: calc(100% + 10px);
-      left: 50%;
-      transform: translateX(-50%) translateY(4px);
-      background: var(--surf);
-      border: 1px solid var(--edgeL);
-      border-radius: 10px;
-      padding: 0.55rem 0.8rem;
-      font-size: 0.71rem;
-      color: var(--ink2);
-      line-height: 1.55;
-      white-space: normal;
-      min-width: 180px;
-      max-width: 230px;
-      box-shadow: 0 8px 28px rgba(0,0,0,0.28);
-      pointer-events: none;
-      opacity: 0;
-      z-index: 600;
-      transition: opacity 0.18s ease, transform 0.18s ease;
-      text-align: left;
-    }
-    .cm-btn-tip::after {
-      content: '';
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      border: 5px solid transparent;
-      border-top-color: var(--edgeL);
-    }
-    /* Desktop: show on wrapper hover */
-    @media (min-width: 600px) {
-      .cm-action-btn-wrap:hover .cm-btn-tip {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-      }
-    }
-    /* Mobile: show when wrapper has .tip-open */
-    .cm-action-btn-wrap.tip-open .cm-btn-tip {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-    /* Keep tip above viewport on mobile if needed */
-    @media (max-width: 599px) {
-      .cm-btn-tip { min-width: 160px; max-width: 200px; font-size: 0.69rem; }
-    }
-
-    /* ================================================================
-       HELP / TOUR BUTTON — visible on all screen sizes
-       ================================================================ */
-    .hdr-tour-btn {
-      color: var(--accL) !important;
-      opacity: 0.8;
-      font-size: 1.05rem !important;
-    }
-    .hdr-tour-btn:hover { opacity: 1; }
-
-    /* ================================================================
-       TOUR OVERLAY
-       ================================================================ */
-    .cm-tour-bd {
-      position: fixed; inset: 0; z-index: 9000;
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.3s ease;
-    }
-    .cm-tour-bd.active {
-      opacity: 1; pointer-events: auto;
-    }
-    /* Spotlight — the "hole" in the dark overlay */
-    .cm-tour-spot {
-      position: fixed;
-      border-radius: 12px;
-      box-shadow: 0 0 0 9999px rgba(0,0,0,0.68), 0 0 0 2.5px var(--acc), 0 0 20px rgba(59,130,246,0.4);
-      z-index: 9001;
-      transition: left 0.42s cubic-bezier(0.22,1,0.36,1),
-                  top  0.42s cubic-bezier(0.22,1,0.36,1),
-                  width 0.42s cubic-bezier(0.22,1,0.36,1),
-                  height 0.42s cubic-bezier(0.22,1,0.36,1);
-      pointer-events: none;
-    }
-    /* Tour card */
-    .cm-tour-card {
-      position: fixed;
-      z-index: 9002;
-      background: var(--surf);
-      border: 1px solid var(--edgeL);
-      border-radius: 16px;
-      padding: 1.25rem 1.35rem 1.1rem;
-      width: min(340px, calc(100vw - 2rem));
-      box-shadow: 0 20px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(59,130,246,0.12);
-      transition: top 0.38s cubic-bezier(0.22,1,0.36,1),
-                  left 0.38s cubic-bezier(0.22,1,0.36,1),
-                  transform 0.38s cubic-bezier(0.22,1,0.36,1);
-    }
-    .cm-tour-badge {
-      display: inline-flex; align-items: center;
-      background: rgba(59,130,246,0.12); color: var(--accL);
-      font-size: 0.6rem; font-weight: 800; letter-spacing: 0.1em;
-      padding: 0.18rem 0.6rem; border-radius: 50px;
-      margin-bottom: 0.6rem; text-transform: uppercase;
-    }
-    .cm-tour-icon {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 36px; height: 36px; border-radius: 10px;
-      background: rgba(59,130,246,0.1); color: var(--accL);
-      font-size: 1rem; margin-bottom: 0.55rem;
-    }
-    .cm-tour-h {
-      font-size: 0.97rem; font-weight: 800; color: var(--ink);
-      margin-bottom: 0.45rem; line-height: 1.3;
-    }
-    .cm-tour-p {
-      font-size: 0.78rem; color: var(--ink2); line-height: 1.65;
-      margin-bottom: 0.9rem;
-    }
-    .cm-tour-foot {
-      display: flex; align-items: center;
-      justify-content: space-between; gap: 0.5rem;
-    }
-    .cm-tour-skip {
-      background: none; border: none; cursor: pointer;
-      font-size: 0.73rem; color: var(--ink3); padding: 0.3rem 0;
-      font-family: inherit;
-    }
-    .cm-tour-skip:hover { color: var(--bad); }
-    .cm-tour-dots {
-      display: flex; gap: 0.3rem; align-items: center;
-    }
-    .cm-tour-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--edge); transition: background 0.2s ease, transform 0.2s ease;
-    }
-    .cm-tour-dot.active { background: var(--acc); transform: scale(1.3); }
-    .cm-tour-nav { display: flex; gap: 0.4rem; }
-    .cm-tour-prev, .cm-tour-next {
-      padding: 0.42rem 0.9rem;
-      border-radius: 8px; font-size: 0.78rem; font-weight: 600;
-      cursor: pointer; border: 1.5px solid var(--edge);
-      background: var(--surf2); color: var(--ink2);
-      font-family: inherit;
-      transition: background 0.18s ease, color 0.18s ease, transform 0.2s ease;
-    }
-    .cm-tour-next {
-      background: var(--acc); border-color: var(--acc); color: #fff;
-    }
-    .cm-tour-prev:hover:not(:disabled) { background: var(--surf3); color: var(--ink); transform: translateX(-1px); }
-    .cm-tour-next:hover { filter: brightness(1.1); transform: translateX(1px); }
-    .cm-tour-prev:disabled { opacity: 0.3; cursor: not-allowed; }
-
-    /* Pulse ring on spotlight */
-    @keyframes tourPulse {
-      0%,100% { box-shadow: 0 0 0 9999px rgba(0,0,0,0.68), 0 0 0 2.5px var(--acc), 0 0 20px rgba(59,130,246,0.3); }
-      50%      { box-shadow: 0 0 0 9999px rgba(0,0,0,0.68), 0 0 0 4px var(--acc),   0 0 32px rgba(59,130,246,0.55); }
-    }
-    .cm-tour-spot { animation: tourPulse 2.2s ease-in-out infinite; }
-
-    /* ================================================================
-       FAB label tooltip on mobile
-       ================================================================ */
-    @media (max-width: 599px) {
-      .cm-fab { width: 50px; height: 50px; font-size: 1.2rem; }
-    }
-  </style>
 </head>
 <body class="sd-{{theme_mode}}">
 
-  <!-- ============================================================
+  <!-- 
        SPINNER — shows instantly, removed after window.load
-       ============================================================ -->
+        -->
   {% include "reusables/spinner.html" %}
 
-  <!-- ============================================================
+  <!-- 
        APP SHELL — hidden until JS reveal()
-       ============================================================ -->
+        -->
   <div class="cm-app" id="cmApp">
 
     <!-- Mobile aside overlay -->
@@ -536,9 +290,9 @@
 
   </div><!-- /cm-app -->
 
-  <!-- ============================================================
+  <!-- 
        GUIDED TOUR OVERLAY
-       ============================================================ -->
+        -->
   <div class="cm-tour-bd" id="cmTourBd" role="dialog" aria-modal="true" aria-label="Page tour">
 
     <!-- Spotlight highlight box -->
@@ -567,9 +321,9 @@
   </div><!-- /cm-tour-bd -->
 
 
-  <!-- ============================================================
+  <!-- 
        CREATE COMMITMENT OVERLAY  (6-step wizard)
-       ============================================================ -->
+        -->
   <div class="ov-backdrop" id="ovBackdrop"
        role="dialog" aria-modal="true" aria-label="Create a new commitment">
     <div class="ov-panel" id="ovPanel">
@@ -848,9 +602,9 @@
   </div><!-- /ov-backdrop -->
 
 
-  <!-- ============================================================
+  <!-- 
        TOAST
-       ============================================================ -->
+        -->
   <div class="cm-toast" id="cmToast" role="alert" aria-live="assertive" aria-atomic="true">
     <i class="cm-toast-icon fas fa-fire" id="cmToastIcon" aria-hidden="true"></i>
     <span class="cm-toast-msg" id="cmToastMsg">Creating your commitment…</span>
@@ -866,9 +620,9 @@
   </form>
 
 
-  <!-- ============================================================
+  <!-- 
        SPINNER JS (handles rotate-text + auto-hide)
-       ============================================================ -->
+        -->
   <script>{% include "reusables/spinner.js" %}</script>
 
 <!--THIS HANDLES END OF LIFE OF PAGE TO AVOID FREEZING ON SLOW INTERNET OR HIGH TRAFFIC, IT CREATE ILLUSION OF A SPINNER LOADING NEXT PAGE-->
@@ -882,16 +636,16 @@
 
 
 
-  <!-- ============================================================
+  <!-- 
        COMMITMENT PAGE — FULL APPLICATION SCRIPT
-       ============================================================ -->
+        -->
   <script>
   (function () {
     'use strict';
 
-    /* ============================================================
+    /* 
        CONFIG
-       ============================================================ */
+        */
     var AUTO_OPEN = {% if add %}true{% else %}false{% endif %};
 
     var API = {
@@ -937,9 +691,9 @@
       "No dsicipline == no balance."
     ];
 
-    /* ============================================================
+    /* 
        HELPERS
-       ============================================================ */
+        */
     function qs(sel, ctx)   { return (ctx || document).querySelector(sel); }
     function qsa(sel, ctx)  { return (ctx || document).querySelectorAll(sel); }
     function hide(el)       { if (el) el.classList.add('hidden'); }
@@ -960,17 +714,20 @@
                         ';path=/;expires=' + d.toUTCString();
     }
 
-    /* ============================================================
+    /* 
        REVEAL
-       ============================================================ */
-    function reveal() {
-      var app = document.getElementById('cmApp');
-      if (app) app.classList.add('cm-visible');
-    }
+        */
+        var _revealed = false;
+        function reveal() {
+          if (_revealed) return;
+          _revealed = true;
+          var app = document.getElementById('cmApp');
+          if (app) app.classList.add('cm-visible');
+        }
 
-    /* ============================================================
+    /* 
        QUOTE
-       ============================================================ */
+        */
     (function () {
       var el = document.getElementById('hdrQuote');
       if (!el) return;
@@ -978,9 +735,9 @@
       el.textContent = QUOTES[idx];
     })();
 
-    /* ============================================================
+    /* 
        AVATAR LOADING
-       ============================================================ */
+        */
     var FALLBACK_AVATAR = 'https://api.dicebear.com/7.x/initials/svg?seed=' +
       encodeURIComponent('{{ request.user.username }}') +
       '&backgroundColor=1e293b&textColor=60a5fa&size=64';
@@ -1011,9 +768,9 @@
       .then(function (d) { applyAvatar(d && d.url ? d.url : FALLBACK_AVATAR); })
       .catch(function ()  { applyAvatar(FALLBACK_AVATAR); });
 
-    /* ============================================================
+    /* 
        ASIDE TOGGLE
-       ============================================================ */
+        */
     var aside     = document.getElementById('dbAside');
     var asideOvly = document.getElementById('asideOverlay');
 
@@ -1037,9 +794,9 @@
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
     });
 
-    /* ============================================================
+    /* 
        THEME TOGGLE
-       ============================================================ */
+        */
     var themeBtn  = document.getElementById('themeToggleBtn');
     var themeIcon = document.getElementById('themeIcon');
 
@@ -1063,9 +820,9 @@
       applyTheme(document.body.classList.contains('sd-light') ? 'dark' : 'light');
     });
 
-    /* ============================================================
+    /* 
        LOGOUT
-       ============================================================ */
+        */
     document.getElementById('logoutBtn') &&
     document.getElementById('logoutBtn').addEventListener('click', function () {
       if (confirm('Log out of STREAK & DISCIPLINE?')) {
@@ -1075,9 +832,9 @@
       }
     });
 
-    /* ============================================================
+    /* 
        TOAST SYSTEM
-       ============================================================ */
+        */
     var toastEl    = document.getElementById('cmToast');
     var toastMsg   = document.getElementById('cmToastMsg');
     var toastIcon  = document.getElementById('cmToastIcon');
@@ -1120,17 +877,17 @@
 
     toastClose && toastClose.addEventListener('click', hideToast);
 
-    /* ============================================================
+    /* 
        COMMITMENT STATE
-       ============================================================ */
+        */
     var allCommitments = [];
     var activeFilter   = 'all';
     var activeSearch   = '';
     var activeSort     = 'streak';
 
-    /* ============================================================
+    /* 
        LOAD COMMITMENTS
-       ============================================================ */
+        */
     function loadCommitments() {
       var grid   = document.getElementById('cmGrid');
       var errDiv = document.getElementById('cmErr');
@@ -1158,9 +915,9 @@
         });
     }
 
-    /* ============================================================
+    /* 
        STATS BAR
-       ============================================================ */
+        */
     function fillStatsBar(stats) {
       var active     = allCommitments.length;
       var avgStreak  = active > 0
@@ -1209,9 +966,9 @@
       })(start);
     }
 
-    /* ============================================================
+    /* 
        RENDER GRID
-       ============================================================ */
+        */
     function getFiltered() {
       var list = allCommitments.slice();
 
@@ -1278,9 +1035,9 @@
       });
     }
 
-    /* ============================================================
+    /* 
        BUILD CARD
-       ============================================================ */
+        */
     function buildCard(c, i) {
       var color      = CAT_COLOR[c.category]  || CAT_COLOR.other;
       var icon       = CAT_ICON[c.category]   || CAT_ICON.other;
@@ -1376,7 +1133,7 @@
                   '<span class="cm-action-lbl">Archive</span>',
                 '</button>',
                 '<div class="cm-btn-tip">',
-                  '📦 Move to archive. Your streak is saved. Restore anytime from Profile → My Archive.',
+                  'Move to archive. Your streak reset if you miss a day. Restore anytime from Profile -> My Archive.',
                 '</div>',
               '</div>',
 
@@ -1417,9 +1174,9 @@
       return el;
     }
 
-    /* ============================================================
+    /* 
        CHECKIN
-       ============================================================ */
+        */
     function handleCheckin(id, btn) {
       if (!btn || btn.disabled) return;
       btn.disabled = true;
@@ -1450,9 +1207,9 @@
       });
     }
 
-    /* ============================================================
+    /* 
        ARCHIVE
-       ============================================================ */
+        */
     function handleArchive(id, btn) {
       if (!confirm('Archive this commitment? You can restore it from your profile.')) return;
       btn.disabled = true;
@@ -1482,9 +1239,9 @@
       });
     }
 
-    /* ============================================================
+    /* 
        RETRY / CLEAR FILTERS
-       ============================================================ */
+        */
     var retryBtn = document.getElementById('cmRetryBtn');
     retryBtn && retryBtn.addEventListener('click', loadCommitments);
 
@@ -1501,9 +1258,9 @@
       renderGrid();
     });
 
-    /* ============================================================
+    /* 
        SEARCH
-       ============================================================ */
+        */
     var srchInput = document.getElementById('cmSearch');
     var srchClear = document.getElementById('cmSearchClear');
 
@@ -1519,9 +1276,9 @@
       renderGrid();
     });
 
-    /* ============================================================
+    /* 
        CATEGORY FILTER
-       ============================================================ */
+        */
     qsa('.cm-cat').forEach(function (btn) {
       btn.addEventListener('click', function () {
         activeFilter = this.getAttribute('data-cat');
@@ -1531,18 +1288,18 @@
       });
     });
 
-    /* ============================================================
+    /* 
        SORT
-       ============================================================ */
+        */
     var sortSel = document.getElementById('cmSort');
     sortSel && sortSel.addEventListener('change', function () {
       activeSort = this.value;
       renderGrid();
     });
 
-    /* ============================================================
+    /* 
        FAB PARTICLE BURST
-       ============================================================ */
+        */
     var fab = document.getElementById('cmFab');
     fab && fab.addEventListener('click', function (e) {
       var colors = ['#60a5fa', '#818cf8', '#a78bfa', '#34d399'];
@@ -1576,9 +1333,9 @@
       openOverlay();
     });
 
-    /* ============================================================
+    /* 
        OVERLAY — OPEN / CLOSE
-       ============================================================ */
+        */
     var TOTAL_STEPS = 6;
     var currentStep = 1;
 
@@ -1633,9 +1390,9 @@
       }
     });
 
-    /* ============================================================
+    /* 
        STEP NAVIGATION
-       ============================================================ */
+        */
     function goToStep(n) {
       var dir = n > currentStep ? 1 : -1;
       currentStep = n;
@@ -1679,9 +1436,9 @@
       }
     }
 
-    /* ============================================================
+    /* 
        COLLECT FORM DATA FROM CURRENT STEP
-       ============================================================ */
+        */
     function collectStep(n) {
       if (n === 1) {
         var w = qs('#ovWhat');
@@ -1719,9 +1476,9 @@
       }
     }
 
-    /* ============================================================
+    /* 
        VALIDATE STEP
-       ============================================================ */
+        */
     function validateStep(n) {
       if (n === 1) {
         var w = qs('#ovWhat');
@@ -1771,9 +1528,9 @@
       el.classList.add('ov-shake');
     }
 
-    /* ============================================================
+    /* 
        NEXT BUTTONS
-       ============================================================ */
+        */
     [1, 2, 3, 4, 5].forEach(function (n) {
       var btn = document.getElementById('ovNext' + n);
       btn && btn.addEventListener('click', function () {
@@ -1782,9 +1539,9 @@
       });
     });
 
-    /* ============================================================
+    /* 
        CATEGORY CARDS
-       ============================================================ */
+        */
     qsa('.ov-cat-card').forEach(function (card) {
       function select() {
         qsa('.ov-cat-card').forEach(function (c) {
@@ -1801,9 +1558,9 @@
       });
     });
 
-    /* ============================================================
+    /* 
        SUGGESTION CHIPS
-       ============================================================ */
+        */
     qsa('.ov-chip').forEach(function (chip) {
       chip.addEventListener('click', function () {
         var targetId = this.getAttribute('data-fill');
@@ -1815,9 +1572,9 @@
       });
     });
 
-    /* ============================================================
+    /* 
        GOAL CARDS
-       ============================================================ */
+        */
     qsa('.ov-goal-card').forEach(function (card) {
       function select() {
         qsa('.ov-goal-card').forEach(function (c) {
@@ -1845,9 +1602,9 @@
       if (this.checked) FORM.goal_days = 0;
     });
 
-    /* ============================================================
+    /* 
        TIME SELECTS
-       ============================================================ */
+        */
     function populateTime(id, defaultVal) {
       var sel = document.getElementById(id);
       if (!sel) return;
@@ -1877,9 +1634,9 @@
       remSect.style.pointerEvents = this.checked ? '' : 'none';
     });
 
-    /* ============================================================
+    /* 
        METHOD CARDS
-       ============================================================ */
+        */
     qsa('.ov-method-card').forEach(function (card) {
       function select() {
         qsa('.ov-method-card').forEach(function (c) {
@@ -1900,9 +1657,9 @@
       });
     });
 
-    /* ============================================================
+    /* 
        MOTION WORDS
-       ============================================================ */
+        */
     qsa('.ov-motion-word').forEach(function (btn) {
       btn.addEventListener('click', function () {
         qsa('.ov-motion-word').forEach(function (b) { b.classList.remove('on'); });
@@ -1922,9 +1679,9 @@
       });
     });
 
-    /* ============================================================
+    /* 
        CHAR COUNTER
-       ============================================================ */
+        */
     var whatInput = document.getElementById('ovWhat');
     var whatLen   = document.getElementById('ovWhatLen');
     whatInput && whatInput.addEventListener('input', function () {
@@ -1932,9 +1689,9 @@
       if (this.value.trim()) hideErr('ovWhatErr');
     });
 
-    /* ============================================================
+    /* 
        SUBMIT — CREATE COMMITMENT
-       ============================================================ */
+        */
     document.getElementById('ovCreateBtn') &&
     document.getElementById('ovCreateBtn').addEventListener('click', function () {
       collectStep(6);
@@ -1999,9 +1756,9 @@
       doCreate();
     });
 
-    /* ============================================================
+    /* 
        KEYBOARD SHORTCUT — Ctrl/Cmd+K → focus search
-       ============================================================ */
+        */
     document.addEventListener('keydown', function (e) {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
@@ -2010,9 +1767,9 @@
       }
     });
 
-    /* ============================================================
+    /* 
        MOBILE BUTTON TOOLTIP — tap-to-reveal on touch devices
-       ============================================================ */
+        */
     (function () {
       /* Close all open tips */
       function closeAllTips () {
@@ -2056,9 +1813,9 @@
       });
     })();
 
-    /* ============================================================
+    /* 
        GUIDED PAGE TOUR
-       ============================================================ */
+        */
     (function () {
       var STEPS = [
         {
@@ -2282,20 +2039,33 @@
 
     })(); /* /GUIDED TOUR */
 
-    /* ============================================================
+    /* 
        INIT
-       ============================================================ */
+        */
+       /* 
+       INIT
+        */
+    var _initialized = false;
+
     function init() {
+      if (_initialized) return;
+      _initialized = true;
       loadCommitments();
       if (AUTO_OPEN) setTimeout(openOverlay, 650);
     }
 
     if (document.readyState === 'complete') {
-      reveal(); init();
+      reveal();
+      init();
     } else {
-      window.addEventListener('load', function () { reveal(); init(); });
-      /* Hard fallback: 8 s max wait (matches spinner timeout) */
-      setTimeout(function () { reveal(); init(); }, 8000);
+      window.addEventListener('load', function () {
+        reveal();
+        init();
+      });
+      setTimeout(function () {
+        reveal();
+        init();
+      }, 8000);
     }
 
   })();

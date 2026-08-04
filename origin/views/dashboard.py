@@ -17,7 +17,6 @@ class Onboarding(LoginRequiredMixin, View):
     def get(self, request):
         #check user tier, if it does not exist, redirect user to onboarding
         user_profile = Profile.objects.filter(user = request.user).first()
-        print(user_profile)
         if user_profile is None:
             return render(request,'html/onboarding.html')
             logger.error(msg="User is not suppose to have a profile , if user have a profile, redirect them to dashboard")
@@ -41,7 +40,6 @@ class ProfileSettings(LoginRequiredMixin, View):
             'public_id': user_profile.public_searchable_username,
             'leaderboard_optin': user_profile.leaderboard_optin,
             'streak_visible': user_profile.streak_count_is_public_visible,
-            'social_mode': user_profile.streak_count_is_public_visible,
             'ai_insight_active': user_profile.ai_insight_active,
             'weekly_report': user_profile.weekly_report_email_active,
             'custom_reports': user_profile.custom_report_email_active,
@@ -101,7 +99,6 @@ class EachCommitmentView(LoginRequiredMixin, View):
         commitment_istance = Commitment.objects.filter(user = request.user, pk = commitment_key).first()
         
         today_entry_istance = Entries.objects.filter(commitment_key__user = request.user, commitment_key__pk = commitment_key, commit_at = timezone.datetime.now().date()).select_related('commitment_key').first()
-        print(today_entry_istance)
         
         return render(request, 'html/commitment_detail-entries.html',{
             'theme-mode': request.COOKIES.get('sd-theme', 'dark'),

@@ -1,0 +1,280 @@
+
+  <!-- ============================================================
+       CREATE COMMITMENT OVERLAY  (6-step wizard)
+       ============================================================ -->
+  <div class="ov-backdrop" id="ovBackdrop"
+       role="dialog" aria-modal="true" aria-label="Create a new commitment">
+    <div class="ov-panel" id="ovPanel">
+
+      <!-- Panel header -->
+      <div class="ov-header">
+        <div class="ov-header-left">
+          <button class="ov-back-btn" id="ovBackBtn" aria-label="Previous step" style="visibility:hidden">
+            <i class="fas fa-arrow-left"></i>
+          </button>
+          <span class="ov-step-lbl" id="ovStepLbl" aria-live="polite">Step 1 of 6</span>
+        </div>
+        <button class="ov-close-btn" id="ovCloseBtn" aria-label="Close and discard">
+          <i class="fas fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Progress track -->
+      <div class="ov-prog-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="ovProg">
+        <div class="ov-prog-fill" id="ovProgFill" style="width:16.66%"></div>
+      </div>
+
+      <!-- Steps wrapper -->
+      <div class="ov-steps" id="ovSteps">
+
+        <!-- ── STEP 1: What + Category ─────────────────────── -->
+        <div class="ov-step ov-step--active" data-step="1" id="ovStep1">
+          <div class="ov-eyebrow">Step 1 of 6</div>
+          <h2 class="ov-h2">What do you want to commit to?</h2>
+          <p class="ov-hint">"Walk 30 minutes daily" is 10× stronger than "exercise more." Be specific.</p>
+
+          <label class="ov-label" for="ovWhat">Your commitment</label>
+          <input type="text" class="ov-input" id="ovWhat" maxlength="120"
+                 placeholder="e.g., Read 20 pages before bed" autocomplete="off"
+                 aria-describedby="ovWhatErr">
+          <div class="ov-char-count"><span id="ovWhatLen">0</span>/120</div>
+          <div class="ov-err hidden" id="ovWhatErr" role="alert">Please describe your commitment.</div>
+
+          <div class="ov-chips" id="ovWhatChips" aria-label="Quick fill suggestions">
+            <span class="ov-chip" data-fill="ovWhat">Read 20 pages daily</span>
+            <span class="ov-chip" data-fill="ovWhat">Exercise every morning</span>
+            <span class="ov-chip" data-fill="ovWhat">No phone after 10 PM</span>
+            <span class="ov-chip" data-fill="ovWhat">Wake up by 6 AM</span>
+            <span class="ov-chip" data-fill="ovWhat">Meditate 10 minutes</span>
+            <span class="ov-chip" data-fill="ovWhat">Cold shower daily</span>
+          </div>
+
+          <label class="ov-label" style="margin-top:0.75rem">Category</label>
+          <div class="ov-cat-grid" id="ovCatGrid" role="group" aria-label="Choose category">
+            <div class="ov-cat-card" data-cat="fitness" tabindex="0" role="button" aria-pressed="false"><i class="fas fa-dumbbell"></i><span>Fitness</span></div>
+            <div class="ov-cat-card" data-cat="study"   tabindex="0" role="button" aria-pressed="false"><i class="fas fa-book-open"></i><span>Study</span></div>
+            <div class="ov-cat-card" data-cat="health"  tabindex="0" role="button" aria-pressed="false"><i class="fas fa-heart-pulse"></i><span>Health</span></div>
+            <div class="ov-cat-card" data-cat="mindset" tabindex="0" role="button" aria-pressed="false"><i class="fas fa-brain"></i><span>Mindset</span></div>
+            <div class="ov-cat-card" data-cat="growth"  tabindex="0" role="button" aria-pressed="false"><i class="fas fa-seedling"></i><span>Growth</span></div>
+            <div class="ov-cat-card on" data-cat="other" tabindex="0" role="button" aria-pressed="true"><i class="fas fa-ellipsis"></i><span>Other</span></div>
+          </div>
+
+          <div class="ov-btn-row">
+            <button class="btn btn-primary" id="ovNext1">
+              <span class="btn-txt">Continue <i class="fas fa-arrow-right"></i></span>
+              <span class="btn-spin"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── STEP 2: Why ────────────────────────────────── -->
+        <div class="ov-step" data-step="2" id="ovStep2">
+          <div class="ov-eyebrow">Step 2 of 6</div>
+          <h2 class="ov-h2">Why does this actually matter?</h2>
+          <p class="ov-hint">Not the clean answer. The real one. What's at stake if you don't?</p>
+
+          <label class="ov-label" for="ovWhy">Your honest reason</label>
+          <textarea class="ov-input ov-textarea" id="ovWhy" rows="4"
+                    placeholder="e.g., I keep promising myself I'll do this and never follow through. This time is different."
+                    aria-describedby="ovWhyErr"></textarea>
+          <div class="ov-err hidden" id="ovWhyErr" role="alert">Write your honest reason — it stays completely private.</div>
+
+          <div class="ov-chips">
+            <span class="ov-chip" data-fill="ovWhy">To build real self-discipline</span>
+            <span class="ov-chip" data-fill="ovWhy">My health depends on this</span>
+            <span class="ov-chip" data-fill="ovWhy">I want to prove it to myself</span>
+            <span class="ov-chip" data-fill="ovWhy">I keep starting and quitting</span>
+            <span class="ov-chip" data-fill="ovWhy">My future self needs this now</span>
+          </div>
+
+          <div class="ov-privacy-note">
+            <i class="fas fa-lock"></i> This stays completely private. Only you see it.
+          </div>
+
+          <div class="ov-btn-row">
+            <button class="btn btn-primary" id="ovNext2">
+              <span class="btn-txt">Continue <i class="fas fa-arrow-right"></i></span>
+              <span class="btn-spin"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── STEP 3: Minimum Effort ─────────────────────── -->
+        <div class="ov-step" data-step="3" id="ovStep3">
+          <div class="ov-eyebrow">Step 3 of 6</div>
+          <h2 class="ov-h2">What's the smallest version that still counts?</h2>
+          <p class="ov-hint">On your worst day — exhausted, sick, overwhelmed — what still earns a check-in?</p>
+
+          <label class="ov-label" for="ovMin">Minimum effort that counts</label>
+          <input type="text" class="ov-input" id="ovMin" maxlength="120"
+                 placeholder="e.g., Even one page. Even 5 minutes." autocomplete="off"
+                 aria-describedby="ovMinErr">
+          <div class="ov-err hidden" id="ovMinErr" role="alert">Set your minimum — it keeps the streak alive on hard days.</div>
+
+          <div class="ov-chips">
+            <span class="ov-chip" data-fill="ovMin">Even 5 minutes counts</span>
+            <span class="ov-chip" data-fill="ovMin">Just show up — that's enough</span>
+            <span class="ov-chip" data-fill="ovMin">One sentence is a win</span>
+            <span class="ov-chip" data-fill="ovMin">One rep, one step</span>
+            <span class="ov-chip" data-fill="ovMin">Open the app and log it</span>
+          </div>
+
+          <div class="ov-note">
+            <i class="fas fa-lightbulb" style="color:var(--warn);flex-shrink:0;margin-top:1px"></i>
+            <span>People who define a minimum are <strong>3× more consistent</strong> through hard days.</span>
+          </div>
+
+          <div class="ov-btn-row">
+            <button class="btn btn-primary" id="ovNext3">
+              <span class="btn-txt">Continue <i class="fas fa-arrow-right"></i></span>
+              <span class="btn-spin"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── STEP 4: Duration ───────────────────────────── -->
+        <div class="ov-step" data-step="4" id="ovStep4">
+          <div class="ov-eyebrow">Step 4 of 6</div>
+          <h2 class="ov-h2">How long are you committing?</h2>
+          <p class="ov-hint">A deadline makes it real. You can always extend once you hit it.</p>
+
+          <div class="ov-goal-grid" id="ovGoalGrid" role="group" aria-label="Goal duration">
+            <div class="ov-goal-card" data-days="30" tabindex="0" role="button" aria-pressed="false">
+              <div class="ov-goal-n">30</div>
+              <div class="ov-goal-l">days — trial run</div>
+            </div>
+            <div class="ov-goal-card" data-days="90" tabindex="0" role="button" aria-pressed="false">
+              <div class="ov-goal-n">90</div>
+              <div class="ov-goal-l">days — habit lock</div>
+            </div>
+            <div class="ov-goal-card" data-days="180" tabindex="0" role="button" aria-pressed="false">
+              <div class="ov-goal-n">180</div>
+              <div class="ov-goal-l">days — identity shift</div>
+            </div>
+            <div class="ov-goal-card on" data-days="365" tabindex="0" role="button" aria-pressed="true">
+              <div class="ov-goal-n">365</div>
+              <div class="ov-goal-l">days — transformation</div>
+            </div>
+          </div>
+
+          <div class="ov-toggle-row">
+            <span>Commit for life — no end date</span>
+            <label class="ov-switch">
+              <input type="checkbox" id="ovForever" aria-label="Lifelong commitment">
+              <span class="ov-sw-track"><span class="ov-sw-thumb"></span></span>
+            </label>
+          </div>
+
+          <div class="ov-btn-row">
+            <button class="btn btn-primary" id="ovNext4">
+              <span class="btn-txt">Continue <i class="fas fa-arrow-right"></i></span>
+              <span class="btn-spin"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── STEP 5: Schedule ───────────────────────────── -->
+        <div class="ov-step" data-step="5" id="ovStep5">
+          <div class="ov-eyebrow">Step 5 of 6</div>
+          <h2 class="ov-h2">When do you check in?</h2>
+          <p class="ov-hint">Pick the time that fits your day. We log your daily win at this hour.</p>
+
+          <label class="ov-label" for="ovCheckinTime">Daily check-in time</label>
+          <select class="ov-input" id="ovCheckinTime" style="margin-bottom:1rem"></select>
+
+          <div class="ov-toggle-row">
+            <span>Send me a reminder before check-in</span>
+            <label class="ov-switch">
+              <input type="checkbox" id="ovReminderOn" checked aria-label="Enable reminder">
+              <span class="ov-sw-track"><span class="ov-sw-thumb"></span></span>
+            </label>
+          </div>
+
+          <div id="ovReminderSection" style="display:flex;flex-direction:column;gap:0.85rem">
+            <div>
+              <label class="ov-label" for="ovReminderTime">Reminder time</label>
+              <select class="ov-input" id="ovReminderTime"></select>
+            </div>
+
+            <div>
+              <label class="ov-label" style="margin-bottom:0.4rem">How should we remind you?</label>
+              <div class="ov-method-grid" id="ovMethodGrid" role="group" aria-label="Reminder method">
+                <div class="ov-method-card on" data-method="email" tabindex="0" role="button" aria-pressed="true">
+                  <i class="fas fa-envelope"></i><span>Email</span>
+                </div>
+                <div class="ov-method-card" data-method="whatsapp" tabindex="0" role="button" aria-pressed="false">
+                  <i class="fab fa-whatsapp"></i><span>WhatsApp</span>
+                </div>
+                <div class="ov-method-card" data-method="push" tabindex="0" role="button" aria-pressed="false">
+                  <i class="fas fa-bell"></i><span>Push</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="ovWaField" class="hidden">
+              <label class="ov-label" for="ovWaNum">WhatsApp number</label>
+              <input type="tel" class="ov-input" id="ovWaNum"
+                     placeholder="+2348000000000"
+                     aria-describedby="ovWaErr">
+              <div class="ov-err hidden" id="ovWaErr" role="alert">Enter a valid WhatsApp number with country code.</div>
+            </div>
+          </div>
+
+          <div class="ov-btn-row" style="margin-top:1rem">
+            <button class="btn btn-primary" id="ovNext5">
+              <span class="btn-txt">Continue <i class="fas fa-arrow-right"></i></span>
+              <span class="btn-spin"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── STEP 6: Motion Word ────────────────────────── -->
+        <div class="ov-step" data-step="6" id="ovStep6">
+          <div class="ov-eyebrow">Step 6 of 6 — Final step</div>
+          <h2 class="ov-h2">How are you feeling right now?</h2>
+          <p class="ov-hint">Pick one word. It anchors your commitment to this moment — something to return to on hard days.</p>
+
+          <div class="ov-motion-grid" id="ovMotionGrid" role="group" aria-label="Choose your emotion word">
+            {% for word in motion_list %}
+            <button class="ov-motion-word" data-word="{{ word }}" type="button">{{ word }}</button>
+            {% empty %}
+            <!-- Fallback words if motion_list not passed from Django context -->
+            <button class="ov-motion-word" data-word="determined"  type="button">determined</button>
+            <button class="ov-motion-word" data-word="focused"      type="button">focused</button>
+            <button class="ov-motion-word" data-word="ready"        type="button">ready</button>
+            <button class="ov-motion-word" data-word="motivated"    type="button">motivated</button>
+            <button class="ov-motion-word" data-word="excited"      type="button">excited</button>
+            <button class="ov-motion-word" data-word="calm"         type="button">calm</button>
+            <button class="ov-motion-word" data-word="confident"    type="button">confident</button>
+            <button class="ov-motion-word" data-word="disciplined"  type="button">disciplined</button>
+            <button class="ov-motion-word" data-word="strong"       type="button">strong</button>
+            <button class="ov-motion-word" data-word="hopeful"      type="button">hopeful</button>
+            <button class="ov-motion-word" data-word="proud"        type="button">proud</button>
+            <button class="ov-motion-word" data-word="inspired"     type="button">inspired</button>
+            <button class="ov-motion-word" data-word="grateful"     type="button">grateful</button>
+            <button class="ov-motion-word" data-word="fearless"     type="button">fearless</button>
+            <button class="ov-motion-word" data-word="relentless"   type="button">relentless</button>
+            {% endfor %}
+          </div>
+          <div class="ov-err hidden" id="ovMotionErr" role="alert">Pick the word that captures this moment.</div>
+
+          <div class="ov-selected-word-wrap hidden" id="ovSelectedWordWrap" aria-live="polite">
+            <span class="ov-selected-word-lbl">You feel:</span>
+            <span class="ov-selected-word" id="ovSelectedWordDisplay"></span>
+          </div>
+
+          <div class="ov-btn-row" style="margin-top:0.25rem">
+            <button class="btn btn-primary btn-lg" id="ovCreateBtn" type="button">
+              <span class="btn-txt"><i class="fas fa-fire"></i> Create My Commitment</span>
+              <span class="btn-spin"></span>
+            </button>
+          </div>
+
+          <p class="ov-privacy-note" style="text-align:center;margin-top:0.5rem;justify-content:center">
+            <i class="fas fa-lock"></i>&nbsp; Private by default. Only you see your why and entries.
+          </p>
+        </div>
+
+      </div><!-- /ov-steps -->
+    </div><!-- /ov-panel -->
+  </div><!-- /ov-backdrop -->

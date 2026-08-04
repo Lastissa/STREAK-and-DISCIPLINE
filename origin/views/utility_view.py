@@ -141,6 +141,12 @@ def helper_with_friendship_request_answer(request, to_user_id : str):
     #check their status, if its pending -- request already sent at TIME, accepted -- you are already friends with this user since TIME
     relationship = Friendship.objects.filter(from_user = from_user, to_user = to_user.user).first()
     if relationship is None:
+        #check if the sender still have the allowed limit and have not reached it 
+        current_list = Friendship.objects.filter(from_user = request.user).count()
+        profile_istance = Profile.objects.filter(user = request.user).first()
+        #if limit reached, return error
+        max_allowed = ChoicesValidatorInModels().partner_limit[profile_istance.tier]
+        if current_list >= max_allowed: return JsonResponse({'message': 'you have ereached limit of partner allowed for this tier. Upgrade account tohave more partners.'}, status = 403)
         
         #send request --brb send email to notify to user also
         istance = Friendship.objects.create(

@@ -107,7 +107,7 @@ class Static:
     @classmethod
     def logo_url(self) -> str:
         """Logo url for the site"""
-        return 'https://res.cloudinary.com/brop3jeq/image/upload/v1784524604/logo_jvljxp.png'
+        return 'https://res.cloudinary.com/brop3jeq/image/upload/v1785824234/discipline_and_streak_tqzzvi.png'
     
     @classmethod
     def token_expiry_time(self)-> int:

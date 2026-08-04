@@ -33,6 +33,7 @@ urlpatterns = [
     path('dashboard/commitment/<str:commitment_key>/settings/', views.EachCommitmentViewSettings.as_view(), name = 'origin_each_commitment_view_settings'),
     path('dashboard/commitment/<str:commitment_key>/needed_data/', views.EachCommitementHeatMap.as_view(), name = 'origin_each_commitment_entries_needed_data'),
     path('dashboard/commitment/<str:commitment_key>/save_entry/', views.EachCommitementEntries.as_view(), name = 'origin_each_commitment_entries_save_entry'),
+    path('dashboard/commitment/<str:id>/archive/', views.EachCommitmentArchive.as_view(), name = 'origin_commitment_archive'), #archive a commitment
     path('dashboard/profile/', views.ProfileSettings.as_view(), name = 'origin_profile'),
     path('dashboard/relationship/', views.Relationship.as_view(), name = 'origin_relationship'),
     path('dashboard/reports/', views.DashbaordAnalytics.as_view(), name = 'origin_reports'),

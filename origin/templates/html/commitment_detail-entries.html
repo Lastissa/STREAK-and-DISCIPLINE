@@ -121,7 +121,7 @@
 
         <!-- Back nav -->
         <div class="cd-back-nav">
-          <a href="/v1/commitments/" class="cd-back-link">
+          <a href="{% url "origin_commitments" %}" class="cd-back-link">
             <i class="fas fa-arrow-left"></i> My Commitments
           </a>
           <span class="cd-breadcrumb" id="cdBreadcrumb">
@@ -532,16 +532,16 @@
 </script>
 
 
-  <!-- ============================================================
+  <!-- 
        APPLICATION SCRIPT
-       ============================================================ -->
+        -->
   <script>
   (function(){
     'use strict';
 
-    /* ============================================================
+    /* 
        DJANGO CONTEXT → JS
-       ============================================================ */
+        */
     var CID              = {{ commitment_id }};
     var STREAK           = {{ commitment.streak_count }};
     var GOAL_DAYS        = {{ commitment.goal_days }};
@@ -558,9 +558,9 @@
     var MODE             = '{{ commitment.mode_of_delivery }}';
     var IS_EDITING       = false;  /* tracks whether we're editing an existing entry */
 
-    /* ============================================================
+    /* 
        API ENDPOINTS
-       ============================================================ */
+        */
     var API = {
       heatmap:      '{% url "origin_each_commitment_entries_needed_data" commitment_key="pk"%}'.replace('pk', CID),
       entryCreate:  '{% url "origin_each_commitment_entries_save_entry" commitment_key="pk"%}'.replace('pk', CID),
@@ -568,9 +568,9 @@
       settings:     '{% url "origin_each_commitment_view_settings" commitment_key="pk"%}'.replace('pk', CID)
     };
 
-    /* ============================================================
+    /* 
        CATEGORY CONFIG
-       ============================================================ */
+        */
     var CAT_ICON = {
       fitness:'fa-dumbbell', study:'fa-book-open', work:'fa-briefcase',
       health:'fa-heart-pulse', mindset:'fa-brain', growth:'fa-seedling', other:'fa-ellipsis'
@@ -580,9 +580,9 @@
       mindset:'#a855f7', growth:'#f59e0b', work:'#fb923c', other:'#64748b'
     };
 
-    /* ============================================================
+    /* 
        WRITING PROMPTS
-       ============================================================ */
+        */
     var PROMPTS = [
       'What was the hardest moment today, and how did you handle it?',
       'What\'s one thing you did better than yesterday?',
@@ -606,9 +606,9 @@
       "He who conquers himself conquers all."
     ];
 
-    /* ============================================================
+    /* 
        HELPERS
-       ============================================================ */
+        */
     function qs(sel, ctx){ return (ctx||document).querySelector(sel); }
     function qsa(sel, ctx){ return (ctx||document).querySelectorAll(sel); }
     function hide(el){ if(el) el.classList.add('hidden'); }
@@ -637,26 +637,26 @@
       }
     }
 
-    /* ============================================================
+    /* 
        REVEAL
-       ============================================================ */
+        */
     function reveal(){
       var app=document.getElementById('cdApp');
       if(app) app.classList.add('cd-visible');
     }
 
-    /* ============================================================
+    /* 
        QUOTE
-       ============================================================ */
+        */
     (function(){
       var el=document.getElementById('hdrQuote'); if(!el) return;
       var idx=(new Date().getDate()+new Date().getMonth()*31)%QUOTES.length;
       el.textContent=QUOTES[idx];
     })();
 
-    /* ============================================================
+    /* 
        AVATAR
-       ============================================================ */
+        */
     var FALLBACK_AVT='https://api.dicebear.com/7.x/initials/svg?seed='+
       encodeURIComponent('{{ request.user.username }}')+'&backgroundColor=1e293b&textColor=60a5fa&size=64';
 
@@ -676,9 +676,9 @@
       .then(function(d){ applyAvatar(d&&d.url?d.url:FALLBACK_AVT); })
       .catch(function(){ applyAvatar(FALLBACK_AVT); });
 
-    /* ============================================================
+    /* 
        ASIDE TOGGLE
-       ============================================================ */
+        */
     var aside=document.getElementById('dbAside');
     var asideOvly=document.getElementById('asideOverlay');
     function openAside(){ aside&&aside.classList.add('open'); asideOvly&&asideOvly.classList.add('show'); }
@@ -689,9 +689,9 @@
     hdrAv&&hdrAv.addEventListener('click',function(){ aside&&aside.classList.contains('open')?closeAside():openAside(); });
     hdrAv&&hdrAv.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){e.preventDefault();this.click();} });
 
-    /* ============================================================
+    /* 
        THEME TOGGLE
-       ============================================================ */
+        */
     var themeBtn=document.getElementById('themeToggleBtn');
     var themeIcon=document.getElementById('themeIcon');
     function applyTheme(mode){
@@ -702,16 +702,16 @@
     (function(){ var s=getCookie('sd-theme'); if(s) applyTheme(s); })();
     themeBtn&&themeBtn.addEventListener('click',function(){ applyTheme(document.body.classList.contains('sd-light')?'dark':'light'); });
 
-    /* ============================================================
+    /* 
        LOGOUT
-       ============================================================ */
+        */
     document.getElementById('logoutBtn')&&document.getElementById('logoutBtn').addEventListener('click',function(){
       if(confirm('Log out?')){ var f=document.getElementById('logoutForm'); if(f) f.submit(); }
     });
 
-    /* ============================================================
+    /* 
        TOAST
-       ============================================================ */
+        */
     var toastEl=document.getElementById('cmToast');
     var toastMsg=document.getElementById('cmToastMsg');
     var toastIcon=document.getElementById('cmToastIcon');
@@ -732,9 +732,9 @@
     function hideToast(){ if(toastEl) toastEl.classList.remove('cm-toast-visible'); }
     document.getElementById('cmToastClose')&&document.getElementById('cmToastClose').addEventListener('click',hideToast);
 
-    /* ============================================================
+    /* 
        HERO SETUP
-       ============================================================ */
+        */
     (function(){
       /* Category icon */
       var iconEl=document.getElementById('cdCatIcon');
@@ -800,9 +800,9 @@
       }
     })();
 
-    /* ============================================================
+    /* 
        ENTRY DATE LABEL
-       ============================================================ */
+        */
     (function(){
       var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
       var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -812,9 +812,9 @@
       var chip=document.getElementById('cdEntryDateChip'); if(chip) chip.textContent=label;
     })();
 
-    /* ============================================================
+    /* 
        WRITING PROMPT
-       ============================================================ */
+        */
     var promptShown=false;
     var promptBox=document.getElementById('cdPromptBox');
     var promptBtn=document.getElementById('cdPromptBtn');
@@ -827,9 +827,9 @@
       promptShown=true;
     });
 
-    /* ============================================================
+    /* 
        TEXTAREA AUTO-EXPAND + WORD COUNT
-       ============================================================ */
+        */
     var textarea=document.getElementById('cdTextarea');
     var wcEl=document.getElementById('cdWc');
     var selectedMood='';
@@ -852,9 +852,9 @@
       if(TODAY_ENTRY_RATING) selectedRating=TODAY_ENTRY_RATING;
     }
 
-    /* ============================================================
+    /* 
        MOOD CHIPS
-       ============================================================ */
+        */
     qsa('.cd-mood-chip').forEach(function(chip){
       if(TODAY_ENTRY_MOOD && chip.getAttribute('data-mood')===TODAY_ENTRY_MOOD){
         chip.classList.add('on');
@@ -866,9 +866,9 @@
       });
     });
 
-    /* ============================================================
+    /* 
        STAR RATING
-       ============================================================ */
+        */
     var stars=qsa('.cd-star');
     function setStars(val){
       selectedRating=val;
@@ -892,9 +892,9 @@
       });
     });
 
-    /* ============================================================
+    /* 
        EDIT / CANCEL EDIT
-       ============================================================ */
+        */
     document.getElementById('cdEditBtn')&&document.getElementById('cdEditBtn').addEventListener('click',function(){
       IS_EDITING=true;
       var doneEl=document.getElementById('cdEntryDone');
@@ -919,9 +919,9 @@
       hide(formEl);
     });
 
-    /* ============================================================
+    /* 
        SUBMIT ENTRY
-       ============================================================ */
+        */
     document.getElementById('cdSubmitBtn')&&document.getElementById('cdSubmitBtn').addEventListener('click',function(){
       var content=textarea?textarea.value.trim():'';
       if(!content){ showToast('Write something — even one sentence counts.','error'); return; }
@@ -971,9 +971,9 @@
       });
     });
 
-    /* ============================================================
+    /* 
        HEATMAP
-       ============================================================ */
+        */
     function loadHeatmap(){
       fetch(API.heatmap, {credentials:'same-origin'})
       .then(function(r){ return r.ok?r.json():null; })
@@ -1041,9 +1041,9 @@
       });
     }
 
-    /* ============================================================
+    /* 
        SETTINGS ACCORDION
-       ============================================================ */
+        */
     var settingsToggle=document.getElementById('cdSettingsToggle');
     var settingsBody=document.getElementById('cdSettingsBody');
     var settingsChevron=document.getElementById('cdSettingsChevron');
@@ -1138,22 +1138,22 @@
 
     /* Archive commitment */
     document.getElementById('cdsArchiveBtn')&&document.getElementById('cdsArchiveBtn').addEventListener('click',function(){
-      if(!confirm('Archive "{{ commitment.what|truncatechars:60|escapejs }}"?\nYou can restore it from your profile later.')) return;
-      fetch('/api/v1/commitments/'+CID+'/archive/',{
+      if(!confirm('Archive "{{ commitment.what|truncatechars:60|escapejs }}"?\nYou can restore it from your commitment page later.')) return;
+      fetch('/v1/dashboard/commitment/'+CID+'/archive/',{
         method:'POST', credentials:'same-origin',
         headers:{'X-CSRFToken':getCookie('csrftoken'),'Content-Type':'application/json'}
       })
       .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
       .then(function(res){
-        if(res.ok){ showToast('Commitment archived.','info',2500); setTimeout(function(){ window.location.href='/v1/commitments/'; },2700); }
+        if(res.ok){ showToast('Commitment archived.','info',2500); setTimeout(function(){ window.location.href='{% url "origin_commitments" %}'; },2700); }
         else showToast((res.data&&res.data.message)||'Could not archive. Try again.','error');
       })
       .catch(function(){ showToast('Network error.','error'); });
     });
 
-    /* ============================================================
+    /* 
        KEYBOARD SHORTCUT  Ctrl/Cmd+Enter → submit entry
-       ============================================================ */
+        */
     document.addEventListener('keydown',function(e){
       if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){
         var formEl=document.getElementById('cdEntryForm');
@@ -1164,18 +1164,33 @@
       }
     });
 
-    /* ============================================================
-       INIT
-       ============================================================ */
-    function init(){
-      loadHeatmap();
-    }
+/* ============================================================
+   INIT
+   ============================================================ */
+  var pageInitialized = false;
 
-    if(document.readyState==='complete'){ reveal(); init(); }
-    else{
-      window.addEventListener('load',function(){ reveal(); init(); });
-      setTimeout(function(){ reveal(); init(); }, 8000);
-    }
+  function init(){
+    if (pageInitialized) return;
+    pageInitialized = true;
+
+    loadHeatmap();
+  }
+
+  if (document.readyState === 'complete') {
+    reveal();
+    init();
+  } else {
+    window.addEventListener('load', function () {
+      reveal();
+      init();
+    });
+
+    // Fallback for extremely slow networks
+    setTimeout(function () {
+      reveal();
+      init();
+    }, 8000);
+  }
 
   })();
   </script>

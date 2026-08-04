@@ -651,3 +651,252 @@ body.sd-light .cm-toast {
 body.sd-light .db-header {
   box-shadow: 0 1px 0 #e2e8f0;
 }
+
+
+
+
+/* 
+    MOBILE BEAUTY IMPROVEMENTS
+    */
+@media (max-width: 599px) {
+  .cm-main { padding: 1rem 0.85rem 5rem; }
+  .cm-page-title { font-size: 1.15rem; }
+  .cm-page-sub { font-size: 0.74rem; }
+  .cm-hero {
+    flex-direction: column; align-items: flex-start;
+    gap: 0.8rem; margin-bottom: 1.1rem;
+  }
+  .cm-hero .btn { width: 100%; justify-content: center; padding: 0.7rem 1rem; font-size: 0.85rem; }
+  .cm-stats-bar {
+    padding: 0.7rem 0.9rem; gap: 0.4rem;
+    margin-bottom: 1.1rem; border-radius: 12px;
+  }
+  .cm-stat-n { font-size: 1.2rem; }
+  .cm-stat-l { font-size: 0.6rem; }
+  .cm-stat-sep { height: 28px; }
+  .cm-filter-bar { flex-direction: column; gap: 0.55rem; margin-bottom: 1.1rem; }
+  .cm-search-wrap { width: 100%; }
+  .cm-cats {
+    flex-wrap: nowrap; overflow-x: auto; width: 100%;
+    padding-bottom: 0.2rem; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .cm-cats::-webkit-scrollbar { display: none; }
+  .cm-sort { width: 100%; }
+  .cm-grid { gap: 0.8rem; }
+  .cm-card__body { padding: 0.9rem 0.9rem 0.85rem 0.8rem; gap: 0.6rem; }
+  .cm-card__what { font-size: 0.87rem; line-height: 1.45; }
+  .cm-streak-num { font-size: 1.1rem; }
+  .cm-card__top { margin-bottom: 0; }
+}
+
+/* 
+    CARD ACTION BUTTONS — labeled on mobile, icon-only on desktop
+    */
+.cm-card__actions { display: flex; gap: 0.35rem; align-items: center; }
+
+.cm-action-btn-wrap {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Mobile: pill buttons with icon + text label */
+@media (max-width: 599px) {
+  .cm-action-btn {
+    width: auto !important;
+    height: auto !important;
+    padding: 0.42rem 0.72rem !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.32rem !important;
+    font-size: 0.71rem !important;
+    min-height: 34px;
+  }
+  .cm-action-lbl {
+    display: inline !important;
+    font-size: 0.69rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+  .cm-card__foot {
+    padding-top: 0.7rem;
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+  }
+  .cm-goal-lbl { font-size: 0.65rem; min-width: 0; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+/* Desktop: hide the text label, show only icon with hover tooltip */
+@media (min-width: 600px) {
+  .cm-action-lbl { display: none; }
+}
+
+/* 
+    BUTTON TOOLTIP — CSS hover on desktop, JS toggle on mobile
+    */
+.cm-btn-tip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: var(--surf);
+  border: 1px solid var(--edgeL);
+  border-radius: 10px;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.71rem;
+  color: var(--ink2);
+  line-height: 1.55;
+  white-space: normal;
+  min-width: 180px;
+  max-width: 230px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.28);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 600;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  text-align: left;
+}
+.cm-btn-tip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--edgeL);
+}
+/* Desktop: show on wrapper hover */
+@media (min-width: 600px) {
+  .cm-action-btn-wrap:hover .cm-btn-tip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+/* Mobile: show when wrapper has .tip-open */
+.cm-action-btn-wrap.tip-open .cm-btn-tip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+/* Keep tip above viewport on mobile if needed */
+@media (max-width: 599px) {
+  .cm-btn-tip { min-width: 160px; max-width: 200px; font-size: 0.69rem; }
+}
+
+/* 
+    HELP / TOUR BUTTON — visible on all screen sizes
+    */
+.hdr-tour-btn {
+  color: var(--accL) !important;
+  opacity: 0.8;
+  font-size: 1.05rem !important;
+}
+.hdr-tour-btn:hover { opacity: 1; }
+
+/* 
+    TOUR OVERLAY
+    */
+.cm-tour-bd {
+  position: fixed; inset: 0; z-index: 9000;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.cm-tour-bd.active {
+  opacity: 1; pointer-events: auto;
+}
+/* Spotlight — the "hole" in the dark overlay */
+.cm-tour-spot {
+  position: fixed;
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.68), 0 0 0 2.5px var(--acc), 0 0 20px rgba(59,130,246,0.4);
+  z-index: 9001;
+  transition: left 0.42s cubic-bezier(0.22,1,0.36,1),
+              top  0.42s cubic-bezier(0.22,1,0.36,1),
+              width 0.42s cubic-bezier(0.22,1,0.36,1),
+              height 0.42s cubic-bezier(0.22,1,0.36,1);
+  pointer-events: none;
+}
+/* Tour card */
+.cm-tour-card {
+  position: fixed;
+  z-index: 9002;
+  background: var(--surf);
+  border: 1px solid var(--edgeL);
+  border-radius: 16px;
+  padding: 1.25rem 1.35rem 1.1rem;
+  width: min(340px, calc(100vw - 2rem));
+  box-shadow: 0 20px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(59,130,246,0.12);
+  transition: top 0.38s cubic-bezier(0.22,1,0.36,1),
+              left 0.38s cubic-bezier(0.22,1,0.36,1),
+              transform 0.38s cubic-bezier(0.22,1,0.36,1);
+}
+.cm-tour-badge {
+  display: inline-flex; align-items: center;
+  background: rgba(59,130,246,0.12); color: var(--accL);
+  font-size: 0.6rem; font-weight: 800; letter-spacing: 0.1em;
+  padding: 0.18rem 0.6rem; border-radius: 50px;
+  margin-bottom: 0.6rem; text-transform: uppercase;
+}
+.cm-tour-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 10px;
+  background: rgba(59,130,246,0.1); color: var(--accL);
+  font-size: 1rem; margin-bottom: 0.55rem;
+}
+.cm-tour-h {
+  font-size: 0.97rem; font-weight: 800; color: var(--ink);
+  margin-bottom: 0.45rem; line-height: 1.3;
+}
+.cm-tour-p {
+  font-size: 0.78rem; color: var(--ink2); line-height: 1.65;
+  margin-bottom: 0.9rem;
+}
+.cm-tour-foot {
+  display: flex; align-items: center;
+  justify-content: space-between; gap: 0.5rem;
+}
+.cm-tour-skip {
+  background: none; border: none; cursor: pointer;
+  font-size: 0.73rem; color: var(--ink3); padding: 0.3rem 0;
+  font-family: inherit;
+}
+.cm-tour-skip:hover { color: var(--bad); }
+.cm-tour-dots {
+  display: flex; gap: 0.3rem; align-items: center;
+}
+.cm-tour-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--edge); transition: background 0.2s ease, transform 0.2s ease;
+}
+.cm-tour-dot.active { background: var(--acc); transform: scale(1.3); }
+.cm-tour-nav { display: flex; gap: 0.4rem; }
+.cm-tour-prev, .cm-tour-next {
+  padding: 0.42rem 0.9rem;
+  border-radius: 8px; font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; border: 1.5px solid var(--edge);
+  background: var(--surf2); color: var(--ink2);
+  font-family: inherit;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.2s ease;
+}
+.cm-tour-next {
+  background: var(--acc); border-color: var(--acc); color: #fff;
+}
+.cm-tour-prev:hover:not(:disabled) { background: var(--surf3); color: var(--ink); transform: translateX(-1px); }
+.cm-tour-next:hover { filter: brightness(1.1); transform: translateX(1px); }
+.cm-tour-prev:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Pulse ring on spotlight */
+@keyframes tourPulse {
+  0%,100% { box-shadow: 0 0 0 9999px rgba(0,0,0,0.68), 0 0 0 2.5px var(--acc), 0 0 20px rgba(59,130,246,0.3); }
+  50%      { box-shadow: 0 0 0 9999px rgba(0,0,0,0.68), 0 0 0 4px var(--acc),   0 0 32px rgba(59,130,246,0.55); }
+}
+.cm-tour-spot { animation: tourPulse 2.2s ease-in-out infinite; }
+
+/* 
+    FAB label tooltip on mobile
+    */
+@media (max-width: 599px) {
+  .cm-fab { width: 50px; height: 50px; font-size: 1.2rem; }
+}

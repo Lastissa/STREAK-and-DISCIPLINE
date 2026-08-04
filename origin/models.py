@@ -9,6 +9,11 @@ class ChoicesValidatorInModels:
         
         self.tier = ['free', 'premium', 'gold']
         self.theme = ['dark', 'light']
+        self.partner_limit = {
+            self.tier[0]: 1,
+            self.tier[1]: 5,
+            self.tier[2]: 20
+        }
         self.social_mode = ['solo', 'partner']
         self.commitment_category = ['other', 'fitness', 'study', 'work', 'health', 'mindset', 'growth']
         self.report_delivery_mode = ['email', 'whatsapp', 'push']
