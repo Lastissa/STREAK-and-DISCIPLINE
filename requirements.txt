@@ -43,7 +43,7 @@ python-dotenv==1.2.2
 python-engineio==4.13.3
 python-socketio==5.16.3
 python3-openid==3.2.0
-pywin32==312
+pywin32==312; sys_platform == 'win32'
 pyzmq==27.1.0
 redis==8.1.0
 requests==2.34.2
