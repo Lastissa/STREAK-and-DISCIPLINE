@@ -833,10 +833,10 @@ class EachCommitementEntries(LoginRequiredMixin, View):
         
         #check if user have already checked in today, if yes, return error
         last_entry = Entries.objects.filter(commitment_key=commitment_key).order_by('-commit_at').first()
-        if last_entry and last_entry.commit_at.isoformat() == timezone.now().date().isoformat():
+        if last_entry and last_entry.commit_at.isoformat() == timezone.now().date().isoformat(): #yyyy-mm-dd
             return JsonResponse({'message': 'You have already checked in today.'}, status=400)
         
-        # Create a new entry since commitment dey and user have not mad entry today
+        # Create a new entry since commitment dey and user have not made entry today
         with transaction.atomic():
             entry = Entries.objects.create(
                 commitment_key=commitment_instance,
@@ -846,8 +846,7 @@ class EachCommitementEntries(LoginRequiredMixin, View):
                 )
             
             # Update streak count and last check-in
-            last_entry = Entries.objects.filter(commitment_key=commitment_key).order_by('-commit_at').first()
-            print(last_entry and (timezone.now().date() - last_entry.commit_at).days)
+            last_entry = Entries.objects.filter(commitment_key=commitment_key).order_by('-commit_at').first()   #The - tells it to sort by newest first
             if last_entry and (timezone.now().date() - last_entry.commit_at).days == 1:
                 commitment_instance.streak_count += 1   #Streak count increase by 1 if last entry was yesterday
             else:
@@ -855,6 +854,8 @@ class EachCommitementEntries(LoginRequiredMixin, View):
             
             commitment_instance.last_check_in = timezone.now()
             commitment_instance.save()
+            
+            
         
         return JsonResponse({'message': 'Entry saved successfully.', 'entry_id': entry.pk}, status=201)
 

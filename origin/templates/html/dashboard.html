@@ -6,13 +6,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Dashboard — STREAK &amp; DISCIPLINE</title>
+  <title>Dashboard - STREAK &amp; DISCIPLINE</title>
 
   <!-- Font Awesome (local) -->
   <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
 
   <!--
-    CRITICAL INLINE STYLES — background + spinner.
+    CRITICAL INLINE STYLES - background + spinner.
     Paints in <50ms. Nothing blocks the first pixel.
   -->
   <style>
@@ -39,12 +39,12 @@
 <body class="sd-{{theme_mode}}">
 
   <!-- 
-       SPINNER — shows instantly, hides after window.load
+       SPINNER - shows instantly, hides after window.load
         -->
   {% include "reusables/spinner.html" %}
 
   <!-- 
-       APP SHELL — hidden until reveal()
+       APP SHELL - hidden until reveal()
         -->
   <div class="db-app" id="dbApp">
 
@@ -146,7 +146,7 @@
 
       </div><!-- /aside-scroll -->
 
-      <!-- Logout — sticky bottom -->
+      <!-- Logout - sticky bottom -->
       <div class="aside-logout">
         <button class="aside-logout-btn" id="logoutBtn">
           <i class="fas fa-right-from-bracket"></i> Log Out
@@ -192,7 +192,7 @@
 
         <!-- 1. GREETING -->
         <div class="db-greeting">
-          <div class="db-greeting-time" id="greetTime">—</div>
+          <div class="db-greeting-time" id="greetTime">-</div>
           <h1 class="db-greeting-text">
             <span id="greetWord">Good day</span>,
             <span style="color:var(--accL)">{{ request.user.username }}</span>
@@ -208,7 +208,7 @@
           </p>
         </div>
 
-        <!-- 1b. FIRST-TIME WELCOME HERO — only when the user has zero
+        <!-- 1b. FIRST-TIME WELCOME HERO - only when the user has zero
              active commitments. Server-rendered (Django, not JS) so it
              is on-screen instantly and the page never feels empty/dead
              for a brand-new user. Mirrors the hero + empty-state pattern
@@ -218,7 +218,7 @@
           <div class="db-welcome-icon"><i class="fas fa-fire-flame-curved"></i></div>
           <h2 class="db-welcome-title">Welcome to STREAK &amp; DISCIPLINE, {{ request.user.username }}.</h2>
           <p class="db-welcome-sub">
-            This dashboard tracks the promises you keep to yourself — but right now
+            This dashboard tracks the promises you keep to yourself - but right now
             it's empty, because you haven't made one yet. Add a commitment,
             check in daily, and this page fills in around you.
           </p>
@@ -232,7 +232,7 @@
         </div>
         {% endif %}
 
-        <!-- 2. STATS ROW (from Django context — instant) -->
+        <!-- 2. STATS ROW (from Django context - instant) -->
         <div class="db-stats">
           <!-- Zeal Score -->
           <div class="stat-card zeal">
@@ -245,7 +245,7 @@
           <!-- Consistency -->
           <div class="stat-card">
             <span class="stat-icon"><i class="fas fa-chart-pie"></i></span>
-            <span class="stat-num" id="consistNum">{{ consistency_pct|default:"—" }}%</span>
+            <span class="stat-num" id="consistNum">{{ consistency_pct|default:"-" }}%</span>
             <span class="stat-label">Consistency</span>
             <span class="stat-sub">All-time check-in rate</span>
           </div>
@@ -261,7 +261,7 @@
         <!-- Zeal score tooltip -->
         <div class="zeal-tooltip" id="zealTooltip" role="tooltip">
           <strong>Zeal Score explained</strong>
-          This is your discipline index — calculated across all your active commitments,
+          This is your discipline index - calculated across all your active commitments,
           Formula = Number of commitment * avergae streek
           <br>e.g your current commitment = '{{total_active_commitments}}'<br>
            multiplied by your average streak<br>gives  '{{zeal_score}}'<br><br>
@@ -283,7 +283,7 @@
           <i class="fas fa-trophy"></i>
           <span>
             <strong style="color:var(--accL)">{{ Upcoming_milestone }} day{{ Upcoming_milestone|pluralize }} to go.</strong>
-            You're close to your next milestone — don't break now.
+            You're close to your next milestone. Don't break now.
           </span>
         </div>
         {% endif %}
@@ -388,7 +388,7 @@
     </div><!-- /db-wrap -->
 
     <!-- 
-         FAB — quick-add commitment (goes to commitments page)
+         FAB - quick-add commitment (goes to commitments page)
           -->
     <a href="{% url "origin_commitments" %}?add=true" class="db-fab no-print"
        title="Add new commitment" aria-label="Add new commitment">
@@ -414,7 +414,7 @@
             <div class="share-preview-commit" id="spCommit">Loading commitment…</div>
             <div class="share-stat-row">
               <div class="share-stat-item">
-                <span class="share-stat-n" id="spStreak">—</span>
+                <span class="share-stat-n" id="spStreak">-</span>
                 <span class="share-stat-l">Streak</span>
               </div>
               <div class="share-stat-item">
@@ -422,7 +422,7 @@
                 <span class="share-stat-l">Zeal</span>
               </div>
               <div class="share-stat-item">
-                <span class="share-stat-n">{{ consistency_pct|default:"—" }}%</span>
+                <span class="share-stat-n">{{ consistency_pct|default:"-" }}%</span>
                 <span class="share-stat-l">Consistency</span>
               </div>
             </div>
@@ -451,7 +451,7 @@
 
           <p style="font-size:0.7rem;color:var(--ink3)">
             <i class="fas fa-lock"></i>
-            Only your username is shared — never your entries or personal details.
+            Only your username is shared - never your entries or personal details.
           </p>
         </div>
         <div class="db-modal-footer">
@@ -468,12 +468,12 @@
           -->
     <div class="print-only">
       <div class="print-card" id="printCard">
-        <div class="print-brand">STREAK &amp; DISCIPLINE — Progress Report</div>
+        <div class="print-brand">STREAK &amp; DISCIPLINE - Progress Report</div>
         <div class="print-title">@{{ request.user.username }}</div>
-        <div class="print-commit" id="printCommitText">—</div>
+        <div class="print-commit" id="printCommitText">-</div>
         <div class="print-stats">
           <div class="print-stat-item">
-            <span class="print-stat-n" id="printStreakN">—</span>
+            <span class="print-stat-n" id="printStreakN">-</span>
             <span class="print-stat-l">Day Streak</span>
           </div>
           <div class="print-stat-item">
@@ -481,7 +481,7 @@
             <span class="print-stat-l">Zeal Score</span>
           </div>
           <div class="print-stat-item">
-            <span class="print-stat-n">{{ consistency_pct|default:"—" }}%</span>
+            <span class="print-stat-n">{{ consistency_pct|default:"-" }}%</span>
             <span class="print-stat-l">Consistency</span>
           </div>
           <div class="print-stat-item">
@@ -725,7 +725,7 @@
       banner.appendChild(textGroup);
     }
 
-/*  COMMITMENT CARDS — /get_commitment_data*/
+/*  COMMITMENT CARDS - /get_commitment_data*/
     var commitmentData = [];
 
     var CAT_ICONS = {
@@ -845,7 +845,7 @@
     }
 
     /* 
-       PARTNER WIDGET — /partner-widget/
+       PARTNER WIDGET - /partner-widget/
         */
     function loadPartners() {
       var section = document.getElementById('dbPartners');
@@ -1024,7 +1024,7 @@
       var c = commitmentData[idx];
       if (!c) {
         qs('#spCommit') && (qs('#spCommit').textContent = 'No commitments loaded yet.');
-        qs('#spStreak') && (qs('#spStreak').textContent = '—');
+        qs('#spStreak') && (qs('#spStreak').textContent = '-');
         return;
       }
       qs('#spCommit') && (qs('#spCommit').textContent = '"' + c.what + '"');

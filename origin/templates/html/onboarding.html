@@ -14,6 +14,7 @@
   <!-- Inline spinner CSS — critical, must render before anything else -->
   <style>
     {% include "reusables/spinner.css" %}
+    {% include "reusables/custom_message.css" %}
     {% comment %} {% include "reusables/custom_message.css" %} {% endcomment %}
   </style>
 
@@ -32,6 +33,7 @@
        LOADER — waits for heavy CSS (max 8 s)
        ====================================================== -->
   {% include "reusables/spinner.html" %}
+  {% include "reusables/custom_message.html" %}
   {% comment %} {% include "reusables/custom_message.html" %} {% endcomment %}
   <!-- ======================================================
        APP ROOT — hidden until CSS ready
@@ -751,6 +753,7 @@
 </style>
 <script>
   {% include 'reusables/navigation_loader.js' %}
+  {% include "reusables/custom_message.js" %}
 </script>
 
   <!-- ==============================================================

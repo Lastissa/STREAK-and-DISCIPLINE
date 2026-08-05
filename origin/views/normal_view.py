@@ -7,8 +7,8 @@ from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib import messages
 from django.core.cache import cache
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import models
-from django.core.validators import validate_email
+from django.db import models, transaction
+from django.core.validators import EmailValidator
 from origin.models import Profile,Commitment, Entries, Friendship, ChoicesValidatorInModels
 from ..models import News
 
@@ -21,6 +21,7 @@ from .utility_view import helper_with_friendship_request_answer
 import logging
 from datetime import timedelta
 logger = logging.getLogger(__name__)
+
 
 class OriginHome(View):
     def get(self, request):

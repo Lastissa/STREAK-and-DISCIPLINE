@@ -1745,11 +1745,11 @@
             var msg = (res.data && res.data.message)
               ? res.data.message
               : 'Something went wrong. Tap to retry.';
-            showToast(msg, 'error', 0, doCreate);
+            showToast(msg, 'error', 4500);
           }
         })
         .catch(function () {
-          showToast('Network error. Tap to retry.', 'error', 0, doCreate);
+          showToast('Network error. Tap to retry.', 'error', 4500);
         });
       }
 

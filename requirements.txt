@@ -12,6 +12,7 @@ ConfigArgParse==1.7.5
 cryptography==49.0.0
 defusedxml==0.7.1
 Django==6.0.7
+django-redis==7.0.0
 dotenv==0.9.9
 Flask==3.1.3
 flask-cors==6.0.5
@@ -33,6 +34,7 @@ packaging==26.2
 pillow==12.3.0
 pluggy==1.6.0
 psutil==7.2.2
+psycopg2-binary==2.9.12
 pycparser==3.0
 Pygments==2.20.0
 PyJWT==2.13.0
@@ -41,8 +43,9 @@ python-dotenv==1.2.2
 python-engineio==4.13.3
 python-socketio==5.16.3
 python3-openid==3.2.0
-pywin32==312; sys_platform == 'win32'
+pywin32==312
 pyzmq==27.1.0
+redis==8.1.0
 requests==2.34.2
 requests-oauthlib==2.0.0
 resend==2.34.0

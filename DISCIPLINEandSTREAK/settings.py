@@ -62,10 +62,17 @@ TEMPLATES = [
 WSGI_APPLICATION = 'DISCIPLINEandSTREAK.wsgi.application'
 
 
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('NAME'),
+        'USER': os.getenv('USER'),
+        'HOST': os.getenv('HOST'),
+        'PORT': '5432',
+        'PASSWORD': os.getenv('PASSWORD'),
+        'OPTIONS': {'sslmode': 'require','connect_timeout': 5},
+        'CONN_MAX_AGE': 600,
     }
 }
 
@@ -142,3 +149,23 @@ CSRF_FAILURE_VIEW  = 'origin.urls.csrf_failure' #for handling the boring forbidd
 CLOUDINARY_CLOUD_NAME = os.getenv('CLOUD_NAME')
 CLOUDINARY_API_KEY = os.getenv('CLOUDINARY_API_KEY')
 CLOUDINARY_API_SECRET = os.getenv('CLOUDINARY_API_SECRET')
+
+import os
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": os.getenv('REDIS_URL'),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "SOCKET_CONNECT_TIMEOUT": 5,
+            "SOCKET_TIMEOUT": 5,
+            "RETRY_ON_TIMEOUT": True,
+            "CONNECTION_POOL_CLASS": "redis.BlockingConnectionPool",            #Help with limit on upstash
+            "CONNECTION_POOL_CLASS_KWARGS": {
+                "max_connections": 50,      # Manage connection limits
+                "timeout": 20,
+            },
+        }
+    }
+}

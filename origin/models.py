@@ -140,7 +140,7 @@ class Commitment(models.Model):
     whatsapp_number = models.CharField(max_length=20, blank=True) #if the user chooses whtsap so i can save their phone number using +xxxxxxxxxxxxxxx
     
     def __str__(self):
-        return f"{self.user.email} Commitments -- what_name: {self.what}"
+        return f"{self.user.email} Commitments -- what_name: {self.what}; status -> {self.is_active}"
     
 
 

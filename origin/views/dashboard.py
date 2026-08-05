@@ -18,6 +18,7 @@ class Onboarding(LoginRequiredMixin, View):
         #check user tier, if it does not exist, redirect user to onboarding
         user_profile = Profile.objects.filter(user = request.user).first()
         if user_profile is None:
+            if request.user.is_superuser:messages.info(request, message="Admin Account dectected!")
             return render(request,'html/onboarding.html')
             logger.error(msg="User is not suppose to have a profile , if user have a profile, redirect them to dashboard")
         else: return redirect('origin_dashboard')
@@ -58,9 +59,15 @@ class Dashboard(LoginRequiredMixin, View):
             messages.warning(request, message="Please Finish your onboarding before accessing this page, head to login and sigin in with you creedentials and you will be taken to onboarding")
             return render(request, 'html/full_screen_message.html')
         
-        commitment_istance = Commitment.objects.filter(user=request.user, is_active=True)
-        consistency_pct = [i.streak_count for i in  commitment_istance] #different from zeal score --- loop through streak; sum them all and divide by all
-        c_pct = sum(consistency_pct) / (len(consistency_pct)+1) #i added one to curb the issue of division by zero
+        commitment_istance = Commitment.objects.filter(user=request.user, is_active=True).all()
+        consistency = [0 for i in commitment_istance if i.streak_count > 0]    #Find the amount of streak score > 0 / total commitment (i use the tenchique of all ocnsistncy must have a streak score but are they all greater than zero?) ; that give the consistency_cpt
+        avg_streak_Counter = [ i.streak_count for i in commitment_istance]
+        try:    avg_streak = sum(avg_streak_Counter) / len(avg_streak_Counter) #i added one to curb the issue of division by zero   sum them all and divide by all to to get roughly avg 
+        except ZeroDivisionError: avg_streak = 0
+        
+        user_profile.zeal_score = round(avg_streak*commitment_istance.count())
+        user_profile.save()
+        
         data = {
             'tier' : user_profile.tier,
             'zeal_score' : user_profile.zeal_score,
@@ -68,7 +75,7 @@ class Dashboard(LoginRequiredMixin, View):
             'ai_insight_active' : user_profile.ai_insight_active,
             'social_mode' : user_profile.social_mode,
             'total_active_commitments': commitment_istance.count(),
-            'consistency_pct': c_pct,  
+            'consistency_pct': (len(consistency)/commitment_istance.count())*100,  
              'total_entries': Entries.objects.filter(commitment_key__user = request.user).count(),       #Hold usr current tier
              'theme_mode': request.COOKIES.get("sd-theme", 'dark'),
             
@@ -78,6 +85,7 @@ class Dashboard(LoginRequiredMixin, View):
         
         optimization() #this is for debugging and optimization, it will print the query count and the sql query in the console
         return render(request, 'html/dashboard.html', data)
+    
 
 def optimization():
     """This is for optimization and debugging"""

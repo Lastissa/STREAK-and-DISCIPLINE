@@ -171,7 +171,7 @@ class PasswordValidate(View):
         #token is still in the db, check if it have expired
         token_have_not_expired = (timezone.now() - token_still_valid_in_db.date_created).seconds < Static.token_expiry_time()
         if token_have_not_expired is False:
-            messages.info(request, message=f"The Link have Expired as the {int(Static.token_expiry_time()/60)} minutes timeout have been reached.")
+            messages.info(request, message=f"The Link have Expired as the {int(Static.token_expiry_time()/60)} minutes timeout have been reached. Please Check for more recent timeout Probably you opened an old link.")
             return render(request, 'html/full_screen_message.html')
         
         #over here, The link is still valid, update password and invalidate token and then redirect to login page

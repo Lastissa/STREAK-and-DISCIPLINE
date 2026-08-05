@@ -6,7 +6,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>{{ commitment.what|truncatechars:45 }} — STREAK &amp; DISCIPLINE</title>
+  <title>{{ commitment.what|truncatechars:45 }} - STREAK &amp; DISCIPLINE</title>
 
   <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
 
@@ -157,7 +157,7 @@
                   </span>
                   {% if commitment.goal_days > 0 %}
                   <span class="cd-meta-sep">·</span>
-                  <span class="cd-meta-txt" id="cdDaysLeft">— days left</span>
+                  <span class="cd-meta-txt" id="cdDaysLeft">- days left</span>
                   {% else %}
                   <span class="cd-meta-sep">·</span>
                   <span class="cd-meta-txt"><i class="fas fa-infinity"></i> Lifelong</span>
@@ -261,7 +261,7 @@
                 <textarea
                   class="cd-textarea"
                   id="cdTextarea"
-                  placeholder="How did it go today? Be honest with yourself — this is only for you."
+                  placeholder="How did it go today? Be honest with yourself - this is only for you."
                   rows="5"
                   aria-label="Today's entry"
                 ></textarea>
@@ -290,15 +290,15 @@
                   </div>
                 </div>
 
-                <!-- Rating (1-5) — requires rating field on Entry model -->
+                <!-- Rating (1-5) - requires rating field on Entry model -->
                 <div class="cd-rating-section">
                   <div class="cd-rating-lbl">Rate today's effort</div>
                   <div class="cd-stars" id="cdStars" role="group" aria-label="Effort rating 1 to 5">
-                    <button class="cd-star" data-val="1" type="button" aria-label="1 — poor">★</button>
-                    <button class="cd-star" data-val="2" type="button" aria-label="2 — below average">★</button>
-                    <button class="cd-star" data-val="3" type="button" aria-label="3 — average">★</button>
-                    <button class="cd-star" data-val="4" type="button" aria-label="4 — good">★</button>
-                    <button class="cd-star" data-val="5" type="button" aria-label="5 — outstanding">★</button>
+                    <button class="cd-star" data-val="1" type="button" aria-label="1 - poor">★</button>
+                    <button class="cd-star" data-val="2" type="button" aria-label="2 - below average">★</button>
+                    <button class="cd-star" data-val="3" type="button" aria-label="3 - average">★</button>
+                    <button class="cd-star" data-val="4" type="button" aria-label="4 - good">★</button>
+                    <button class="cd-star" data-val="5" type="button" aria-label="5 - outstanding">★</button>
                   </div>
                 </div>
 
@@ -350,17 +350,17 @@
                 <!-- Stats mini row -->
                 <div class="cd-stats-mini">
                   <div class="cd-stat-mini">
-                    <div class="cd-stat-mini-n" id="cdStatDays">—</div>
+                    <div class="cd-stat-mini-n" id="cdStatDays">-</div>
                     <div class="cd-stat-mini-l">Days in</div>
                   </div>
                   <div class="cd-stat-mini">
                     <div class="cd-stat-mini-n" id="cdStatLeft">
-                      {% if commitment.goal_days > 0 %}—{% else %}∞{% endif %}
+                      {% if commitment.goal_days > 0 %}-{% else %}∞{% endif %}
                     </div>
                     <div class="cd-stat-mini-l">Days left</div>
                   </div>
                   <div class="cd-stat-mini">
-                    <div class="cd-stat-mini-n" id="cdStatPct">—</div>
+                    <div class="cd-stat-mini-n" id="cdStatPct">-</div>
                     <div class="cd-stat-mini-l">Complete</div>
                   </div>
                 </div>
@@ -405,7 +405,7 @@
                 <div class="cd-detail-row">
                   <div class="cd-detail-lbl">Last check-in</div>
                   <div class="cd-detail-val" style="font-size:.78rem;color:var(--ink2)">
-                    {{ commitment.last_check_in|date:"D, M d Y — g:i A" }}
+                    {{ commitment.last_check_in|date:"D, M d Y - g:i A" }}
                   </div>
                 </div>
                 {% endif %}
@@ -590,7 +590,7 @@
       'Did you push past the minimum today? What made the difference?',
       'What would you tell yourself before starting today, knowing what you know now?',
       'Rate your focus today. What pulled your attention away?',
-      'What did showing up today cost you — and was it worth it?',
+      'What did showing up today cost you - and was it worth it?',
       'What story did you almost tell yourself to skip today?',
       'What would not doing this have felt like tonight?',
       'What is today\'s entry teaching you about who you\'re becoming?'
@@ -924,7 +924,7 @@
         */
     document.getElementById('cdSubmitBtn')&&document.getElementById('cdSubmitBtn').addEventListener('click',function(){
       var content=textarea?textarea.value.trim():'';
-      if(!content){ showToast('Write something — even one sentence counts.','error'); return; }
+      if(!content){ showToast('Write something - even one sentence counts.','error'); return; }
       var wc=countWords(content);
 
       var btn=this;
@@ -944,7 +944,7 @@
       .then(function(res){
         btn.classList.remove('cd-loading'); btn.disabled=false;
         if(res.ok){
-          showToast(IS_EDITING?'Entry updated. ✓':'Logged! 🔥 Streak protected.','success', 4000);
+          showToast(IS_EDITING?'Entry updated. ✓':'Logged!. See you tommorrow.','success', 4000);
           /* Update done state inline */
           var doneEl=document.getElementById('cdEntryDone');
           var formEl=document.getElementById('cdEntryForm');
@@ -967,7 +967,7 @@
       })
       .catch(function(){
         btn.classList.remove('cd-loading'); btn.disabled=false;
-        showToast('Network error — please retry.','error');
+        showToast('Network error - please retry.','error');
       });
     });
 
@@ -986,7 +986,7 @@
         if(cellWrap) show(cellWrap);
       })
       .catch(function(){
-        /* Keep skeletons hidden on failure — silent degradation */
+        /* Keep skeletons hidden on failure - silent degradation */
         var skGrid=document.getElementById('cdHeatSkGrid');
         if(skGrid) skGrid.style.display='none';
       });
@@ -1132,7 +1132,7 @@
       })
       .catch(function(){
         btn.classList.remove('cd-loading'); btn.disabled=false;
-        showToast('Network error — please retry.','error');
+        showToast('Network error - please retry.','error');
       });
     });
 
