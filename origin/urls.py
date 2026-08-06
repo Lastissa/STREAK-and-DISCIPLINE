@@ -75,6 +75,7 @@ urlpatterns = [
     path('profile_data/update_username/', views.ProfileUpdateUsernameORUserid.as_view(), name = 'origin_profile_update_first_part'),     #return the needed json file to the profile page dashboardpage uspdate username, userid 
     path('profile_data/update_profile/', views.ProfileUpdateToggles.as_view(), name = 'origin_profile_update_second_part'),     #return the needed json file to the profile page dashboardpage leaderboard optn in, show zeal score etc
     path('profile_data/update_theme/', views.ProfileUpdateTheme.as_view(), name = 'origin_profile_update_theme'),     #return the needed json file to the profile page dashboardpage uspdate username, userid 
+    path('profile_export_data/', views.DataExport.as_view(), name = 'origin_export_data'),
     path('reports_data/', views.ReportsData.as_view(), name = 'origin_reports_data'),     #return the needed json for the user reports page, this is the one that will be used to load the report data in the reports page
 
 

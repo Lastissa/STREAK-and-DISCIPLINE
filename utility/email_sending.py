@@ -344,7 +344,7 @@ def send_partner_request_notification(to_email: str, from_username: str, from_us
                                 </table>
                                 
                                 <p style="margin:0;font-size:12px;color:#64748b;line-height:1.5">
-                                    You can accept or decline this request from your dashboard. 
+                                    You can accept or decline this request from your dashboard -> relationsip -> received (pending). 
                                     If you accept, you'll see {from_username}'s consistency data on your partners widget. 
                                     You can remove them anytime from Profile → Settings.
                                 </p>

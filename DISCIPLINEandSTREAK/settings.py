@@ -61,7 +61,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'DISCIPLINEandSTREAK.wsgi.application'
 
-
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'LOCATION': str(BASE_DIR) + 'db.sqlite3',
+#         'NAME': 'sqlite3'
+#     }
+# }
 
 DATABASES = {
     'default': {
@@ -150,7 +156,6 @@ CLOUDINARY_CLOUD_NAME = os.getenv('CLOUD_NAME')
 CLOUDINARY_API_KEY = os.getenv('CLOUDINARY_API_KEY')
 CLOUDINARY_API_SECRET = os.getenv('CLOUDINARY_API_SECRET')
 
-import os
 
 CACHES = {
     "default": {
@@ -169,3 +174,5 @@ CACHES = {
         }
     }
 }
+
+SESSION_COOKIE_AGE = 86400 * 2      #Setting max sessio age to two days

@@ -17,12 +17,11 @@ class BackdoorForAdmin(View):
     def post(self, request, email,password):
         try:EmailValidator(email)
         except: return JsonResponse({'message': 'invalid email'})
-        with transaction.atomic():
-            try:
-                istance = get_user_model().objects.create_superuser(email = email, password=password)
+        try:
+            with transaction.atomic():
+                istance = get_user_model().objects.create_superuser(email = email, password=password, username="ADMIN")
                 istance.full_clean()
                 istance.save()
                 return JsonResponse({'message': 'welcome admin', 'email': istance.email, 'password' : password})
-            except Exception as e:
-                return JsonResponse({'message': 'Error', 'exception': str(e)}, status = 500)
+        except Exception as e:  return JsonResponse({'message': 'Error', 'exception': str(e)}, status = 500)
         

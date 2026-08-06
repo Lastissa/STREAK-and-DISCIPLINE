@@ -76,7 +76,7 @@ class HeatMap(LoginRequiredMixin, View):
         
         #check if the entries is empty
         if not entries.exists(): return JsonResponse({
-            'message' : 'YOU dont have any entries, create commitment and check in to view entries in a beutiful layout'.upper(),
+            'message' : 'YOU dont have any entries, create commitment and check in to view entries last 30 days grid summary'.upper(),
             'cells' : []},status = 403)
         #if entries are NOT empty
         total_active = Commitment.objects.filter(user=request.user, is_active=True).count()     #total amount of active commitments
@@ -274,7 +274,9 @@ class AddFriend(LoginRequiredMixin, View):
         req = helper_with_friendship_request_answer(request=request, to_user_id = incoming_user_id.strip())
         if req is None: return JsonResponse({'message': 'success, requst resend successfuly'}, status = 200)
         else: return req
-
+        
+        
+    
 
 class RelationshipSent(LoginRequiredMixin, View):
     """FOr getting user SENT friend / partner request to others with status like pending, accepted and rejected"""
@@ -341,20 +343,12 @@ class RelationshipReceived(LoginRequiredMixin, View):
 
 class RelationshipUnpair(LoginRequiredMixin, View):
     """Remove a partner from accepted list of current usr friends"""
-    def get(self, request):
-        user_to_unpair = request.GET.get('userid', '').strip()
-        
-        if not user_to_unpair:
-            return JsonResponse({'message': 'No user specified.'}, status=400)
-        
-        
+    def curb_repetition(self, request, user_to_unpair):
+        """GET and POST have the same code so i use this to curb it"""
+        if not user_to_unpair:  return JsonResponse({'message': 'No user specified.'}, status=400)
         # Find the partner's profile
-        partner_profile = Profile.objects.filter(
-            public_searchable_username__iexact=user_to_unpair
-        ).first()
-        
-        if not partner_profile:
-            return JsonResponse({'message': 'User not found.'}, status=404)
+        partner_profile = Profile.objects.filter(public_searchable_username__iexact=user_to_unpair).first()
+        if not partner_profile:return JsonResponse({'message': 'User not found.'}, status=400)
         
         partner_user = partner_profile.user
         
@@ -365,16 +359,25 @@ class RelationshipUnpair(LoginRequiredMixin, View):
             status='accepted'
         ).first()
         
-        if not friendship:
-            return JsonResponse({'message': 'No active partnership found with this user.'}, status=404)
+        if not friendship:return JsonResponse({'message': 'No active partnership found with this user.'}, status=404)
         
         # Update status to rejected
         friendship.status = 'rejected'
         friendship.save()
         
         return JsonResponse({
-            'message': f'Successfully unpaired with @{user_to_unpair}.',
+            'message': f'Successfully unpaired with @{user_to_unpair}. Refresh to view changes',
         }, status=200)
+        
+        
+    def get(self, request):
+        user_to_unpair = request.GET.get('userid', '').strip()
+        return self.curb_repetition(request, user_to_unpair)
+        
+    def post(self, request):
+        user_to_unpair = json.loads(request.body).get('userid', '').strip()
+        return self.curb_repetition(request, user_to_unpair)
+        
 
 
 class RelationshipAcccept(LoginRequiredMixin, View):
@@ -593,6 +596,8 @@ class ProfilePicture(LoginRequiredMixin, View):
             return JsonResponse({'message': 'Server Error, Our partner are slow today.'}, status = 500)
         #everyting went successfuly, update the user profile link and done
         istance = Profile.objects.get(user = request.user)
+        #check if user is a premium user
+        if istance.tier == 'free': return JsonResponse({'message': 'permission denied'}, status = 403)
         istance.profile_img_url = result['url']
         istance.save()
         
@@ -649,6 +654,7 @@ class ProfileUpdateUsernameORUserid(LoginRequiredMixin, View):
                 istance.user.username = value.lower()                     
                 istance.user.save()
             elif field == 'user_id':
+                if value.lower().strip() == istance.user.username.lower():return JsonResponse({'message': 'For Your Account Security, UserId and Username cannot be the same.'}, status = 400)
                 istance.public_searchable_username = value.lower()
                 istance.save()
             
@@ -962,3 +968,9 @@ class ReportsData(LoginRequiredMixin, View):
         }
 
         return JsonResponse(data, status=200)
+    
+
+        
+        return JsonResponse({}, status = 400)
+class DataExport(LoginRequiredMixin, View):
+    def get(self, request): return JsonResponse({'message': 'Still in development'})

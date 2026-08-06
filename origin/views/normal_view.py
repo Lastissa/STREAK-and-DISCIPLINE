@@ -185,93 +185,106 @@ class BlogView(View):
     
     def get(self, request):
         post = []
-        data = News.objects.all() #use Pgination later #brb
-        for i in data:
-            post.append(
-                {
-                    'tag' : i.tag,
-                    'title': i.title,
-                    'excerpt': i.excerpt,
-                    'date': custom_date_formatter(datetime_data=i.date),
-                    'read_time'  :i.read_time,
-                    'url': reverse('origin_blog') + f"/{i.pk}",
-                    'image_url': i.banner,
-                    'featured': i.featuered
-                }
-            )
-        posts = [
+        data = News.objects.order_by('-date').all() #use Pgination later #brb
+        if data.count() < 1 : return render(request, 'html/blog_and_update.html', {})
+        post = [
             {
-                'tag': 'Update',
-                'title': 'New Feature: Weekly Leaderboard is Live',
-                'excerpt': 'See how you rank against other disciplined minds every Sunday. Opt in from your profile settings to appear on the board.',
-                'date': 'Jul 28, 2026',
-                'read_time': '2 min read',
-                'url': reverse('origin_blog') + f"/{request.user.pk}",
-                'image_url': '',  # leave empty if no image
-                'featured': True,  # this one spans full width
-            },
-            {
-                'tag': 'Tip',
-                'title': 'The 2-Minute Rule: How to Never Miss a Check-In',
-                'excerpt': 'On your worst days, your minimum effort is your secret weapon. Here is how to set one that actually works.',
-                'date': 'Jul 25, 2026',
-                'read_time': '3 min read',
-                'image_url': '',
-                'featured': False,
-            },
-            {
-                'tag': 'Guide',
-                'title': 'Why Your Streak Reset Is a Gift, Not a Failure',
-                'excerpt': 'The number does not define you. How you respond to the reset does. A different way to think about breaking the chain.',
-                'date': 'Jul 20, 2026',
-                'read_time': '4 min read',
-                'url': '/v1/blog/streak-reset-gift/',
-                'image_url': '',
-                'featured': False,
-            },
-            {
-                'tag': 'Story',
-                'title': 'How Opeyemi Went From Zero to 217 Days',
-                'excerpt': 'A community member shares how one honest sentence a day rebuilt their confidence and changed their mornings.',
-                'date': 'Jul 15, 2026',
-                'read_time': '5 min read',
-                'url': '/v1/blog/opeyemi-217-days/',
-                'image_url': '',
-                'featured': False,
-            },
-            {
-                'tag': 'Update',
-                'title': 'Accountability Partners Are Here',
-                'excerpt': 'You can now invite someone to see your consistency score. Not your entries — just your commitment to showing up.',
-                'date': 'Jul 10, 2026',
-                'read_time': '2 min read',
-                'url': '/v1/blog/accountability-partners/',
-                'image_url': '',
-                'featured': False,
-            },
-            {
-                'tag': 'Tip',
-                'title': 'Morning vs Evening Check-Ins: What the Data Says',
-                'excerpt': 'Our analytics show morning check-ins average 52 words. Evening ones? 24. What your timing reveals about your mindset.',
-                'date': 'Jul 5, 2026',
-                'read_time': '3 min read',
-                'url': '/v1/blog/morning-vs-evening/',
-                'image_url': '',
-                'featured': False,
-            },
-            
-            #to show image
-            {
-                'tag': 'Update',
-                'title': 'New Feature: Weekly Leaderboard is Live',
-                'excerpt': '...',
-                'date': 'Jul 28, 2026',
-                'read_time': '2 min read',
-                'url': '/v1/blog/weekly-leaderboard-launch/',
-                'image_url': Static.logo_url(),
-                'featured': True,
-            },
+                'tag' : i.tag,
+                'title': i.title,
+                'excerpt': i.excerpt,
+                'date': custom_date_formatter(datetime_data=i.date),
+                'read_time'  :i.read_time,
+                'url': reverse('origin_blog') + f"/{i.pk}",
+                'image_url': i.banner,
+                'featured': i.featuered
+            }
+            for i in data
         ]
+        for i in data:
+                post.append(
+                    {
+                        'tag' : i.tag,
+                        'title': i.title,
+                        'excerpt': i.excerpt,
+                        'date': custom_date_formatter(datetime_data=i.date),
+                        'read_time'  :i.read_time,
+                        'url': reverse('origin_blog') + f"/{i.pk}",
+                        'image_url': i.banner,
+                        'featured': i.featuered
+                    })
+                posts = [
+                    {
+                        'tag': 'update',
+                        'title': 'New Feature: Weekly Leaderboard is Live',
+                        'excerpt': 'See how you rank against other disciplined minds every Sunday. Opt in from your profile settings to appear on the board.',
+                        'date': 'Jul 28, 2026',
+                        'read_time': '2 min read',
+                        'url': reverse('origin_blog') + f"/{request.user.pk}",
+                        'image_url': '',  # leave empty if no image
+                        'featured': True,  # this one spans full width
+                    },
+                    {
+                        'tag': 'tip',
+                        'title': 'The 2-Minute Rule: How to Never Miss a Check-In',
+                        'excerpt': 'On your worst days, your minimum effort is your secret weapon. Here is how to set one that actually works.',
+                        'date': 'Jul 25, 2026',
+                        'read_time': '3 min read',
+                        'image_url': '',
+                        'featured': False,
+                    },
+                    {
+                        'tag': 'guide',
+                        'title': 'Why Your Streak Reset Is a Gift, Not a Failure',
+                        'excerpt': 'The number does not define you. How you respond to the reset does. A different way to think about breaking the chain.',
+                        'date': 'Jul 20, 2026',
+                        'read_time': '4 min read',
+                        'url': '/v1/blog/streak-reset-gift/',
+                        'image_url': '',
+                        'featured': False,
+                    },
+                    {
+                        'tag': 'story',
+                        'title': 'How Opeyemi Went From Zero to 217 Days',
+                        'excerpt': 'A community member shares how one honest sentence a day rebuilt their confidence and changed their mornings.',
+                        'date': 'Jul 15, 2026',
+                        'read_time': '5 min read',
+                        'url': '/v1/blog/opeyemi-217-days/',
+                        'image_url': '',
+                        'featured': False,
+                    },
+                    {
+                        'tag': 'update',
+                        'title': 'Accountability Partners Are Here',
+                        'excerpt': 'You can now invite someone to see your consistency score. Not your entries — just your commitment to showing up.',
+                        'date': 'Jul 10, 2026',
+                        'read_time': '2 min read',
+                        'url': '/v1/blog/accountability-partners/',
+                        'image_url': '',
+                        'featured': False,
+                    },
+                    {
+                        'tag': 'tip',
+                        'title': 'Morning vs Evening Check-Ins: What the Data Says',
+                        'excerpt': 'Our analytics show morning check-ins average 52 words. Evening ones? 24. What your timing reveals about your mindset.',
+                        'date': 'Jul 5, 2026',
+                        'read_time': '3 min read',
+                        'url': '/v1/blog/morning-vs-evening/',
+                        'image_url': '',
+                        'featured': False,
+                    },
+                    
+                    #to show image
+                    {
+                        'tag': 'update',
+                        'title': 'New Feature: Weekly Leaderboard is Live',
+                        'excerpt': '...',
+                        'date': 'Jul 28, 2026',
+                        'read_time': '2 min read',
+                        'url': '/v1/blog/weekly-leaderboard-launch/',
+                        'image_url': Static.logo_url(),
+                        'featured': True,
+                    },
+                ]
         
         context = {
             'tier': 'gold',

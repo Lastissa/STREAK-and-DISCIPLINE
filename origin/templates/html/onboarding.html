@@ -14,7 +14,6 @@
   <!-- Inline spinner CSS — critical, must render before anything else -->
   <style>
     {% include "reusables/spinner.css" %}
-    {% include "reusables/custom_message.css" %}
     {% comment %} {% include "reusables/custom_message.css" %} {% endcomment %}
   </style>
 
@@ -29,15 +28,14 @@
 </head>
 <body>
 
-  <!-- ======================================================
+  <!-- 
        LOADER — waits for heavy CSS (max 8 s)
-       ====================================================== -->
+        -->
   {% include "reusables/spinner.html" %}
-  {% include "reusables/custom_message.html" %}
   {% comment %} {% include "reusables/custom_message.html" %} {% endcomment %}
-  <!-- ======================================================
+  <!-- 
        APP ROOT — hidden until CSS ready
-       ====================================================== -->
+        -->
   <div class="ob-main" id="obMain">
 
     <!-- Particle canvas (desktop only, shown via CSS) -->
@@ -61,18 +59,18 @@
     <!-- Progress stripe -->
     <div class="ob-progress"><div class="ob-progress-fill" id="obFill"></div></div>
 
-    <!-- ====================================================
+    <!-- ====
          OUTER WRAPPER — becomes ob-split for phases 3–10
-         ==================================================== -->
+         ==== -->
     <div class="ob-wrap" id="obWrap">
 
       <!-- LEFT: form wizard -->
       <div class="ob-left">
         <div class="ob-phases" id="obPhases">
 
-          <!-- ================================================
+          <!-- 
                PHASE 1 — WELCOME  (full-screen, cinematic)
-               ================================================ -->
+                -->
           <div class="ob-phase ob-fs" data-phase="1" id="p1">
             <div class="ob-welcome">
               <div class="ob-welcome-logo">
@@ -118,9 +116,9 @@
             </div>
           </div>
 
-          <!-- ================================================
+          <!-- 
                PHASE 2 — INTRO  (what S&D is + what you'll get)
-               ================================================ -->
+                -->
           <div class="ob-phase ob-fs" data-phase="2" id="p2">
             <div class="ob-intro">
               <div class="ob-eyebrow"><i class="fas fa-circle-info"></i> Before we dive in</div>
@@ -169,9 +167,9 @@
             </div>
           </div>
 
-          <!-- ================================================
+          <!-- 
                PHASE 3 — YOUR NAME
-               ================================================ -->
+                -->
           <div class="ob-phase" data-phase="3" id="p3">
             <div class="ob-card">
               <div class="ob-eyebrow">Step 1 of 9</div>
@@ -200,9 +198,9 @@
             </div>
           </div>
 
-          <!-- ================================================
+          <!-- 
                PHASE 4 — YOUR VOW  (what + category)
-               ================================================ -->
+                -->
           <div class="ob-phase" data-phase="4" id="p4">
             <div class="ob-card">
               <div class="ob-eyebrow">Step 2 of 9</div>
@@ -243,9 +241,9 @@
             </div>
           </div>
 
-          <!-- ================================================
+          <!-- 
                PHASE 5 — YOUR WHY
-               ================================================ -->
+                -->
           <div class="ob-phase" data-phase="5" id="p5">
             <div class="ob-card">
               <div class="ob-eyebrow">Step 3 of 9</div>
@@ -278,9 +276,9 @@
             </div>
           </div>
 
-          <!-- ================================================
+          <!-- 
                PHASE 6 — MINIMUM EFFORT
-               ================================================ -->
+                -->
           <div class="ob-phase" data-phase="6" id="p6">
             <div class="ob-card">
               <div class="ob-eyebrow">Step 4 of 9</div>
@@ -313,9 +311,9 @@
             </div>
           </div>
 
-          <!-- ================================================
+          <!-- 
                PHASE 7 — GOAL DURATION
-               ================================================ -->
+                -->
           <div class="ob-phase" data-phase="7" id="p7">
             <div class="ob-card">
               <div class="ob-eyebrow">Step 5 of 9</div>
@@ -344,9 +342,9 @@
             </div>
           </div>
 
-          <!-- ================================================
+          <!-- 
                PHASE 8 — SCHEDULE & REMINDERS
-               ================================================ -->
+                -->
           <div class="ob-phase" data-phase="8" id="p8">
             <div class="ob-card">
               <div class="ob-eyebrow">Step 6 of 9</div>
@@ -399,9 +397,9 @@
             </div>
           </div>
 
-          <!-- ================================================
+          <!-- 
                PHASE 9 — ACCOUNTABILITY
-               ================================================ -->
+                -->
           <div class="ob-phase" data-phase="9" id="p9">
             <div class="ob-card">
               <div class="ob-eyebrow">Step 7 of 9</div>
@@ -477,9 +475,9 @@
             </div>
           </div>
 
-          <!-- ================================================
+          <!-- 
                PHASE 10 — PREFERENCES
-               ================================================ -->
+                -->
           <div class="ob-phase" data-phase="10" id="p10">
             <div class="ob-card">
               <div class="ob-eyebrow">Step 8 of 9 — Almost there</div>
@@ -539,9 +537,9 @@
             </div>
           </div>
 
-          <!-- ================================================
+          <!-- 
                PHASE 11 — DASHBOARD PREVIEW  (full-screen)
-               ================================================ -->
+                -->
           <div class="ob-phase ob-fs" data-phase="11" id="p11">
             <div class="ob-preview">
               <div class="ob-eyebrow">Step 9 of 9</div>
@@ -602,9 +600,9 @@
             </div>
           </div>
 
-          <!-- ================================================
+          <!-- 
                PHASE 12 — LAUNCH  (full-screen, celebration)
-               ================================================ -->
+                -->
           <div class="ob-phase ob-fs" data-phase="12" id="p12">
             <div class="ob-launch">
               <div class="check-wrap" style="position:relative">
@@ -671,9 +669,9 @@
         </div><!-- /ob-phases -->
       </div><!-- /ob-left -->
 
-      <!-- ====================================================
+      <!-- ====
            RIGHT: Live dashboard preview  (desktop, phases 3–10)
-           ==================================================== -->
+           ==== -->
       <div class="ob-right" id="obRight">
         <div class="ob-dash">
           <p class="ob-dash-label"><i class="fas fa-eye"></i> Your dashboard preview — live</p>
@@ -715,9 +713,9 @@
 
   </div><!-- /ob-main -->
 
-  <!-- ==============================================================
+  <!-- ========
        INLINE CRITICAL JS — spinner wait + 8-second fallback
-       ============================================================== -->
+       ======== -->
   <script>
     (function() {
       var ready = false;
@@ -753,22 +751,22 @@
 </style>
 <script>
   {% include 'reusables/navigation_loader.js' %}
-  {% include "reusables/custom_message.js" %}
+  
 </script>
 
-  <!-- ==============================================================
+  <!-- ========
        FULL APP SCRIPT — phase engine, physics, particles
        Placed at bottom of body — no defer needed
-       ============================================================== -->
+       ======== -->
   <script>
   (function() {
-    {% comment %} {% include "reusables/custom_message.js" %} {% endcomment %}
+    //{% include "reusables/custom_message.js" %}
     'use strict';
 
-    /* ============================================================
+    /* ======
        SPRING PHYSICS ENGINE
        GTA-level: mass, damping, overshoot, settle
-       ============================================================ */
+       ====== */
     function Spring(cfg) {
       cfg = cfg || {};
       this.k  = cfg.stiffness || 170;   // spring constant
@@ -793,10 +791,10 @@
       return Math.abs(this.v) < 0.008 && Math.abs(this.x - this.t) < 0.008;
     };
 
-    /* ============================================================
+    /* ======
        CANVAS PARTICLE SYSTEM — desktop only
        Particles drift, connect to neighbours, react to mouse
-       ============================================================ */
+       ====== */
     var canvas  = document.getElementById('ob-canvas');
     var ctx     = canvas && canvas.getContext('2d');
     var mouse   = { x: -9999, y: -9999 };
@@ -873,9 +871,9 @@
       window.addEventListener('mousemove', function(e) { mouse.x = e.clientX; mouse.y = e.clientY; });
     }
 
-    /* ============================================================
+    /* ======
        PARTICLE BURST — fires on CTA clicks
-       ============================================================ */
+       ====== */
     function burst(el, count) {
       count = count || 16;
       var rect = el.getBoundingClientRect();
@@ -918,9 +916,9 @@
       }
     }
 
-    /* ============================================================
+    /* ======
        CARD 3D TILT — desktop mouse tracking
-       ============================================================ */
+       ====== */
     function initTilt(card) {
       if (!card || window.innerWidth < 900) return;
       card.addEventListener('mousemove', function(e) {
@@ -934,9 +932,9 @@
       });
     }
 
-    /* ============================================================
+    /* ======
        STATE
-       ============================================================ */
+       ====== */
     var STATE = {
       phase: 1,
       name: '{{request.user.username}}',
@@ -962,9 +960,9 @@
       STORAGE_KEY: 'sd_ob_v2'
     };
 
-    /* ============================================================
+    /* ======
        PERSISTENCE
-       ============================================================ */
+       ====== */
     function save() {
       try {
         localStorage.setItem(STATE.STORAGE_KEY, JSON.stringify({
@@ -1003,9 +1001,9 @@
       } catch(e) { return false; }
     }
 
-    /* ============================================================
+    /* ======
        POPULATE CALENDARS (right panel + preview)
-       ============================================================ */
+       ====== */
     function buildCal(container) {
       if (!container) return;
       container.innerHTML = '';
@@ -1019,9 +1017,9 @@
       }
     }
 
-    /* ============================================================
+    /* ======
        LIVE DASHBOARD PREVIEW UPDATES
-       ============================================================ */
+       ====== */
     function updateDash() {
       // Greeting name
       var dwName = document.getElementById('dwName');
@@ -1082,9 +1080,9 @@
       }
     }
 
-    /* ============================================================
+    /* ======
        PROGRESS
-       ============================================================ */
+       ====== */
     function updateProgress(n) {
       var fill = document.getElementById('obFill');
       if (fill) fill.style.width = ((n / 12) * 100).toFixed(1) + '%';
@@ -1105,9 +1103,9 @@
       });
     }
 
-    /* ============================================================
+    /* ======
        SPLIT MODE — show/hide right dashboard panel
-       ============================================================ */
+       ====== */
     var splitPhases = {3:1,4:1,5:1,6:1,7:1,8:1,9:1,10:1};
     function updateSplit(n) {
       var wrap  = document.getElementById('obWrap');
@@ -1122,9 +1120,9 @@
       }
     }
 
-    /* ============================================================
+    /* ======
        PHASE NAVIGATION
-       ============================================================ */
+       ====== */
     var currentPhase = 1;
 
     function goTo(n) {
@@ -1150,9 +1148,9 @@
       window.scrollTo({ top:0, behavior:'smooth' });
     }
 
-    /* ============================================================
+    /* ======
        VALIDATION
-       ============================================================ */
+       ====== */
     function validatePhase(n) {
       var ok = true;
       function fail(id, errId) {
@@ -1187,9 +1185,9 @@
       });
     });
 
-    /* ============================================================
+    /* ======
        COLLECT STATE FROM FORM
-       ============================================================ */
+       ====== */
     function collectState() {
       var n = document.getElementById('obName');   if(n) STATE.name = n.value.trim();
       var w = document.getElementById('obWhat');   if(w) STATE.what = w.value.trim();
@@ -1206,9 +1204,9 @@
       var fw  = document.getElementById('obForever'); if(fw) STATE.goalForever = fw.checked;
     }
 
-    /* ============================================================
+    /* ======
        RESTORE FORM FROM STATE
-       ============================================================ */
+       ====== */
     function restoreForm() {
       function set(id, val) {
         var el = document.getElementById(id);
@@ -1265,9 +1263,9 @@
       if (fs) fs.style.display = STATE.socialMode === 'partner' ? 'block' : 'none';
     }
 
-    /* ============================================================
+    /* ======
        POPULATE SUMMARY (phase 12)
-       ============================================================ */
+       ====== */
     function populateSummary() {
       collectState();
       var m = document.getElementById('sumWhat');   if(m) m.textContent = STATE.what || '—';
@@ -1285,9 +1283,9 @@
         : STATE.socialMode === 'partner' ? 'With partner' : 'Solo';
     }
 
-    /* ============================================================
+    /* ======
        BUILD TIME SELECT OPTIONS
-       ============================================================ */
+       ====== */
     function buildTimeSelect(selId, def) {
       var sel = document.getElementById(selId);
       if (!sel) return;
@@ -1304,9 +1302,9 @@
     buildTimeSelect('obCheckinTime',  '21:00');
     buildTimeSelect('obReminderTime', '20:30');
 
-    /* ============================================================
+    /* ======
        BUILD DOTS (mobile)
-       ============================================================ */
+       ====== */
     var dotsEl = document.getElementById('obDots');
     if (dotsEl) {
       for (var d = 1; d <= 12; d++) {
@@ -1318,15 +1316,15 @@
       }
     }
 
-    /* ============================================================
+    /* ======
        BUILD CALENDARS
-       ============================================================ */
+       ====== */
     buildCal(document.getElementById('dwCal'));
     buildCal(document.getElementById('mockCal'));
 
-    /* ============================================================
+    /* ======
        BUTTON DELEGATION — data-next / data-prev
-       ============================================================ */
+       ====== */
     document.addEventListener('click', function(e) {
       var btn = e.target.closest('[data-next]');
       if (btn && !btn.closest('.ob-right')) {
@@ -1356,9 +1354,9 @@
       }
     });
 
-    /* ============================================================
+    /* ======
        LIVE INPUT UPDATES → dashboard preview
-       ============================================================ */
+       ====== */
     ['obName','obWhat','obWhy'].forEach(function(id) {
       var el = document.getElementById(id);
       if (!el) return;
@@ -1368,9 +1366,9 @@
       });
     });
 
-    /* ============================================================
+    /* ======
        CATEGORY CHIPS
-       ============================================================ */
+       ====== */
     document.querySelectorAll('[data-cat]').forEach(function(c) {
       c.addEventListener('click', function() {
         document.querySelectorAll('[data-cat]').forEach(function(cc){cc.classList.remove('on')});
@@ -1380,9 +1378,9 @@
       });
     });
 
-    /* ============================================================
+    /* ======
        SUGGESTION CHIPS (fill input)
-       ============================================================ */
+       ====== */
     document.querySelectorAll('[data-fill]').forEach(function(chip) {
       chip.addEventListener('click', function() {
         var target = document.getElementById(chip.dataset.fill);
@@ -1397,9 +1395,9 @@
       });
     });
 
-    /* ============================================================
+    /* ======
        GOAL CARDS
-       ============================================================ */
+       ====== */
     document.querySelectorAll('[data-days]').forEach(function(g) {
       g.addEventListener('click', function() {
         document.querySelectorAll('[data-days]').forEach(function(gg){gg.classList.remove('on')});
@@ -1423,9 +1421,9 @@
       });
     }
 
-    /* ============================================================
+    /* ======
        METHOD CARDS (reminder channel)
-       ============================================================ */
+       ====== */
     document.querySelectorAll('[data-method]').forEach(function(mc) {
       mc.addEventListener('click', function() {
         document.querySelectorAll('[data-method]').forEach(function(mm){mm.classList.remove('on')});
@@ -1438,9 +1436,9 @@
       });
     });
 
-    /* ============================================================
+    /* ======
        REMINDER TOGGLE
-       ============================================================ */
+       ====== */
     var remOn = document.getElementById('obReminderOn');
     var remSec = document.getElementById('obReminderSection');
     if (remOn && remSec) {
@@ -1461,9 +1459,9 @@
       save();
     });
 
-    /* ============================================================
+    /* ======
        SOCIAL MODE CARDS
-       ============================================================ */
+       ====== */
     document.querySelectorAll('[data-mode]').forEach(function(sc) {
       sc.addEventListener('click', function() {
         document.querySelectorAll('[data-mode]').forEach(function(s){s.classList.remove('on')});
@@ -1475,9 +1473,9 @@
       });
     });
 
-    /* ============================================================
+    /* ======
        THEME PICKER
-       ============================================================ */
+       ====== */
     document.querySelectorAll('[data-theme]').forEach(function(t) {
       t.addEventListener('click', function() {
         document.querySelectorAll('[data-theme]').forEach(function(tt){tt.classList.remove('on')});
@@ -1496,9 +1494,9 @@
       });
     });
 
-    /* ============================================================
+    /* ======
        HEADER THEME BUTTON
-       ============================================================ */
+       ====== */
     var themeBtn = document.getElementById('obThemeBtn');
     if (themeBtn) {
       themeBtn.addEventListener('click', function() {
@@ -1516,9 +1514,9 @@
       });
     }
 
-    /* ============================================================
+    /* ======
        FRIEND SEARCH
-       ============================================================ */
+       ====== */
     function friendState(which) {
       ['frLoading','frFound','frSent','frNone','frError','frSkipped'].forEach(function(id) {
         var el = document.getElementById(id);
@@ -1601,9 +1599,9 @@
       });
     }
 
-    /* ============================================================
+    /* ======
        SUBMIT — POST JSON to /dummy_endpoint
-       ============================================================ */
+       ====== */
     var submitBtn = document.getElementById('submitBtn');
     if (submitBtn) {
       submitBtn.addEventListener('click', function() {
@@ -1680,9 +1678,9 @@
     });
     }
 
-    /* ============================================================
+    /* ======
        RESTART BUTTON
-       ============================================================ */
+       ====== */
     var restartBtn = document.getElementById('restartBtn');
     if (restartBtn) {
       restartBtn.addEventListener('click', function() {
@@ -1693,9 +1691,9 @@
       });
     }
 
-    /* ============================================================
+    /* ======
        TOUCH SWIPE (mobile) — velocity-aware, spring feel
-       ============================================================ */
+       ====== */
     var touchStart = { x:0, y:0, t:0 };
     var phases = document.getElementById('obPhases');
     if (phases) {
@@ -1724,9 +1722,9 @@
       });
     }
 
-    /* ============================================================
+    /* ======
        COOKIE HELPERS
-       ============================================================ */
+       ====== */
     function getCookie(name) {
       var v = document.cookie.match('(?:^|;) ?' + name + '=([^;]*)(;|$)');
       return v ? decodeURIComponent(v[1]) : '';
@@ -1737,16 +1735,16 @@
       document.cookie = name + '=' + encodeURIComponent(value) + ';path=/;expires=' + d.toUTCString();
     }
 
-    /* ============================================================
+    /* ======
        SHAKE KEYFRAME (inline for browsers that need it)
-       ============================================================ */
+       ====== */
     var shakeStyle = document.createElement('style');
     shakeStyle.textContent = '@keyframes shakeX{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}';
     document.head.appendChild(shakeStyle);
 
-    /* ============================================================
+    /* ======
        INIT — restore saved state and go to saved phase
-       ============================================================ */
+       ====== */
     var hasData = loadSaved();
     restoreForm();
     updateDash();
@@ -1758,17 +1756,17 @@
       goTo(1);
     }
 
-    /* ============================================================
+    /* ======
        AUTO-SAVE on any input change across the whole form
-       ============================================================ */
+       ====== */
     document.querySelectorAll('.ob-input,.ob-switch input').forEach(function(el) {
       el.addEventListener('change', function() { collectState(); updateDash(); save(); });
       el.addEventListener('input',  function() { collectState(); updateDash(); });
     });
 
-    /* ============================================================
+    /* ======
        THEME INIT from cookie
-       ============================================================ */
+       ====== */
     (function() {
       var saved = getCookie('sd-theme') || STATE.theme;
       if (saved === 'light') {
@@ -1782,9 +1780,9 @@
       }
     })();
 
-    /* ============================================================
+    /* ======
        HEAVY CSS FALLBACK (set rel=stylesheet if not done yet)
-       ============================================================ */
+       ====== */
     var hcss = document.getElementById('heavy-css');
     if (hcss && hcss.rel !== 'stylesheet') hcss.rel = 'stylesheet';
 

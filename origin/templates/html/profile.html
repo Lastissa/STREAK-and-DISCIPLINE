@@ -28,7 +28,7 @@
 
     <div class="aside-overlay" id="asideOverlay"></div>
 
-    <!-- ================================================ ASIDE -->
+    <!--  ASIDE -->
     <aside class="db-aside no-print" id="dbAside">
       <div class="aside-scroll">
         <div class="aside-top">
@@ -66,9 +66,9 @@
         </nav>
         {% if not tier or tier == 'free' %}
         <div class="aside-upgrade">
-          <h4><i class="fas fa-gem"></i> Upgrade to Pro</h4>
+          <h4><i class="fas fa-gem"></i> Upgrade to Premium</h4>
           <p>50 commitments, AI insights, WhatsApp reminders, profile pictures &amp; more.</p>
-          <a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm btn-full">Start 7-Day Trial</a>
+          <a href="{% url "origin_signup" %}?trial=true" class="btn btn-primary btn-sm btn-full">Start 7-Day Trial</a>
         </div>
         {% endif %}
       </div>
@@ -77,7 +77,7 @@
       </div>
     </aside>
 
-    <!-- ================================================ HEADER -->
+    <!--  HEADER -->
     <header class="db-header no-print">
       <div class="hdr-left">
         <div class="hdr-avatar" id="hdrAvatarWrap" role="button" tabindex="0" title="Toggle menu">
@@ -93,7 +93,7 @@
       </div>
     </header>
 
-    <!-- ================================================ MAIN -->
+    <!--  MAIN -->
     <div class="pf-wrap">
       <main class="pf-main">
 
@@ -270,7 +270,7 @@
               <p class="pf-hint" style="margin-top:.5rem">
                 <span class="pf-gate-badge pf-gate-premium"><i class="fas fa-lock"></i> Premium &amp; Gold</span>
                 &nbsp;Upgrade to upload a custom profile picture.
-                <a href="/v1/signup/?trial=true" style="color:var(--accL)">Start free trial</a>
+                <a href="{% url "origin_signup" %}?trial=true" style="color:var(--accL)">Start free trial</a>
               </p>
               {% else %}
               <div class="pf-card">
@@ -322,51 +322,51 @@
                 </div>
                 <div class="pf-cooldown" id="cooldown-leaderboard_optin"><i class="fas fa-check-circle"></i> Saved</div>
 
-                <!-- Show Zeal Score (Premium+) -->
-                <div class="pf-toggle-row {% if tier == 'free' %}pf-locked-row{% endif %}"
-                     id="row-streak-visible">
+                <!-- Show Zeal Score -->
+                 <div class="pf-toggle-row" id="row-streak-visible">
                   <div class="pf-toggle-left">
                     <div class="pf-toggle-label">
-                      <i class="fas fa-eye" style="color:var(--ink3)"></i> Show Zeal Score Publicly
-                      {% if tier == 'free' %}<span class="pf-gate-badge pf-gate-premium"><i class="fas fa-lock"></i> Premium</span>{% endif %}
+                      <i class="fas fa-eye" style="color:var(--ink3)"></i>
+                      Show Zeal Score Publicly
                     </div>
                     <p class="pf-hint">Show your exact Zeal Score on the leaderboard, not just your rank.</p>
                   </div>
                   <label class="pf-switch" aria-label="Show Zeal Score">
                     <input type="checkbox" id="pfStreakVisible"
-                           {% if streak_visible %}checked{% endif %}
-                           data-field="streak_count_is_public_visible"
-                           {% if tier == 'free' %}disabled{% endif %}>
+                          {% if streak_visible %}checked{% endif %}
+                          data-field="streak_count_is_public_visible">
                     <span class="pf-sw-track"><span class="pf-sw-thumb"></span></span>
                   </label>
                 </div>
+                
                 <div class="pf-cooldown" id="cooldown-streak_count_is_public_visible"><i class="fas fa-check-circle"></i> Saved</div>
 
-                <!-- Partner mode (Premium+) -->
-                <div class="pf-toggle-row {% if tier == 'free' %}pf-locked-row{% endif %}"
-                     id="row-social-mode">
+                <!-- Partner mode  -->
+                <div class="pf-toggle-row" id="row-social-mode">
                   <div class="pf-toggle-left">
                     <div class="pf-toggle-label">
-                      <i class="fas fa-handshake" style="color:var(--ink3)"></i> Partner Mode
-                      {% if tier == 'free' %}<span class="pf-gate-badge pf-gate-premium"><i class="fas fa-lock"></i> Premium</span>{% endif %}
+                      <i class="fas fa-handshake" style="color:var(--ink3)"></i>
+                      Partner Mode
                     </div>
-                    <p class="pf-hint">Let potential partner be able to send you partner requests. Entries stay private.</p>
+                    <p class="pf-hint">Let potential partners be able to send you partner requests. Entries stay private.</p>
                   </div>
                   <label class="pf-switch" aria-label="Partner mode">
                     <input type="checkbox" id="pfSocialMode"
-                           {% if social_mode == 'partner' %}checked{% endif %}
-                           data-field="social_mode" data-true="partner" data-false="solo"
-                           {% if tier == 'free' %}disabled{% endif %}>
+                          {% if social_mode == 'partner' %}checked{% endif %}
+                          data-field="social_mode"
+                          data-true="partner"
+                          data-false="solo">
                     <span class="pf-sw-track"><span class="pf-sw-thumb"></span></span>
                   </label>
                 </div>
+
                 <div class="pf-cooldown" id="cooldown-social_mode"><i class="fas fa-check-circle"></i> Saved</div>
 
                 <!-- AI data consent -->
                 <div class="pf-toggle-row">
                   <div class="pf-toggle-left">
-                    <div class="pf-toggle-label"><i class="fas fa-microchip" style="color:var(--ink3)"></i> Allow AI Analysis</div>
-                    <p class="pf-hint">Anonymous analysis of your entries for personalized AI insights. No data is sold. If enabled it shows in the navigation bar under insights.</p>
+                    <div class="pf-toggle-label"><i class="fas fa-microchip" style="color:var(--ink3)"></i> Allow AI Analysis For Report Evaluation</div>
+                    <p class="pf-hint">Anonymous analysis of your entries for personalized insights and well detailed reports. No data is sold. If enabled it shows in the navigation bar under Analysis and report.</p>
                   </div>
                   <label class="pf-switch" aria-label="Allow AI analysis">
                     <input type="checkbox" id="pfAiConsent"
@@ -565,7 +565,7 @@
                       {% endfor %}
                       
                     </ul>
-                    {% if tier == 'free' or not tier %}<a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm btn-full" style="margin-top:.4rem">Start Trial</a>{% endif %}
+                    {% if tier == 'free' or not tier %}<a href="{% url "origin_signup" %}?trial=true" class="btn btn-primary btn-sm btn-full" style="margin-top:.4rem">Start Trial</a>{% endif %}
                   </div>
                   <div class="pf-tier-card {% if tier == 'gold' %}current{% endif %}">
                     <div class="pf-tier-card-name gold"><i class="fas fa-crown"></i> Gold</div>
@@ -595,7 +595,7 @@
                 <p class="pf-hint">
                   <span class="pf-gate-badge pf-gate-premium"><i class="fas fa-lock"></i> Premium</span>
                   &nbsp;Partner mode requires Premium or Gold.
-                  <a href="/v1/signup/?trial=true" style="color:var(--accL)">Upgrade</a>
+                  <a href="{% url "origin_signup" %}?trial=true" style="color:var(--accL)">Upgrade</a>
                 </p>
                 {% else %}
                 <div id="pfPartnerList">
@@ -1138,7 +1138,7 @@
               +'<div class="pf-partner-id">@'+p.public_id+'</div>'
               +'<div class="pf-partner-stat">'+p.streak_count+' pts</div>'
             +'</div>'
-            +'<button class="btn btn-ghost btn-sm" data-partner-id="'+p.id+'" onclick="removePartner(this)"'
+            +'<button class="btn btn-ghost btn-sm" data-partner-id="'+p.public_id+'" onclick="removePartner(this)"'
               +' style="color:var(--bad);flex-shrink:0"><i class="fas fa-xmark"></i></button>'
           +'</div>';
         }).join('');
@@ -1192,10 +1192,10 @@
     window.removePartner=function(btn){
       if(!confirm('Remove this partner?'))return;
       var pid=btn.getAttribute('data-partner-id');
-      fetch('/v1/remove_partner/',{
+      fetch('{% url "origin_relationship_unpair" %}',{
         method:'POST',credentials:'same-origin',
         headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
-        body:JSON.stringify({partner_id:pid})
+        body:JSON.stringify({userid:pid})
       })
       .then(function(r){return r.ok?r.json():{ok:false}})
       .then(function(d){if(d.ok){showToast('Partner removed.','info');loadPartners()}

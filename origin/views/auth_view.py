@@ -117,6 +117,7 @@ class PasswordReset(View):
             fetched_email = request.POST["email"]
             validate_email(fetched_email)
             user_email = get_user_model().objects.filter(email__iexact = fetched_email).first()
+            print(user_email, fetched_email)
             if user_email:
                 """Valid user, prepare token"""
                 token = "".join(random.sample("123456789abcdefghijklmnopqrsuvwxyzABCDEFGHIJKLMNOPRSTUVWXYZ", Static.token_lenght()))
@@ -134,7 +135,7 @@ class PasswordReset(View):
             return JsonResponse({'message': 'Request received, If email exist in our database you will receive a reset link -new user'})
         except ResendError as e:
             logger.error(msg=f"Error happened while trying to send user their password reset email , error is {e}")
-            return JsonResponse({'message': 'Oops, you dont seem to have internet connection, please try again when you are connected.-Refresh page to resend link'})
+            return JsonResponse({'message': 'Oops, you dont seem to have internet connection, please try again when you are connected.-Refresh page to resend link'}, status = 500)
         except ValidationError as e: return JsonResponse({"message" : "Invalid Email, Refresh page to try again"})
         except Exception as e:
             logger.error(msg=f"user tried to reset password and eperience error  : {e}")
