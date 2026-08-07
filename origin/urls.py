@@ -36,6 +36,7 @@ urlpatterns = [
     path('dashboard/commitment/<str:id>/archive/', views.EachCommitmentArchive.as_view(), name = 'origin_commitment_archive'), #archive a commitment
     path('dashboard/profile/', views.ProfileSettings.as_view(), name = 'origin_profile'),
     path('dashboard/relationship/', views.Relationship.as_view(), name = 'origin_relationship'),
+    path('dashboard/relationship/partner/<str:userid>/', views.PartnerAcceptedDashboard.as_view(), name = 'origin_relationship_partner'),
     path('dashboard/reports/', views.DashbaordAnalytics.as_view(), name = 'origin_reports'),
     
     

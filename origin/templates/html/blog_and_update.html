@@ -83,6 +83,7 @@
           <div class="aside-section-lbl">Navigation</div>
           {% if request.user.is_authenticated %}
           <a href="{% url 'origin_dashboard' %}" class="aside-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
+          <a href="{% url 'origin_relationship' %}" class="aside-link"><i class="fas fa-gauge-high"></i> Relationship</a>
           <a href="{% url "origin_profile" %}" class="aside-link"><i class="fas fa-circle-user"></i> Profile</a>
           <a href="{% url "origin_leaderboard" %}" class="aside-link"><i class="fas fa-ranking-star"></i> Leaderboard</a>
           <a href="/v1/groups/" class="aside-link"><i class="fas fa-users"></i> Groups</a>

@@ -187,6 +187,11 @@ body.sd-light .db-header {
 body.sd-light .rel-card { box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
 body.sd-light .rel-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.1); }
 
+/* Accepted-partner cards double as a tap target into their partner page */
+.rel-card-tappable { cursor: pointer; }
+.rel-card-tappable:hover { border-color: var(--acc); }
+.rel-card-tappable:active { transform: translateX(1px) scale(0.995); }
+
 .rel-empty {
   animation: relPanelIn 0.4s cubic-bezier(0.22,1,0.36,1) both;
 }

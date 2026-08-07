@@ -688,11 +688,17 @@
     function renderRecordsCard(item, badgeKind) {
       var b = baseCard(item, badgeKind);
       var actions = el('div', 'rel-card-actions');
-      var btn = el('a', 'btn btn-outline btn-sm', 'View Records');
-      // TODO: point this at your real per-partner records view once it exists
-      btn.href = '/v1/relationship/partner-record/' + encodeURIComponent(item.userid);
+      var btn = el('a', 'btn btn-outline btn-sm', 'View Partner');
+      btn.href = '/v1/dashboard/relationship/partner/' + encodeURIComponent(item.userid) + '/';
       actions.appendChild(btn);
       b.card.appendChild(actions);
+      // Tapping anywhere on an accepted-partner card opens their partner page too,
+      // not just the explicit button — the button stays for a clear, discoverable target.
+      b.card.classList.add('rel-card-tappable');
+      b.card.addEventListener('click', function(e) {
+        if (e.target.closest('a,button')) return; // let the real button/its own clicks behave normally
+        window.location.href = btn.href;
+      });
       return b.card;
     }
 

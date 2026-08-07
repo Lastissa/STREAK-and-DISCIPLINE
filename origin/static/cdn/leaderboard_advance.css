@@ -38,39 +38,388 @@ body {
 }
 
 /* ================================================================
-   NAVBAR GLASSMORPHISM + SPRING
+   NEON PALETTE — for the reveal sequence only
    ================================================================ */
-.site-header {
-  background: rgba(10,14,23,0.72);
-  backdrop-filter: blur(22px) saturate(150%);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.04) inset;
-  transition: box-shadow 0.4s ease, background 0.4s ease;
-}
-body.light-mode .site-header {
-  background: rgba(248,250,252,0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+:root {
+  --neon-cyan:    #00f7ff;
+  --neon-magenta: #ff2fd0;
+  --neon-red:     #ff2b4d;
 }
 
-.logo-link {
-  transition: transform 0.3s var(--spring);
+/* ================================================================
+   FLOATING TOP CONTROLS — back button + theme toggle
+   ================================================================ */
+.back-btn, .theme-toggle {
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  background: rgba(17,24,39,0.65);
+  transition: transform 0.28s var(--spring), box-shadow 0.28s ease, border-color 0.2s ease;
 }
-.logo-link:hover { transform: scale(1.04); }
+body.light-mode .back-btn, body.light-mode .theme-toggle {
+  background: rgba(255,255,255,0.7);
+}
+.back-btn:hover {
+  transform: translateY(-2px) translateX(-2px);
+  border-color: var(--acc);
+  box-shadow: 0 8px 24px var(--glow);
+}
+.back-btn:active { transform: scale(0.96); }
+.back-btn i { transition: transform 0.25s var(--spring); }
+.back-btn:hover i { transform: translateX(-3px); }
 
-.nav-links a {
-  position: relative; overflow: hidden;
-  transition: color 0.2s ease, background 0.2s ease, transform 0.3s var(--spring);
+.theme-toggle:hover {
+  transform: rotate(-14deg) scale(1.08);
+  border-color: var(--acc);
+  box-shadow: 0 8px 24px var(--glow);
 }
-.nav-links a::before {
-  content: ''; position: absolute; inset: 0;
-  background: rgba(59,130,246,0.09); border-radius: inherit;
-  transform: scaleX(0); transform-origin: left;
-  transition: transform 0.25s var(--spring-s); z-index: -1;
+.theme-toggle:active { transform: scale(0.9); }
+
+/* ================================================================
+   REVEAL FLASH — "TOP 10 REVEALED" cinematic title card
+   ================================================================ */
+.reveal-flash {
+  background: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.55), rgba(0,0,0,0.15) 70%);
+  transition: opacity 0.3s ease;
 }
-.nav-links a:hover::before, .nav-links a.current::before { transform: scaleX(1); }
-.nav-links a:hover { transform: translateY(-1px); }
+.reveal-flash-text {
+  background: linear-gradient(90deg, var(--neon-cyan), var(--accL), var(--gold), var(--neon-magenta));
+  background-size: 300% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: none;
+}
+.reveal-flash.show {
+  opacity: 1;
+  animation: flashPulse 1.3s ease forwards;
+}
+.reveal-flash.show .reveal-flash-text {
+  animation: flashTextIn 1.3s cubic-bezier(0.16,1,0.3,1) both, flashGradientSweep 1.3s linear both;
+}
+@keyframes flashPulse {
+  0%   { opacity: 0; }
+  12%  { opacity: 1; }
+  75%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes flashTextIn {
+  0%   { transform: scale(0.6); filter: blur(6px); letter-spacing: 0.4em; }
+  35%  { transform: scale(1.06); filter: blur(0); letter-spacing: 0.06em; }
+  45%  { transform: scale(1) skewX(6deg); text-shadow: -3px 0 var(--neon-cyan), 3px 0 var(--neon-magenta); }
+  50%  { transform: scale(1) skewX(-4deg); text-shadow: 3px 0 var(--neon-cyan), -3px 0 var(--neon-magenta); }
+  55%  { transform: scale(1) skewX(0); text-shadow: none; }
+  100% { transform: scale(1); }
+}
+@keyframes flashGradientSweep {
+  from { background-position: 0% 0; }
+  to   { background-position: 200% 0; }
+}
+
+/* ================================================================
+   FOCUS-MODE ATMOSPHERE — grid floor + scanline + vignette
+   Only visible while body.lb-focus-mode is active (reveal in progress)
+   ================================================================ */
+.focus-overlay { transition: opacity 0.5s ease; }
+body.lb-focus-mode .focus-overlay { opacity: 1; }
+
+.focus-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(59,130,246,0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,0.14) 1px, transparent 1px);
+  background-size: 46px 46px;
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 100%, #000 40%, transparent 78%);
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 100%, #000 40%, transparent 78%);
+  transform: perspective(400px) rotateX(58deg) scale(1.6);
+  transform-origin: 50% 100%;
+  animation: gridDrift 6s linear infinite;
+}
+@keyframes gridDrift {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 0 46px, 46px 0; }
+}
+
+.focus-scanline {
+  position: absolute; left: 0; right: 0; height: 140px; top: -140px;
+  background: linear-gradient(180deg, transparent, rgba(59,130,246,0.16), transparent);
+  animation: scanlineSweep 3.4s ease-in-out infinite;
+}
+@keyframes scanlineSweep {
+  0%   { top: -140px; }
+  100% { top: 100%; }
+}
+
+.focus-vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 70% 60% at 50% 42%, transparent 40%, rgba(0,0,0,0.55) 100%);
+}
+
+/* Dim + blur everything except the stage while focus mode is active */
+body.lb-focus-mode #lbMain > .container > .lb-section:not(#stageSection),
+body.lb-focus-mode .site-footer {
+  filter: blur(6px) brightness(0.4) saturate(0.6);
+  opacity: 0.55;
+  pointer-events: none;
+  transition: filter 0.6s ease, opacity 0.6s ease;
+}
+@media (max-width: 640px) {
+  body.lb-focus-mode #lbMain > .container > .lb-section:not(#stageSection),
+  body.lb-focus-mode .site-footer {
+    filter: blur(2px) brightness(0.45) saturate(0.7);
+  }
+}
+
+/* Auto-focus the stage: lift, center, glow */
+#stageSection {
+  transition: transform 0.6s var(--spring-s), filter 0.6s ease;
+  position: relative; z-index: 30;
+}
+body.lb-focus-mode #stageSection {
+  transform: scale(1.015);
+}
+body.lb-focus-mode .lb-stage-wrap::before {
+  content: '';
+  position: absolute; inset: -24px;
+  border-radius: var(--rXL);
+  box-shadow: 0 0 0 1px rgba(59,130,246,0.25), 0 0 80px rgba(59,130,246,0.18);
+  pointer-events: none;
+  animation: stageAuraPulse 2.4s ease-in-out infinite;
+  z-index: -1;
+}
+@keyframes stageAuraPulse {
+  0%,100% { box-shadow: 0 0 0 1px rgba(59,130,246,0.25), 0 0 60px rgba(59,130,246,0.14); }
+  50%      { box-shadow: 0 0 0 1px rgba(96,165,250,0.4), 0 0 100px rgba(59,130,246,0.26); }
+}
+.lb-stage-wrap { position: relative; }
+
+/* Lighter ambient afterglow once reveal has settled */
+body.lb-revealed-glow #stageSection { transform: none; }
+body.lb-revealed-glow .lb-stage-wrap::after {
+  content: '';
+  position: absolute; inset: -16px;
+  border-radius: var(--rXL);
+  box-shadow: 0 0 60px rgba(59,130,246,0.08);
+  pointer-events: none; z-index: -1;
+  transition: opacity 1s ease;
+}
+
+/* ================================================================
+   CARD DISORIENTATION SHUFFLE — plays only during focus mode, on
+   cards that haven't flipped yet. Colour-shifts, jitters position,
+   fades — then snaps cleanly into the final ranked order the instant
+   JS adds .flipped (the running animation simply stops matching and
+   the existing flip transition takes over from wherever it was).
+   ================================================================ */
+@keyframes cardShuffle {
+  0%   { transform: translate(0,0) rotate(0deg) scale(1);        filter: hue-rotate(0deg) brightness(1) saturate(1); }
+  14%  { transform: translate(-13px, 9px) rotate(-7deg) scale(0.95);  filter: hue-rotate(70deg) brightness(1.35) saturate(1.4); }
+  28%  { transform: translate(11px, -13px) rotate(6deg) scale(1.05);  filter: hue-rotate(150deg) brightness(0.7) saturate(1.2); }
+  42%  { transform: translate(-9px, -7px) rotate(-4deg) scale(0.97);  filter: hue-rotate(220deg) brightness(1.25) saturate(1.5); }
+  56%  { transform: translate(12px, 8px) rotate(5deg) scale(1.03);    filter: hue-rotate(300deg) brightness(0.85) saturate(1.3); }
+  70%  { transform: translate(-7px, 12px) rotate(-3deg) scale(0.96);  filter: hue-rotate(20deg) brightness(1.15) saturate(1.1); }
+  85%  { transform: translate(6px, -5px) rotate(2deg) scale(1.01);    filter: hue-rotate(340deg) brightness(0.95) saturate(1.2); }
+  100% { transform: translate(0,0) rotate(0deg) scale(1);        filter: hue-rotate(360deg) brightness(1) saturate(1); }
+}
+body.lb-focus-mode .lb-card:not(.flipped) {
+  animation: cardShuffle 1.7s ease-in-out infinite;
+}
+body.lb-focus-mode .lb-card:not(.flipped):nth-child(2n) { animation-duration: 2s; animation-direction: reverse; }
+body.lb-focus-mode .lb-card:not(.flipped):nth-child(3n) { animation-duration: 1.35s; }
+body.lb-focus-mode .lb-card:not(.flipped):nth-child(5n) { animation-duration: 2.2s; animation-direction: reverse; }
+
+/* Chromatic-aberration edge flicker on the still-hidden card backs */
+body.lb-focus-mode .lb-card:not(.flipped) .lb-back {
+  animation: backGlitch 1.7s ease-in-out infinite;
+}
+@keyframes backGlitch {
+  0%,100% { box-shadow: 0 6px 24px rgba(0,0,0,0.3); }
+  50%      { box-shadow: -3px 0 0 rgba(0,247,255,0.35), 3px 0 0 rgba(255,47,208,0.35), 0 6px 24px rgba(0,0,0,0.3); }
+}
+
+/* Landing impact glow: fires once each card locks into .flipped, timed
+   to line up with JS's own stagger (--fi is set per-card by JS) */
+.lb-card.flipped .lb-front {
+  animation: cardLanding 0.7s calc(var(--fi, 0) * 90ms + 0.75s) var(--spring-s);
+}
+@keyframes cardLanding {
+  0%   { box-shadow: 0 0 0 2px rgba(59,130,246,0.9), 0 0 50px rgba(59,130,246,0.5); }
+  100% { box-shadow: 0 6px 24px rgba(0,0,0,0.3); }
+}
+
+/* ================================================================
+   SEQUENTIAL SPOTLIGHT REVEAL
+   Each rank is zoomed to screen-centre one at a time (JS computes the
+   --zoom-x/--zoom-y offset + --zoom-scale, this file owns every curve,
+   duration and glow). The wrap (not the card) carries the zoom, so it
+   never fights with the card's own rotateY flip.
+   ================================================================ */
+body.lb-sequence-active .lb-card-wrap {
+  transition: opacity 0.4s ease, filter 0.4s ease;
+}
+body.lb-sequence-active .lb-card-wrap:not(.is-spotlighted) {
+  opacity: 0.22;
+  filter: blur(2px) saturate(0.5);
+}
+body.light-mode.lb-sequence-active .lb-card-wrap:not(.is-spotlighted) {
+  opacity: 0.3;
+  filter: blur(2px) saturate(0.6) brightness(1.04);
+}
+
+.lb-card-wrap.is-spotlighted {
+  position: relative;
+  z-index: 500;
+  transform: translate(var(--zoom-x, 0), var(--zoom-y, 0)) scale(var(--zoom-scale, 1.6));
+  transition: transform 0.42s cubic-bezier(0.16,1,0.3,1);
+}
+.lb-card-wrap.settling {
+  transform: translate(0, 0) scale(1);
+  transition: transform 0.38s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* Tier variety — strip (8–10), grid (4–7) and podium (2–3) each get a
+   slightly different flavour of motion so the countdown doesn't feel
+   like the same beat repeated nine times. */
+.lb-card-wrap.tier-c.is-spotlighted {
+  transition-timing-function: cubic-bezier(0.16,1,0.3,1);
+}
+.lb-card-wrap.tier-b.is-spotlighted {
+  transform: translate(var(--zoom-x, 0), var(--zoom-y, 0)) scale(var(--zoom-scale, 1.6)) rotate(-1.6deg);
+  transition-timing-function: cubic-bezier(0.34,1.56,0.64,1);
+}
+.lb-card-wrap.tier-a.is-spotlighted {
+  transform: translate(var(--zoom-x, 0), var(--zoom-y, 0)) scale(var(--zoom-scale, 1.6)) rotate(1.1deg);
+  transition-timing-function: cubic-bezier(0.22,1,0.36,1);
+}
+
+/* Spotlight ring — reads clearly on both light and dark backgrounds
+   because it's a coloured glow rather than a dark scrim */
+.lb-card-wrap.is-spotlighted::before {
+  content: '';
+  position: absolute; inset: -14px;
+  border-radius: calc(var(--rXL) + 10px);
+  box-shadow: 0 0 0 1px rgba(59,130,246,0.4), 0 24px 70px rgba(0,0,0,0.45), 0 0 90px rgba(59,130,246,0.28);
+  animation: spotlightRingPulse 1.1s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+body.light-mode .lb-card-wrap.is-spotlighted::before {
+  box-shadow: 0 0 0 1px rgba(59,130,246,0.35), 0 24px 60px rgba(15,23,42,0.18), 0 0 70px rgba(59,130,246,0.22);
+}
+@keyframes spotlightRingPulse {
+  0%,100% { box-shadow: 0 0 0 1px rgba(59,130,246,0.4), 0 24px 70px rgba(0,0,0,0.45), 0 0 70px rgba(59,130,246,0.22); }
+  50%      { box-shadow: 0 0 0 1px rgba(96,165,250,0.55), 0 24px 70px rgba(0,0,0,0.45), 0 0 110px rgba(59,130,246,0.34); }
+}
+
+/* ================================================================
+   MYSTERY CHARGE — rank 1 pulses harder and harder in place before
+   it ever moves, so the audience knows something bigger is coming
+   ================================================================ */
+.lb-card-wrap.is-charging .lb-card { animation: none; }
+.lb-card-wrap.is-charging .lb-back {
+  animation: mysteryCharge 1.45s ease-in-out infinite;
+}
+@keyframes mysteryCharge {
+  0%   { box-shadow: 0 0 0 1px rgba(245,158,11,0.3), 0 0 24px rgba(245,158,11,0.18); transform: scale(1); }
+  50%  { box-shadow: 0 0 0 2px rgba(251,191,36,0.6), 0 0 55px rgba(245,158,11,0.4); transform: scale(1.035); }
+  100% { box-shadow: 0 0 0 1px rgba(245,158,11,0.3), 0 0 24px rgba(245,158,11,0.18); transform: scale(1); }
+}
+body.lb-mystery-charge .focus-vignette {
+  animation: mysteryVignette 1.45s ease-in-out infinite;
+}
+@keyframes mysteryVignette {
+  0%,100% { background: radial-gradient(ellipse 70% 60% at 50% 42%, transparent 40%, rgba(0,0,0,0.55) 100%); }
+  50%      { background: radial-gradient(ellipse 70% 60% at 50% 42%, rgba(245,158,11,0.06) 20%, rgba(0,0,0,0.6) 100%); }
+}
+
+/* Champion spotlight — the podium ring gets a gold cast instead of blue */
+.lb-card-wrap.is-champion-spotlight::before {
+  box-shadow: 0 0 0 1px rgba(245,158,11,0.55), 0 30px 80px rgba(0,0,0,0.5), 0 0 120px rgba(245,158,11,0.4);
+  animation: championRingPulse 0.85s ease-in-out infinite;
+}
+body.light-mode .lb-card-wrap.is-champion-spotlight::before {
+  box-shadow: 0 0 0 1px rgba(245,158,11,0.5), 0 30px 70px rgba(15,23,42,0.2), 0 0 100px rgba(245,158,11,0.32);
+}
+@keyframes championRingPulse {
+  0%,100% { filter: brightness(1); }
+  50%      { filter: brightness(1.18); }
+}
+
+/* ================================================================
+   CONFETTI BURST — fired once, at the champion reveal only
+   ================================================================ */
+.celebration-burst.show { opacity: 1; }
+.confetti-piece {
+  position: absolute;
+  top: -6%;
+  left: var(--left, 50%);
+  border-radius: 2px;
+  opacity: 0.95;
+  transform: translate3d(0,0,0) rotate(0deg);
+  animation: confettiFall var(--dur, 2s) var(--delay, 0s) cubic-bezier(0.36,0.06,0.6,0.98) forwards;
+}
+@keyframes confettiFall {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 1; }
+  85%  { opacity: 1; }
+  100% { transform: translate3d(var(--drift, 0), 108vh, 0) rotate(var(--rot, 360deg)); opacity: 0; }
+}
+
+/* Champion flash gets a gold-weighted sweep instead of the full rainbow */
+.reveal-flash.champion-flash .reveal-flash-text {
+  background: linear-gradient(90deg, var(--gold), var(--goldL), #fff, var(--gold));
+  background-size: 300% 100%;
+}
+
+/* ================================================================
+   OUTRO — "this could be you next week"
+   ================================================================ */
+.reveal-outro {
+  transition: opacity 0.45s ease, visibility 0.45s ease;
+}
+.reveal-outro.show .outro-card {
+  animation: outroCardIn 0.55s cubic-bezier(0.16,1,0.3,1) both;
+}
+@keyframes outroCardIn {
+  from { opacity: 0; transform: translateY(24px) scale(0.94); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.outro-card {
+  box-shadow: 0 24px 70px rgba(0,0,0,0.45), 0 0 0 1px rgba(59,130,246,0.18);
+}
+body.light-mode .outro-card {
+  box-shadow: 0 20px 50px rgba(15,23,42,0.16), 0 0 0 1px rgba(59,130,246,0.14);
+}
+.outro-eyebrow i {
+  animation: outroSparklePulse 1.6s ease-in-out infinite;
+}
+@keyframes outroSparklePulse {
+  0%,100% { opacity: 0.6; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.18); }
+}
+.outro-cta {
+  transition: transform 0.28s var(--spring), box-shadow 0.28s ease;
+  box-shadow: 0 4px 16px var(--glow);
+}
+.outro-cta:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 24px rgba(59,130,246,0.35);
+}
+.outro-cta:active { transform: scale(0.96); }
+.outro-cta i { transition: transform 0.25s var(--spring); }
+.outro-cta:hover i { transform: translateX(3px); }
+
+/* ================================================================
+   MEDAL BADGE — vector award icon replacing the emoji medals, tinted
+   by the existing .text-gold/.text-silver/.text-bronze classes
+   ================================================================ */
+.card-medal-icon {
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.25));
+  animation: medalGleam 2.6s ease-in-out infinite;
+}
+body.light-mode .card-medal-icon {
+  filter: drop-shadow(0 2px 5px rgba(15,23,42,0.15));
+}
+@keyframes medalGleam {
+  0%,100% { filter: drop-shadow(0 2px 6px rgba(0,0,0,0.25)) brightness(1); }
+  50%      { filter: drop-shadow(0 2px 10px rgba(0,0,0,0.3)) brightness(1.15); }
+}
 
 /* ================================================================
    HERO ENTRANCE
@@ -346,28 +695,36 @@ html[data-input="fine"] .about-card:hover {
 }
 
 /* ================================================================
-   REVEAL BUTTON SPRING
+   REVEAL BUTTON — compact pill, not a slab. A quiet ambient pulse
+   instead of a big spreading glow ring, so it reads as a normal-sized
+   CTA that happens to breathe a little, rather than dominating the layout.
    ================================================================ */
 .btn-reveal {
   background: var(--acc);
   color: #fff;
-  font-size: 1rem;
-  padding: 0.9rem 2.4rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 0.62rem 1.4rem;
   border-radius: 50px;
   border: none;
   position: relative;
   overflow: hidden;
-  transition: transform 0.32s var(--spring), box-shadow 0.32s ease;
-  box-shadow: 0 4px 24px var(--glow), 0 0 60px rgba(59,130,246,0.1);
-  animation: revealBtnPulse 3s ease-in-out infinite;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: transform 0.28s var(--spring), box-shadow 0.28s ease;
+  box-shadow: 0 2px 12px var(--glow);
+  animation: revealBtnPulse 2.6s ease-in-out infinite;
 }
+.btn-reveal i { font-size: 0.78rem; }
 @keyframes revealBtnPulse {
-  0%,100% { box-shadow: 0 4px 24px var(--glow), 0 0 0 0 rgba(59,130,246,0.3); }
-  50%      { box-shadow: 0 4px 24px var(--glow), 0 0 0 12px rgba(59,130,246,0); }
+  0%,100% { box-shadow: 0 2px 12px var(--glow), 0 0 0 0 rgba(59,130,246,0.26); }
+  50%      { box-shadow: 0 2px 12px var(--glow), 0 0 0 6px rgba(59,130,246,0); }
 }
 .btn-reveal:hover {
-  transform: scale(1.06) translateY(-3px);
-  box-shadow: 0 10px 36px rgba(59,130,246,0.45), 0 0 80px rgba(59,130,246,0.15);
+  transform: scale(1.035) translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59,130,246,0.35);
   animation: none;
 }
 .btn-reveal:active {
@@ -376,18 +733,45 @@ html[data-input="fine"] .about-card:hover {
   animation: none;
 }
 
-/* Reveal button shimmer sweep */
+/* Reveal button shimmer sweep — subtler, narrower band */
 .btn-reveal::after {
   content: '';
   position: absolute; top:-50%; left:-60%;
-  width:40%; height:200%;
-  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.18), transparent);
+  width:26%; height:200%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.14), transparent);
   transform: skewX(-20deg);
-  animation: btnShimmer 3s ease-in-out infinite;
+  animation: btnShimmer 3.4s ease-in-out infinite;
 }
 @keyframes btnShimmer {
   0%,100% { left:-60%; opacity:0; }
-  50%      { left:120%; opacity:1; }
+  50%      { left:120%; opacity:0.9; }
+}
+
+/* ================================================================
+   CARD AVATAR — smooth fade-in once the real image loads, plus a
+   subtle rank-tinted ring so podium avatars feel a bit more alive.
+   ================================================================ */
+.card-avatar {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.card-avatar img {
+  transition: opacity 0.45s ease;
+}
+.card-avatar .avatar-placeholder svg {
+  transition: opacity 0.3s ease;
+}
+.card-avatar img.is-loaded ~ .avatar-placeholder {
+  opacity: 0;
+}
+.lb-card.card-rank-1 .card-avatar {
+  border-color: rgba(245,158,11,0.55);
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
+}
+.rank-2 .card-avatar, .podium-slot.rank2 .card-avatar {
+  border-color: rgba(148,163,184,0.55);
+}
+.rank-3 .card-avatar, .podium-slot.rank3 .card-avatar {
+  border-color: rgba(180,120,60,0.55);
 }
 
 /* Week-toggle button */
@@ -397,29 +781,36 @@ html[data-input="fine"] .about-card:hover {
 .btn-last-week:hover { transform: translateY(-2px); }
 
 /* ================================================================
-   "ALMOST THERE" LOADING DRAMA
+   "ALMOST THERE" LOADING DRAMA — compact radar HUD, not a big spinner.
+   Small enough to sit beside the message text instead of dominating
+   the screen while the real show (card shuffle) happens behind it.
    ================================================================ */
+.at-hud { animation: fadeSlideUp 0.3s ease both; }
+
 .at-ring-wrap {
   position: relative;
-}
-.at-ring-wrap::before, .at-ring-wrap::after {
-  content: '';
-  position: absolute; inset: 0; border-radius: 50%;
-  border: 3px solid transparent;
+  border-radius: 50%;
+  background:
+    conic-gradient(from 0deg, var(--acc) 0deg, transparent 70deg,
+      transparent 290deg, var(--accL) 360deg);
+  animation: atRingSpin 1.1s linear infinite;
+  box-shadow: 0 0 10px var(--glow), inset 0 0 0 1px rgba(255,255,255,0.06);
 }
 .at-ring-wrap::before {
-  border-top-color: var(--acc);
-  border-right-color: var(--acc);
-  animation: atSpin1 0.9s linear infinite;
+  content: '';
+  position: absolute; inset: 4px; border-radius: 50%;
+  background: var(--bg);
 }
-.at-ring-wrap::after {
-  border-bottom-color: var(--accL);
-  border-left-color: var(--accL);
-  inset: 8px;
-  animation: atSpin2 1.3s linear infinite reverse;
+body.light-mode .at-ring-wrap::before { background: var(--surf); }
+.at-ring-dot {
+  box-shadow: 0 0 8px 2px var(--acc);
+  animation: atDotPulse 1.1s ease-in-out infinite;
 }
-@keyframes atSpin1 { to { transform: rotate(360deg); } }
-@keyframes atSpin2 { to { transform: rotate(360deg); } }
+@keyframes atRingSpin { to { transform: rotate(360deg); } }
+@keyframes atDotPulse {
+  0%,100% { opacity: 0.5; transform: translate(-50%,-50%) scale(0.85); }
+  50%      { opacity: 1;   transform: translate(-50%,-50%) scale(1.25); }
+}
 
 .at-bar-fill {
   background: linear-gradient(90deg, var(--acc), var(--accL), var(--gold));
@@ -430,6 +821,15 @@ html[data-input="fine"] .about-card:hover {
 @keyframes fillShimmer {
   0%   { background-position: 100% 0; }
   100% { background-position: -100% 0; }
+}
+
+/* HUD text: quick chromatic-aberration glitch flicker on entry, then settles */
+.at-msg { position: relative; }
+.at-msg.active { animation: hudTextGlitchIn 0.45s ease both; }
+@keyframes hudTextGlitchIn {
+  0%   { opacity: 0; transform: translateY(16px); text-shadow: -2px 0 var(--acc), 2px 0 var(--gold); }
+  40%  { text-shadow: 2px 0 var(--acc), -2px 0 var(--gold); }
+  100% { opacity: 1; transform: translateY(0); text-shadow: none; }
 }
 
 /* ================================================================
@@ -493,6 +893,98 @@ html[data-input="fine"] .about-card:hover {
   transition: color 0.2s ease, transform 0.25s var(--spring);
 }
 .footer-links a:hover { transform: translateX(3px); }
+
+/* ================================================================
+   TENSION PHASE — the wait gets tenser the longer it runs: shuffle
+   speeds up, the stage 'heartbeat' quickens, grid/scanline accelerate,
+   and a false near-reveal flicker teases the payoff.
+   ================================================================ */
+@keyframes stageHeartbeat {
+  0%,100% { transform: scale(1); }
+  20%     { transform: scale(1.012); }
+  35%     { transform: scale(0.998); }
+  50%     { transform: scale(1.016); }
+  70%     { transform: scale(1); }
+}
+body.lb-focus-mode .lb-stage-wrap { animation: stageHeartbeat 1.8s ease-in-out infinite; }
+
+body.lb-tension .lb-card:not(.flipped)            { animation-duration: 0.65s; }
+body.lb-tension .lb-card:not(.flipped) .lb-back    { animation-duration: 0.65s; }
+body.lb-tension .lb-card:not(.flipped):nth-child(2n) { animation-duration: 0.75s; }
+body.lb-tension .lb-card:not(.flipped):nth-child(3n) { animation-duration: 0.55s; }
+body.lb-tension .lb-card:not(.flipped):nth-child(5n) { animation-duration: 0.85s; }
+body.lb-tension .focus-grid                        { animation-duration: 2.1s; }
+body.lb-tension .focus-scanline                     { animation-duration: 1.05s; }
+body.lb-tension .lb-stage-wrap::before              { animation-duration: 0.9s; }
+body.lb-tension .lb-stage-wrap                      { animation-duration: 0.85s; }
+
+.focus-vignette::after {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(255,255,255,0.07);
+  opacity: 0;
+}
+body.lb-tension .focus-vignette::after {
+  animation: teaseFlicker 2.4s steps(1) infinite;
+}
+@keyframes teaseFlicker {
+  0%, 87%, 100% { opacity: 0; }
+  89%  { opacity: 0.55; }
+  90%  { opacity: 0; }
+  93%  { opacity: 0.3; }
+  94%  { opacity: 0; }
+}
+
+/* ================================================================
+   CLIMAX COUNTDOWN — "3…2…1" right before the flash. Guaranteed
+   suspense beat regardless of how long the fetch actually took.
+   ================================================================ */
+.climax-overlay {
+  background: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.8), rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.85));
+  transition: opacity 0.25s ease;
+}
+.climax-digit {
+  display: inline-block;
+  background: linear-gradient(180deg, var(--neon-cyan), var(--accL) 45%, var(--neon-magenta));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 34px rgba(59,130,246,0.55));
+  opacity: 0;
+}
+.climax-digit.tick { animation: climaxTick 0.43s cubic-bezier(0.16,1,0.3,1); }
+@keyframes climaxTick {
+  0%   { transform: scale(2.4); opacity: 0; filter: blur(12px) drop-shadow(0 0 0 transparent); }
+  10%  { opacity: 1; text-shadow: -5px 0 var(--neon-cyan), 5px 0 var(--neon-magenta); }
+  20%  { text-shadow: 5px 0 var(--neon-cyan), -5px 0 var(--neon-magenta); }
+  30%  { text-shadow: none; }
+  45%  { transform: scale(1); opacity: 1; filter: blur(0) drop-shadow(0 0 34px rgba(59,130,246,0.55)); }
+  82%  { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.68); opacity: 0; }
+}
+
+/* Screen shake on each countdown tick — beats the stage like a pulse */
+body.lb-focus-mode .lb-stage-wrap.shake {
+  animation: climaxShake 0.42s cubic-bezier(0.36,0.07,0.19,0.97);
+}
+@keyframes climaxShake {
+  10%,90%     { transform: translate3d(-1px,0,0); }
+  20%,80%     { transform: translate3d(2px,-1px,0); }
+  30%,50%,70% { transform: translate3d(-4px,1px,0); }
+  40%,60%     { transform: translate3d(4px,-1px,0); }
+}
+
+/* ================================================================
+   MOBILE TUNING — lighter atmosphere, same motion language
+   ================================================================ */
+@media (max-width: 640px) {
+  .focus-grid { background-size: 34px 34px; opacity: 0.8; }
+  .focus-scanline { height: 90px; top: -90px; }
+  body.lb-focus-mode .lb-stage-wrap::before { inset: -12px; }
+  @keyframes cardShuffle {
+    0%   { transform: translate(0,0) rotate(0deg) scale(1);       filter: hue-rotate(0deg) brightness(1); }
+    30%  { transform: translate(-6px, 5px) rotate(-3deg) scale(0.97); filter: hue-rotate(140deg) brightness(1.2); }
+    60%  { transform: translate(6px, -5px) rotate(3deg) scale(1.02);  filter: hue-rotate(280deg) brightness(0.9); }
+    100% { transform: translate(0,0) rotate(0deg) scale(1);       filter: hue-rotate(360deg) brightness(1); }
+  }
+}
 
 /* ================================================================
    LIGHT MODE OVERRIDES

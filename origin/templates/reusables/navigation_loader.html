@@ -1,4 +1,4 @@
-<div class="nav-loader loader-hidden" id="navLoader" aria-hidden="true">
+<div class="nav-loader loader-hidden" id="navLoader" aria-hidden="true" role="alertdialog" aria-label="Page is loading">
     <div class="loader-pulse"></div>
 
     <div class="loader-text-wrapper">
@@ -18,6 +18,20 @@
         <span class="loader-text">Site Unresponsive...</span>
         <span class="loader-text">Site Unresponsive......</span>
         <span class="loader-text">Attemptng Retry</span>
+    </div>
 
+    <!-- Cancel controls: only shown for navigations we intercepted ourselves
+         (link clicks / form submits), since a genuine browser-level unload
+         (typed URL, refresh, closing tab) cannot be cancelled by custom UI. -->
+    <div class="loader-cancel-wrap" id="navLoaderCancelWrap">
+        <div class="loader-progress-track" id="navLoaderProgressTrack" aria-hidden="true">
+            <div class="loader-progress-fill" id="navLoaderProgressFill"></div>
+        </div>
+        <p class="loader-cancel-hint" id="navLoaderCancelHint">Didn't mean to leave? You can still stay on this page.</p>
+        <button type="button" class="loader-cancel-btn" id="navLoaderCancelBtn">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+            <span>Cancel &amp; stay on this page</span>
+        </button>
+        <p class="loader-cancel-confirm" id="navLoaderCancelConfirm">Cancelled — you're still here.</p>
     </div>
 </div>

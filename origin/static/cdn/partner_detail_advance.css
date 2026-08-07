@@ -1,0 +1,166 @@
+/* ================================================================
+   PARTNER DETAIL — ADVANCE CSS  (deferred, non-blocking)
+   ================================================================ */
+
+@keyframes skShimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+.sk {
+  background: linear-gradient(
+    90deg,
+    var(--surf)  0%,
+    var(--surf3) 40%,
+    var(--edgeL) 50%,
+    var(--surf3) 60%,
+    var(--surf)  100%
+  );
+  background-size: 800px 100%;
+  animation: skShimmer 1.6s ease-in-out infinite;
+}
+
+/* ---- BACKGROUND ATMOSPHERE — same "breathing" nebula as the rest
+        of the dashboard family, tuned slightly warmer for a partner's
+        space rather than the user's own ---- */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 900px 700px at 20% 90%, rgba(59,130,246,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 700px 550px at 85% 5%, rgba(245,158,11,0.04) 0%, transparent 55%),
+    radial-gradient(ellipse 500px 400px at 50% 45%, rgba(167,139,250,0.03) 0%, transparent 50%);
+  animation: bgBreath 20s ease-in-out infinite alternate;
+}
+@keyframes bgBreath {
+  0%   { opacity: 0.7; transform: scale(1); }
+  100% { opacity: 1;   transform: scale(1.06); }
+}
+body.sd-light::before { display: none; }
+
+.pd-main, .pd-topnav, .pd-dock { position: relative; z-index: 1; }
+
+/* ---- TOP NAV — glass pills, gentle drop-in ---- */
+.pd-topnav { animation: pdDropIn 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+@keyframes pdDropIn {
+  from { opacity: 0; transform: translateY(-14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pd-pill {
+  background: rgba(13,20,33,0.85);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.2);
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), border-color 0.2s ease, color 0.2s ease;
+}
+body.sd-light .pd-pill {
+  background: rgba(255,255,255,0.9);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
+.pd-pill:hover { transform: translateY(-2px); border-color: var(--acc); color: var(--ink); }
+.pd-back:active { transform: translateY(0) scale(0.97); }
+
+/* ---- HERO — avatar ring glows and gently pulses, name/tags cascade in ---- */
+.pd-hero { animation: pdFadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; animation-delay: 0.05s; }
+@keyframes pdFadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pd-ring {
+  position: relative;
+  box-shadow: 0 0 0 1px var(--edge), 0 12px 40px -8px var(--glow);
+  animation: pdRingPulse 3.2s ease-in-out infinite;
+}
+@keyframes pdRingPulse {
+  0%,100% { box-shadow: 0 0 0 1px var(--edge), 0 12px 40px -8px var(--glow); }
+  50%     { box-shadow: 0 0 0 1px var(--edge), 0 16px 54px -6px var(--glow); }
+}
+.pd-avatar-wrap img { opacity: 0; transition: opacity 0.35s ease; }
+.pd-avatar-wrap img.loaded { opacity: 1; }
+
+.pd-name { animation: pdFadeUp 0.5s cubic-bezier(0.22,1,0.36,1) both; animation-delay: 0.15s; }
+.pd-userid { animation: pdFadeUp 0.5s cubic-bezier(0.22,1,0.36,1) both; animation-delay: 0.2s; }
+.pd-tags { animation: pdFadeUp 0.5s cubic-bezier(0.22,1,0.36,1) both; animation-delay: 0.25s; }
+.pd-privacy-note { animation: pdFadeUp 0.5s cubic-bezier(0.22,1,0.36,1) both; animation-delay: 0.3s; }
+
+.pd-tag { transition: transform 0.2s ease, border-color 0.2s ease; }
+.pd-tag:hover { transform: translateY(-1px); border-color: var(--edgeL); }
+.pd-tag-partner {
+  background: linear-gradient(135deg, rgba(59,130,246,0.14), rgba(96,165,250,0.06));
+  animation: pdTagGlow 2.6s ease-in-out infinite;
+}
+@keyframes pdTagGlow {
+  0%,100% { box-shadow: 0 0 0 rgba(59,130,246,0); }
+  50%     { box-shadow: 0 0 14px rgba(59,130,246,0.25); }
+}
+
+/* ---- STAT CONSTELLATION — cards drop in staggered by --i, lift on hover ---- */
+.pd-stat {
+  animation: pdStatIn 0.45s cubic-bezier(0.22,1,0.36,1) both;
+  animation-delay: calc(0.3s + (var(--i, 0) * 0.07s));
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease, border-color 0.2s ease;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+}
+@keyframes pdStatIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.pd-stat:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.22);
+  border-color: var(--edgeL);
+}
+body.sd-light .pd-stat { box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+body.sd-light .pd-stat:hover { box-shadow: 0 8px 20px rgba(0,0,0,0.09); }
+
+.pd-stat-hero { position: relative; overflow: hidden; }
+.pd-stat-hero::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(245,158,11,0.08) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: pdShimmerSweep 5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes pdShimmerSweep {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.pd-stat-hero .pd-stat-icon { animation: pdFlicker 2.4s ease-in-out infinite; }
+@keyframes pdFlicker {
+  0%,100% { transform: scale(1); }
+  50%     { transform: scale(1.08) rotate(-3deg); }
+}
+
+.pd-footer-note {
+  animation: pdFadeUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+  animation-delay: 0.9s;
+}
+
+/* ---- FLOATING BOTTOM DOCK — rises in, buttons lift on hover ---- */
+.pd-dock { animation: pdDockRise 0.5s cubic-bezier(0.22,1,0.36,1) both; animation-delay: 0.35s; }
+@keyframes pdDockRise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pd-dock-btn {
+  background: rgba(13,20,33,0.9);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+body.sd-light .pd-dock-btn {
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+}
+.pd-dock-btn:hover { transform: translateY(-3px); border-color: var(--acc); }
+.pd-dock-btn:active { transform: translateY(-1px) scale(0.97); }
+.pd-dock-danger:hover { border-color: var(--bad); }
+
+/* ---- TOAST ---- */
+.pd-toast { animation: pdToastIn 0.25s ease both; }
+@keyframes pdToastIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}

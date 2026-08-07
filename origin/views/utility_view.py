@@ -12,7 +12,7 @@ from django.db import IntegrityError
 from django.http import Http404
 from django.utils import timezone
 from utility.config import custom_date_formatter
-from utility.email_sending import send_partner_request_notification
+from utility.email_sending import *
 
 from ..models import ChoicesValidatorInModels, Profile, Friendship
 
@@ -21,8 +21,12 @@ logger = logging.getLogger(__name__)
 
 class RedirectHandler(View):
     """handling redirect from one page to another"""
+    def get(self, request, raw_url):
+        """return user to that same url they want to go and if the url is invalid; raise error"""
+        try:return redirect(raw_url)
+        except:raise Http404
+
     def post(self, request, raw_url):
-        print("Seen")
         if request.GET.get('login_account'):
             """Proceed to login user and create session"""
             try:
@@ -31,10 +35,9 @@ class RedirectHandler(View):
                 user_exist = user_status is not None
                 user_istance = authenticate(request=request, email = email.upper(), password = request.POST["password"])    #i wou;d have remove this but i need it along the custom user model 
                 
-                logger.info(msg= user_istance)
                 if user_istance or user_exist:
                     #set a key in cache to rate limit after 3 attempt
-                    the_key = f"attempt_login_{email}"
+                    the_key = f"attempt_login_{email.upper()}"
                     rate_limit = cache.get(the_key) or ""
                     if len(rate_limit)  <2:
                         messages.info( request=request,message= f"Incorrect password or Email.")
@@ -60,6 +63,7 @@ class RedirectHandler(View):
                     #user found, create a session and direct onboarding to handle wether it should direct user to dashboard or stay
                     login(request=request, user=user_istance, backend='django.contrib.auth.backends.ModelBackend')  #i currently have three login style set up, hence why i need to specify which i wan to use
                     request.session.save() #i had a race condtioning issue bcos the next page(onboarding uses the seesion as soon as it comes) and the redirect url was not havig enough time to store the db and BOOM , site crash ----This fix cos it mean the request must be saved before user is allowto go
+                    optimization()
                     return redirect('origin_onboarding')
                 else:
                     logger.warning(msg=f"userexist : {user_exist} is false and also user_istance {user_istance} is false")
@@ -106,11 +110,7 @@ class RedirectHandler(View):
                  "status" : "error",
                  "statcktrace": str(e)},
                 status = 502)
-    
-    def get(self, request, raw_url):
-        """return user to that same url they want to go and if the url is invalid; raise error"""
-        try:return redirect(raw_url)
-        except:raise Http404
+                
 
 
 
@@ -140,26 +140,52 @@ def helper_with_friendship_request_answer(request, to_user_id : str):
     
     #check their status, if its pending -- request already sent at TIME, accepted -- you are already friends with this user since TIME
     relationship = Friendship.objects.filter(from_user = from_user, to_user = to_user.user).first()
+    #check if the sender still have the allowed limit and have not reached it 
+    current_list = Friendship.objects.filter(from_user = request.user).count()
+    profile_istance = Profile.objects.filter(user = request.user).first()
+    if profile_istance is None: return JsonResponse({'message': 'You dont have a profile yet, have you finished onboarding?'}, status = 403)
     if relationship is None:
-        #check if the sender still have the allowed limit and have not reached it 
-        current_list = Friendship.objects.filter(from_user = request.user).count()
-        profile_istance = Profile.objects.filter(user = request.user).first()
         #if limit reached, return error
         max_allowed = ChoicesValidatorInModels().partner_limit[profile_istance.tier]
         if current_list >= max_allowed: return JsonResponse({'message': 'you have ereached limit of partner allowed for this tier. Upgrade account tohave more partners.'}, status = 403)
-        
-        #send request --brb send email to notify to user also
+        send_partner_request_notification(to_email= to_user.user.email, from_username=from_user.username ,from_userid=profile_istance.public_searchable_username)
         istance = Friendship.objects.create(
             from_user = from_user,
             to_user = to_user.user,
             status = ChoicesValidatorInModels().friendship_status[0], #pending
         )
+        #send a notification to the recevier since status is pending
+        # print(
+        #     {'to_email': to_user.user.email,
+        #      'from_username': from_user.username,
+        #     'from_user_id': profile_istance.public_searchable_username}
+            
+        # )
     elif relationship.status == ChoicesValidatorInModels().friendship_status[0]: return JsonResponse({'message' : f'request already sent since {custom_date_formatter(datetime_data = relationship.updated_at)} -PENDING'}, status = 403)
     elif relationship.status == ChoicesValidatorInModels().friendship_status[1]: return JsonResponse({'message' : f'you are already friend with this person since {custom_date_formatter(datetime_data = relationship.updated_at)}'}, status = 403)
     else:
-        # status was 'rejected' — allow resending
+        # status was 'rejected' — allow resending , look for any update in the to_user username or userid
+        send_partner_request_notification_previously_rejected(to_email= to_user.user.email, from_username=relationship.from_user.username ,from_userid=profile_istance.public_searchable_username)
         relationship.status = 'pending'
         relationship.save()
+        # print(
+        #         {'to_email': to_user.user.email,
+        #             'from_username': from_user.username,
+        #         'from_user_id': profile_istance.public_searchable_username}
+                
+        #     )
+        
         return None
     
-    
+
+
+from django.db import connection
+
+
+def optimization():
+    """This is for optimization and debugging"""
+    print(f"Query count: {len(connection.queries)}")
+    for q in connection.queries:
+        print(f"  {q['time']}s - {q['sql'][:100]}")
+        print("")  # Add a newline for better readability
+        

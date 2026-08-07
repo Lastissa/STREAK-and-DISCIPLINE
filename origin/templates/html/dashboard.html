@@ -349,6 +349,30 @@
           </div>
         </div>
 
+        <!-- 6b. INSIGHTS - deferred/lazy data visualization. Built entirely
+             from data already fetched for the commitment cards above (no
+             extra network round-trip), and rendered via requestIdleCallback
+             AFTER the cards paint, so it never competes with first load. -->
+        <div class="db-insights" id="dbInsights" style="display:none">
+          <div class="db-section-label">
+            <i class="fas fa-chart-simple"></i> Insights
+          </div>
+          <div class="insights-grid">
+            <div class="insight-card">
+              <div class="insight-card-title">Streak by Commitment</div>
+              <div class="insight-card-body" id="insightStreakChart">
+                <div class="sk sk-text w100" style="height:8rem"></div>
+              </div>
+            </div>
+            <div class="insight-card">
+              <div class="insight-card-title">Where Your Effort Goes</div>
+              <div class="insight-card-body" id="insightCategoryChart">
+                <div class="sk sk-text w100" style="height:8rem"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 7. PARTNER STREAK WIDGET (conditional on social_mode, skeleton → fetch) -->
         {% if social_mode == 'partner' %}
         <div class="db-partners" id="dbPartners">
@@ -749,6 +773,7 @@
           commitmentData = res.d.commitments;
           renderCommitments(commitmentData);
           buildShareSelector(commitmentData);
+          scheduleInsights(commitmentData);
         })
         .catch(function() {
           showCommitError('Network error. Please check your connection and retry.');
@@ -821,6 +846,122 @@
 
         grid.appendChild(card);
       });
+    }
+
+    // ===== Insights (deferred, non-blocking data viz) =====
+    // Uses the commitment data we already fetched above - no extra network
+    // call. Deliberately scheduled with requestIdleCallback so it only runs
+    // once the browser is idle, well after everything above has painted.
+    function scheduleInsights(data) {
+      var run = function () { renderInsights(data); };
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(run, { timeout: 2000 });
+      } else {
+        setTimeout(run, 300);
+      }
+    }
+
+    function renderInsights(data) {
+      var panel = document.getElementById('dbInsights');
+      if (!panel) return;
+
+      if (!Array.isArray(data) || data.length === 0) {
+        panel.style.display = 'none';
+        return;
+      }
+
+      panel.style.display = '';
+      renderStreakInsight(data);
+      renderCategoryInsight(data);
+    }
+
+    function renderStreakInsight(data) {
+      var host = document.getElementById('insightStreakChart');
+      if (!host) return;
+
+      var rows = data.slice().sort(function (a, b) {
+        return (b.streak_count || 0) - (a.streak_count || 0);
+      }).slice(0, 6);
+
+      if (!rows.length) {
+        host.innerHTML = '<div class="insight-empty">No active commitments yet.</div>';
+        return;
+      }
+
+      var max = Math.max.apply(null, rows.map(function (r) { return r.streak_count || 0; })) || 1;
+
+      var html = '<div class="insight-bars">' + rows.map(function (r) {
+        var pct = Math.round(((r.streak_count || 0) / max) * 100);
+        return (
+          '<div class="insight-bar-row">' +
+            '<span class="insight-bar-label" title="' + sanitize(r.what || '') + '">' + sanitize(r.what || 'Untitled') + '</span>' +
+            '<span class="insight-bar-track"><span class="insight-bar-fill" data-pct="' + pct + '"></span></span>' +
+            '<span class="insight-bar-value">' + (r.streak_count || 0) + 'd</span>' +
+          '</div>'
+        );
+      }).join('') + '</div>';
+
+      host.innerHTML = html;
+
+      // Animate bars in on the next frame so the fill transition actually plays
+      requestAnimationFrame(function () {
+        host.querySelectorAll('.insight-bar-fill').forEach(function (el) {
+          var pct = parseFloat(el.getAttribute('data-pct')) || 0;
+          el.style.transform = 'scaleX(' + (pct / 100) + ')';
+          el.classList.add('grown');
+        });
+      });
+    }
+
+    function renderCategoryInsight(data) {
+      var host = document.getElementById('insightCategoryChart');
+      if (!host) return;
+
+      var counts = {};
+      data.forEach(function (c) {
+        var cat = (c.category || 'other').toLowerCase();
+        counts[cat] = (counts[cat] || 0) + 1;
+      });
+
+      var cats = Object.keys(counts);
+      if (!cats.length) {
+        host.innerHTML = '<div class="insight-empty">Nothing to break down yet.</div>';
+        return;
+      }
+
+      var palette = ['#3b82f6', '#22c55e', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6', '#f43f5e'];
+      var total = data.length;
+      var radius = 15.9159; // matches the circumference-100 trick used by the ring elsewhere
+      var circumference = 2 * Math.PI * radius;
+      var offset = 0;
+
+      var arcs = cats.map(function (cat, i) {
+        var count = counts[cat];
+        var frac = count / total;
+        var dash = frac * circumference;
+        var color = palette[i % palette.length];
+        var circle = '<circle cx="21" cy="21" r="' + radius + '" fill="none" stroke="' + color + '" ' +
+          'stroke-width="4" stroke-dasharray="' + dash.toFixed(2) + ' ' + (circumference - dash).toFixed(2) + '" ' +
+          'stroke-dashoffset="' + (-offset).toFixed(2) + '" transform="rotate(-90 21 21)" stroke-linecap="butt"/>';
+        offset += dash;
+        return { circle: circle, cat: cat, count: count, color: color };
+      });
+
+      var svg = '<svg class="insight-donut-svg" width="96" height="96" viewBox="0 0 42 42">' +
+        arcs.map(function (a) { return a.circle; }).join('') +
+        '</svg>';
+
+      var legend = '<div class="insight-donut-legend">' + arcs.map(function (a) {
+        return (
+          '<div class="insight-legend-row">' +
+            '<span class="insight-legend-dot" style="background:' + a.color + '"></span>' +
+            '<span class="insight-legend-name">' + sanitize(a.cat) + '</span>' +
+            '<span>&middot; ' + a.count + '</span>' +
+          '</div>'
+        );
+      }).join('') + '</div>';
+
+      host.innerHTML = '<div class="insight-donut-wrap">' + svg + legend + '</div>';
     }
 
     function showCommitError(msg) {

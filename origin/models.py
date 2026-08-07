@@ -39,6 +39,12 @@ class ChoicesValidatorInModels:
             'reflective', 'introspective', 'thoughtful', 'nostalgic', 'humbled',
         ]
         self.friendship_status = ['pending', 'accepted', 'rejected']
+        self.news_category = [
+            'update',               #   SOMETHING WORTH KNOWING LIKE "PRESS THIS BTN TO DO THIS"
+            'feature',              #   AN ADDITIOANL UPDATE HAVE BEEN MADE TO THE SITE
+            'story',                #   A WILLING USER SHARED THEIR STORY WITH US
+            'quotes'                #   REGULAR WORD OF MOTIVATION.
+            , ]
     
 
 custom_val = ChoicesValidatorInModels()
@@ -192,8 +198,9 @@ class News(models.Model):
     excerpt = models.CharField(blank=False, null= False)        # Frist few lines of the full text
     date = models.DateField(auto_now_add= True)                 # Date created
     read_time = models.IntegerField(blank=False, null=False)    # Estimated time user is suppose to read it for
-    banner = models.URLField(null=False)                        # IF the new have a banner and the image of the banner
+    banner = models.URLField(null=False)                        # IF the news have a banner and the image of the banner
     featuered = models.BooleanField(default=True)               # for full width set to true
+    actual_content = models.TextField(default="", blank=True, null= True)# This hold the actual content that will be displayed on its own page
     
     def __str__(self):
         return "News"

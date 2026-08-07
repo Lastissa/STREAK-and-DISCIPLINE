@@ -10,9 +10,8 @@ from django.db import transaction
 from ..models import Profile, Commitment, ChoicesValidatorInModels, PasswordResetToken
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError as V_Error
+
 from django.shortcuts import redirect, render
-from resend.exceptions import ResendError, ValidationError
-from django.http import JsonResponse
 from django.utils import timezone
 
 from utility.email_sending import send_password_reset_email, send_password_reset_successful_email
@@ -74,9 +73,9 @@ class DbSave(LoginRequiredMixin,View):
         if social_mode_settings.strip().lower() == customVal.social_mode[1]:
             from_user_istance = request.user
             to_user_istance = Profile.objects.filter(public_searchable_username__iexact = social_friend_user_id).first()
-            print(f'{to_user_istance}')
             if to_user_istance is None: return JsonResponse({'message' : f"user id:'{social_friend_user_id}' does not exist hence your request will be revoked, kindly recheck the userid or switch to solo"}, status = 404)
-
+        #Check if there is a trial key in the query and check if the usr have not used any free trial bnefore
+        
         #if we get here and no issues; all data is valid , create
         with transaction.atomic():
             profile_istance = Profile.objects.create(
@@ -117,7 +116,6 @@ class PasswordReset(View):
             fetched_email = request.POST["email"]
             validate_email(fetched_email)
             user_email = get_user_model().objects.filter(email__iexact = fetched_email).first()
-            print(user_email, fetched_email)
             if user_email:
                 """Valid user, prepare token"""
                 token = "".join(random.sample("123456789abcdefghijklmnopqrsuvwxyzABCDEFGHIJKLMNOPRSTUVWXYZ", Static.token_lenght()))
@@ -125,18 +123,14 @@ class PasswordReset(View):
                 save_token_to_db.save()
                 send_password_reset_email(
                     to_email=fetched_email,
-                    endpoint=reverse('origin_password_reset_validate',
-                    kwargs={'email' : user_email, 'token': token}),
+                    endpoint=reverse('origin_password_reset_validate',kwargs={'email' : user_email, 'token': token}),
                     expiry=Static.token_expiry_time(),
-                    username=user_email)  
+                    username=user_email.username)  
                     
-                return JsonResponse({'message': 'Request received, If email exist in our database you will receive a reset link within the next few seconds, refresh page to resend get a new link - old user'}, status = 200)
+                return JsonResponse({'message': 'Request received, If email exist in our database you will receive a reset link within the next few seconds, refresh page to resend get a new link. NB: CHECK SPAM FOLDER ALSO. - old user'}, status = 200)
             #no user found
             return JsonResponse({'message': 'Request received, If email exist in our database you will receive a reset link -new user'})
-        except ResendError as e:
-            logger.error(msg=f"Error happened while trying to send user their password reset email , error is {e}")
-            return JsonResponse({'message': 'Oops, you dont seem to have internet connection, please try again when you are connected.-Refresh page to resend link'}, status = 500)
-        except ValidationError as e: return JsonResponse({"message" : "Invalid Email, Refresh page to try again"})
+        except V_Error as e: return JsonResponse({"message" : "Invalid Email, Refresh page to try again"})
         except Exception as e:
             logger.error(msg=f"user tried to reset password and eperience error  : {e}")
             return JsonResponse({"message" : "Please refresh page and retry again but if message persiste, contact customer support as we might be experiencing internal issue"}, status = 500)
@@ -159,7 +153,7 @@ class PasswordValidate(View):
             messages.info(request, message=f"The Link have Expired as the {int(Static.token_expiry_time()/60)} minutes timeout have been reached.")
             return render(request, 'html/full_screen_message.html')
         #return normal page for reset since token still exist.
-        return render(request, 'html/final_step_of_password_reset.html', {'expiry_seconds': Static.token_expiry_time})
+        return render(request, 'html/final_step_of_password_reset.html', {'expiry_seconds': Static.token_expiry_time() -(timezone.now() - token_still_valid_in_db.date_created).seconds})
     
     def post(self, request, email, token):
         #check if the data still exist in the db
@@ -190,7 +184,7 @@ class PasswordValidate(View):
 
 class AccountDeactivated(View):
     def get(self, request, email, days_left):
-        if days_left.isdigit is False:
+        if days_left.isdigit() is False:
             days_left = days_left
             days_until_deletion = "NA"
         else:
@@ -211,7 +205,7 @@ class ReactivateAccountJson(View):
             #first check if the account is truly deactivated or exist
             data = json.loads(request.body).get('email', None)
             validate_email(data)
-            if data is None : return JsonResponse({'message'}, status = 500)
+            if data is None : return JsonResponse({'message': ''}, status = 500)
             istance = get_user_model().objects.filter(email__iexact = data).first()
             if istance is None:
                 return JsonResponse({'message': 'Invalid credentials'}, status = 400)   #watch for the s

@@ -17,7 +17,8 @@ from django.db import models
 import json
 import logging
 
-from utility.file_upload import upload_profile_picture, delete_profile_picture
+from utility.file_upload import *
+from utility.email_sending import send_partner_request_accepted_email
 
 logger = logging.getLogger(__name__)
 
@@ -292,12 +293,12 @@ class RelationshipSent(LoginRequiredMixin, View):
         end_fetch = limit*(after_id+1)                          #the end of the pagination
         
         if limit>20: limit  = 20  #max should be 20 to avoid spammers issue
-        logger.info(msg= f"Pagination in relationship for SENT with start = {start_fetch} and end  = {end_fetch}")
+        # logger.info(msg= f"Pagination in relationship for SENT with start = {start_fetch} and end  = {end_fetch}")
         friend_istance = Friendship.objects.filter(from_user = request.user, status__iexact= status).select_related('to_user')[start_fetch: end_fetch]
-        #i dont want to make another call for each friend_istance to get reciever profile so i wil just recreate the formula again which is username + CustomUser pk
+        
         results = [
             {
-                'userid': f"{i.to_user.username}{i.to_user.pk:02d}",
+                'userid': Profile.objects.filter(user = i.to_user).first().public_searchable_username if Profile.objects.filter(user = i.to_user).first() else "NONE",
                 'username': i.to_user.username,
                 'profile_image': '',
                 'updated_at': i.updated_at
@@ -329,7 +330,7 @@ class RelationshipReceived(LoginRequiredMixin, View):
         #i dont want to make another call for each friend_istance to get reciever profile so i wil just recreate the formula again which is username + CustomUser pk
         results = [
             {
-                'userid': f"{i.from_user.username}{i.from_user.pk:02d}",
+                'userid': Profile.objects.filter(user = i.from_user).first().public_searchable_username if Profile.objects.filter(user = i.from_user).first() else "NONE",
                 'username': i.from_user.username,
                 'profile_image': '',
                 'updated_at': i.updated_at
@@ -363,7 +364,7 @@ class RelationshipUnpair(LoginRequiredMixin, View):
         
         # Update status to rejected
         friendship.status = 'rejected'
-        friendship.save()
+        friendship.save() 
         
         return JsonResponse({
             'message': f'Successfully unpaired with @{user_to_unpair}. Refresh to view changes',
@@ -383,15 +384,15 @@ class RelationshipUnpair(LoginRequiredMixin, View):
 class RelationshipAcccept(LoginRequiredMixin, View):
     """This handle accepting partner request SENT to user if user want to accept"""
     def get(self, request):
-            user_to_unpair = request.GET.get('userid', '').strip()
+            user_to_pair = request.GET.get('userid', '').strip()
             
-            if not user_to_unpair:
+            if not user_to_pair:
                 return JsonResponse({'message': 'No user specified.'}, status=400)
             
             
             # Find the partner's profile
             partner_profile = Profile.objects.filter(
-                public_searchable_username__iexact=user_to_unpair
+                public_searchable_username__iexact=user_to_pair
             ).first()
             
             if not partner_profile:
@@ -401,7 +402,6 @@ class RelationshipAcccept(LoginRequiredMixin, View):
             
             # make sure the current state is pending
             friendship = Friendship.objects.filter(
-                models.Q(from_user=request.user, to_user=partner_user) |
                 models.Q(from_user=partner_user, to_user=request.user),
                 status='pending'
             ).first()
@@ -409,10 +409,18 @@ class RelationshipAcccept(LoginRequiredMixin, View):
             if not friendship:
                 return JsonResponse({'message': 'No active friend request from this user.'}, status=404)
             
-            # Update status to accepted as per there was na active friend request
+            #send notification email
+            send_partner_request_accepted_email(to_email=partner_user.email, sender_username=partner_user.username, accepter_userid= Profile.objects.get(user = request.user).public_searchable_username, accepter_username=request.user.username)
+            # Update status to accepted as per there was an active friend request
             friendship.status = 'accepted'
             friendship.save()
-            
+            #notifier the sender that their request have been accepted
+            # print(
+            #     {'to_email': partner_user.email,
+            #      'sender_username': partner_user.username,
+            #      'accepter_userid': Profile.objects.get(user = request.user).public_searchable_username
+            #      }
+            # )
             return JsonResponse({
                 'message': f'Successfully accepetd the friend request',
             }, status=200)
@@ -676,8 +684,6 @@ class ProfileUpdateToggles(LoginRequiredMixin, View):
            
            #CLEAN DATA - OMO BUT I AM TAKING A RISK, I AM ONLY DEPENDING ON BOOLEAN VALUE AND NT ACTUALLY CHECKING THE VALUE E.G IF USER SNED TRUE, I JSUT SAVE FALSE, I DONT CHECK IF ITS TRUE
            istance = Profile.objects.filter(user = request.user).first()
-           print(data)
-           print(istance.ai_insight_active)
            #HANDLE LEADEROARD OPT IN
            if field == 'leaderboard_optin':
                istance.leaderboard_optin = not istance.leaderboard_optin
@@ -753,9 +759,6 @@ class EachCommitmentViewSettings(LoginRequiredMixin, View):
         checkin_time = data['user_selected_reminder_time']                  #time to update xx:xx
         whatsapp_number = data.get('whatsapp_number')                       #only if mode_of_delivery is whatsapp
         reminder_active = data.get('reminder_active')                       #Check if the user want to stop receviing reminders
-        
-        print(data)
-
         # Validate mode_of_delivery
         if mode_of_delivery not in ChoicesValidatorInModels().report_delivery_mode: return JsonResponse({'message': 'Invalid mode of delivery.'}, status=400)
        

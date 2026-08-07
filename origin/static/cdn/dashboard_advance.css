@@ -1,20 +1,7 @@
-/* ================================================================
-   DASHBOARD — ADVANCE CSS  (deferred, non-blocking)
-   Place at: origin/static/cdn/dashboard_advance.css
-   All animations, glassmorphism, spring physics, skeleton shimmer.
-   Loads async. Page is already readable before this arrives.
-   ================================================================ */
 
-/* ---- Spring easing reference ---------------------------------
-   Overshoot spring:   cubic-bezier(0.34,1.56,0.64,1)
-   Fast decelerate:    cubic-bezier(0.22,1,0.36,1)
-   Elastic snap:       cubic-bezier(0.68,-0.55,0.265,1.55)
-   Heavy settle:       cubic-bezier(0.16,1,0.3,1)
------------------------------------------------------------------ */
-
-/* ================================================================
+/* 
    SKELETON SHIMMER
-   ================================================================ */
+    */
 @keyframes skShimmer {
   0%   { background-position: -400px 0; }
   100% { background-position:  400px 0; }
@@ -36,9 +23,9 @@
 /* Skeleton card gets a border glow too */
 .sk-card .sk { animation: skShimmer 1.6s ease-in-out infinite; }
 
-/* ================================================================
+/* 
    BACKGROUND ATMOSPHERE
-   ================================================================ */
+    */
 body::before {
   content: '';
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
@@ -55,9 +42,9 @@ body::before {
 
 body.sd-light::before { display: none; }
 
-/* ================================================================
+/* 
    GLASSMORPHISM  —  layered on top of light CSS base styles
-   ================================================================ */
+    */
 .db-aside {
   background: rgba(13,20,33,0.9);
   backdrop-filter: blur(24px) saturate(160%);
@@ -85,9 +72,9 @@ body.sd-light .db-header {
   box-shadow: 0 1px 0 rgba(203,213,225,0.8), 0 2px 12px rgba(0,0,0,0.04);
 }
 
-/* ================================================================
+/* 
    ASIDE SLIDE & NAV SPRING PHYSICS
-   ================================================================ */
+    */
 .db-aside {
   transition: transform 0.4s cubic-bezier(0.22,1,0.36,1),
               box-shadow 0.4s ease;
@@ -110,9 +97,9 @@ body.sd-light .db-header {
 }
 .aside-avatar-wrap img.loaded { animation: avatarReveal 0.5s cubic-bezier(0.22,1,0.36,1) both; }
 
-/* ================================================================
+/* 
    HEADER
-   ================================================================ */
+    */
 @keyframes hdrSlideDown {
   from { opacity:0; transform: translateY(-100%); }
   to   { opacity:1; transform: translateY(0); }
@@ -138,9 +125,9 @@ body.sd-light .db-header {
 }
 .hdr-quote.tick { animation: quoteTicker 6s ease-in-out forwards; }
 
-/* ================================================================
+/* 
    GREETING ENTRANCE
-   ================================================================ */
+    */
 @keyframes greetIn {
   from { opacity:0; transform: translateY(20px); }
   60%  { opacity:1; transform: translateY(-2px); }
@@ -150,9 +137,9 @@ body.sd-light .db-header {
 .db-greeting-text { animation: greetIn 0.6s 0.2s cubic-bezier(0.22,1,0.36,1) both; }
 .db-greeting-sub  { animation: greetIn 0.5s 0.34s cubic-bezier(0.22,1,0.36,1) both; }
 
-/* ================================================================
+/* 
    WELCOME HERO — zero-commitment first-time state
-   ================================================================ */
+    */
 @keyframes welcomeHeroIn {
   from { opacity:0; transform: translateY(24px) scale(0.98); }
   100% { opacity:1; transform: translateY(0) scale(1); }
@@ -173,9 +160,9 @@ body.sd-light .db-header {
 }
 .db-welcome-hero .btn-primary:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 8px 20px var(--glow); }
 
-/* ================================================================
+/* 
    STAT CARDS  — spring entrance + hover 3D tilt
-   ================================================================ */
+    */
 @keyframes statCardIn {
   from { opacity:0; transform: translateY(28px) scale(0.92); }
   65%  { opacity:1; transform: translateY(-4px) scale(1.01); }
@@ -212,9 +199,9 @@ body.sd-light .db-header {
   box-shadow: 0 2px 12px rgba(0,0,0,0.15);
 }
 
-/* ================================================================
+/* 
    STATUS BANNER ENTRANCE
-   ================================================================ */
+    */
 @keyframes bannerSlide {
   from { opacity:0; transform: translateX(-16px); }
   to   { opacity:1; transform: translateX(0); }
@@ -226,9 +213,9 @@ body.sd-light .db-header {
 }
 .db-status:hover { border-color: var(--edgeL); box-shadow: 0 4px 18px rgba(0,0,0,0.18); }
 
-/* ================================================================
+/* 
    MILESTONE CARD
-   ================================================================ */
+    */
 @keyframes milestoneIn {
   from { opacity:0; transform: translateX(-12px); }
   to   { opacity:1; transform: translateX(0); }
@@ -249,9 +236,9 @@ body.sd-light .db-header {
   50%      { box-shadow: 0 0 12px var(--glow); }
 }
 
-/* ================================================================
+/* 
    HEATMAP
-   ================================================================ */
+    */
 @keyframes hmIn {
   from { opacity:0; transform: translateY(16px); }
   to   { opacity:1; transform: translateY(0); }
@@ -276,9 +263,9 @@ body.sd-light .db-header {
 }
 .hm-cell.hm-reveal { animation: cellReveal 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
 
-/* ================================================================
+/* 
    COMMITMENT CARDS  — production-level
-   ================================================================ */
+    */
 @keyframes commitIn {
   from { opacity:0; transform: translateY(32px) scale(0.93); }
   60%  { opacity:1; transform: translateY(-4px) scale(1.01); }
@@ -345,9 +332,9 @@ body.sd-light .db-header {
 .commit-empty h4 { font-size:0.9rem; margin-bottom:0.4rem; }
 .commit-empty p  { font-size:0.78rem; color:var(--ink2); margin-bottom:1rem; line-height:1.6; }
 
-/* ================================================================
+/* 
    PARTNER WIDGET
-   ================================================================ */
+    */
 @keyframes partnerIn {
   from { opacity:0; transform: translateX(-12px); }
   to   { opacity:1; transform: translateX(0); }
@@ -376,9 +363,9 @@ body.sd-light .db-header {
   50%      { box-shadow: 0 0 10px rgba(34,197,94,0.6); }
 }
 
-/* ================================================================
+/* 
    UPGRADE CTA BANNER
-   ================================================================ */
+    */
 .aside-upgrade {
   animation: upgradePulse 4s ease-in-out infinite;
 }
@@ -387,9 +374,9 @@ body.sd-light .db-header {
   50%      { box-shadow: 0 0 0 6px rgba(59,130,246,0); }
 }
 
-/* ================================================================
+/* 
    FAB  — floating action button spring
-   ================================================================ */
+    */
 .db-fab {
   transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1),
               box-shadow 0.32s cubic-bezier(0.22,1,0.36,1);
@@ -406,9 +393,9 @@ body.sd-light .db-header {
 }
 .db-fab:active { transform: scale(0.92); transition-duration: 0.1s; }
 
-/* ================================================================
+/* 
    SHARE / PRINT MODAL
-   ================================================================ */
+    */
 .db-modal-overlay {
   transition: opacity 0.3s ease;
 }
@@ -435,9 +422,9 @@ body.sd-light .db-modal {
 .share-opt-btn:hover { transform: translateY(-2px); filter: brightness(1.12); }
 .share-opt-btn:active { transform: scale(0.94); }
 
-/* ================================================================
+/* 
    ZEAL TOOLTIP
-   ================================================================ */
+    */
 .zeal-tooltip {
   box-shadow: 0 8px 24px rgba(0,0,0,0.35);
   backdrop-filter: blur(16px);
@@ -454,34 +441,34 @@ body.sd-light .db-modal {
 }
 .zeal-info:hover { color: var(--accL); transform: scale(1.2); }
 
-/* ================================================================
+/* 
    SECTION REVEAL  (JS adds .revealed when data arrives)
-   ================================================================ */
+    */
 @keyframes sectionReveal {
   from { opacity:0; transform: translateY(24px); }
   to   { opacity:1; transform: translateY(0); }
 }
 .db-section-reveal { animation: sectionReveal 0.5s cubic-bezier(0.22,1,0.36,1) both; }
 
-/* ================================================================
+/* 
    COMMITMENT CARD STAGGER  (JS sets --i CSS var per card)
-   ================================================================ */
+    */
 .commit-card.stagger {
   animation: commitIn 0.55s cubic-bezier(0.22,1,0.36,1) both;
   animation-delay: calc(var(--i, 0) * 0.08s);
 }
 
-/* ================================================================
+/* 
    PARTNER CARD STAGGER
-   ================================================================ */
+    */
 .partner-card.stagger {
   animation: partnerIn 0.4s cubic-bezier(0.22,1,0.36,1) both;
   animation-delay: calc(var(--i, 0) * 0.07s);
 }
 
-/* ================================================================
+/* 
    BUTTONS  — spring hover
-   ================================================================ */
+    */
 .btn {
   transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1),
               box-shadow 0.28s cubic-bezier(0.22,1,0.36,1),
@@ -494,9 +481,9 @@ body.sd-light .db-modal {
 .btn-primary:active { transform: scale(0.96); transition-duration: 0.08s; }
 .btn-outline:hover  { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.18); }
 
-/* ================================================================
+/* 
    LIGHT MODE OVERRIDES
-   ================================================================ */
+    */
 body.sd-light .stat-card {
   box-shadow: 0 2px 10px rgba(0,0,0,0.06);
 }
@@ -511,9 +498,9 @@ body.sd-light .db-modal {
 }
 body.sd-light body::before { display: none; }
 
-/* ================================================================
+/* 
    REDUCED MOTION
-   ================================================================ */
+    */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -521,3 +508,60 @@ body.sd-light body::before { display: none; }
     transition-duration: 0.1s !important;
   }
 }
+/* ===== Insights section (lazy/deferred data viz - additive, reversible) ===== */
+.db-insights{margin-bottom:1.75rem}
+
+.insights-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1rem;
+}
+
+@media (max-width:720px){
+  .insights-grid{grid-template-columns:1fr}
+}
+
+.insight-card{
+  background:var(--surf);border:1px solid var(--edge);
+  border-radius:var(--rL);padding:1rem 1.1rem 1.1rem;
+}
+
+.insight-card-title{
+  font-size:0.78rem;font-weight:700;color:var(--ink2);
+  text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.75rem;
+}
+
+.insight-card-body{min-height:8rem;display:flex;align-items:center;justify-content:center}
+
+.insight-empty{
+  font-size:0.8rem;color:var(--ink3);text-align:center;padding:1rem 0.5rem;
+}
+
+/* Streak bar chart */
+.insight-bars{width:100%;display:flex;flex-direction:column;gap:0.6rem}
+.insight-bar-row{display:flex;align-items:center;gap:0.6rem;font-size:0.76rem}
+.insight-bar-label{
+  width:34%;flex-shrink:0;color:var(--ink2);white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;
+}
+.insight-bar-track{
+  flex:1;height:9px;border-radius:99px;background:var(--surf3,var(--edge));
+  overflow:hidden;position:relative;
+}
+.insight-bar-fill{
+  height:100%;border-radius:99px;
+  background:linear-gradient(90deg,var(--acc),var(--accL));
+  transform-origin:left center;
+  transform:scaleX(0);
+  transition:transform 0.9s cubic-bezier(.16,1,.3,1);
+}
+.insight-bar-fill.grown{transform:scaleX(1)}
+.insight-bar-value{width:2.6rem;flex-shrink:0;text-align:right;color:var(--ink);font-weight:700}
+
+/* Category donut */
+.insight-donut-wrap{display:flex;align-items:center;gap:1.1rem;width:100%}
+.insight-donut-svg{flex-shrink:0}
+.insight-donut-legend{display:flex;flex-direction:column;gap:0.4rem;font-size:0.76rem;min-width:0}
+.insight-legend-row{display:flex;align-items:center;gap:0.45rem;color:var(--ink2)}
+.insight-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.insight-legend-name{text-transform:capitalize;color:var(--ink);font-weight:600}

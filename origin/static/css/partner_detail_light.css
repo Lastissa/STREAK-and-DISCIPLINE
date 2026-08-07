@@ -1,0 +1,195 @@
+/* ---- Variables — same palette as the rest of the dashboard family -------- */
+:root {
+  --bg:        #060b14;
+  --surf:      #0d1421;
+  --surf2:     #111d2e;
+  --surf3:     #16253a;
+  --ink:       #e4ecf7;
+  --ink2:      #8da5c0;
+  --ink3:      #4a6075;
+  --acc:       #3b82f6;
+  --accL:      #60a5fa;
+  --accXL:     #93c5fd;
+  --glow:      rgba(59,130,246,0.2);
+  --ok:        #22c55e;
+  --warn:      #f59e0b;
+  --bad:       #ef4444;
+  --gold:      #f59e0b;
+  --edge:      #1c2a3d;
+  --edgeL:     #2a3d56;
+
+  --r:         10px;
+  --rL:        16px;
+  --rXL:       22px;
+  --font:      system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --ease:      0.2s ease;
+
+  --pd-topnav-h: 64px;
+  --pd-dock-h:   72px;
+}
+
+body.sd-light {
+  --bg:    #f0f4fa; --surf: #fff; --surf2: #f8fafc; --surf3: #f1f5fb;
+  --ink:   #0f172a; --ink2: #475569; --ink3: #94a3b8;
+  --edge:  #e2e8f0; --edgeL: #cbd5e1;
+}
+
+/* ---- Reset ---------------------------------------------------- */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{height:100%;scroll-behavior:smooth}
+body{
+  font-family:var(--font);background:var(--bg);color:var(--ink);
+  min-height:100%;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+a{color:inherit;text-decoration:none}
+img,svg{display:block;max-width:100%}
+button,select,input,textarea{font-family:inherit;border:none;background:none;color:inherit;cursor:pointer}
+
+/* ---- Skeleton (shared shape with rest of app) ------------------ */
+.sk{background:linear-gradient(90deg,var(--surf2) 25%,var(--surf3) 50%,var(--surf2) 75%);background-size:200% 100%}
+.sk-circle{border-radius:50%}
+
+/* ---- App shell --------------------------------------------------
+   No aside, no fixed header — this page is intentionally a focused
+   "room" of its own, framed by a floating top pill-nav and a floating
+   bottom action dock instead of the standard dashboard chrome.
+------------------------------------------------------------------- */
+.pd-main{
+  min-height:100vh;
+  padding:calc(var(--pd-topnav-h) + 1.5rem) 1.25rem calc(var(--pd-dock-h) + 2.5rem);
+  max-width:760px;
+  margin:0 auto;
+}
+
+/* ---- Floating top nav ------------------------------------------- */
+.pd-topnav{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0.85rem 1.1rem;
+}
+.pd-pill{
+  display:inline-flex;align-items:center;gap:0.45rem;
+  background:var(--surf);border:1px solid var(--edge);
+  border-radius:999px;padding:0.5rem 0.9rem;
+  font-size:0.78rem;font-weight:600;color:var(--ink2);
+}
+.pd-back i{font-size:0.75rem}
+.pd-topnav-right{display:flex;gap:0.5rem}
+.pd-icon-btn{width:2.25rem;height:2.25rem;padding:0;justify-content:center;font-size:0.9rem}
+
+/* ---- Hero --------------------------------------------------------- */
+.pd-hero{
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:1rem 0 2rem;
+}
+.pd-ring{
+  --pct: 0;
+  width:120px;height:120px;border-radius:50%;
+  padding:6px;
+  margin-bottom:1rem;
+  background: conic-gradient(var(--acc) calc(var(--pct) * 1%), var(--surf3) 0);
+}
+.pd-avatar-wrap{
+  width:100%;height:100%;border-radius:50%;overflow:hidden;
+  background:var(--surf2);border:3px solid var(--bg);
+}
+.pd-avatar-wrap img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+
+.pd-name{font-size:1.35rem;font-weight:800;letter-spacing:-0.01em}
+.pd-userid{font-size:0.85rem;color:var(--ink3);margin-top:0.2rem}
+
+.pd-tags{display:flex;flex-wrap:wrap;justify-content:center;gap:0.5rem;margin-top:0.9rem}
+.pd-tag{
+  display:inline-flex;align-items:center;gap:0.4rem;
+  font-size:0.72rem;font-weight:600;color:var(--ink2);
+  background:var(--surf2);border:1px solid var(--edge);
+  border-radius:999px;padding:0.35rem 0.75rem;
+}
+.pd-tag-partner{color:var(--accXL);border-color:var(--acc)}
+
+.pd-privacy-note{
+  margin-top:1rem;font-size:0.72rem;color:var(--ink3);
+  max-width:340px;line-height:1.5;
+  display:flex;align-items:center;gap:0.4rem;justify-content:center;
+}
+
+/* ---- Stat constellation ------------------------------------------- */
+.pd-stats{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:0.75rem;
+}
+@media(max-width:560px){
+  .pd-stats{grid-template-columns:repeat(2, 1fr)}
+}
+.pd-stat{
+  background:var(--surf);border:1px solid var(--edge);
+  border-radius:var(--rL);
+  padding:1.1rem 0.9rem;
+  display:flex;flex-direction:column;align-items:flex-start;gap:0.4rem;
+}
+.pd-stat-hero{
+  grid-column:span 3;
+  background:linear-gradient(135deg,var(--surf2),var(--surf));
+  border-color:var(--acc);
+  flex-direction:row;align-items:center;gap:1rem;
+}
+.pd-stat-wide{grid-column:span 3}
+@media(max-width:560px){
+  .pd-stat-hero,.pd-stat-wide{grid-column:span 2}
+}
+.pd-stat-icon{
+  width:2.1rem;height:2.1rem;border-radius:0.65rem;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surf3);color:var(--accL);font-size:0.9rem;
+  flex-shrink:0;
+}
+.pd-stat-hero .pd-stat-icon{width:2.6rem;height:2.6rem;font-size:1.1rem;color:var(--gold)}
+.pd-stat-value{font-size:1.4rem;font-weight:800;letter-spacing:-0.01em}
+.pd-stat-hero .pd-stat-value{font-size:1.9rem}
+.pd-stat-value-text{font-size:1.05rem}
+.pd-stat-label{font-size:0.7rem;color:var(--ink3);font-weight:600}
+
+.pd-footer-note{
+  text-align:center;font-size:0.78rem;color:var(--ink3);
+  margin-top:2rem;font-style:italic;
+}
+
+/* ---- Floating bottom action dock ----------------------------------- */
+.pd-dock{
+  position:fixed;left:0;right:0;bottom:0;z-index:200;
+  display:flex;justify-content:center;gap:0.5rem;
+  padding:0.85rem 1rem calc(0.85rem + env(safe-area-inset-bottom));
+}
+.pd-dock-btn{
+  display:flex;flex-direction:column;align-items:center;gap:0.25rem;
+  background:var(--surf);border:1px solid var(--edge);
+  border-radius:var(--rL);
+  padding:0.55rem 1.1rem;
+  font-size:0.65rem;font-weight:700;color:var(--ink2);
+  min-width:76px;
+}
+.pd-dock-btn i{font-size:0.95rem;color:var(--accL)}
+.pd-dock-danger i{color:var(--bad)}
+.pd-dock-danger{color:var(--bad)}
+.pd-loading{opacity:0.6;pointer-events:none}
+
+/* ---- Toast (matches relationship.html's toast shape) ---------------- */
+#pdToastWrap{
+  position:fixed;top:calc(var(--pd-topnav-h) + 0.5rem);left:50%;
+  transform:translateX(-50%);z-index:999;
+  display:flex;flex-direction:column;gap:0.5rem;align-items:center;
+}
+.pd-toast{
+  background:var(--surf);border:1px solid var(--edge);
+  border-radius:var(--r);padding:0.6rem 1rem;
+  font-size:0.78rem;display:flex;align-items:center;gap:0.5rem;
+  box-shadow:0 6px 18px rgba(0,0,0,0.25);
+}
+.pd-toast.ok i{color:var(--ok)}
+.pd-toast.bad i{color:var(--bad)}
+
+.no-print{}
+
+@media print{ .pd-topnav,.pd-dock{display:none} }

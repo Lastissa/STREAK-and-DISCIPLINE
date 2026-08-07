@@ -176,3 +176,20 @@ CACHES = {
 }
 
 SESSION_COOKIE_AGE = 86400 * 2      #Setting max sessio age to two days
+
+# settings.py
+ANYMAIL = {
+  "MAILTRAP_API_TOKEN": "9a502a727a707dfe171e9dffb6727cb5",
+}
+EMAIL_BACKEND = "anymail.backends.mailtrap.EmailBackend"
+DEFAULT_FROM_EMAIL = "hello@demomailtrap.co"
+
+
+#smtp usage
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+DEFAULT_FROM_EMAIL  = 'sydstrict@gmail.com'
+EMAIL_HOST_USER = DEFAULT_FROM_EMAIL
+EMAIL_USE_SSL = True
+EMAIL_HOST_PASSWORD = os.getenv('GMAIL_PASSWORD')
+EMAIL_PORT = 465

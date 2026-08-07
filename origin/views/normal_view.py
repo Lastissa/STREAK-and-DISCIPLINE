@@ -106,7 +106,9 @@ class LogoutUI(View):
 
 class Leaderboard(View):
     """Return html for leaderboard to use"""
-    def get(self, request): return render(request, 'html/leaderboard.html')
+    def get(self, request): return render(request, 'html/leaderboard.html', {
+        'user_istance': request.user
+    })
 
 #PURE JSON
 

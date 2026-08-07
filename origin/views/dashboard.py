@@ -3,12 +3,11 @@ from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, redirect
 from django.utils import timezone
-from ..models import Profile, Commitment, Entries
+from ..models import Friendship, Profile, Commitment, Entries
 from django.contrib import messages
 from django.http import JsonResponse
 
-from django.db import connection
-
+from .utility_view import optimization
 from ..models import ChoicesValidatorInModels
 
 class Onboarding(LoginRequiredMixin, View):
@@ -87,13 +86,7 @@ class Dashboard(LoginRequiredMixin, View):
         return render(request, 'html/dashboard.html', data)
     
 
-def optimization():
-    """This is for optimization and debugging"""
-    print(f"Query count: {len(connection.queries)}")
-    for q in connection.queries:
-        print(f"  {q['time']}s - {q['sql'][:100]}")
-        print("")  # Add a newline for better readability
-        
+
         
         
 class EachCommitmentView(LoginRequiredMixin, View):
@@ -133,6 +126,70 @@ class Relationship(LoginRequiredMixin, View):
             'tier': istance.tier,
             'ai_insight_active' : istance.ai_insight_active,
             })
+
+class PartnerAcceptedDashboard(LoginRequiredMixin, View):
+    login_url = 'v1/login/'
+    def get(self, request, userid):
+        print(request.user, userid)
+        istance = Profile.objects.filter(user=request.user).first()
+        if istance is None:
+            messages.warning(request, message="Please Finish your onboarding before accessing this page, head to login and sigin in with you creedentials and you will be taken to onboarding")
+            return render(request, 'html/full_screen_message.html')
+
+        #validate tht indeed there is a friendship with status accpetd bwn this request.user and userid
+        userid_user_ist = Profile.objects.filter(public_searchable_username__iexact = userid).first()
+        if userid_user_ist is None:
+            #user dey whine me
+            messages.error(request, message= "ERROR 403.   You are not AUTHORIZED to visit this page, to gain access; add partner and once they accept your request, go to dashboard -> relationship -> partners.")
+            return render(request, 'html/full_screen_message.html')
+        
+        #check if partner is still in partner mode or have change to solo
+        if userid_user_ist.social_mode != 'partner':
+            messages.error(request, message= f"ERROR 403. Your partner {userid} have changed their social mode to solo and due to DISCIPLINE & STREAk security, you are denied access to view this page.")
+            return render(request, 'html/full_screen_message.html')
+        #check if that relationship exist
+        relationship = Friendship.objects.filter(
+            from_user = userid_user_ist.user,
+            to_user = request.user,
+            status__iexact = 'accepted'
+        ).first()
+        
+        if relationship is None:
+            messages.error(request, message= f"ERROR 403. You are not authorized to visit this page, This error can surface if {userid} remove you from their Partner List.")
+            return render(request)
+        
+        #relationship is valid and not none
+        
+        commitment_istance = Commitment.objects.filter(user=userid_user_ist.user, is_active=True).all()
+        streaks = [c.streak_count for c in commitment_istance]
+        active_count = len(streaks)
+        combined_streak = sum(streaks)
+        longest_streak = max(streaks) if streaks else 0
+        with_progress = len([s for s in streaks if s > 0])
+        consistency_pct = round((with_progress / active_count) * 100) if active_count else 0
+        total_checkins = Entries.objects.filter(commitment_key__user=userid_user_ist.user).count()
+
+        last_entry = Entries.objects.filter(commitment_key__user=userid_user_ist.user).order_by('-commit_at').first()
+        today = timezone.now().date()
+        last_active_days_ago = (today - last_entry.commit_at).days if last_entry else None
+
+        optimization()
+
+        return render(request, 'html/partner_detail.html', {
+            'theme_mode': request.COOKIES.get('sd-theme', 'dark'),
+            'tier': istance.tier,
+            'ai_insight_active': istance.ai_insight_active,
+            'partner_userid': userid_user_ist.public_searchable_username,
+            'partner_username': userid_user_ist.user.username,
+            'partner_zeal_score': userid_user_ist.zeal_score,
+            'active_commitments_count': active_count,
+            'combined_streak': combined_streak,
+            'longest_streak': longest_streak,
+            'consistency_pct': consistency_pct,
+            'total_checkins': total_checkins,
+            'last_active_days_ago': last_active_days_ago,
+            'partner_since': relationship.updated_at,
+        })
 
 
 

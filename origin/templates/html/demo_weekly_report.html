@@ -746,7 +746,7 @@
                     <p>Start your own private streak — no leaderboard, no pressure, just an honest mirror.</p>
                     <div class="hero-actions">
                         <a href="{% url "origin_signup" %}" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Start Free</a>
-                        <a href="{% url "origin_dashboard" %}" class="btn btn-outline btn-lg"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+                        <a href="{% url "origin_dashboard" %}" class="btn btn-outline btn-lg">Back to Dashboard</a>
                     </div>
                 </div>
             </section>
@@ -772,7 +772,7 @@
             </div>
             <div class="footer-links">
                 <h4>Support</h4>
-                <a href="mailto:support@streakanddiscipline.com"><i class="fas fa-envelope"></i> support@streakanddiscipline.com</a>
+                <a href="mailto:{{oficial_email}}"><i class="fas fa-envelope"></i> support@streakanddiscipline.com</a>
                 <a href="{% url "origin_extra" %}#help"><i class="fas fa-question-circle"></i> Help Center</a>
             </div>
             <div class="footer-links">
@@ -799,7 +799,7 @@
         </div>
     </div>
 
-<!--THIS HANDLES END OF LIFE OF PAGE TO AVOID FREEZING ON SLOW INTERNET OR HIGH TRAFFIC, IT CREATE ILLUSION OF A SPINNER LOADING NEXT PAGE-->
+{% comment %} <!--THIS HANDLES END OF LIFE OF PAGE TO AVOID FREEZING ON SLOW INTERNET OR HIGH TRAFFIC, IT CREATE ILLUSION OF A SPINNER LOADING NEXT PAGE-->
 {% include "reusables/navigation_loader.html" %}
 <style rel="stylesheet">
   {% include 'reusables/navigation_loader.css' %}
@@ -807,7 +807,7 @@
 <script>
   {% include 'reusables/navigation_loader.js' %}
 </script>
-
+ {% endcomment %}
 
     <!-- ========== SCRIPTS ========== -->
     <script>

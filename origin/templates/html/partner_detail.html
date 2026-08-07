@@ -1,0 +1,329 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include "reusables/web_icon.html" %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>@{{ partner_userid }} — Partner — STREAK &amp; DISCIPLINE</title>
+
+  <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
+
+  <!--
+    CRITICAL INLINE — background + spinner.
+    Paints in <50ms. Nothing blocks the first pixel.
+  -->
+  <style>
+    {% include "reusables/spinner.css" %}
+    html, body { margin:0; padding:0; background:#060b14; }
+    body.sd-light { background:#f0f4fa; }
+    .pd-app { opacity:0; visibility:hidden; transition:opacity 0.6s ease, visibility 0.6s ease; }
+    .pd-app.pd-visible { opacity:1; visibility:visible; }
+  </style>
+
+  <!-- LIGHT CSS: blocking, critical layout, no animations -->
+  <link rel="stylesheet" href="{% static 'css/partner_detail_light.css' %}">
+
+  <!-- ADVANCE CSS: non-blocking, loads after first paint -->
+  <link rel="preload" href="{% static 'cdn/partner_detail_advance.css' %}" as="style"
+        onload="this.onload=null;this.rel='stylesheet'" id="adv-css">
+  <noscript><link rel="stylesheet" href="{% static 'cdn/partner_detail_advance.css' %}"></noscript>
+</head>
+<body class="sd-{{ theme_mode }}">
+
+  <!--
+       LOADER — shows instantly, removed after window.load
+        -->
+  {% include "reusables/spinner.html" %}
+
+  <div id="pdToastWrap"></div>
+
+  <!--
+       APP SHELL — NO aside/header shell here on purpose.
+       This page is reached by tapping a single partner, so instead of the
+       usual dashboard aside it gets its own focused, immersive "Partner Room":
+       a floating pill nav up top and a floating action dock at the bottom.
+        -->
+  <div class="pd-app" id="pdApp">
+
+    <!-- ==== FLOATING TOP NAV ==== -->
+    <div class="pd-topnav no-print">
+      <a href="{% url 'origin_relationship' %}" class="pd-pill pd-back" aria-label="Back to Relationships">
+        <i class="fas fa-arrow-left"></i> <span>Relationships</span>
+      </a>
+      <div class="pd-topnav-right">
+        <button class="pd-pill pd-icon-btn" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
+          <i class="fas fa-moon" id="themeIcon"></i>
+        </button>
+      </div>
+    </div>
+
+    <main class="pd-main">
+
+      <!-- ==== HERO — avatar ring is a live consistency-% dial ==== -->
+      <section class="pd-hero">
+        <div class="pd-ring" style="--pct:{{ consistency_pct }}">
+          <div class="pd-avatar-wrap" id="pdAvatarWrap">
+            <div class="sk sk-circle" style="width:100%;height:100%" id="pdAvatarSk"></div>
+          </div>
+        </div>
+
+        <h1 class="pd-name">{{ partner_username }}</h1>
+        <div class="pd-userid">@{{ partner_userid }}</div>
+
+        <div class="pd-tags">
+          <span class="pd-tag pd-tag-partner"><i class="fas fa-user-group"></i> Accountability Partner</span>
+          <span class="pd-tag"><i class="fas fa-calendar-check"></i> Partners since {{ partner_since|date:"M j, Y" }}</span>
+        </div>
+
+        <p class="pd-privacy-note">
+          <i class="fas fa-shield-halved"></i>
+          You're only seeing counts and totals here , For privacy and security their entries, notes,and commitment note will not be shared.
+        </p>
+      </section>
+
+      <!-- ==== STAT CONSTELLATION — aggregate-only cards, staggered reveal ==== -->
+      <section class="pd-stats" aria-label="Partner stats">
+
+        <div class="pd-stat pd-stat-hero" style="--i:0">
+          <div class="pd-stat-icon"><i class="fas fa-fire-flame-curved"></i></div>
+          <div class="pd-stat-value" data-count="{{ combined_streak }}">0</div>
+          <div class="pd-stat-label">Combined Streak (days)</div>
+        </div>
+
+        <div class="pd-stat" style="--i:1">
+          <div class="pd-stat-icon"><i class="fas fa-trophy"></i></div>
+          <div class="pd-stat-value" data-count="{{ longest_streak }}">0</div>
+          <div class="pd-stat-label">Longest Active Streak</div>
+        </div>
+
+        <div class="pd-stat" style="--i:2">
+          <div class="pd-stat-icon"><i class="fas fa-list-check"></i></div>
+          <div class="pd-stat-value" data-count="{{ active_commitments_count }}">0</div>
+          <div class="pd-stat-label">Active Commitments</div>
+        </div>
+
+        <div class="pd-stat" style="--i:3">
+          <div class="pd-stat-icon"><i class="fas fa-bolt"></i></div>
+          <div class="pd-stat-value" data-count="{{ partner_zeal_score }}">0</div>
+          <div class="pd-stat-label">Zeal Score</div>
+        </div>
+
+        <div class="pd-stat" style="--i:4">
+          <div class="pd-stat-icon"><i class="fas fa-chart-line"></i></div>
+          <div class="pd-stat-value" data-count="{{ consistency_pct }}" data-suffix="%">0%</div>
+          <div class="pd-stat-label">Consistency</div>
+        </div>
+
+        <div class="pd-stat" style="--i:5">
+          <div class="pd-stat-icon"><i class="fas fa-book-open"></i></div>
+          <div class="pd-stat-value" data-count="{{ total_checkins }}">0</div>
+          <div class="pd-stat-label">Total Check-ins</div>
+        </div>
+
+        <div class="pd-stat pd-stat-wide" style="--i:6">
+          <div class="pd-stat-icon"><i class="fas fa-clock-rotate-left"></i></div>
+          <div class="pd-stat-value pd-stat-value-text">
+            {% if last_active_days_ago is None %}Not yet active
+            {% elif last_active_days_ago == 0 %}Today
+            {% elif last_active_days_ago == 1 %}Yesterday
+            {% else %}{{ last_active_days_ago }} days ago{% endif %}
+          </div>
+          <div class="pd-stat-label">Last Check-in</div>
+        </div>
+
+      </section>
+
+      <p class="pd-footer-note">
+        Showing up together tends to work better than showing up alone.
+      </p>
+
+    </main>
+
+    <!-- ==== FLOATING BOTTOM ACTION DOCK ==== -->
+    <div class="pd-dock no-print">
+      <a href="{% url 'origin_relationship' %}" class="pd-dock-btn">
+        <i class="fas fa-arrow-left"></i><span>Back</span>
+      </a>
+      <a href="{% url 'origin_leaderboard' %}" class="pd-dock-btn">
+        <i class="fas fa-ranking-star"></i><span>Leaderboard</span>
+      </a>
+      <button class="pd-dock-btn pd-dock-danger" id="pdUnpartnerBtn">
+        <i class="fas fa-user-slash"></i><span>Unpartner</span>
+      </button>
+    </div>
+
+  </div><!-- /pd-app -->
+
+  <!--THIS HANDLES END OF LIFE OF PAGE TO AVOID FREEZING ON SLOW INTERNET OR HIGH TRAFFIC, IT CREATE ILLUSION OF A SPINNER LOADING NEXT PAGE-->
+  {% include "reusables/navigation_loader.html" %}
+  <style rel="stylesheet">
+    {% include 'reusables/navigation_loader.css' %}
+  </style>
+  <script>
+    {% include 'reusables/navigation_loader.js' %}
+  </script>
+
+  <script>
+    (function() {
+    'use strict';
+
+    function getCookie(name) {
+      var v = document.cookie.match('(?:^|;) ?' + name + '=([^;]*)(;|$)');
+      return v ? decodeURIComponent(v[1]) : '';
+    }
+    function setCookie(name, value, days) {
+      var d = new Date(); d.setDate(d.getDate() + (days || 1));
+      document.cookie = name + '=' + encodeURIComponent(value) + ';path=/;expires=' + d.toUTCString();
+    }
+    function el(tag, cls, html) {
+      var e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (html) e.innerHTML = html;
+      return e;
+    }
+    function sanitize(str) {
+      var d = document.createElement('div');
+      d.textContent = str || '';
+      return d.innerHTML;
+    }
+
+    var DEFAULT_AVATAR = 'https://api.dicebear.com/7.x/initials/svg?seed=' +
+                         encodeURIComponent('{{ partner_username }}') +
+                         '&backgroundColor=1e293b&textColor=60a5fa&size=128';
+
+    function toast(msg, kind) {
+      var wrap = document.getElementById('pdToastWrap');
+      if (!wrap) return;
+      var t = el('div', 'pd-toast ' + (kind === 'ok' ? 'ok' : 'bad'));
+      t.innerHTML = '<i class="fas ' + (kind === 'ok' ? 'fa-circle-check' : 'fa-triangle-exclamation') + '"></i> ' + sanitize(msg);
+      wrap.appendChild(t);
+      setTimeout(function() {
+        t.style.transition = 'opacity .25s ease';
+        t.style.opacity = '0';
+        setTimeout(function() { t.remove(); }, 260);
+      }, 4000);
+    }
+
+    /*
+       AVATAR — same /user_picture_data/ pattern would only work for the
+       logged-in user, so partners get a deterministic identicon instead
+       (no extra endpoint, nothing personal leaked).
+        */
+    (function loadPartnerAvatar() {
+      var wrap = document.getElementById('pdAvatarWrap');
+      var sk = document.getElementById('pdAvatarSk');
+      var img = document.createElement('img');
+      img.alt = '{{ partner_username }}';
+      img.onload = function() {
+        if (sk && sk.parentNode) sk.remove();
+        img.classList.add('loaded');
+        wrap.appendChild(img);
+      };
+      img.onerror = function() { img.src = DEFAULT_AVATAR; };
+      img.src = DEFAULT_AVATAR;
+    })();
+
+    /*
+       COUNT-UP — every stat number animates in once, staggered by --i
+        */
+    function animateCounters() {
+      document.querySelectorAll('.pd-stat-value[data-count]').forEach(function(node) {
+        var target = parseInt(node.getAttribute('data-count'), 10) || 0;
+        var suffix = node.getAttribute('data-suffix') || '';
+        var start = null;
+        var duration = 900;
+        function step(ts) {
+          if (!start) start = ts;
+          var progress = Math.min((ts - start) / duration, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          node.textContent = Math.round(eased * target) + suffix;
+          if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      });
+    }
+
+    /*
+       THEME TOGGLE — identical behavior to dashboard.html / relationship.html
+        */
+    var themeBtn  = document.getElementById('themeToggleBtn');
+    var themeIcon = document.getElementById('themeIcon');
+    (function() {
+      var saved = getCookie('sd-theme');
+      if (saved === 'light' && themeIcon) themeIcon.className = 'fas fa-sun';
+    })();
+    function setTheme(dark) {
+      document.body.classList.toggle('sd-light', !dark);
+      if (themeIcon) themeIcon.className = dark ? 'fas fa-moon' : 'fas fa-sun';
+      setCookie('sd-theme', dark ? 'dark' : 'light', 365);
+    }
+    themeBtn && themeBtn.addEventListener('click', function() {
+      setTheme(document.body.classList.contains('sd-light'));
+    });
+
+    /*
+       UNPARTNER — same GET+query endpoint as relationship.html
+        */
+    var unpartnerBtn = document.getElementById('pdUnpartnerBtn');
+    unpartnerBtn && unpartnerBtn.addEventListener('click', function() {
+      if (!confirm('Unpartner with @{{ partner_userid }}? This cannot be undone.')) return;
+      unpartnerBtn.disabled = true;
+      unpartnerBtn.classList.add('pd-loading');
+
+      fetch('/v1/relationship/unpartner/?userid=' + encodeURIComponent('{{ partner_userid }}'), {
+        method: 'GET',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        credentials: 'include'
+      }).then(function(r) {
+        return r.json().catch(function() { return {}; }).then(function(d) { return { status: r.status, data: d }; });
+      }).then(function(res) {
+        if (res.status === 200) {
+          toast('Unpartnered. Taking you back to Relationships...', 'ok');
+          setTimeout(function() { window.location.href = '{% url "origin_relationship" %}'; }, 1200);
+        } else {
+          unpartnerBtn.disabled = false;
+          unpartnerBtn.classList.remove('pd-loading');
+          toast((res.data && res.data.message) || 'Could not unpartner right now.', 'bad');
+        }
+      }).catch(function() {
+        unpartnerBtn.disabled = false;
+        unpartnerBtn.classList.remove('pd-loading');
+        toast('Network error — please try again.', 'bad');
+      });
+    });
+
+    /*
+       INIT / REVEAL
+        */
+    var _pdInitDone = false;
+    var _pdRevealed = false;
+
+    function reveal() {
+      if (_pdRevealed) return;
+      _pdRevealed = true;
+      var app = document.getElementById('pdApp');
+      if (app) app.classList.add('pd-visible');
+    }
+    function init() {
+      if (_pdInitDone) return;
+      _pdInitDone = true;
+      animateCounters();
+    }
+
+    if (document.readyState === 'complete') {
+      reveal(); init();
+    } else {
+      window.addEventListener('load', function() { reveal(); init(); });
+    }
+    setTimeout(function() { reveal(); init(); }, 8000);
+
+    })();
+  </script>
+
+  <!-- Loader JS (handles its own hide on window.load + 8s fallback) -->
+  <script>{% include "reusables/spinner.js" %}</script>
+
+</body>
+</html>

@@ -71,6 +71,7 @@ def template_based_reusables(request):
         'footer_copyright_note': footer_copyright_note,
         'custom_base_url' : os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8002').split(',')[0],
         'logo_url' : Static.logo_url(),
+        'oficial_email': Static.official_email(),
         'mobile_dark_url': static('img/mobile_dark.png'), #'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/mobile_dark_iuvjyq.png',
         'mobile_light_url': static('img/mobile_light.png'),#'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/mobile_light_xvuaxj.png',
         'desktop_dark_url' : static('img/desktop_dark.png'),#'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/desktop_dark_nvt6lr.png',
@@ -120,7 +121,7 @@ class Static:
     @classmethod
     def official_email(self) -> str:
         """The official email account i use to send email to users"""
-        return "STREAK & DISCIPLINE <noreply@resend.dev>"
+        return "sydstrict@gmail.com"
     
     @classmethod
     def tier(self, tier : int) -> list:
