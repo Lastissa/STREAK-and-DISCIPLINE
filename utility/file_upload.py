@@ -44,7 +44,7 @@ def upload_profile_picture(uploaded_file: bytes, user_email:str, old_user_email=
         eager_async=True,           # Process in background
         resource_type='image',
         allowed_formats=['jpg', 'jpeg', 'png', 'webp'],
-        max_file_size=5 * 1024 * 1024,  # 3MB max before upload
+        max_file_size=3 * 1024 * 1024,  # 3MB max before upload, it it not reach sef
     )
     
     return {
@@ -54,7 +54,7 @@ def upload_profile_picture(uploaded_file: bytes, user_email:str, old_user_email=
 
 
 def delete_profile_picture(user_email):
-    """Delete an profile picture from Cloudinary.where publiv id is thier email in upper"""
+    """Delete an profile picture from Cloudinary.where public id is thier email in upper"""
     if user_email:
         try:
             cloudinary.uploader.destroy(user_email)
@@ -62,3 +62,31 @@ def delete_profile_picture(user_email):
         except Exception:
             return False
     return False
+
+
+
+
+def upload_news_banner(uploaded_file: bytes, id: int)-> dict:
+    """name tag is the id of that news, save the news first and them grab the  id collect image link, save the link also"""
+    result = cloudinary.uploader.upload(
+        uploaded_file,
+        folder=f"discipline_and_streak_profile_picture/NEWS/BANNERS/",
+        public_id=f"news_banner_{id}",
+        overwrite=True,
+        eager=[{
+            'width': 200,
+            'height': 200,
+            'crop': 'fill',
+            'gravity': 'face',
+            'quality': 100,          # okay quality - it's just a  banner
+            'fetch_format': 'auto',
+        }],
+        eager_async=True,           # Process in background
+        resource_type='image',
+        allowed_formats=['jpg', 'jpeg', 'png', 'webp'],
+        max_file_size=3 * 1024 * 1024,  # 3MB max before upload
+    )
+    return {
+        'url': result['eager'][0]['secure_url'],  # Use eager transformed version
+        'public_id': result['public_id']
+        }

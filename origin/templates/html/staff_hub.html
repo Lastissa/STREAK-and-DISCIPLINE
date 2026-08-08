@@ -1,0 +1,221 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include "reusables/web_icon.html" %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Staff tools directory for STREAK & DISCIPLINE.">
+  <title>Staff Hub — STREAK &amp; DISCIPLINE</title>
+
+  <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
+  <link rel="stylesheet" href="{% static 'css/staff_hub.css' %}">
+
+  <style>
+    /*
+      This block only holds the spinner partial's own CSS (shared include, not
+      page-specific) — every Staff Hub-specific style lives in
+      static/css/staff_hub.css so this page has no coupling to any other
+      page's stylesheet, including blog_and_update.css.
+    */
+    {% include "reusables/spinner.css" %}
+  </style>
+</head>
+<body class="{% if page_theme != 'dark' %}sd-light{% endif %}">
+
+  {% include "reusables/spinner.html" %}
+
+  <div class="js-loading-indicator" id="jsLoadingIndicator">
+    <span class="js-loading-dot"></span>
+    <span>Loading interface…</span>
+  </div>
+
+  <div class="staff-app" id="staffApp">
+    <a href="#main" class="skip-link">Skip to content</a>
+
+    <!-- ============ TOP BAR ============ -->
+    <header class="staff-topbar">
+      <div class="topbar-inner">
+        <button class="icon-btn" id="backBtn" aria-label="Go back"><i class="fas fa-arrow-left"></i></button>
+
+        <a href="{% url 'origin_dashboard' %}" class="brand">
+          <img src="{{ logo_url }}" alt="" class="brand-logo">
+          <span class="brand-name">STREAK<em>&amp;</em>DISCIPLINE</span>
+        </a>
+
+        <nav class="topbar-nav" aria-label="Primary">
+          <a href="{% url 'origin_dashboard' %}" class="topbar-nav-link">Dashboard</a>
+          <a href="{% url 'origin_staff_home' %}" class="topbar-nav-link active">Staff Hub</a>
+          <a href="{% url 'origin_blog' %}" class="topbar-nav-link">Blog</a>
+        </nav>
+
+        <div class="topbar-actions">
+          <button class="icon-btn" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
+          <button class="icon-btn menu-toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============ MOBILE / SLIDE NAV ============ -->
+    <div class="nav-overlay" id="navOverlay"></div>
+    <nav class="mobile-nav" id="mobileNav" aria-label="Menu">
+      <div class="mobile-nav-head">
+        <span><i class="fas fa-shield-halved"></i> Staff Menu</span>
+        <button class="icon-btn" id="navCloseBtn" aria-label="Close menu"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="mobile-nav-links">
+        <div class="mobile-nav-lbl">Navigation</div>
+        <a href="{% url 'origin_dashboard' %}" class="mobile-nav-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
+        <a href="{% url 'origin_staff_home' %}" class="mobile-nav-link active"><i class="fas fa-shield-halved"></i> Staff Hub</a>
+        <a href="{% url 'origin_blog' %}" class="mobile-nav-link"><i class="fas fa-newspaper"></i> Blog &amp; Updates</a>
+        <a href="{% url 'origin_leaderboard' %}" class="mobile-nav-link"><i class="fas fa-ranking-star"></i> Leaderboard</a>
+
+        <div class="mobile-nav-lbl">Account</div>
+        <button type="button" class="mobile-nav-link" id="logoutBtn"><i class="fas fa-right-from-bracket"></i> Log Out</button>
+      </div>
+    </nav>
+
+    <main class="staff-main" id="main">
+      <section class="staff-hero">
+        <span class="staff-badge"><i class="fas fa-shield-halved"></i> Staff Only</span>
+        <h2>Staff Hub</h2>
+        <p>Every staff-only tool on the site, in one place. New tools show up here automatically as they're built.</p>
+      </section>
+
+      <!--
+        ==========================================================================
+        TOOL CARDS — do not add cards here by hand. This loop renders whatever is
+        in the `staff_tools` context variable (see origin/views/staff.py ->
+        StaffHub.STAFF_TOOLS for how to register a new tool). Keeping the cards
+        data-driven means future tools need zero HTML changes.
+        ==========================================================================
+      -->
+      <div class="staff-tool-grid" id="staffToolGrid">
+        {% for tool in staff_tools %}
+          {% if tool.status == 'live' and tool.url %}
+          <a href="{{ tool.url }}" class="staff-tool-card">
+            <div class="staff-tool-icon"><i class="fas {{ tool.icon }}"></i></div>
+            <h3>{{ tool.title }}</h3>
+            <p>{{ tool.description }}</p>
+          </a>
+          {% else %}
+          <div class="staff-tool-card soon" aria-disabled="true" tabindex="-1">
+            <span class="staff-tool-status soon">Coming soon</span>
+            <div class="staff-tool-icon"><i class="fas {{ tool.icon }}"></i></div>
+            <h3>{{ tool.title }}</h3>
+            <p>{{ tool.description }}</p>
+          </div>
+          {% endif %}
+        {% empty %}
+        <div class="staff-empty">
+          <i class="fas fa-toolbox"></i>
+          <h3>No staff tools yet</h3>
+          <p>Register the first one in StaffHub.STAFF_TOOLS.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </main>
+  </div>
+
+  <form method="POST" action="{% url 'origin_logout' %}" id="logoutForm" style="display:none">{% csrf_token %}</form>
+
+  <script>{% include "reusables/spinner.js" %}</script>
+
+  {% include "reusables/navigation_loader.html" %}
+  <style rel="stylesheet">
+    {% include 'reusables/navigation_loader.css' %}
+  </style>
+  <script>
+    {% include 'reusables/navigation_loader.js' %}
+  </script>
+
+  <script>
+  /*
+    ==========================================================================
+    STAFF HUB JS — kept intentionally small/generic (theme, nav, logout, back
+    button) because this page has no unique interactive behaviour of its own
+    yet; it's just a directory of links. If a FUTURE staff tool needs its own
+    JS (like blog_and_update.html's "Add News" modal does), do NOT bolt it on
+    here — build that tool as its own page/template with its own <script>
+    block, and just add a STAFF_TOOLS entry in staff.py pointing to it. This
+    file should stay just shell chrome (theme/nav/logout) forever.
+    ==========================================================================
+  */
+  (function() {
+    'use strict';
+    const app = document.getElementById('staffApp');
+
+    function boot() {
+      if (!app.classList.contains('loaded')) {
+        app.classList.add('loaded');
+        const indicator = document.getElementById('jsLoadingIndicator');
+        if (indicator) {
+          indicator.classList.add('hidden');
+          setTimeout(function() { if (indicator.parentNode) indicator.remove(); }, 500);
+        }
+        init();
+      }
+    }
+    setTimeout(boot, 400);
+
+    const $ = function(s, c) { return (c || document).querySelector(s); };
+    function getCookie(n) { var v = document.cookie.match('(?:^|;) ?' + n + '=([^;]*)'); return v ? decodeURIComponent(v[1]) : ''; }
+    function setCookie(n, v, d) { var t = new Date(); t.setDate(t.getDate() + (d || 1)); document.cookie = n + '=' + encodeURIComponent(v) + ';path=/;expires=' + t.toUTCString(); }
+
+    function init() {
+      initTheme();
+      initBackButton();
+      initMobileNav();
+      initLogout();
+    }
+
+    // Cookie name kept as "sd_theme" (underscore) to match the server-side
+    // check in this template's <body class> above. NOTE: most other pages in
+    // this project still use "sd-theme" (hyphen) — see blog_and_update.html's
+    // note on the same mismatch. Don't "fix" this one in isolation; it needs
+    // to be reconciled project-wide in one pass.
+    function initTheme() {
+      var btn = $('#themeToggle'), icon = btn.querySelector('i');
+      function set(dark) {
+        document.body.classList.toggle('sd-light', !dark);
+        icon.className = dark ? 'fas fa-moon' : 'fas fa-sun';
+        setCookie('sd-theme', dark ? 'dark' : 'light', 365);
+      }
+      btn.addEventListener('click', function() { set(document.body.classList.contains('sd-light')); });
+      if (getCookie('sd-theme') === 'dark') { document.body.classList.remove('sd-light'); icon.className = 'fas fa-moon'; }
+    }
+
+    function initBackButton() {
+      var btn = $('#backBtn');
+      var fallback = "{% url 'origin_dashboard' %}";
+      btn.addEventListener('click', function() {
+        var cameFromSameSite = document.referrer && document.referrer.indexOf(window.location.origin) === 0;
+        if (cameFromSameSite && window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.href = fallback;
+        }
+      });
+    }
+
+    function initMobileNav() {
+      var nav = $('#mobileNav'), toggle = $('#menuToggle'), overlay = $('#navOverlay'), closeBtn = $('#navCloseBtn');
+      function open() { nav.classList.add('open'); overlay.classList.add('show'); toggle.classList.add('open'); toggle.setAttribute('aria-expanded', 'true'); }
+      function close() { nav.classList.remove('open'); overlay.classList.remove('show'); toggle.classList.remove('open'); toggle.setAttribute('aria-expanded', 'false'); }
+      toggle.addEventListener('click', function() { nav.classList.contains('open') ? close() : open(); });
+      overlay.addEventListener('click', close);
+      closeBtn.addEventListener('click', close);
+      nav.querySelectorAll('.mobile-nav-link[href]').forEach(function(l) { l.addEventListener('click', close); });
+      document.addEventListener('keydown', function(e) { if (e.key === 'Escape') close(); });
+    }
+
+    function initLogout() {
+      var btn = $('#logoutBtn'), form = $('#logoutForm');
+      btn && btn.addEventListener('click', function() {
+        if (confirm('Log out?')) { form ? form.submit() : window.location.href = "{% url 'origin_logout' %}"; }
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

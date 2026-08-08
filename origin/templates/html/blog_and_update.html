@@ -4,8 +4,8 @@
 <head>
   {% include "reusables/web_icon.html" %}
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Articles, product updates and tips from STREAK & DISCIPLINE.">
   <title>Blog & Updates — STREAK &amp; DISCIPLINE</title>
 
   <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
@@ -18,7 +18,7 @@
     body.sd-light{--bg:#f1f5f9;--surface:#ffffff;--text:#0f172a;--text-secondary:#475569;--border:#e2e8f0}
     {% include "reusables/spinner.css" %}
     .blog-app{opacity:0;visibility:hidden;transition:opacity 0.4s ease,visibility 0.4s ease}
-    .blog-app.loaded{opacity:1;visibility:visible;display:flex;min-height:100vh}
+    .blog-app.loaded{opacity:1;visibility:visible}
 
     .js-loading-indicator {
       position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:10002;
@@ -38,7 +38,7 @@
         id="heavy-css">
   <noscript><link rel="stylesheet" href="{% static 'cdn/advance_blog_and_update.css' %}"></noscript>
 </head>
-<body class="{% if request.COOKIES.sd_theme != 'dark' %}sd-light{% endif %}">
+<body class="{% if page_mode != 'dark' %}sd-light{% endif %}">
 
   {% include "reusables/spinner.html" %}
 
@@ -48,163 +48,249 @@
   </div>
 
   <div class="blog-app" id="blogApp">
-    <canvas id="particleCanvas"></canvas>
-    <div class="aside-overlay" id="asideOverlay"></div>
+    <a href="#main" class="skip-link">Skip to content</a>
 
-    <aside class="blog-aside" id="blogAside">
-      <div class="aside-scroll">
-        <div class="aside-top">
-          <div class="aside-avatar-wrap" id="asideAvatarWrap">
-            {% if request.user.is_authenticated %}
-            <div class="sk sk-circle" style="width:48px;height:48px" id="asideAvatarSk"></div>
-            {% else %}
-            <img src="{{ logo_url }}" alt="S&D" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
-            {% endif %}
-          </div>
-          <div class="aside-username">{% if request.user.is_authenticated %}{{ request.user.username }}{% else %}DISCIPLINE &amp; STREAK{% endif %}</div>
+    <!-- ============ TOP BAR — replaces the aside entirely ============ -->
+    <header class="blog-topbar">
+      <div class="topbar-inner">
+        <button class="icon-btn" id="backBtn" aria-label="Go back"><i class="fas fa-arrow-left"></i></button>
+
+        <a href="{% if request.user.is_authenticated %}{% url 'origin_dashboard' %}{% else %}/v1/{% endif %}" class="brand">
+          <img src="{{ logo_url }}" alt="" class="brand-logo">
+          <span class="brand-name">STREAK<em>&amp;</em>DISCIPLINE</span>
+        </a>
+
+        <nav class="topbar-nav" aria-label="Primary">
           {% if request.user.is_authenticated %}
-          <span class="tier-badge tier-{{ tier|default:'free' }}">
-            {% if tier == 'gold' %}<i class="fas fa-crown"></i> Gold
-            {% elif tier == 'premium' %}<i class="fas fa-gem"></i> Premium
-            {% else %}<i class="fas fa-user"></i> Free{% endif %}
-          </span>
-          {% endif %}
-        </div>
-
-        <div class="aside-section-lbl">Filter by Category</div>
-        <div class="category-filter" id="categoryFilter">
-          <button class="cat-filter-btn active" data-cat="all">All</button>
-          {% for cat in categories %}
-          <button class="cat-filter-btn" data-cat="{{ cat|lower }}">{{ cat }}</button>
-          {% endfor %}
-        </div>
-
-        <nav class="aside-nav">
-          <div class="aside-section-lbl">Navigation</div>
-          {% if request.user.is_authenticated %}
-          <a href="{% url 'origin_dashboard' %}" class="aside-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
-          <a href="{% url 'origin_relationship' %}" class="aside-link"><i class="fas fa-gauge-high"></i> Relationship</a>
-          <a href="{% url "origin_profile" %}" class="aside-link"><i class="fas fa-circle-user"></i> Profile</a>
-          <a href="{% url "origin_leaderboard" %}" class="aside-link"><i class="fas fa-ranking-star"></i> Leaderboard</a>
-          <a href="/v1/groups/" class="aside-link"><i class="fas fa-users"></i> Groups</a>
-          <a href="{% url "origin_blog" %}" class="aside-link active"><i class="fas fa-newspaper"></i> Blog & Updates</a>
-          <a href="/v1/reports/" class="aside-link"><i class="fas fa-chart-line"></i> Analytics</a>
+          <a href="{% url 'origin_dashboard' %}" class="topbar-nav-link">Dashboard</a>
+          <a href="{% url 'origin_blog' %}" class="topbar-nav-link active">Blog</a>
+          <a href="{% url 'origin_leaderboard' %}" class="topbar-nav-link">Leaderboard</a>
           {% else %}
-          <a href="/v1/" class="aside-link"><i class="fas fa-home"></i> Home</a>
-          <a href="/v1/blog/" class="aside-link active"><i class="fas fa-newspaper"></i> Blog & Updates</a>
-          <a href="/v1/weekly-analysis/" class="aside-link"><i class="fas fa-chart-line"></i> Sample Report</a>
-          <a href="/v1/extra/#pricing" class="aside-link"><i class="fas fa-tag"></i> Pricing</a>
-          <a href="{% url 'origin_login' %}" class="aside-link"><i class="fas fa-sign-in"></i> Sign In</a>
-          <a href="{% url 'origin_signup' %}" class="aside-link"><i class="fas fa-user-plus"></i> Start Free</a>
+          <a href="/v1/" class="topbar-nav-link">Home</a>
+          <a href="{% url 'origin_blog' %}" class="topbar-nav-link active">Blog</a>
+          <a href="/v1/extra/#pricing" class="topbar-nav-link">Pricing</a>
           {% endif %}
-          <div class="aside-section-lbl">Support</div>
-          <a href="https://wa.me/2347013687825" target="_blank" rel="noopener" class="aside-link"><i class="fab fa-whatsapp"></i> WhatsApp</a>
-          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link"><i class="fas fa-envelope"></i> Email</a>
         </nav>
-        {% if request.user.is_authenticated and tier == 'free' %}
-        <div class="aside-upgrade">
-          <h4><i class="fas fa-gem"></i> Upgrade to Pro</h4>
-          <p>Unlock AI insights, 50 commitments, and more.</p>
-          <a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm btn-full">Start 7-Day Trial</a>
+
+        <div class="topbar-actions">
+          {% if request.user.is_staff or request.user.is_superuser %}
+          <button class="btn btn-primary btn-sm btn-add-news" id="addNewsBtn">
+            <i class="fas fa-plus"></i><span>Add News</span>
+          </button>
+          {% endif %}
+          <button class="icon-btn" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
+          <button class="icon-btn menu-toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
         </div>
+      </div>
+    </header>
+
+    <!-- ============ MOBILE / SLIDE NAV ============ -->
+    <div class="nav-overlay" id="navOverlay"></div>
+    <nav class="mobile-nav" id="mobileNav" aria-label="Menu">
+      <div class="mobile-nav-head">
+        <span><i class="fas fa-bars"></i> Menu</span>
+        <button class="icon-btn" id="navCloseBtn" aria-label="Close menu"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="mobile-nav-links">
+        {% if request.user.is_staff or request.user.is_superuser %}
+        <div class="mobile-nav-lbl">Staff</div>
+        <button type="button" class="mobile-nav-link" id="addNewsBtnMobile"><i class="fas fa-plus"></i> Add News</button>
+        {% endif %}
+
+        <div class="mobile-nav-lbl">Navigation</div>
+        {% if request.user.is_authenticated %}
+        <a href="{% url 'origin_dashboard' %}" class="mobile-nav-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
+        <a href="{% url 'origin_relationship' %}" class="mobile-nav-link"><i class="fas fa-user-group"></i> Relationship</a>
+        <a href="{% url 'origin_profile' %}" class="mobile-nav-link"><i class="fas fa-circle-user"></i> Profile</a>
+        <a href="{% url 'origin_leaderboard' %}" class="mobile-nav-link"><i class="fas fa-ranking-star"></i> Leaderboard</a>
+        <a href="/v1/groups/" class="mobile-nav-link"><i class="fas fa-users"></i> Groups</a>
+        <a href="{% url 'origin_blog' %}" class="mobile-nav-link active"><i class="fas fa-newspaper"></i> Blog &amp; Updates</a>
+        <a href="{% url "origin_reports" %}" class="mobile-nav-link"><i class="fas fa-chart-line"></i> Analytics</a>
+        {% else %}
+        <a href="/v1/" class="mobile-nav-link"><i class="fas fa-home"></i> Home</a>
+        <a href="{% url 'origin_blog' %}" class="mobile-nav-link active"><i class="fas fa-newspaper"></i> Blog &amp; Updates</a>
+        <a href="/v1/weekly-analysis/" class="mobile-nav-link"><i class="fas fa-chart-line"></i> Sample Report</a>
+        <a href="/v1/extra/#pricing" class="mobile-nav-link"><i class="fas fa-tag"></i> Pricing</a>
+        <a href="{% url 'origin_login' %}" class="mobile-nav-link"><i class="fas fa-sign-in"></i> Sign In</a>
+        <a href="{% url 'origin_signup' %}" class="mobile-nav-link"><i class="fas fa-user-plus"></i> Start Free</a>
+        {% endif %}
+
+        <div class="mobile-nav-lbl">Support</div>
+        <a href="https://wa.me/2347013687825" target="_blank" rel="noopener" class="mobile-nav-link"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+        <a href="mailto:issaabdulsalamope11@gmail.com" class="mobile-nav-link"><i class="fas fa-envelope"></i> Email</a>
+
+        {% if request.user.is_authenticated %}
+        <div class="mobile-nav-lbl">Account</div>
+        <button type="button" class="mobile-nav-link" id="logoutBtn"><i class="fas fa-right-from-bracket"></i> Log Out</button>
         {% endif %}
       </div>
-      {% if request.user.is_authenticated %}
-      <div class="aside-logout">
-        <button class="aside-logout-btn" id="logoutBtn"><i class="fas fa-right-from-bracket"></i> Log Out</button>
-      </div>
-      {% endif %}
-    </aside>
+    </nav>
 
-    <div class="blog-wrap">
-      <header class="blog-header">
-        <button class="menu-toggle" id="menuToggle" aria-label="Menu"><span></span><span></span><span></span></button>
-        <h1 class="blog-title">Blog & Updates</h1>
-        <div class="blog-header-right">
-          <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
-        </div>
-      </header>
+    <main class="blog-main" id="main">
+      <section class="blog-hero">
+        <h2>Discipline, Unpacked</h2>
+        <p>Articles, tips, and product updates to help you keep your word — every single day.</p>
+      </section>
 
-      <main class="blog-main">
-        <section class="blog-hero">
-          <h2>Discipline, Unpacked</h2>
-          <p>Articles, tips, and product updates to help you keep your word — every single day.</p>
-        </section>
-
-        <div class="blog-layout" id="blogLayout">
-          {% for post in posts %}
-          <article class="blog-card {% if post.featured %}blog-card-featured{% endif %}" data-category="{{ post.tag|lower }}">
-            {% if post.image_url %}
-            <div class="blog-card-image">
-              <img src="{{ post.image_url }}" alt="{{ post.title }}" loading="lazy">
-            </div>
-            {% endif %}
-            <div class="blog-card-body">
-              <div class="blog-card-tag">{{ post.tag }}</div>
-              <h3>{{ post.title }}</h3>
-              <p class="blog-card-excerpt">{{ post.excerpt }}</p>
-              <div class="blog-card-meta">
-                <span><i class="fas fa-calendar"></i> {{ post.date }}</span>
-                <span><i class="fas fa-clock"></i> {{ post.read_time }}</span>
-              </div>
-              {% if post.url %}
-              <a href="{{ post.url }}" class="blog-card-link">Read More <i class="fas fa-arrow-right"></i></a>
-              {% endif %}
-            </div>
-          </article>
-          {% empty %}
-          <div class="blog-empty">
-            <i class="fas fa-newspaper"></i>
-            <h3>No posts yet</h3>
-            <p>Check back soon for discipline tips, product updates, and community stories.</p>
-          </div>
+      {% if categories %}
+      <div class="tag-filter-scroll">
+        <div class="tag-filter" id="tagFilter">
+          <button class="tag-chip active" data-tag="all">All</button>
+          {% for cat in categories %}
+          <button class="tag-chip" data-tag="{{ cat|lower }}">{{ cat }}</button>
           {% endfor %}
         </div>
+      </div>
+      {% endif %}
 
-        <div class="end-of-content" id="endOfContent">
-          <div class="end-line"></div>
-          <span>You've reached the end</span>
-          <p>Check back later for more updates</p>
+      <div class="blog-grid" id="blogGrid">
+        {% for post in posts %}
+        <article class="post-card {% if post.featured %}post-card-featured{% endif %}" data-tag="{{ post.tag|lower }}">
+          {% if post.image_url %}
+          <div class="post-card-image">
+            <img src="{{ post.image_url }}" alt="{{ post.title }}" loading="lazy">
+          </div>
+          {% endif %}
+          <div class="post-card-body">
+            <div class="post-card-tag">{{ post.tag }}</div>
+            <h3>{{ post.title }}</h3>
+            <p class="post-card-excerpt">{{ post.excerpt }}</p>
+            <div class="post-card-meta">
+              <span><i class="fas fa-calendar"></i> {{ post.date }}</span>
+              <span><i class="fas fa-clock"></i> {{ post.read_time }}</span>
+            </div>
+            {% if post.url %}
+            <a href="{{ post.url }}" class="post-card-link">Read More <i class="fas fa-arrow-right"></i></a>
+            {% endif %}
+          </div>
+        </article>
+        {% empty %}
+        <div class="blog-empty">
+          <i class="fas fa-newspaper"></i>
+          <h3>No posts yet</h3>
+          <p>Check back soon for discipline tips, product updates, and community stories.</p>
         </div>
+        {% endfor %}
+      </div>
 
-        <footer class="blog-footer">
-          <div class="footer-grid">
-            <div class="footer-brand">
-              <span class="footer-logo">STREAK &amp; DISCIPLINE</span>
-              <p>A private discipline journal for those serious about keeping promises to themselves. No badges. No noise. Just you vs your word.</p>
-              <div class="footer-socials">
-                <a href="https://x.com/lastissa" target="_blank" rel="noopener" aria-label="X"><i class="fab fa-x-twitter"></i></a>
-                <a href="https://github.com/lastissa" target="_blank" rel="noopener" aria-label="GitHub"><i class="fab fa-github"></i></a>
-                <a href="https://wa.me/2347013687825" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-              </div>
-            </div>
-            <div class="footer-links">
-              <h4>Explore</h4>
-              <a href="/v1/">Home</a>
-              <a href="/v1/blog/">Blog</a>
-              <a href="/v1/weekly-analysis/">Sample Report</a>
-              <a href="/v1/extra/#pricing">Pricing</a>
-            </div>
-            <div class="footer-links">
-              <h4>Support</h4>
-              <a href="mailto:issaabdulsalamope11@gmail.com"><i class="fas fa-envelope"></i> Email Support</a>
-              <a href="https://wa.me/2347013687825"><i class="fab fa-whatsapp"></i> WhatsApp</a>
-              <a href="tel:+2347013687825"><i class="fas fa-phone"></i> +234 701 368 7825</a>
-            </div>
-            <div class="footer-links">
-              <h4>Legal</h4>
-              <a href="{% url 'origin_extra' %}#privacy">Privacy Policy</a>
-              <a href="{% url 'origin_extra' %}#terms">Terms of Service</a>
-              <a href="{% url 'origin_extra' %}#contact">Contact Us</a>
-            </div>
+      <div class="end-of-content" id="endOfContent">
+        <div class="end-line"></div>
+        <span>You've reached the end</span>
+        <p>Check back later for more updates</p>
+      </div>
+    </main>
+
+    <footer class="blog-footer">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <span class="footer-logo">STREAK &amp; DISCIPLINE</span>
+          <p>A private discipline journal for those serious about keeping promises to themselves. No badges. No noise. Just you vs your word.</p>
+          <div class="footer-socials">
+            <a href="https://x.com/lastissa" target="_blank" rel="noopener" aria-label="X"><i class="fab fa-x-twitter"></i></a>
+            <a href="https://github.com/lastissa" target="_blank" rel="noopener" aria-label="GitHub"><i class="fab fa-github"></i></a>
+            <a href="https://wa.me/2347013687825" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
           </div>
-          <div class="footer-bottom">
-            <p>&copy; {{ footer_copyright_note }} &middot; Built with discipline in Lagos, Nigeria.</p>
-          </div>
-        </footer>
-      </main>
-    </div>
+        </div>
+        <div class="footer-links">
+          <h4>Explore</h4>
+          <a href="/v1/">Home</a>
+          <a href="{% url 'origin_blog' %}">Blog</a>
+          <a href="/v1/weekly-analysis/">Sample Report</a>
+          <a href="/v1/extra/#pricing">Pricing</a>
+        </div>
+        <div class="footer-links">
+          <h4>Support</h4>
+          <a href="mailto:issaabdulsalamope11@gmail.com"><i class="fas fa-envelope"></i> Email Support</a>
+          <a href="https://wa.me/2347013687825"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+          <a href="tel:+2347013687825"><i class="fas fa-phone"></i> +234 701 368 7825</a>
+        </div>
+        <div class="footer-links">
+          <h4>Legal</h4>
+          <a href="{% url 'origin_extra' %}#privacy">Privacy Policy</a>
+          <a href="{% url 'origin_extra' %}#terms">Terms of Service</a>
+          <a href="{% url 'origin_extra' %}#contact">Contact Us</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; {{ footer_copyright_note }} &middot; Built with discipline in Lagos, Nigeria.</p>
+      </div>
+    </footer>
   </div>
+
+  <!-- ============ ADD NEWS MODAL (staff / superuser only) ============ -->
+  {% if request.user.is_staff or request.user.is_superuser %}
+  <div class="modal-overlay" id="addNewsOverlay"></div>
+  <div class="news-modal" id="addNewsModal" role="dialog" aria-modal="true" aria-labelledby="addNewsTitle" aria-hidden="true">
+    <div class="news-modal-head">
+      <h2 id="addNewsTitle"><i class="fas fa-newspaper"></i> Add News Post</h2>
+      <button class="icon-btn" id="closeNewsModal" aria-label="Close"><i class="fas fa-times"></i></button>
+    </div>
+
+    <form class="news-form" id="addNewsForm" novalidate>
+      {% csrf_token %}
+
+      <label for="newsTitle">Title
+        <input type="text" id="newsTitle" name="title" maxlength="200" required placeholder="e.g. New Feature: Weekly Leaderboard is Live">
+      </label>
+
+      <div class="form-row">
+        <label for="newsTag">Tag
+          <select id="newsTag" name="tag" required>
+            {% for t in news_tags %}
+            <option value="{{ t }}">{{ t|title }}</option>
+            {% empty %}
+            <option value="quotes" selected>Quotes</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label for="newsReadTime">Approx. read time (min)
+          <input type="number" id="newsReadTime" name="read_time" required min="1" max="120" step="1" placeholder="3">
+        </label>
+      </div>
+
+      <label for="newsExcerpt">Excerpt
+        <textarea id="newsExcerpt" name="excerpt" rows="2" maxlength="240" required placeholder="A one or two sentence summary shown on the blog card"></textarea>
+        <span class="char-count" id="excerptCount">0 / 240</span>
+      </label>
+
+      <label for="newsBanner">Banner image
+        <div class="file-drop" id="fileDrop">
+          <input type="file" id="newsBanner" name="banner" accept="image/png,image/jpeg,image/webp">
+          <div class="file-drop-empty" id="fileDropEmpty">
+            <i class="fas fa-image"></i>
+            <span>Tap to choose an image</span>
+            <small>PNG, JPG or WEBP</small>
+          </div>
+          <img class="file-drop-preview" id="filePreview" alt="" hidden>
+        </div>
+      </label>
+
+      <label class="toggle-row" for="newsFeatured">
+        <span>Featured<small>Show this post full-width on the blog page</small></span>
+        <span class="switch">
+          <input type="checkbox" id="newsFeatured" name="featured">
+          <span class="switch-track"></span>
+        </span>
+      </label>
+
+      <label for="newsContent">Full content
+        <textarea id="newsContent" name="actual_content" rows="8" required placeholder="Write the full article here..."></textarea>
+      </label>
+
+      <p class="form-error" id="newsFormError" hidden></p>
+
+      <div class="news-form-actions">
+        <button type="button" class="btn btn-ghost" id="cancelNewsBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="submitNewsBtn">
+          <span class="btn-label">Publish Post</span>
+        </button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+
+  <div class="toast-stack" id="toastStack"></div>
 
   {% if request.user.is_authenticated %}
   <form method="POST" action="{% url 'origin_logout' %}" id="logoutForm" style="display:none">{% csrf_token %}</form>
@@ -212,105 +298,351 @@
 
   <script>{% include "reusables/spinner.js" %}</script>
 
-<!--THIS HANDLES END OF LIFE OF PAGE TO AVOID FREEZING ON SLOW INTERNET OR HIGH TRAFFIC, IT CREATE ILLUSION OF A SPINNER LOADING NEXT PAGE-->
-{% include "reusables/navigation_loader.html" %}
-<style rel="stylesheet">
-  {% include 'reusables/navigation_loader.css' %}
-</style>
+
 <script>
-  {% include 'reusables/navigation_loader.js' %}
-</script>
+(function () {
+  'use strict';
+  const app = document.getElementById('blogApp');
+  const heavyCss = document.getElementById('heavy-css');
+  
+  const $ = (s, c) => (c || document).querySelector(s);
+  const $$ = (s, c) => (c || document).querySelectorAll(s);
 
-  <script>
-  (function() {
-    'use strict';
-    const app = document.getElementById('blogApp');
-    const heavyCss = document.getElementById('heavy-css');
+  function getCookie(name) {
+  const match = document.cookie.match('(?:^|;)\\s*' + name + '=([^;]*)');
+  return match ? decodeURIComponent(match[1]) : '';
+}
 
-    function boot() {
-      if (!app.classList.contains('loaded')) {
-        app.classList.add('loaded');
-        const indicator = document.getElementById('jsLoadingIndicator');
-        if (indicator) {
-          indicator.classList.add('hidden');
-          setTimeout(function() { if (indicator.parentNode) indicator.remove(); }, 500);
-        }
-        init();
+  function setCookie(name, value, days) {
+    const d = new Date();
+    d.setDate(d.getDate() + (days || 1));
+    document.cookie =
+      name + '=' + encodeURIComponent(value) +
+      ';path=/;expires=' + d.toUTCString();
+  }
+
+  function boot() {
+    if (!app || app.classList.contains('loaded')) return;
+
+    app.classList.add('loaded');
+
+    const indicator = document.getElementById('jsLoadingIndicator');
+    if (indicator) {
+      indicator.classList.add('hidden');
+      setTimeout(() => {
+        if (indicator.parentNode) indicator.remove();
+      }, 500);
+    }
+
+    init();
+  }
+
+  if (heavyCss) {
+    if (heavyCss.rel === 'stylesheet') boot();
+    else heavyCss.addEventListener('load', boot);
+  }
+
+  setTimeout(boot, 8000);
+
+  function init() {
+    initTheme();
+    initBackButton();
+    initMobileNav();
+    initLogout();
+    initCategoryFilter();
+    initAddNewsModal();
+  }
+
+  function initTheme() {
+    const btn = $('#themeToggle');
+    if (!btn) return;
+
+    const icon = btn.querySelector('i');
+
+    function apply(dark) {
+      document.body.classList.toggle('sd-light', !dark);
+      if (icon) icon.className = dark ? 'fas fa-moon' : 'fas fa-sun';
+      setCookie('sd-theme', dark ? 'dark' : 'light', 365);
+    }
+
+    btn.addEventListener('click', function () {
+      apply(document.body.classList.contains('sd-light'));
+    });
+
+    if (getCookie('sd-theme') === 'dark') {
+      document.body.classList.remove('sd-light');
+      if (icon) icon.className = 'fas fa-moon';
+    }
+  }
+
+  function initBackButton() {
+    const btn = $('#backBtn');
+    if (!btn) return;
+
+    const fallback = "{% if request.user.is_authenticated %}{% url 'origin_dashboard' %}{% else %}/v1/{% endif %}";
+
+    btn.addEventListener('click', function () {
+      const sameSite =
+        document.referrer &&
+        document.referrer.indexOf(window.location.origin) === 0;
+
+      if (sameSite && window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = fallback;
       }
+    });
+  }
+
+  function initMobileNav() {
+    const nav = $('#mobileNav');
+    const toggle = $('#menuToggle');
+    const overlay = $('#navOverlay');
+    const closeBtn = $('#navCloseBtn');
+
+    if (!nav || !toggle || !overlay) return;
+
+    function open() {
+      nav.classList.add('open');
+      overlay.classList.add('show');
+      toggle.classList.add('open');
+      toggle.setAttribute('aria-expanded', 'true');
     }
 
-    if (heavyCss) {
-      if (heavyCss.rel === 'stylesheet') boot();
-      else heavyCss.addEventListener('load', boot);
-    }
-    setTimeout(boot, 8000);
-
-    const $ = function(s,c) { return (c||document).querySelector(s); };
-    const $$ = function(s,c) { return (c||document).querySelectorAll(s); };
-    function getCookie(n) { var v = document.cookie.match('(?:^|;) ?'+n+'=([^;]*)'); return v ? decodeURIComponent(v[1]) : ''; }
-    function setCookie(n,v,d) { var t=new Date(); t.setDate(t.getDate()+(d||1)); document.cookie=n+'='+encodeURIComponent(v)+';path=/;expires='+t.toUTCString(); }
-
-    function init() {
-      initTheme();
-      initSidebar();
-      initLogout();
-      initCategoryFilter();
-      {% if request.user.is_authenticated %}loadUserPicture();{% endif %}
+    function close() {
+      nav.classList.remove('open');
+      overlay.classList.remove('show');
+      toggle.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
     }
 
-    function initTheme() {
-      var btn = $('#themeToggle'), icon = btn.querySelector('i');
-      function set(dark) { document.body.classList.toggle('sd-light',!dark); icon.className=dark?'fas fa-moon':'fas fa-sun'; setCookie('sd-theme',dark?'dark':'light',365); }
-      btn.addEventListener('click',function(){ set(document.body.classList.contains('sd-light')); });
-      if (getCookie('sd-theme')==='dark') { document.body.classList.remove('sd-light'); icon.className='fas fa-moon'; }
-    }
+    toggle.addEventListener('click', function () {
+      nav.classList.contains('open') ? close() : open();
+    });
 
-    function initSidebar() {
-      var sidebar=$('#blogAside'),toggle=$('#menuToggle'),overlay=$('#asideOverlay');
-      function open(){sidebar.classList.add('open');overlay.classList.add('show');}
-      function close(){sidebar.classList.remove('open');overlay.classList.remove('show');}
-      toggle.addEventListener('click',function(){ sidebar.classList.contains('open')?close():open(); });
-      overlay.addEventListener('click',close);
-      sidebar.querySelectorAll('.aside-link').forEach(function(l){ l.addEventListener('click',function(){ if(window.innerWidth<1024)close(); }); });
-    }
+    overlay.addEventListener('click', close);
+    if (closeBtn) closeBtn.addEventListener('click', close);
 
-    function initCategoryFilter() {
-      var buttons = $$('.cat-filter-btn');
-      var cards = $$('.blog-card');
-      buttons.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          buttons.forEach(function(b) { b.classList.remove('active'); });
-          this.classList.add('active');
-          var cat = this.dataset.cat;
-          cards.forEach(function(card) {
-            card.style.display = (cat === 'all' || card.dataset.category === cat) ? '' : 'none';
-          });
+    nav.querySelectorAll('.mobile-nav-link[href]').forEach(function (link) {
+      link.addEventListener('click', close);
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') close();
+    });
+
+    const mobileAdd = $('#addNewsBtnMobile');
+    if (mobileAdd) {
+      mobileAdd.addEventListener('click', function () {
+        close();
+        if (window.__openNewsModal) window.__openNewsModal();
+      });
+    }
+  }
+
+  function initCategoryFilter() {
+    const buttons = $$('.tag-chip');
+    const cards = $$('.post-card');
+
+    if (!buttons.length) return;
+
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        buttons.forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+
+        const tag = this.dataset.tag;
+
+        cards.forEach(function (card) {
+          card.style.display =
+            tag === 'all' || card.dataset.tag === tag ? '' : 'none';
         });
+      });
+    });
+  }
+
+  function initLogout() {
+    {% if request.user.is_authenticated %}
+    const btn = $('#logoutBtn');
+    const form = $('#logoutForm');
+
+    if (btn) {
+      btn.addEventListener('click', function () {
+        if (confirm('Log out?')) {
+          if (form) form.submit();
+          else window.location.href = "{% url 'origin_logout' %}";
+        }
+      });
+    }
+    {% endif %}
+  }
+
+  function showToast(message, type) {
+    const stack = $('#toastStack');
+    if (!stack) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-' + (type || 'success');
+    toast.innerHTML =
+      '<i class="fas ' +
+      (type === 'error' ? 'fa-times-circle' : 'fa-check-circle') +
+      '"></i><span>' +
+      message +
+      '</span>';
+
+    stack.appendChild(toast);
+
+    setTimeout(function () {
+      toast.remove();
+    }, 4000);
+  }
+
+  function initAddNewsModal() {
+    const modal = $('#addNewsModal');
+    if (!modal) return;
+
+    const overlay = $('#addNewsOverlay');
+    const openBtn = $('#addNewsBtn');
+    const closeBtn = $('#closeNewsModal');
+    const cancelBtn = $('#cancelNewsBtn');
+    const form = $('#addNewsForm');
+    const errorBox = $('#newsFormError');
+    const submitBtn = $('#submitNewsBtn');
+    const excerpt = $('#newsExcerpt');
+    const count = $('#excerptCount');
+    const banner = $('#newsBanner');
+    const preview = $('#filePreview');
+    const empty = $('#fileDropEmpty');
+
+    const ENDPOINT = '{% url "origin_staff_publish_news" %}';
+
+    let lastFocused = null;
+
+    function open() {
+      lastFocused = document.activeElement;
+      overlay.classList.add('show');
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+
+      setTimeout(function () {
+        const title = $('#newsTitle');
+        if (title) title.focus();
+      }, 200);
+    }
+
+    function close() {
+      overlay.classList.remove('show');
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+      if (lastFocused) lastFocused.focus();
+    }
+
+    window.__openNewsModal = open;
+
+    if (openBtn) openBtn.addEventListener('click', open);
+    overlay.addEventListener('click', close);
+    if (closeBtn) closeBtn.addEventListener('click', close);
+    if (cancelBtn) cancelBtn.addEventListener('click', close);
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && modal.classList.contains('open')) {
+        close();
+      }
+    });
+
+    if (excerpt && count) {
+      excerpt.addEventListener('input', function () {
+        count.textContent = excerpt.value.length + ' / 240';
       });
     }
 
-    {% if request.user.is_authenticated %}
-    function loadUserPicture(){
-      fetch("{% url 'origin_user_picture' %}",{headers:{'X-CSRFToken':getCookie('csrftoken')}})
-        .then(function(r){ return r.json(); })
-        .then(function(d){
-          var url=d.url||'';
-          var wrap=$('#asideAvatarWrap'); if(!wrap)return;
-          var img=document.createElement('img');img.alt='{{request.user.username}}';img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%';
-          img.onerror=function(){img.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\' viewBox=\'0 0 48 48\'%3E%3Ccircle cx=\'24\' cy=\'24\' r=\'24\' fill=\'%231e293b\'/%3E%3Ccircle cx=\'24\' cy=\'19\' r=\'9\' fill=\'%23475669\'/%3E%3Cellipse cx=\'24\' cy=\'46\' rx=\'16\' ry=\'10\' fill=\'%23475669\'/%3E%3C/svg%3E';};
-          img.onload=function(){var sk=$('#asideAvatarSk');if(sk)sk.remove();wrap.appendChild(img);};
-          img.src=url||'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\' viewBox=\'0 0 48 48\'%3E%3Ccircle cx=\'24\' cy=\'24\' r=\'24\' fill=\'%231e293b\'/%3E%3Ccircle cx=\'24\' cy=\'19\' r=\'9\' fill=\'%23475669\'/%3E%3Cellipse cx=\'24\' cy=\'46\' rx=\'16\' ry=\'10\' fill=\'%23475669\'/%3E%3C/svg%3E';
-        }).catch(function(){});
-    }
-    {% endif %}
+    if (banner) {
+      banner.addEventListener('change', function () {
+        const file = banner.files && banner.files[0];
+        if (!file) return;
 
-    function initLogout(){
-      {% if request.user.is_authenticated %}
-      var btn=$('#logoutBtn'),form=$('#logoutForm');
-      btn&&btn.addEventListener('click',function(){if(confirm('Log out?'))form?form.submit():window.location.href="{% url 'origin_logout' %}";});
-      {% endif %}
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          preview.src = e.target.result;
+          preview.hidden = false;
+          empty.hidden = true;
+        };
+        reader.readAsDataURL(file);
+      });
     }
-  })();
-  </script>
+
+    function setSubmitting(state) {
+      if (!submitBtn) return;
+      submitBtn.disabled = state;
+
+      const label = submitBtn.querySelector('.btn-label');
+      if (label) label.textContent = state ? 'Publishing…' : 'Publish Post';
+    }
+
+    if (!form) return;
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      if (errorBox) errorBox.hidden = true;
+
+      const title = $('#newsTitle').value.trim();
+      const tag = $('#newsTag').value;
+      const readTime = $('#newsReadTime').value;
+      const featured = $('#newsFeatured').checked;
+      const content = $('#newsContent').value.trim();
+      const bannerFile = banner.files && banner.files[0];
+
+      if (!title || !tag || !excerpt.value.trim() || !readTime || !content) {
+          if (errorBox) {
+            errorBox.textContent = 'Please fill in all required fields before publishing.';
+            errorBox.hidden = false;
+          }
+          return;
+        }
+
+      const fd = new FormData();
+      fd.append('title', title);
+      fd.append('tag', tag);
+      fd.append('excerpt', excerpt.value.trim());
+      fd.append('read_time', readTime);
+    if (bannerFile) {
+      fd.append('banner', bannerFile);}
+      fd.append('featured', featured ? 'true' : 'false');
+      fd.append('actual_content', content);
+
+      setSubmitting(true);
+
+      fetch(ENDPOINT, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        body: fd
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error('Request failed');
+          return res.json().catch(function () { return {}; });
+        })
+        .then(function () {
+          setSubmitting(false);
+          showToast('Post published.', 'success');
+          form.reset();
+          preview.hidden = true;
+          empty.hidden = false;
+          if (count) count.textContent = '0 / 240';
+          close();
+        })
+        .catch(function () {
+          setSubmitting(false);
+          if (errorBox) {
+            errorBox.textContent =
+              'Something went wrong publishing this post. Please try again.';
+            errorBox.hidden = false;
+          }
+          showToast('Failed to publish post.', 'error');
+        });
+    });
+  }
+})();
+</script>
 </body>
 </html>

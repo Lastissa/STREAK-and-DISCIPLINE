@@ -1,4 +1,4 @@
 from django.contrib import admin
 from .models import *
 
-admin.site.register((CustomeUser,Profile, PasswordResetToken,Friendship, Commitment, Entries, News))
+admin.site.register((CustomeUser,Profile, PasswordResetToken,Friendship, Commitment, Entries, News, StaffTempToken))

@@ -1,0 +1,457 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include "reusables/web_icon.html" %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Sign Up — STREAK & DISCIPLINE</title>
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="{{font_awesome_all_min_css}}"/>
+
+    <!-- Inline critical loader -->
+    <style
+    >{% include "reusables/spinner.css" %}
+    {% include "reusables/custom_message.css" %}
+    </style>
+
+    <!-- Lightweight CSS (critical path) -->
+    <link rel="stylesheet" href="{% static 'css/signup.css' %}">
+
+    <!-- Heavy CSS (deferred, non-blocking) -->
+    <link rel="preload" href="{% static 'cdn/signup.css' %}" as="style"
+          onload="this.onload=null;this.rel='stylesheet'" id="heavy-css">
+    <noscript>
+        <link rel="stylesheet" href="{% static 'cdn/signup.css' %}">
+    </noscript>
+
+    <style>
+        /* ---- staff-only additions, kept local so the shared signup.css stays untouched ---- */
+        .staff-badge{
+            display:inline-flex;align-items:center;gap:0.4rem;
+            padding:0.3rem 0.7rem;border-radius:999px;
+            background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.35);
+            color:#3b82f6;font-size:0.72rem;font-weight:600;letter-spacing:.03em;
+            text-transform:uppercase;margin-bottom:0.9rem;
+        }
+        .access-code-row{display:flex;gap:0.6rem;align-items:flex-start}
+        .access-code-row .btn{flex-shrink:0;white-space:nowrap}
+        .access-code-hint{margin-top:0.4rem;font-size:0.78rem;color:var(--text-secondary,#94a3b8);line-height:1.5}
+        .access-code-status{
+            margin-top:0.6rem;font-size:0.82rem;line-height:1.5;
+            padding:0.6rem 0.8rem;border-radius:8px;display:none;
+        }
+        .access-code-status.show{display:block}
+        .access-code-status.status-ok{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#16a34a}
+        .access-code-status.status-err{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444}
+        .staff-fields-locked{opacity:0.45;pointer-events:none;filter:grayscale(0.3);transition:opacity 0.25s ease,filter 0.25s ease}
+        .staff-fields-unlocked{opacity:1;pointer-events:auto;filter:none}
+        .token-group{position:relative}
+        .token-group input{letter-spacing:0.12em;font-family:'Courier New',monospace;text-transform:none}
+        .btn-outline:disabled{opacity:0.5;cursor:not-allowed}
+    </style>
+</head>
+<body>
+    <!-- Loader -->
+    {% include "reusables/spinner.html" %}
+    {% include "reusables/custom_message.html" %}
+
+    <!-- Header -->
+    <header class="site-header" id="siteHeader">
+        <div class="container header-inner">
+            <a href="/" class="logo-link">
+                <img src="{{logo_url}}"
+                     alt="Logo" class="logo-img" width="36" height="36"
+                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2236%22 height=%2236%22%3E%3Crect width=%2236%22 height=%2236%22 rx=%228%22 fill=%22%233b82f6%22/%3E%3Ctext x=%2250%25%22 y=%2255%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2218%22 font-family=%22system-ui%22%3ES%26D%3C/text%3E%3C/svg%3E'">
+                <span class="logo-text">STREAK & DISCIPLINE</span>
+            </a>
+            <div class="nav-actions">
+                <span class="nav-hint">Not staff?</span>
+                <a href="{% url 'origin_signup' %}" class="btn btn-outline btn-sm">Regular Sign Up</a>
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="signup-main">
+        <div class="signup-split">
+            <!-- Left: Image Panel (desktop only) -->
+            <div class="signup-visual" id="signupVisual">
+                <div class="visual-overlay"></div>
+                <img src="{{user_2}}"
+                    alt="Staff access"
+                    class="lazy-img visual-img"
+                    width="800" height="1000"
+                    loading = 'lazy'
+                >
+                <div class="visual-quote">
+                    <p>"Access is earned personally, not requested anonymously."</p>
+                </div>
+            </div>
+
+            <!-- Right: Form Panel -->
+            <div class="signup-form-panel">
+                <div class="form-container">
+                    <div class="form-header">
+                        <span class="staff-badge"><i class="fas fa-shield-halved"></i> Staff Access Only</span>
+                        <h1>Staff Sign Up</h1>
+                        <p>Get an access code from an admin, then create your staff account.</p>
+                    </div>
+
+                    <!-- Staff Signup Form -->
+                    <form method="POST" class="signup-form" id="staffSignupForm" novalidate>
+                        {% csrf_token %}
+
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-envelope input-icon"></i>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    id="email"
+                                    placeholder="you@example.com"
+                                    required
+                                    autocomplete="email"
+                                    class="form-input"
+                                >
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-user input-icon"></i>
+                                <input type="text" name="username" id="username" placeholder="Choose a username" required autocomplete="nickname" class="form-input">
+                            </div>
+                        </div>
+
+                        <!-- STEP 1: request the access code -->
+                        <div class="form-group">
+                            <label for="getCodeBtn">Access Code</label>
+                            <div class="access-code-row">
+                                <button type="button" class="btn btn-outline btn-block" id="getCodeBtn">
+                                    <span class="mini-spinner" id="getCodeSpinner" style="display:none;"></span>
+                                    <span id="getCodeBtnText"><i class="fas fa-key"></i> Get Access Code</span>
+                                </button>
+                            </div>
+                            <p class="access-code-hint">
+                                An admin passes this code to you personally (call, WhatsApp, in person). It is never sent to you directly by the system.
+                            </p>
+                            <div class="access-code-status" id="accessCodeStatus"></div>
+                        </div>
+
+                        <!-- STEP 2: fields below stay locked until a code has been requested -->
+                        <div id="staffLockedFields" class="staff-fields-locked">
+                            <div class="form-group token-group">
+                                <label for="token">Enter Access Code</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-hashtag input-icon"></i>
+                                    <input
+                                        type="text"
+                                        name="token"
+                                        id="token"
+                                        placeholder="st-xxxxxxxx"
+                                        autocomplete="one-time-code"
+                                        class="form-input"
+                                    >
+                                </div>
+                                <span class="form-error" id="tokenError" style="display:none"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="password1">Password</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-lock input-icon"></i>
+                                    <input
+                                        type="password"
+                                        name="password1"
+                                        id="password1"
+                                        placeholder="Create a strong password"
+                                        autocomplete="new-password"
+                                        class="form-input"
+                                    >
+                                    <button type="button" class="toggle-password" data-target="password1" aria-label="Show password">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="password2">Confirm Password</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-lock input-icon"></i>
+                                    <input
+                                        type="password"
+                                        name="password2"
+                                        id="password2"
+                                        placeholder="Repeat your password"
+                                        autocomplete="new-password"
+                                        class="form-input"
+                                    >
+                                    <button type="button" class="toggle-password" data-target="password2" aria-label="Show password">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="form-group checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="agree_terms" id="agreeTerms">
+                                    <span class="checkmark"></span>
+                                    I agree to the <a href="{% url 'origin_extra' %}#terms" target="_self">Terms of Service</a> and <a href="{% url 'origin_extra' %}#privacy" target="_self">Privacy Policy</a>
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBtn">
+                                <span class="mini-spinner" style="display:none;"></span>
+                                <span class="btn-text"><i class="fas fa-user-shield"></i> Create Staff Account</span>
+                            </button>
+                        </div>
+
+                        <p class="form-error" id="formError" style="display:none"></p>
+                    </form>
+
+                    <p class="form-footer">
+                        Already have an account? <a href="{% url 'origin_login' %}">Sign In</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+
+    <!-- Scripts -->
+    <script>
+        {% include "reusables/spinner.js" %}
+        {% include "reusables/custom_message.js" %}
+        // Load heavy CSS
+        const heavyCss = document.getElementById('heavy-css');
+        if (heavyCss && heavyCss.rel !== 'stylesheet') {
+            heavyCss.rel = 'stylesheet';
+        }
+
+        // Theme toggle
+        (function() {
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return null;
+            }
+            function setCookie(name, value, days) {
+                const d = new Date();
+                d.setTime(d.getTime() + (days * 86400000));
+                document.cookie = name + '=' + value + ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax';
+            }
+            const body = document.body;
+            const btn = document.getElementById('themeToggle');
+            const saved = getCookie('sd-theme');
+            if (saved === 'light') {
+                body.classList.add('light-mode');
+                if (btn) btn.innerHTML = '<i class="fas fa-sun"></i>';
+            }
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    if (body.classList.contains('light-mode')) {
+                        body.classList.remove('light-mode');
+                        setCookie('sd-theme', 'dark', 365);
+                        btn.innerHTML = '<i class="fas fa-moon"></i>';
+                    } else {
+                        body.classList.add('light-mode');
+                        setCookie('sd-theme', 'light', 365);
+                        btn.innerHTML = '<i class="fas fa-sun"></i>';
+                    }
+                });
+            }
+        })();
+
+        // Password visibility toggle
+        document.querySelectorAll('.toggle-password').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                const icon = this.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.replace('fa-eye', 'fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.replace('fa-eye-slash', 'fa-eye');
+                }
+            });
+        });
+
+        // ---- Staff access-code flow ----
+        (function() {
+            function getCsrfCookie() {
+                const value = `; ${document.cookie}`;
+                const parts = value.split('; csrftoken=');
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return document.querySelector('input[name=csrfmiddlewaretoken]').value;
+            }
+
+            const emailInput = document.getElementById('email');
+            const usernameInput = document.getElementById('username');
+            const getCodeBtn = document.getElementById('getCodeBtn');
+            const getCodeSpinner = document.getElementById('getCodeSpinner');
+            const getCodeBtnText = document.getElementById('getCodeBtnText');
+            const statusBox = document.getElementById('accessCodeStatus');
+            const lockedFields = document.getElementById('staffLockedFields');
+            const tokenInput = document.getElementById('token');
+            const tokenError = document.getElementById('tokenError');
+            const formError = document.getElementById('formError');
+            const form = document.getElementById('staffSignupForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const password1 = document.getElementById('password1');
+            const password2 = document.getElementById('password2');
+            const agreeTerms = document.getElementById('agreeTerms');
+
+            let codeRequested = false;
+            let submitting = false;
+
+            function showStatus(message, ok) {
+                statusBox.textContent = message;
+                statusBox.className = 'access-code-status show ' + (ok ? 'status-ok' : 'status-err');
+            }
+
+            function unlockFields() {
+                lockedFields.classList.remove('staff-fields-locked');
+                lockedFields.classList.add('staff-fields-unlocked');
+                tokenInput.focus();
+            }
+
+            getCodeBtn.addEventListener('click', function() {
+                const email = emailInput.value.trim();
+                const username = usernameInput.value.trim();
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                if (!emailRegex.test(email)) {
+                    showStatus('Enter a valid email address first.', false);
+                    emailInput.focus();
+                    return;
+                }
+                if (!username) {
+                    showStatus('Choose a username first.', false);
+                    usernameInput.focus();
+                    return;
+                }
+
+                getCodeBtn.disabled = true;
+                getCodeSpinner.style.display = 'inline-block';
+                getCodeBtnText.innerHTML = 'Requesting…';
+
+                fetch("{% url 'origin_get_staff_token' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfCookie()
+                    },
+                    body: JSON.stringify({ email: email, username: username })
+                })
+                .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
+                .then(function(result) {
+                    getCodeBtn.disabled = false;
+                    getCodeSpinner.style.display = 'none';
+                    getCodeBtnText.innerHTML = '<i class="fas fa-rotate-right"></i> Resend Access Code';
+                    showStatus(result.data.message || (result.ok ? 'Request received.' : 'Something went wrong.'), result.ok);
+                    if (result.ok) {
+                        codeRequested = true;
+                        unlockFields();
+                        emailInput.setAttribute('readonly', 'readonly');
+                        usernameInput.setAttribute('readonly', 'readonly');
+                    }
+                })
+                .catch(function() {
+                    getCodeBtn.disabled = false;
+                    getCodeSpinner.style.display = 'none';
+                    getCodeBtnText.innerHTML = '<i class="fas fa-key"></i> Get Access Code';
+                    showStatus('Network error requesting your code. Please try again.', false);
+                });
+            });
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                formError.style.display = 'none';
+                tokenError.style.display = 'none';
+
+                if (submitting) return;
+
+                if (!codeRequested) {
+                    showStatus('Request an access code before creating your account.', false);
+                    return;
+                }
+                if (!tokenInput.value.trim()) {
+                    tokenError.textContent = 'Enter the access code an admin gave you.';
+                    tokenError.style.display = 'block';
+                    tokenInput.focus();
+                    return;
+                }
+                if (password1.value.length < 8) {
+                    formError.textContent = 'Password must be at least 8 characters.';
+                    formError.style.display = 'block';
+                    password1.focus();
+                    return;
+                }
+                if (password1.value !== password2.value) {
+                    formError.textContent = 'Passwords do not match.';
+                    formError.style.display = 'block';
+                    password2.focus();
+                    return;
+                }
+                if (!agreeTerms.checked) {
+                    formError.textContent = 'Please agree to the Terms of Service and Privacy Policy.';
+                    formError.style.display = 'block';
+                    return;
+                }
+
+                submitting = true;
+                submitBtn.disabled = true;
+                submitBtn.querySelector('.mini-spinner').style.display = 'inline-block';
+                submitBtn.querySelector('.btn-text').innerHTML = 'Creating account…';
+
+                fetch("{% url 'origin_verify_staff_token' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfCookie()
+                    },
+                    body: JSON.stringify({
+                        email: emailInput.value.trim(),
+                        username: usernameInput.value.trim(),
+                        token: tokenInput.value.trim(),
+                        password1: password1.value,
+                        password2: password2.value
+                    })
+                })
+                .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
+                .then(function(result) {
+                    if (result.data.message === 'success') {
+                        submitBtn.querySelector('.btn-text').innerHTML = 'Account created — redirecting…';
+                        window.location.href = "{% url 'origin_login' %}";
+                        return;
+                    }
+                    submitting = false;
+                    submitBtn.disabled = false;
+                    submitBtn.querySelector('.mini-spinner').style.display = 'none';
+                    submitBtn.querySelector('.btn-text').innerHTML = '<i class="fas fa-user-shield"></i> Create Staff Account';
+                    formError.textContent = result.data.message || 'Something went wrong creating your account.';
+                    formError.style.display = 'block';
+                })
+                .catch(function() {
+                    submitting = false;
+                    submitBtn.disabled = false;
+                    submitBtn.querySelector('.mini-spinner').style.display = 'none';
+                    submitBtn.querySelector('.btn-text').innerHTML = '<i class="fas fa-user-shield"></i> Create Staff Account';
+                    formError.textContent = 'Network error creating your account. Please try again.';
+                    formError.style.display = 'block';
+                });
+            });
+        })();
+    </script>
+</body>
+</html>

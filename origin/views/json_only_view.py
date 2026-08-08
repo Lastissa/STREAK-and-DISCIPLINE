@@ -873,12 +873,14 @@ class ReportsData(LoginRequiredMixin, View):
     login_url = '/v1/login/'
 
     def get(self, request):
+        today = request.GET.get('week') or timezone.datetime.now().date()
+        total_user_commitments = Commitment.objects.filter(user = request.user).order_by('-id').all()
         data = {
             # ---- HERO ----
-            "week_range_label": "Jul 13 – Jul 19, 2026",
-            "week_number_label": "Week 29",
+            "week_range_label":f"{today - timezone.timedelta(days=7)} - {today}",
+            "week_number_label": "Week",
             "generated_note": "Generated from 6 of 7 check-ins.",
-            "current_week_iso": "2026-07-13",
+            "current_week_iso": timezone.datetime.now().date(),
             "prev_week_iso": "2026-07-06",   # null/omit to disable the "prev" button
             "next_week_iso": None,           # null/omit to disable the "next" button (e.g. current week)
 

@@ -17,7 +17,8 @@ class Onboarding(LoginRequiredMixin, View):
         #check user tier, if it does not exist, redirect user to onboarding
         user_profile = Profile.objects.filter(user = request.user).first()
         if user_profile is None:
-            if request.user.is_superuser:messages.info(request, message="Admin Account dectected!")
+            if request.user.is_superuser or request.user.is_staff: return redirect('origin_staff_home')
+                
             return render(request,'html/onboarding.html')
             logger.error(msg="User is not suppose to have a profile , if user have a profile, redirect them to dashboard")
         else: return redirect('origin_dashboard')
@@ -52,12 +53,12 @@ class Dashboard(LoginRequiredMixin, View):
     """THE FIRST LANDING PAGE WHEN DASHBOARD IS CLICKED, COMES RIGHT AFTER ONBOARDING DONE ALSO"""
     login_url = '/v1/login/'
     def get(self, request):
+        if request.user.is_staff or request.user.is_superuser: return redirect('origin_staff_home')        
         user_profile = Profile.objects.filter(user = request.user).order_by('tier').first()
         if user_profile is None:
             #incase user does not have tier configured and want to access this page, dont allow
             messages.warning(request, message="Please Finish your onboarding before accessing this page, head to login and sigin in with you creedentials and you will be taken to onboarding")
             return render(request, 'html/full_screen_message.html')
-        
         commitment_istance = Commitment.objects.filter(user=request.user, is_active=True).all()
         consistency = [0 for i in commitment_istance if i.streak_count > 0]    #Find the amount of streak score > 0 / total commitment (i use the tenchique of all ocnsistncy must have a streak score but are they all greater than zero?) ; that give the consistency_cpt
         avg_streak_Counter = [ i.streak_count for i in commitment_istance]
@@ -145,7 +146,7 @@ class PartnerAcceptedDashboard(LoginRequiredMixin, View):
         
         #check if partner is still in partner mode or have change to solo
         if userid_user_ist.social_mode != 'partner':
-            messages.error(request, message= f"ERROR 403. Your partner {userid} have changed their social mode to solo and due to DISCIPLINE & STREAk security, you are denied access to view this page.")
+            messages.error(request, message= f"ERROR 403. Your partner {userid} have changed their social mode to solo and due to STREAK & DISCIPLINE security, you are denied access to view this page.")
             return render(request, 'html/full_screen_message.html')
         #check if that relationship exist
         relationship = Friendship.objects.filter(
@@ -219,7 +220,6 @@ class DashbaordAnalytics(LoginRequiredMixin, View):
     login_url = '/v1/login/'
     def get(self, request):
         istance = Profile.objects.filter(user = request.user).first()
-        
         return render(request, 'html/reports.html', {
             'theme_mode': request.COOKIES.get('sd-theme', 'dark'),
             })

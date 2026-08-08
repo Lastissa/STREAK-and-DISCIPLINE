@@ -188,113 +188,104 @@ class BlogView(View):
     def get(self, request):
         post = []
         data = News.objects.order_by('-date').all() #use Pgination later #brb
-        if data.count() < 1 : return render(request, 'html/blog_and_update.html', {})
+        
+        # posts = [
+        #         {
+        #             'tag': 'update',
+        #             'title': 'New Feature: Weekly Leaderboard is Live',
+        #             'excerpt': 'See how you rank against other disciplined minds every Sunday. Opt in from your profile settings to appear on the board.',
+        #             'date': 'Jul 28, 2026',
+        #             'read_time': '2 min read',
+        #             'url': reverse('origin_blog') + f"/{request.user.pk}",
+        #             'image_url': '',  # leave empty if no image
+        #             'featured': True,  # this one spans full width
+        #         },
+        #         {
+        #             'tag': 'tip',
+        #             'title': 'The 2-Minute Rule: How to Never Miss a Check-In',
+        #             'excerpt': 'On your worst days, your minimum effort is your secret weapon. Here is how to set one that actually works.',
+        #             'date': 'Jul 25, 2026',
+        #             'read_time': '3 min read',
+        #             'image_url': '',
+        #             'featured': False,
+        #         },
+        #         {
+        #             'tag': 'guide',
+        #             'title': 'Why Your Streak Reset Is a Gift, Not a Failure',
+        #             'excerpt': 'The number does not define you. How you respond to the reset does. A different way to think about breaking the chain.',
+        #             'date': 'Jul 20, 2026',
+        #             'read_time': '4 min read',
+        #             'url': '/v1/blog/streak-reset-gift/',
+        #             'image_url': '',
+        #             'featured': False,
+        #         },
+        #         {
+        #             'tag': 'story',
+        #             'title': 'How Opeyemi Went From Zero to 217 Days',
+        #             'excerpt': 'A community member shares how one honest sentence a day rebuilt their confidence and changed their mornings.',
+        #             'date': 'Jul 15, 2026',
+        #             'read_time': '5 min read',
+        #             'url': '/v1/blog/opeyemi-217-days/',
+        #             'image_url': '',
+        #             'featured': False,
+        #         },
+        #         {
+        #             'tag': 'update',
+        #             'title': 'Accountability Partners Are Here',
+        #             'excerpt': 'You can now invite someone to see your consistency score. Not your entries — just your commitment to showing up.',
+        #             'date': 'Jul 10, 2026',
+        #             'read_time': '2 min read',
+        #             'url': '/v1/blog/accountability-partners/',
+        #             'image_url': '',
+        #             'featured': False,
+        #         },
+        #         {
+        #             'tag': 'tip',
+        #             'title': 'Morning vs Evening Check-Ins: What the Data Says',
+        #             'excerpt': 'Our analytics show morning check-ins average 52 words. Evening ones? 24. What your timing reveals about your mindset.',
+        #             'date': 'Jul 5, 2026',
+        #             'read_time': '3 min read',
+        #             'url': '/v1/blog/morning-vs-evening/',
+        #             'image_url': '',
+        #             'featured': False,
+        #         },
+                
+        #         #to show image
+        #         {
+        #             'tag': 'update',
+        #             'title': 'New Feature: Weekly Leaderboard is Live',
+        #             'excerpt': '...',
+        #             'date': 'Jul 28, 2026',
+        #             'read_time': '2 min read',
+        #             'url': '/v1/blog/weekly-leaderboard-launch/',
+        #             'image_url': Static.logo_url(),
+        #             'featured': True,
+        #         },
+        #     ]
+        context = {
+            'tier': 'gold',
+            'posts': post,
+            'categories': ['Update', 'TIP', 'Guide', 'Story'],  # unique tags
+            'news_tags': ['Update', 'TIP', 'Guide', 'Story'],   #for the is_staff own
+        }
+        
+        if data.count() < 1 : return render(request, 'html/blog_and_update.html', {"page_mode": request.COOKIES.get('sd-theme', ''),**context})
         post = [
             {
                 'tag' : i.tag,
                 'title': i.title,
                 'excerpt': i.excerpt,
-                'date': custom_date_formatter(datetime_data=i.date),
+                'date': i.date,
                 'read_time'  :i.read_time,
                 'url': reverse('origin_blog') + f"/{i.pk}",
                 'image_url': i.banner,
-                'featured': i.featuered
+                'featured': i.featured
             }
             for i in data
         ]
-        for i in data:
-                post.append(
-                    {
-                        'tag' : i.tag,
-                        'title': i.title,
-                        'excerpt': i.excerpt,
-                        'date': custom_date_formatter(datetime_data=i.date),
-                        'read_time'  :i.read_time,
-                        'url': reverse('origin_blog') + f"/{i.pk}",
-                        'image_url': i.banner,
-                        'featured': i.featuered
-                    })
-                posts = [
-                    {
-                        'tag': 'update',
-                        'title': 'New Feature: Weekly Leaderboard is Live',
-                        'excerpt': 'See how you rank against other disciplined minds every Sunday. Opt in from your profile settings to appear on the board.',
-                        'date': 'Jul 28, 2026',
-                        'read_time': '2 min read',
-                        'url': reverse('origin_blog') + f"/{request.user.pk}",
-                        'image_url': '',  # leave empty if no image
-                        'featured': True,  # this one spans full width
-                    },
-                    {
-                        'tag': 'tip',
-                        'title': 'The 2-Minute Rule: How to Never Miss a Check-In',
-                        'excerpt': 'On your worst days, your minimum effort is your secret weapon. Here is how to set one that actually works.',
-                        'date': 'Jul 25, 2026',
-                        'read_time': '3 min read',
-                        'image_url': '',
-                        'featured': False,
-                    },
-                    {
-                        'tag': 'guide',
-                        'title': 'Why Your Streak Reset Is a Gift, Not a Failure',
-                        'excerpt': 'The number does not define you. How you respond to the reset does. A different way to think about breaking the chain.',
-                        'date': 'Jul 20, 2026',
-                        'read_time': '4 min read',
-                        'url': '/v1/blog/streak-reset-gift/',
-                        'image_url': '',
-                        'featured': False,
-                    },
-                    {
-                        'tag': 'story',
-                        'title': 'How Opeyemi Went From Zero to 217 Days',
-                        'excerpt': 'A community member shares how one honest sentence a day rebuilt their confidence and changed their mornings.',
-                        'date': 'Jul 15, 2026',
-                        'read_time': '5 min read',
-                        'url': '/v1/blog/opeyemi-217-days/',
-                        'image_url': '',
-                        'featured': False,
-                    },
-                    {
-                        'tag': 'update',
-                        'title': 'Accountability Partners Are Here',
-                        'excerpt': 'You can now invite someone to see your consistency score. Not your entries — just your commitment to showing up.',
-                        'date': 'Jul 10, 2026',
-                        'read_time': '2 min read',
-                        'url': '/v1/blog/accountability-partners/',
-                        'image_url': '',
-                        'featured': False,
-                    },
-                    {
-                        'tag': 'tip',
-                        'title': 'Morning vs Evening Check-Ins: What the Data Says',
-                        'excerpt': 'Our analytics show morning check-ins average 52 words. Evening ones? 24. What your timing reveals about your mindset.',
-                        'date': 'Jul 5, 2026',
-                        'read_time': '3 min read',
-                        'url': '/v1/blog/morning-vs-evening/',
-                        'image_url': '',
-                        'featured': False,
-                    },
-                    
-                    #to show image
-                    {
-                        'tag': 'update',
-                        'title': 'New Feature: Weekly Leaderboard is Live',
-                        'excerpt': '...',
-                        'date': 'Jul 28, 2026',
-                        'read_time': '2 min read',
-                        'url': '/v1/blog/weekly-leaderboard-launch/',
-                        'image_url': Static.logo_url(),
-                        'featured': True,
-                    },
-                ]
-        
-        context = {
-            'tier': 'gold',
-            'posts': posts,
-             'categories': ['Update', 'TIP', 'Guide', 'Story'],  # unique tags
-        }
+        context['posts'] = post
 
-        return render(request, 'html/blog_and_update.html', context)
+        return render(request, 'html/blog_and_update.html', {"page_mode": request.COOKIES.get('sd-theme', ''),**context})
     
 class BlogViewExpanded(View):
     def get(self, request):
@@ -308,27 +299,43 @@ class GetLeaderBoardData(View):
             rank_list = []
             for i in range(1,11):
                 rank_list.append({
-                    'rank': i ,'public_id': 'unavailable', 'total_streak': None, 'private': False
+                    'rank': i ,'public_id': 'unavailable', 'total_streak': None, 'private': False, 'user_profile_pic': "https://res.cloudinary.com/brop3jeq/image/upload/v1784291265/Screenshot2_m4ugnt.png"
                 })
             return JsonResponse({'entries': rank_list, 'total_participants': None, "most_active_day": None, "your_rank": None, "your_total_streak": None,}, status = 200)
         
         #the current week
+        
+        # profile_ist = Profile.objects.filter(leaderboard_optin = True).order_by('-zeal_score').all()
+        # ranking = [
+        #     {
+        #         'rank' : count,
+        #         'public_id':i.public_searchable_username,
+        #         'total_streak': i.zeal_score,
+        #         'private': i.streak_count_is_public_visible,
+        #         'user_profile_pic': i.profile_img_url
+        #     }
+        #     for count, i in enumerate(profile_ist, start=1)
+        # ]
+        
+        ranking = [
+            {"rank": 1, "public_id": "ope1023", "total_streak": 120, "private": False, 'user_profile_pic': "https://res.cloudinary.com/brop3jeq/image/upload/v1785757958/discipline_and_streak_profile_picture/LASTISSA11%40GMAIL.COM/profile_LASTISSA11%40GMAIL.COM.jpg"},
+            {"rank": 2, "public_id": "opeyemi01", "total_streak": None, "private": True, 'user_profile_pic': 'https://res.cloudinary.com/brop3jeq/image/upload/v1785574304/discipline_and_streak_profile_picture/OPE%40GMAIL.COM/profile_OPE%40GMAIL.COM.png'},
+            {"rank": 3, "public_id": "david_n", "total_streak": 98, "private": False, 'user_profile_pic': "https://res.cloudinary.com/brop3jeq/image/upload/v1784291263/Screenshot5_prraxs.png"},
+            {"rank": 4, "public_id": "sarah_k", "total_streak": 87, "private": False, "user_profile_pic": "https://res.cloudinary.com/brop3jeq/image/upload/v1784291265/Screenshot2_m4ugnt.png"},
+            {"rank": 5, "public_id": "ademide_m", "total_streak": None, "private": True},
+            {"rank": 6, "public_id": "success_a", "total_streak": 76, "private": False},
+            {"rank": 7, "public_id": "tunde_b", "total_streak": 64, "private": False},
+            {"rank": 8, "public_id": "nkechi_o", "total_streak": None, "private": True},
+            {"rank": 9, "public_id": "emeka_i", "total_streak": 51, "private": False},
+            {"rank": 10, "public_id": "fatima_u", "total_streak": 43, "private": False},
+            ],
+        
+        
         return JsonResponse({
-    "message": "ok",
-    "week_label": "Jul 21 – Jul 27, 2026",
-    "week_number": 30,
-    "entries": [
-        {"rank": 1, "public_id": "chidi007", "total_streak": 142, "private": False},
-        {"rank": 2, "public_id": "opeyemi01", "total_streak": None, "private": True},
-        {"rank": 3, "public_id": "david_n", "total_streak": 98, "private": False},
-        {"rank": 4, "public_id": "sarah_k", "total_streak": 87, "private": False},
-        {"rank": 5, "public_id": "ademide_m", "total_streak": None, "private": True},
-        {"rank": 6, "public_id": "success_a", "total_streak": 76, "private": False},
-        {"rank": 7, "public_id": "tunde_b", "total_streak": 64, "private": False},
-        {"rank": 8, "public_id": "nkechi_o", "total_streak": None, "private": True},
-        {"rank": 9, "public_id": "emeka_i", "total_streak": 51, "private": False},
-        {"rank": 10, "public_id": "fatima_u", "total_streak": 43, "private": False},
-        ],
+        "message": "ok",
+        "week_label": "Jul 21 - Jul 27, 2026",
+        "week_number": 30,
+        "entries": ranking,
         "total_participants": 47,
         "most_active_day": "Monday",
         "your_rank": 3,

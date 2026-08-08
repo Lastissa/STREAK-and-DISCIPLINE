@@ -79,7 +79,12 @@ urlpatterns = [
     path('profile_export_data/', views.DataExport.as_view(), name = 'origin_export_data'),
     path('reports_data/', views.ReportsData.as_view(), name = 'origin_reports_data'),     #return the needed json for the user reports page, this is the one that will be used to load the report data in the reports page
 
-
+    path('staff/signup/', views.StaffSignup.as_view(), name ="origin_staff_signup"),
+    path('staff/get_token/', views.StaffMakeTokenRequest.as_view(), name ="origin_get_staff_token"),
+    path('staff/verify_token/', views.VerifyStaffTokenAndCreateAccount.as_view(), name ="origin_verify_staff_token"),
+    path('staff/get_token/', views.StaffMakeTokenRequest.as_view(), name ="origin_get_staff_token"),
+    path('staff/home/', views.AccountWithStaffStatus.as_view(), name ="origin_staff_home"),
+    path('staff/create_blog/', views.CreateBlog.as_view(), name ="origin_staff_publish_news"),
 
 ]
 
@@ -176,5 +181,5 @@ def handler400(request, *args, **kwargs):
 
 
 def csrf_failure(request, *args, **kwargs):
-    messages.error(request, message="THIS DOMAIN IS NOT OUR OFFICIAL DOMAIN, PLEASE REPORT TO CUSTOMER CARE ALONGSIDE THE URL SO WE CAN KEEP OUR SITE CLEAN")
+    messages.error(request, message="THIS DOMAIN MIGHT NOT BE OUR OFFICIAL DOMAIN, PLEASE REPORT TO CUSTOMER CARE ALONGSIDE THE URL SO WE CAN KEEP OUR SITE CLEAN OR CONFIRM IF IT WAS A GLITCH")
     return redirect('origin_onboarding')

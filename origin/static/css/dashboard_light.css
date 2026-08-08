@@ -345,8 +345,11 @@ body.sd-light .db-header{background:rgba(240,244,250,0.9)}
 .hm-cell{
   aspect-ratio:1;border-radius:3px;
   background:var(--edge);
-  transition:background var(--ease);
+  transition:background var(--ease), transform var(--ease);
+  cursor:pointer;
 }
+.hm-cell:hover{transform:scale(1.12)}
+.hm-cell:focus-visible{outline:2px solid var(--accL);outline-offset:2px}
 .hm-cell.lv1{background:rgba(59,130,246,0.25)}
 .hm-cell.lv2{background:rgba(59,130,246,0.5)}
 .hm-cell.lv3{background:var(--acc)}
@@ -492,6 +495,27 @@ body.sd-light .db-header{background:rgba(240,244,250,0.9)}
 .db-modal-footer{
   padding:1rem 1.25rem;border-top:1px solid var(--edge);
   display:flex;gap:0.5rem;justify-content:flex-end;flex-shrink:0;
+}
+
+/* ---- Day detail modal (heatmap cell click) -------------------- */
+.dd-status{display:flex;align-items:center;gap:0.9rem;margin-bottom:1.1rem}
+.dd-status-icon{
+  width:44px;height:44px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:1.05rem;
+  background:var(--edge);color:var(--ink2);
+}
+.dd-status-icon.full{background:rgba(34,197,94,0.15);color:var(--ok)}
+.dd-status-icon.partial{background:rgba(59,130,246,0.15);color:var(--accL)}
+.dd-status-icon.empty{background:rgba(148,163,184,0.12);color:var(--ink3)}
+.dd-status-title{font-weight:700;font-size:0.95rem}
+.dd-status-sub{font-size:0.78rem;color:var(--ink2);margin-top:0.15rem}
+.dd-progress-track{height:8px;border-radius:50px;background:var(--edge);overflow:hidden;margin-bottom:0.5rem}
+.dd-progress-fill{height:100%;border-radius:50px;background:var(--acc);transition:width 0.4s ease;width:0}
+.dd-progress-label{font-size:0.74rem;color:var(--ink2);margin-bottom:1rem}
+.dd-note{
+  font-size:0.82rem;color:var(--ink2);line-height:1.6;
+  background:var(--surf2);border:1px solid var(--edge);
+  border-radius:var(--r);padding:0.8rem;
 }
 
 /* Share card preview */

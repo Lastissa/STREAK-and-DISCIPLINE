@@ -137,7 +137,7 @@
         {% if tier == 'free' or not tier %}
         <div class="aside-upgrade">
           <h4><i class="fas fa-gem"></i> Upgrade to Pro</h4>
-          <p>Unlock AI insights, 50 commitments, custom reports and WhatsApp reminders.</p>
+          <p>Unlock AI insights, 50 commitments, custom reports and moe.</p>
           <a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm btn-full">
             Start 7-Day Trial
           </a>
@@ -488,6 +488,39 @@
     </div><!-- /shareModal -->
 
     <!-- 
+         DAY DETAIL MODAL - opens when a 30-day heatmap cell is clicked
+          -->
+    <div class="db-modal-overlay" id="dayDetailModal" role="dialog" aria-modal="true" aria-label="Day details">
+      <div class="db-modal">
+        <div class="db-modal-header">
+          <h3><i class="fas fa-calendar-day" style="color:var(--accL)"></i> <span id="ddDateLabel">Day details</span></h3>
+          <button class="hdr-btn" id="closeDayDetailModal" aria-label="Close">
+            <i class="fas fa-xmark"></i>
+          </button>
+        </div>
+        <div class="db-modal-body">
+          <div class="dd-status">
+            <div class="dd-status-icon" id="ddStatusIcon"><i class="fas fa-minus"></i></div>
+            <div>
+              <div class="dd-status-title" id="ddStatusTitle">-</div>
+              <div class="dd-status-sub" id="ddStatusSub">-</div>
+            </div>
+          </div>
+
+          <div class="dd-progress-track">
+            <div class="dd-progress-fill" id="ddProgressFill"></div>
+          </div>
+          <p class="dd-progress-label" id="ddProgressLabel">0 check-ins logged</p>
+
+          <p class="dd-note" id="ddNote"></p>
+        </div>
+        <div class="db-modal-footer">
+          <button class="btn btn-ghost btn-sm" id="closeDayDetailModal2">Close</button>
+        </div>
+      </div>
+    </div><!-- /dayDetailModal -->
+
+    <!-- 
          PRINT CARD (hidden on screen, prints cleanly)
           -->
     <div class="print-only">
@@ -687,9 +720,92 @@
         div.title = c.date + ': ' + c.count + ' check-in' + (c.count !== 1 ? 's' : '');
         div.style.animationDelay = (i * 0.015) + 's';
         div.classList.add('hm-reveal');
+        div.dataset.date = c.date;
+        div.dataset.count = c.count;
+        div.setAttribute('role', 'button');
+        div.setAttribute('tabindex', '0');
+        div.setAttribute('aria-label', c.date + ': ' + c.count + ' check-in' + (c.count !== 1 ? 's' : ''));
+        div.addEventListener('click', function() { openDayDetail(c.date, c.count); });
+        div.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDayDetail(c.date, c.count); }
+        });
         grid.appendChild(div);
       });
     }
+
+    /*
+       DAY DETAIL MODAL
+       Uses only what /user_heat_map/ already returned (per-cell date + count,
+       plus total_active from the same response) - no extra request needed.
+        */
+    function openDayDetail(dateStr, count) {
+      var modal = document.getElementById('dayDetailModal');
+      if (!modal) return;
+
+      var d = new Date(dateStr + 'T00:00:00');
+      var todayStr = new Date().toISOString().slice(0, 10);
+      var isToday = dateStr === todayStr;
+      var dateLabel = d.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+      var totalActive = (heatmapData && heatmapData.total_active) || 0;
+      var pct = totalActive > 0 ? Math.min(Math.round((count / totalActive) * 100), 100) : (count > 0 ? 100 : 0);
+
+      document.getElementById('ddDateLabel').textContent = (isToday ? 'Today · ' : '') + dateLabel;
+
+      var icon = document.getElementById('ddStatusIcon');
+      var title = document.getElementById('ddStatusTitle');
+      var sub = document.getElementById('ddStatusSub');
+      icon.className = 'dd-status-icon';
+
+      if (count === 0) {
+        icon.classList.add('empty');
+        icon.innerHTML = '<i class="fas fa-minus"></i>';
+        title.textContent = 'No check-ins';
+        sub.textContent = isToday ? "Nothing logged yet today." : 'Nothing was logged on this day.';
+      } else if (totalActive > 0 && count >= totalActive) {
+        icon.classList.add('full');
+        icon.innerHTML = '<i class="fas fa-check"></i>';
+        title.textContent = 'Full check-in';
+        sub.textContent = 'Every active commitment was checked in.';
+      } else {
+        icon.classList.add('partial');
+        icon.innerHTML = '<i class="fas fa-fire"></i>';
+        title.textContent = count + ' check-in' + (count !== 1 ? 's' : '');
+        sub.textContent = 'Partial day — some commitments still open.';
+      }
+
+      document.getElementById('ddProgressFill').style.width = pct + '%';
+      document.getElementById('ddProgressLabel').textContent = totalActive > 0
+        ? count + ' of ' + totalActive + ' active commitment' + (totalActive !== 1 ? 's' : '') + ' checked in'
+        : count + ' check-in' + (count !== 1 ? 's' : '') + ' logged';
+
+      var note = document.getElementById('ddNote');
+      if (count === 0) {
+        note.textContent = isToday
+          ? "You haven't checked in today yet — even a minimum-effort entry keeps the streak alive."
+          : 'No entries were recorded for this day.';
+      } else if (totalActive > 0 && count >= totalActive) {
+        note.textContent = 'Great day — you showed up for everything you committed to.';
+      } else {
+        note.textContent = 'You showed up for ' + count + ' out of ' + totalActive + '. Every check-in still counts toward your streak.';
+      }
+
+      modal.classList.add('open');
+    }
+
+    function closeDayDetail() {
+      var modal = document.getElementById('dayDetailModal');
+      if (modal) modal.classList.remove('open');
+    }
+
+    document.getElementById('closeDayDetailModal')  && document.getElementById('closeDayDetailModal').addEventListener('click', closeDayDetail);
+    document.getElementById('closeDayDetailModal2') && document.getElementById('closeDayDetailModal2').addEventListener('click', closeDayDetail);
+    document.getElementById('dayDetailModal') && document.getElementById('dayDetailModal').addEventListener('click', function(e) {
+      if (e.target === this) closeDayDetail();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeDayDetail();
+    });
 
     function showHeatmapError(msg) {
       var err = document.getElementById('hmError');
@@ -1012,7 +1128,7 @@
       list.innerHTML = '';
 
       if (partners.length === 0) {
-        list.innerHTML = '<p style="font-size:0.8rem;color:var(--ink3);padding:0.5rem 0">No partners added yet. Search by User ID from your profile.</p>';
+        list.innerHTML = '<p style="font-size:0.8rem;color:var(--ink3);padding:0.5rem 0">No partners added yet. Search by User ID from <a href = "{% url "origin_relationship" %}"><b>Here</b></a>..</p>';
         return;
       }
 

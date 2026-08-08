@@ -61,7 +61,7 @@
           <a href="/v1/leaderboard/"  class="aside-link"><i class="fas fa-ranking-star"></i> Leaderboard</a>
           <a href="{% url 'origin_blog' %}" class="aside-link"><i class="fas fa-newspaper"></i> Blog &amp; Updates</a>
           <div class="aside-section-lbl" style="margin-top:.5rem">Insights</div>
-          <a href="/v1/reports/"      class="aside-link"><i class="fas fa-chart-line"></i> Analytics &amp; Reports</a>
+          <a href="{% url "origin_reports" %}"      class="aside-link"><i class="fas fa-chart-line"></i> Analytics &amp; Reports</a>
           {% if ai_insight_active %}
           <a href="/v1/insights/"     class="aside-link"><i class="fas fa-microchip"></i> AI Insights</a>
           {% endif %}

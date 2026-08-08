@@ -407,3 +407,64 @@ def send_partner_request_notification_previously_rejected(to_email: str, from_us
         from_username=from_username,
         from_userid=from_userid,
     )
+
+
+# ---------------------------------------------------------------------------
+# 7. Staff access code — sent to the OFFICIAL inbox whenever someone requests
+#    a staff signup token. This is deliberately SYNCHRONOUS: the staff-signup
+#    view needs to know immediately whether the send succeeded before it tells
+#    the requester "check with an admin", so I can't fire-and-forget this one
+#    on a background thread like the others.
+# ---------------------------------------------------------------------------
+
+def send_staff_access_code_email(*, to_email: str = Static.official_email(), token: str, requester_email: str = "") -> None:
+    """Email the staff/admin access `token` to `to_email` (defaults to the official
+    STREAK & DISCIPLINE inbox). Nothing is ever sent straight to the person requesting
+    access — an admin reads this email and passes the code to them personally, so this
+    doubles as the manual vetting step before an account with is_staff=True can be made.
+
+    to_email        -- where the code lands. Defaults to Static.official_email(); only
+                        override this if you deliberately want it sent somewhere else.
+    token           -- the raw access code (e.g. 'st-xxxxxxxx') to display.
+    requester_email -- optional: the email the requester typed on the signup page, shown
+                        in the email so the admin knows exactly who to hand the code to.
+    """
+    minutes = max(1, int(Static.token_expiry_time() / 60))
+
+    body = f"""
+        <h1 style="margin:0 0 14px;font-size:19px;color:#0f172a;font-weight:700">Staff access code requested</h1>
+        <p style="margin:0 0 18px;font-size:14px;color:#334155;line-height:1.6">
+            {f'<strong>{requester_email}</strong> just requested' if requester_email else 'Someone just requested'}
+            a staff signup code on STREAK &amp; DISCIPLINE. Do not forward this code to anyone
+            you haven't personally verified &mdash; read it out or share it with them directly.
+        </p>
+        <table cellpadding="0" cellspacing="0" role="presentation" style="width:100%;margin:0 0 18px">
+            <tr>
+                <td align="center" style="background:#0f172a;border-radius:10px;padding:18px">
+                    <p style="margin:0 0 6px;font-size:11px;letter-spacing:.08em;color:#93c5fd;text-transform:uppercase">Access code</p>
+                    <p style="margin:0;font-size:28px;font-weight:700;letter-spacing:.06em;color:#ffffff;font-family:'Courier New',monospace">{token}</p>
+                </td>
+            </tr>
+        </table>
+        <p style="margin:0;font-size:13px;color:#64748b;line-height:1.6">
+            This code expires in <strong>{minutes} minute{'s' if minutes != 1 else ''}</strong> and can only be used once.
+            If nobody at STREAK &amp; DISCIPLINE requested staff access, you can safely ignore this email.
+        </p>
+    """
+
+    send_mail(
+        subject="STREAK & DISCIPLINE staff access code" + (f" — {requester_email}" if requester_email else ""),
+        message=(
+            f"{requester_email or 'Someone'} requested a staff signup code.\n"
+            f"Access code: {token}\n"
+            f"Expires in {minutes} minute{'s' if minutes != 1 else ''}. Only share it after you've verified the requester."
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[to_email],
+        html_message=_shell(
+            preheader=f"Access code expires in {minutes} minutes.",
+            eyebrow="Staff Access Code",
+            body_html=body,
+            footer_note="This code grants staff-level access. Only share it with someone whose identity you've personally confirmed.",
+        ),
+    )

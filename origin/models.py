@@ -193,17 +193,29 @@ class Friendship(models.Model):
         
         
 class News(models.Model):
-    title = models.CharField(blank=False, null= False)          # News title
+    title = models.CharField(blank=False, null= False, unique=True)          # News title
     tag = models.CharField(blank=False, null= False)            # Category of post based on the custom choiced class
     excerpt = models.CharField(blank=False, null= False)        # Frist few lines of the full text
     date = models.DateField(auto_now_add= True)                 # Date created
     read_time = models.IntegerField(blank=False, null=False)    # Estimated time user is suppose to read it for
-    banner = models.URLField(null=False)                        # IF the news have a banner and the image of the banner
-    featuered = models.BooleanField(default=True)               # for full width set to true
+    banner = models.URLField(null=True, blank=True)                        # IF the news have a banner and the image of the banner
+    featured = models.BooleanField(default=True)               # for full width set to true
     actual_content = models.TextField(default="", blank=True, null= True)# This hold the actual content that will be displayed on its own page
     
+    class Meta:
+        unique_together= ('title', 'tag', 'excerpt', 'read_time', 'banner', 'featured', 'actual_content')
+        
     def __str__(self):
         return "News"
     
     
     
+    
+class StaffTempToken(models.Model):
+    email = models.EmailField()
+    token = models.CharField(max_length=10)
+    type = models.CharField(max_length=20)          #   STAFF OR ADMIN; SO TELL THE KIND OF INCOMING TOKEN AS STAFF TOKEN WILL ALWSY START WITH st- AND ADMIN TOKEN ALWASY START WITH  ad-
+    time_sent = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Staff registration tokens : {self.email}"
