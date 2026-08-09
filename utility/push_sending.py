@@ -60,6 +60,15 @@ def _send_one_push(subscription, payload: dict) -> bool:
         logger.error("pywebpush is not installed - run `pip install pywebpush` to enable push reminders.")
         return False
 
+    if not Static.vapid_configured():
+        # Catch this BEFORE calling webpush() so the log line is unambiguous. Without
+        # this check, a missing/malformed private key still reaches webpush(), which
+        # raises some py_vapid-internal exception (not WebPushException) that the
+        # generic except below would log as an opaque, unexplained stack trace instead
+        # of pointing straight at the actual cause.
+        logger.error("Push send skipped: VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY are not both set in .env.")
+        return False
+
     try:
         webpush(
             subscription_info={
@@ -81,6 +90,13 @@ def _send_one_push(subscription, payload: dict) -> bool:
             logger.info("Removed dead push subscription (%s) for endpoint ending in ...%s", status, subscription.endpoint[-12:])
         else:
             logger.error("Push send failed (%s): %s", status, e)
+        return False
+    except Exception as e:
+        # Anything NOT a WebPushException here is almost always a malformed VAPID key,
+        # a corrupted p256dh/auth value on the subscription row, or a bad payload -
+        # not a normal "push service said no". Logged distinctly so it's obvious this
+        # is a configuration bug to fix, not routine subscription churn to ignore.
+        logger.error("Push send raised an unexpected (non-WebPush) error - check VAPID key format/subscription data: %s", e)
         return False
 
 
@@ -119,3 +135,37 @@ def send_push_to_user(user_id: int, title: str, body: str, url: str = None) -> N
         "icon": Static.logo_url(),
     }
     _dispatch(_send_push_to_user, user_id=user_id, payload=payload)
+
+
+def _send_confirmation_push(endpoint: str) -> None:
+    """Look the subscription back up by endpoint (rather than trusting a passed-in
+    object) right before sending, so this still works correctly even if the row was
+    deleted/changed in the few milliseconds between the request finishing and this
+    background thread actually running."""
+    from origin.models import PushSubscription
+
+    sub = PushSubscription.objects.filter(endpoint=endpoint).first()
+    if not sub:
+        logger.info("Confirmation push skipped: subscription for endpoint ...%s no longer exists.", endpoint[-12:])
+        return
+
+    payload = {
+        "title": "Push notifications are on",
+        "body": "You'll be reminded here from now on for any commitment set to Push.",
+        "url": Static.custom_base_url() + "/v1/dashboard/",
+        "icon": Static.logo_url(),
+    }
+    ok = _send_one_push(sub, payload)
+    logger.info("Confirmation push to endpoint ...%s: %s", endpoint[-12:], "sent" if ok else "FAILED")
+
+
+def send_confirmation_push(endpoint: str) -> None:
+    """Async entry point: fires the instant a NEW subscription is saved (see
+    SavePushSubscription in json_only_view.py), targeted at exactly that one browser -
+    not every device the user owns. This is the "instantly confirm it works" mechanism:
+    if the person's OS never shows this notification within a few seconds of accepting
+    the permission prompt, something in the push pipeline (VAPID keys, the service
+    worker, the push service itself) is broken, and they know immediately instead of
+    finding out days later when a real reminder silently never arrives.
+    """
+    _dispatch(_send_confirmation_push, endpoint=endpoint)

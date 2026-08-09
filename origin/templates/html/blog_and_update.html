@@ -117,7 +117,7 @@
 
         <div class="mobile-nav-lbl">Support</div>
         <a href="https://wa.me/2347013687825" target="_blank" rel="noopener" class="mobile-nav-link"><i class="fab fa-whatsapp"></i> WhatsApp</a>
-        <a href="mailto:issaabdulsalamope11@gmail.com" class="mobile-nav-link"><i class="fas fa-envelope"></i> Email</a>
+        <a href="mailto:{{oficial_email}}" class="mobile-nav-link"><i class="fas fa-envelope"></i> Email</a>
 
         {% if request.user.is_authenticated %}
         <div class="mobile-nav-lbl">Account</div>
@@ -200,7 +200,7 @@
         </div>
         <div class="footer-links">
           <h4>Support</h4>
-          <a href="mailto:issaabdulsalamope11@gmail.com"><i class="fas fa-envelope"></i> Email Support</a>
+          <a href="mailto:{{oficial_email}}"><i class="fas fa-envelope"></i> Email Support</a>
           <a href="https://wa.me/2347013687825"><i class="fab fa-whatsapp"></i> WhatsApp</a>
           <a href="tel:+2347013687825"><i class="fas fa-phone"></i> +234 701 368 7825</a>
         </div>

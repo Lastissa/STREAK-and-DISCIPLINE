@@ -279,11 +279,11 @@ body.light-mode .reveal-outro{background:rgba(15,23,42,0.35)}
 /* The flipping card */
 .lb-card{
   width:100%;position:relative;
-  min-height:160px;
+  min-height:190px;   /* was 160px - grown to give the now-larger avatar room without clipping */
   /* transform-style:preserve-3d added in advance CSS */
   cursor:pointer;
 }
-.lb-card.rank1{min-height:200px}
+.lb-card.rank1{min-height:230px}   /* was 200px - matches the bigger rank-1 avatar below */
 
 /* Card faces */
 .lb-face{
@@ -313,12 +313,15 @@ body.light-mode .reveal-outro{background:rgba(15,23,42,0.35)}
 
 /* Profile picture — lazy-loaded image with an SVG person-outline
    fallback underneath. The fallback stays visible until (a) a valid
-   image URL was supplied AND (b) it has actually finished loading. */
+   image URL was supplied AND (b) it has actually finished loading.
+   Sized up from the original 38/56/28px so the face is actually the
+   thing you notice during the reveal, not a thumbnail next to the
+   rank number - especially once the card is zoomed to screen-centre. */
 .card-avatar{
   position:relative;
-  width:38px;height:38px;flex-shrink:0;
+  width:54px;height:54px;flex-shrink:0;
   border-radius:50%;overflow:hidden;
-  margin-bottom:0.4rem;
+  margin-bottom:0.5rem;
   background:var(--surf2);
   border:2px solid var(--border);
 }
@@ -337,8 +340,8 @@ body.light-mode .reveal-outro{background:rgba(15,23,42,0.35)}
   opacity:0;
 }
 .card-avatar img.is-loaded{opacity:1}
-.lb-card.card-rank-1 .card-avatar{width:56px;height:56px;margin-bottom:0.5rem}
-.lb-grid-row .card-avatar,.lb-strip-row .card-avatar{width:28px;height:28px;margin-bottom:0.3rem}
+.lb-card.card-rank-1 .card-avatar{width:80px;height:80px;margin-bottom:0.6rem;border-width:3px}
+.lb-grid-row .card-avatar,.lb-strip-row .card-avatar{width:46px;height:46px;margin-bottom:0.4rem}
 
 .card-rank-badge{
   font-size:1.4rem;font-weight:900;line-height:1;margin-bottom:0.35rem;
@@ -391,8 +394,10 @@ body.light-mode .reveal-outro{background:rgba(15,23,42,0.35)}
   grid-template-columns:repeat(3,1fr);
 }
 
-/* Grid and strip cards are smaller */
-.lb-grid-row .lb-card,.lb-strip-row .lb-card{min-height:110px}
+/* Grid and strip cards are smaller, but still need enough height for
+   the 46px avatar + badge + id + streak text to fit without the
+   overflow:hidden face clipping anything (was 110px for a 28px avatar). */
+.lb-grid-row .lb-card,.lb-strip-row .lb-card{min-height:150px}
 
 /* ---- REVEAL SECTION ----------------------------------------- */
 .reveal-wrap{

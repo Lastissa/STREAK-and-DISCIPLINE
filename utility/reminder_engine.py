@@ -176,6 +176,7 @@ def run_due_reminders() -> dict:
 
     email_items = []
     push_count = 0
+    push_skipped_no_subscription = 0
 
     for (user_id, mode), commitments in buckets.items():
         user = commitments[0].user
@@ -185,7 +186,24 @@ def run_due_reminders() -> dict:
             email_items.append(_build_email_item(user, commitments, profile))
 
         elif mode == 'push':
+            from origin.models import PushSubscription
             from utility.push_sending import send_push_to_user
+
+            if not PushSubscription.objects.filter(user_id=user.id).exists():
+                # This commitment is about to be marked "reminded" for today with
+                # nothing actually deliverable - the person picked Push but never
+                # completed the browser permission flow (or revoked it since). Logged
+                # loudly and counted separately in the summary rather than folded into
+                # push_queued, since "queued" would wrongly imply something was sent.
+                push_skipped_no_subscription += 1
+                logger.warning(
+                    "Commitment(s) %s set to push for user_id=%s, but they have zero active "
+                    "push subscriptions - nothing will be delivered. They likely never "
+                    "completed the browser permission prompt, or revoked it since.",
+                    [c.id for c in commitments], user.id
+                )
+                continue
+
             title, body = _push_title_and_body(user, commitments)
             send_push_to_user(user_id=user.id, title=title, body=body)
             push_count += 1
@@ -205,7 +223,9 @@ def run_due_reminders() -> dict:
         'commitments_due': len(claimed),
         'emails_queued': len(email_items),
         'push_queued': push_count,
+        'push_skipped_no_subscription': push_skipped_no_subscription,
     }
-    logger.info("Reminder tick %s: %s commitment(s) due -> %s email batch(es), %s push send(s).",
-                now_local.strftime('%Y-%m-%d %H:%M'), summary['commitments_due'], summary['emails_queued'], summary['push_queued'])
+    logger.info("Reminder tick %s: %s commitment(s) due -> %s email batch(es), %s push send(s), %s push skipped (no subscription).",
+                now_local.strftime('%Y-%m-%d %H:%M'), summary['commitments_due'], summary['emails_queued'],
+                summary['push_queued'], summary['push_skipped_no_subscription'])
     return summary

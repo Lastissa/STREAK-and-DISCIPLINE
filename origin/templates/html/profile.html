@@ -439,6 +439,25 @@
                 </div>
                 <div class="pf-cooldown" id="cooldown-receive_newsletter"><i class="fas fa-check-circle"></i> Saved</div>
 
+                <!-- Push notifications — NOT wired to data-field/the generic PATCH
+                     mechanism above: this state lives in the browser's own push
+                     subscription (per device), not a boolean column on Profile. See
+                     the dedicated script block below for its own save logic. -->
+                <div class="pf-toggle-row">
+                  <div class="pf-toggle-left">
+                    <div class="pf-toggle-label"><i class="fas fa-bell" style="color:var(--ink3)"></i> Push Notifications (this device)</div>
+                    <p class="pf-hint" id="pfPushHint">
+                      For any commitment set to remind you via Push, your browser needs permission first.
+                      Turning this on will ask you to allow notifications.
+                    </p>
+                  </div>
+                  <label class="pf-switch" aria-label="Push notifications">
+                    <input type="checkbox" id="pfPushToggle">
+                    <span class="pf-sw-track"><span class="pf-sw-thumb"></span></span>
+                  </label>
+                </div>
+                <div class="pf-cooldown" id="pfPushCooldown"><i class="fas fa-check-circle"></i> Saved</div>
+
               </div>
             </section>
 
@@ -805,6 +824,10 @@
 
   <script>{% include "reusables/spinner.js" %}</script>
 
+  <!-- Push notification helper (SDPush.enable/disable) - wired below for the
+       "Push Notifications (this device)" toggle in the Notifications section. -->
+  <script>{% include "reusables/push_notifications.js" %}</script>
+
 <!--THIS HANDLES END OF LIFE OF PAGE TO AVOID FREEZING ON SLOW INTERNET OR HIGH TRAFFIC, IT CREATE ILLUSION OF A SPINNER LOADING NEXT PAGE-->
 {% include "reusables/navigation_loader.html" %}
 <style rel="stylesheet">
@@ -991,6 +1014,57 @@
         }
       });
     })();
+    /* ── Push notifications toggle (this device) ──────────────────
+       Deliberately separate from the generic [data-field] handler above:
+       this toggle's true/false state lives in the browser's own push
+       subscription, not a column on Profile, so it needs its own
+       enable()/disable() calls instead of a PATCH request. */
+    (function(){
+      var pushToggle = qs('#pfPushToggle');
+      var pushHint = qs('#pfPushHint');
+      var pushCooldown = qs('#pfPushCooldown');
+      if (!pushToggle || !window.SDPush) return;
+
+      if (!SDPush.supported()) {
+        pushToggle.disabled = true;
+        if (pushHint) pushHint.textContent = 'Push notifications are not supported in this browser.';
+        return;
+      }
+
+      function flashSaved(msg) {
+        if (!pushCooldown) return;
+        pushCooldown.innerHTML = '<i class="fas fa-check-circle"></i> ' + (msg || 'Saved');
+        pushCooldown.classList.add('show');
+        setTimeout(function(){ pushCooldown.classList.remove('show'); }, 4000);
+      }
+
+      // Reflect actual browser subscription state on load - don't trust a stale checked
+      // attribute, since permission could have been revoked from browser settings since
+      // the last time this page was rendered.
+      SDPush.isEnabled().then(function(on){ pushToggle.checked = on; });
+
+      pushToggle.addEventListener('change', function(){
+        var wantOn = pushToggle.checked;
+        pushToggle.disabled = true;
+
+        var action = wantOn ? SDPush.enable() : SDPush.disable();
+        action.then(function(){
+          flashSaved(wantOn ? 'Push enabled — check for a confirmation notification' : 'Push turned off for this device');
+          showToast(wantOn ? 'Push notifications enabled for this device.' : 'Push notifications turned off for this device.', 'success');
+        }).catch(function(err){
+          pushToggle.checked = !wantOn; // revert - the change didn't actually take
+          var isDenied = err && err.code === 'permission-denied';
+          showToast(
+            (err && err.message) || 'Could not update push notifications for this browser.',
+            'error',
+            isDenied ? 10000 : 3500
+          );
+        }).finally(function(){
+          pushToggle.disabled = false;
+        });
+      });
+    })();
+
     /* ── Toggle switches ───────────────────────────────────────── */
     qsa('.pf-switch input[type="checkbox"]:not([disabled])').forEach(function(chk){
       chk.addEventListener('change',function(){

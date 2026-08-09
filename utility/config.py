@@ -143,6 +143,16 @@ class Static:
         return os.getenv('VAPID_ADMIN_EMAIL', self.official_email())
 
     @classmethod
+    def vapid_configured(self) -> bool:
+        """True only if BOTH halves of the VAPID keypair are set. Checking only the
+        public key is a real trap: the public key alone is enough for the browser to
+        successfully subscribe (so everything LOOKS like it worked, the person even
+        gets the confirmation prompt) but every actual send afterwards fails deep
+        inside pywebpush the moment it tries to sign with a missing private key -
+        invisibly, since that happens on a background thread with nothing watching."""
+        return bool(self.vapid_public_key()) and bool(self.vapid_private_key())
+
+    @classmethod
     def cron_secret_key(self) -> str:
         return os.getenv('CRON_SECRET_KEY', '')
     @classmethod

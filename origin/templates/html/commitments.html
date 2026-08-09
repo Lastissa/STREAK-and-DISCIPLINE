@@ -97,7 +97,7 @@
           <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_blank" rel="noopener" class="aside-link">
             <i class="fab fa-whatsapp"></i> WhatsApp Support
           </a>
-          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link">
+          <a href="mailto:{{oficial_email}}" class="aside-link">
             <i class="fas fa-envelope"></i> Email Support
           </a>
           <a href="tel:{{ customer_care_phone_number }}" class="aside-link">
@@ -531,6 +531,9 @@
                   <i class="fas fa-bell"></i><span>Push</span>
                 </div>
               </div>
+              <p class="ov-hint" style="font-size:0.72rem;margin-top:0.35rem;color:var(--ink2)">
+                Choosing Push will ask your browser for notification permission — accept it so reminders can reach you.
+              </p>
             </div>
 
             <div id="ovWaField" class="hidden">
@@ -1659,7 +1662,16 @@
         // no visible context for why the browser is suddenly asking.
         if (FORM.mode_of_delivery === 'push' && window.SDPush) {
           SDPush.isEnabled().then(function (on) {
-            if (!on) SDPush.enable().catch(function () { /* user can retry from commitment settings later */ });
+            if (!on) SDPush.enable().catch(function (err) {
+              var isDenied = err && err.code === 'permission-denied';
+              // Denial explains a browser-settings fix, not a quick blip - give it
+              // roughly 3x the normal read time instead of the default ~3.5s.
+              showToast(
+                (err && err.message) || 'Could not enable push notifications for this browser.',
+                'error',
+                isDenied ? 10000 : 3500
+              );
+            });
           });
         }
       }

@@ -20,11 +20,13 @@ from .utility_view import helper_with_friendship_request_answer
 
 import logging
 from datetime import timedelta
+from django.utils import timezone
 logger = logging.getLogger(__name__)
 
 
 class OriginHome(View):
     def get(self, request):
+        if (send_user_to_dashboard := try_send_user_to_dashboard(request)) is not None: return send_user_to_dashboard
         messages.info(request, message=intro_word()[0])
         # messages.info(request, message= intro_word()[1])
         return render(request, 'html/landing_page.html', {
@@ -33,7 +35,11 @@ class OriginHome(View):
             'year': get_copyright_year()
         })
 
+def try_send_user_to_dashboard(request: object):
+    """Collect the same request every method collects in django view And try to redirect the useer to the dashboard if they are logged in, i did this to avoid code repetition"""
+    if request.user.is_authenticated:   return redirect('origin_onboarding')
 
+    
 class Extras(View):
     """for privacy policy, term of use etc"""
     def get(self, request): return render(request, 'html/privacy_etc.html')
@@ -41,6 +47,7 @@ class Extras(View):
 class Signup(View):
     """signup page"""
     def get(self, request): 
+        if (send_user_to_dashboard := try_send_user_to_dashboard(request)) is not None: return send_user_to_dashboard
         messages.info(request=request, message="Please, Read term and services before you continue")
         return render(request, 'html/signup.html', {'url_for_form' : reverse('origin_redirect_handler', kwargs={'raw_url' : 'origin_signup'})})
     
@@ -68,9 +75,7 @@ class Signup(View):
 class Login(View):
     """login dashbaord"""
     def get(self, request): 
-        #try to check if user is signed in
-        if request.user.is_authenticated:
-                return redirect('origin_onboarding')
+        if (send_user_to_dashboard := try_send_user_to_dashboard(request)) is not None: return send_user_to_dashboard
         #user is not signed in , redirect them to the login page
         return render(request, 'html/login.html', {'url_for_form': reverse('origin_redirect_handler', kwargs={'raw_url': 'origin_login'})})
     
@@ -99,8 +104,7 @@ class LogoutUI(View):
             logout(request)
             # messages.info(request,'Logout successfully done.')
             return redirect('origin_home')
-        except: 
-            messages.error(request=request, message="Unable to logout. Were You log in before? please go back and try again. If error persist, please contact customer support. Quick Fix")
+        except: messages.error(request=request, message="Unable to logout. Were You log in before? please go back and try again. If error persist, please contact customer support. Quick Fix")
         return render(request, 'html/full_screen_message.html')
 
 
@@ -296,50 +300,84 @@ class BlogViewExpanded(View):
 class GetLeaderBoardData(View):
     def get(self, request):
         if 'last_week' in request.GET: #last week leaderboards
-            rank_list = []
-            for i in range(1,11):
-                rank_list.append({
-                    'rank': i ,'public_id': 'unavailable', 'total_streak': None, 'private': False, 'user_profile_pic': "https://res.cloudinary.com/brop3jeq/image/upload/v1784291265/Screenshot2_m4ugnt.png"
-                })
-            return JsonResponse({'entries': rank_list, 'total_participants': None, "most_active_day": None, "your_rank": None, "your_total_streak": None,}, status = 200)
-        
+            #There is no model that snapshots a past week's ranking (no
+            #WeeklyLeaderboardSnapshot-type table exists), so there is no
+            #real data to serve here. Rather than faking 10 "unavailable"
+            #rows like before (which LIES to the frontend by claiming success),
+            #we return an honest empty/failed response so the UI can show
+            #its real error state instead of a fake board.
+            return JsonResponse({
+                'message': 'Last week\'s leaderboard is not available yet - historical snapshots are not stored.',
+                'entries': [],
+                'total_participants': None,
+                'most_active_day': None,
+                'your_rank': None,
+                'your_total_streak': None,
+                'week_label': None,
+                'week_number': None,
+            }, status=200)
+
         #the current week
-        
-        # profile_ist = Profile.objects.filter(leaderboard_optin = True).order_by('-zeal_score').all()
-        # ranking = [
-        #     {
-        #         'rank' : count,
-        #         'public_id':i.public_searchable_username,
-        #         'total_streak': i.zeal_score,
-        #         'private': i.streak_count_is_public_visible,
-        #         'user_profile_pic': i.profile_img_url
-        #     }
-        #     for count, i in enumerate(profile_ist, start=1)
-        # ]
-        
-        ranking = [
-            {"rank": 1, "public_id": "ope1023", "total_streak": 120, "private": False, 'user_profile_pic': "https://res.cloudinary.com/brop3jeq/image/upload/v1785757958/discipline_and_streak_profile_picture/LASTISSA11%40GMAIL.COM/profile_LASTISSA11%40GMAIL.COM.jpg"},
-            {"rank": 2, "public_id": "opeyemi01", "total_streak": None, "private": True, 'user_profile_pic': 'https://res.cloudinary.com/brop3jeq/image/upload/v1785574304/discipline_and_streak_profile_picture/OPE%40GMAIL.COM/profile_OPE%40GMAIL.COM.png'},
-            {"rank": 3, "public_id": "david_n", "total_streak": 98, "private": False, 'user_profile_pic': "https://res.cloudinary.com/brop3jeq/image/upload/v1784291263/Screenshot5_prraxs.png"},
-            {"rank": 4, "public_id": "sarah_k", "total_streak": 87, "private": False, "user_profile_pic": "https://res.cloudinary.com/brop3jeq/image/upload/v1784291265/Screenshot2_m4ugnt.png"},
-            {"rank": 5, "public_id": "ademide_m", "total_streak": None, "private": True},
-            {"rank": 6, "public_id": "success_a", "total_streak": 76, "private": False},
-            {"rank": 7, "public_id": "tunde_b", "total_streak": 64, "private": False},
-            {"rank": 8, "public_id": "nkechi_o", "total_streak": None, "private": True},
-            {"rank": 9, "public_id": "emeka_i", "total_streak": 51, "private": False},
-            {"rank": 10, "public_id": "fatima_u", "total_streak": 43, "private": False},
-            ],
-        
-        
+
+        #Monday->Sunday boundaries for "this week", used for the week
+        #label/number shown in the hero, and to scope "most active day"
+        #to entries actually logged during the current week.
+        today = timezone.localdate()
+        week_start = today - timedelta(days=today.weekday())   #this week's Monday
+        week_end = week_start + timedelta(days=6)               #this week's Sunday
+
+        #Every opted-in profile, ranked by zeal_score (already the same
+        #"combined discipline" figure shown on the dashboard). Ordered
+        #query, not sliced yet, because we need every opted-in user's
+        #position to answer "your_rank" correctly even if the requester
+        #is ranked outside the visible top 10.
+        ranked_profiles = list(
+            Profile.objects.filter(leaderboard_optin=True)
+            .select_related('user')
+            .order_by('-zeal_score', 'user_id')   #user_id as tiebreaker so ties don't reshuffle order between requests
+        )
+
+        entries = []
+        your_rank = None
+        your_total_streak = None
+
+        for idx, profile in enumerate(ranked_profiles, start=1):
+            #streak_count_is_public_visible hides just the NUMBER, not the
+            #whole row - the user still occupies their rank slot.
+            score_is_public = profile.streak_count_is_public_visible
+
+            if idx <= 10:   #card UI only ever renders 10 slots
+                entries.append({
+                    'rank': idx,
+                    'public_id': profile.public_searchable_username or 'unavailable',
+                    'total_streak': profile.zeal_score if score_is_public else None,
+                    'private': not score_is_public,
+                    'user_profile_pic': profile.profile_img_url or '',
+                })
+
+            if request.user.is_authenticated and profile.user_id == request.user.id:
+                your_rank = idx
+                #"Your Position" is a private-to-you section (never shown
+                #to others per the UI copy), so it always shows the real
+                #score regardless of the public-visibility toggle.
+                your_total_streak = profile.zeal_score
+
+        #Most active day this week, based on journal entries actually
+        #logged in week_start..week_end (Entries.commit_at is a plain
+        #DateField set on creation).
+        day_counts = {}
+        for commit_at in Entries.objects.filter(commit_at__range=(week_start, week_end)).values_list('commit_at', flat=True):
+            day_name = commit_at.strftime('%A')
+            day_counts[day_name] = day_counts.get(day_name, 0) + 1
+        most_active_day = max(day_counts, key=day_counts.get) if day_counts else None
+
         return JsonResponse({
-        "message": "ok",
-        "week_label": "Jul 21 - Jul 27, 2026",
-        "week_number": 30,
-        "entries": ranking,
-        "total_participants": 47,
-        "most_active_day": "Monday",
-        "your_rank": 3,
-        "your_total_streak": 89,
+            "message": "ok",
+            "week_label": f"{week_start.strftime('%b %d')} - {week_end.strftime('%b %d, %Y')}",
+            "week_number": week_start.isocalendar()[1],
+            "entries": entries,
+            "total_participants": len(ranked_profiles),
+            "most_active_day": most_active_day,
+            "your_rank": your_rank,
+            "your_total_streak": your_total_streak,
         })
-        
-        

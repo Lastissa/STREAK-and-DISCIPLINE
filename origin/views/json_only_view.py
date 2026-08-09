@@ -765,7 +765,6 @@ class EachCommitmentViewSettings(LoginRequiredMixin, View):
         #input valid, Now update the data
         db_istance = Commitment.objects.filter(user=request.user, pk=commitment_key).first()
         
-
         #cleaning whatsap number if mode_of_delivery is whatsapp, make sure it starts with + and is a valid number
         if mode_of_delivery == 'whatsapp':
             #verify that whatsap number is valid
@@ -982,10 +981,13 @@ class GetVapidPublicKey(LoginRequiredMixin, View):
     PushManager.subscribe({applicationServerKey: <this key>}). Safe to expose — the
     private half never leaves the server (see utility/push_sending.py)."""
     def get(self, request):
-        key = Static.vapid_public_key()
-        if not key:
+        # Checks BOTH keys via vapid_configured(), not just the public one - a
+        # public-key-only check would let the browser successfully subscribe while
+        # every actual send afterwards silently fails deep inside pywebpush the moment
+        # it tries to sign with a missing private key.
+        if not Static.vapid_configured():
             return JsonResponse({'message': 'Push notifications are not configured on this server yet.'}, status=503)
-        return JsonResponse({'vapid_public_key': key}, status=200)
+        return JsonResponse({'vapid_public_key': Static.vapid_public_key()}, status=200)
 
 
 class SavePushSubscription(LoginRequiredMixin, View):
@@ -1015,6 +1017,10 @@ class SavePushSubscription(LoginRequiredMixin, View):
             endpoint=endpoint,
             defaults={'user': request.user, 'p256dh': p256dh, 'auth': auth, 'user_agent': user_agent},
         )
+
+        from utility.push_sending import send_confirmation_push
+        send_confirmation_push(endpoint=endpoint)  # fires instantly, confirms the whole pipeline actually works end to end
+
         return JsonResponse({'message': 'Push subscription saved. You will now get push reminders for commitments set to push.'}, status=200)
 
 

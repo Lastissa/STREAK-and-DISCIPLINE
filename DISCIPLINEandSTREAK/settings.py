@@ -9,8 +9,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('django_key')
 
-DEBUG = False
-# DEBUG = True
+# DEBUG = False
+DEBUG = True
 
 SOCIAL_AUTH_RAISE_EXCEPTIONS = False # for django_social to not debug, it should be close to up so its easily reached
 
@@ -175,7 +175,7 @@ CACHES = {
     }
 }
 
-SESSION_COOKIE_AGE = 86400 * 2      #Setting max sessio age to two days
+SESSION_COOKIE_AGE = 86400 * 1      #Setting max sessio age to 1 day
 
 EMAIL_BACKEND = "anymail.backends.mailtrap.EmailBackend"
 DEFAULT_FROM_EMAIL = "hello@demomailtrap.co"

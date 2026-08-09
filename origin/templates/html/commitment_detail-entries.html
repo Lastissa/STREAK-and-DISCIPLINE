@@ -73,7 +73,7 @@
           <div class="aside-support-lbl">Support</div>
           <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_blank" rel="noopener" class="aside-link">
             <i class="fab fa-whatsapp"></i> WhatsApp Support</a>
-          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link"><i class="fas fa-envelope"></i> Email Support</a>
+          <a href="mailto:{{oficial_email}}" class="aside-link"><i class="fas fa-envelope"></i> Email Support</a>
           <a href="tel:{{ customer_care_phone_number }}" class="aside-link">
             <i class="fas fa-phone"></i> {{ customer_care_phone_number }}</a>
         </nav>
@@ -473,6 +473,9 @@
                         <i class="fas fa-bell"></i><span>Push</span>
                       </div>
                     </div>
+                    <p style="font-size:0.72rem;margin-top:0.35rem;color:var(--ink2)">
+                      Choosing Push will ask your browser for notification permission — accept it so reminders can reach you.
+                    </p>
                   </div>
 
                   <!-- WhatsApp number (shown when method = whatsapp) -->

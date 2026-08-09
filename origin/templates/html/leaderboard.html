@@ -294,6 +294,14 @@
                 </div>
               </div>
 
+              <!-- Skip control - shown for the whole reveal (waiting HUD +
+                   the cinematic countdown/climax). Jumps straight to the
+                   final board for people who don't want to sit through
+                   the animation. -->
+              <button class="btn btn-outline" id="skipAnimBtn" type="button" style="display:none;margin:0.85rem auto 0;">
+                <i class="fas fa-forward"></i> Skip animation
+              </button>
+
               <!-- Error state -->
               <div class="lb-error" id="lbError">
                 <i class="fas fa-circle-exclamation" style="font-size:1.8rem;color:var(--bad);display:block;margin-bottom:0.75rem"></i>
@@ -587,6 +595,7 @@
   var LB = {
     isLastWeek: false,
     revealed:   false,
+    aborted:    false,   // true once the user hits "Skip animation" for the current reveal
     data:       null,    // last fetch response
     ENDPOINT:   '{% url "origin_get_weekly_leaderboard_json" %}'
   };
@@ -738,12 +747,14 @@
   }
 
   function resetStage() {
+    LB.aborted = false;
     // Flip all cards back
     qsa('.lb-card').forEach(function(c) { c.classList.remove('flipped','flip-stagger'); });
     // Show reveal controls, hide error & almost-there
     show(document.getElementById('revealCtaArea'));
     hide(document.getElementById('almostThere'));
     hide(document.getElementById('lbError'));
+    hide(document.getElementById('skipAnimBtn'));
     // Drop any leftover cinematic state from a previous reveal
     document.body.classList.remove('lb-focus-mode', 'lb-revealed-glow', 'lb-tension', 'lb-climax', 'lb-sequence-active', 'lb-mystery-charge');
     hide(document.getElementById('climaxOverlay'));
@@ -1046,12 +1057,19 @@
     aimAtCenter(els.wrap, spotlightScaleForRank(rank));
 
     requestAnimationFrame(function() {
+      // Checked again here (not just at the top of the function) because
+      // "Skip animation" can fire in the gap between this card starting
+      // and this rAF actually running - without this we'd zoom a card in
+      // right after the skip handler already flipped it into place.
+      if (LB.aborted) return;
       els.wrap.classList.add('is-spotlighted');
     });
 
     setTimeout(function() {
+      if (LB.aborted) { onSettled(); return; }
       els.card.classList.add('flipped');
       setTimeout(function() {
+        if (LB.aborted) { onSettled(); return; }
         els.wrap.classList.remove('is-spotlighted');
         els.wrap.classList.add('settling');
         setTimeout(function() {
@@ -1064,7 +1082,10 @@
   }
 
   function runCountdown(byRank, idx, onDone) {
-    if (idx >= COUNTDOWN_ORDER.length) { onDone(); return; }
+    // LB.aborted short-circuits the remaining ranks straight to onDone
+    // (which hands off to revealChampion, itself also abort-aware) once
+    // the user has asked to skip.
+    if (LB.aborted || idx >= COUNTDOWN_ORDER.length) { onDone(); return; }
     var rank = COUNTDOWN_ORDER[idx];
     spotlightCard(rank, byRank[rank], function() {
       runCountdown(byRank, idx + 1, onDone);
@@ -1115,24 +1136,30 @@
   function revealChampion(byRank, onDone) {
     var entry = byRank[1];
     var els = cardEls(1);
-    if (!els.card || !els.wrap || !entry) { onDone(); return; }
+    // LB.aborted is checked up front so a mid-sequence skip stops the
+    // charge-up/climax/confetti beat from ever starting.
+    if (LB.aborted || !els.card || !els.wrap || !entry) { onDone(); return; }
 
     // Mystery beat: the card stays face-down but "charges up" in place
     document.body.classList.add('lb-mystery-charge');
     els.wrap.classList.add('is-charging');
 
     setTimeout(function() {
+      if (LB.aborted) { onDone(); return; }
       els.wrap.classList.remove('is-charging');
       document.body.classList.remove('lb-mystery-charge');
 
       els.wrap.classList.add('tier-a');
       aimAtCenter(els.wrap, 1.7);
       requestAnimationFrame(function() {
+        if (LB.aborted) return;
         els.wrap.classList.add('is-spotlighted', 'is-champion-spotlight');
       });
 
       setTimeout(function() {
+        if (LB.aborted) { onDone(); return; }
         runClimaxSequence(function() {
+          if (LB.aborted) { onDone(); return; }
           var front = document.getElementById('card-front-1');
           if (front) { front.innerHTML = buildCardFront(entry); front.classList.add('rank-1'); }
           els.card.classList.add('flipped');
@@ -1168,8 +1195,12 @@
     runCountdown(byRank, 0, function() {
       revealChampion(byRank, function() {
         document.body.classList.remove('lb-sequence-active');
-        showOutroMessage();
-        setTimeout(hideOutroMessage, 4200);
+        // Don't show the "next Sunday" outro card if the user skipped -
+        // it's a payoff beat for people who watched the reveal.
+        if (!LB.aborted) {
+          showOutroMessage();
+          setTimeout(hideOutroMessage, 4200);
+        }
         if (onAllDone) onAllDone();
       });
     });
@@ -1179,6 +1210,39 @@
      SEGMENT 10b: Render - kicks off the sequence, brings in the
      supporting numbers once the whole show has settled
       */
+  /* Fills in the stats strip + "Your Position" strip. Pulled out into
+     its own function so both the normal cinematic path (after the full
+     reveal sequence settles) and the instant "skip animation" path
+     (render everything right now, no sequence) can share it instead of
+     keeping two copies in sync. */
+  function finishStatsAndYourRank(data, entries) {
+    var tp  = document.getElementById('ssTotalParticipants');
+    var ts  = document.getElementById('ssTopStreak');
+    var mad = document.getElementById('ssMostActiveDay');
+    var wn  = document.getElementById('ssWeekNumber');
+
+    if (tp) countUp(tp, data.total_participants || 0, '', 0);
+    if (ts && entries.length > 0) {
+      var topEntry = entries.find(function(e) { return !e.private && e.total_streak; });
+      countUp(ts, topEntry ? topEntry.total_streak : 0, ' pts', 100);
+    }
+    if (mad) mad.textContent = data.most_active_day || '-';
+    if (wn)  wn.textContent  = data.week_number    || '-';
+
+    var yrSection = document.getElementById('yourRankSection');
+    var yrNum     = document.getElementById('yrRankNum');
+    var yrStreak  = document.getElementById('yrStreakText');
+    if (data.your_rank && yrSection) {
+      show(yrSection);
+      yrSection.classList.add('lb-revealed');
+      if (yrNum)    yrNum.textContent   = '#' + data.your_rank;
+      if (yrStreak) yrStreak.textContent =
+        data.your_total_streak !== null && data.your_total_streak !== undefined
+          ? data.your_total_streak + ' combined streak points this week'
+          : 'Score is set to private';
+    }
+  }
+
   function renderLeaderboard(data) {
     var entries = data.entries || [];
     var byRank = {};
@@ -1190,39 +1254,86 @@
     if (weekNumText && data.week_number) weekNumText.textContent = 'Week ' + data.week_number;
 
     runRevealSequence(byRank, function() {
+      hide(document.getElementById('skipAnimBtn'));
+      // If the user skipped mid-sequence, renderLeaderboardInstant already
+      // painted the final board and stats - nothing left to do here.
+      if (LB.aborted) return;
       document.body.classList.remove('lb-focus-mode');
       document.body.classList.add('lb-revealed-glow');
-
-      // Stats
-      setTimeout(function() {
-        var tp = document.getElementById('ssTotalParticipants');
-        var ts = document.getElementById('ssTopStreak');
-        var mad = document.getElementById('ssMostActiveDay');
-        var wn = document.getElementById('ssWeekNumber');
-
-        if (tp) countUp(tp, data.total_participants || 0, '', 0);
-        if (ts && entries.length > 0) {
-          var topEntry = entries.find(function(e) { return !e.private && e.total_streak; });
-          countUp(ts, topEntry ? topEntry.total_streak : 0, ' pts', 100);
-        }
-        if (mad) mad.textContent = data.most_active_day || '-';
-        if (wn)  wn.textContent  = data.week_number    || '-';
-      }, 300);
-
-      // Your rank
-      var yrSection = document.getElementById('yourRankSection');
-      var yrNum     = document.getElementById('yrRankNum');
-      var yrStreak  = document.getElementById('yrStreakText');
-      if (data.your_rank && yrSection) {
-        show(yrSection);
-        yrSection.classList.add('lb-revealed');
-        if (yrNum)    yrNum.textContent   = '#' + data.your_rank;
-        if (yrStreak) yrStreak.textContent =
-          data.your_total_streak !== null && data.your_total_streak !== undefined
-            ? data.your_total_streak + ' combined streak points this week'
-            : 'Score is set to private';
-      }
+      setTimeout(function() { finishStatsAndYourRank(data, entries); }, 300);
     });
+  }
+
+  /* Clears every cinematic class/inline-style the countdown/climax
+     sequence may have left mid-flight, so a skipped card doesn't sit
+     half-zoomed or dimmed once we've jumped straight to the end state. */
+  function stopCinematicVisuals() {
+    document.body.classList.remove('lb-climax', 'lb-mystery-charge', 'lb-sequence-active');
+    hide(document.getElementById('climaxOverlay'));
+    var burst = document.getElementById('celebrationBurst');
+    if (burst) { burst.classList.remove('show'); burst.innerHTML = ''; }
+    hideOutroMessage();
+    qsa('.lb-card-wrap').forEach(function(w) {
+      w.classList.remove('is-spotlighted', 'is-charging', 'is-champion-spotlight', 'settling', 'tier-a', 'tier-b', 'tier-c');
+      w.style.removeProperty('--zoom-x');
+      w.style.removeProperty('--zoom-y');
+      w.style.removeProperty('--zoom-scale');
+    });
+  }
+
+  /* The "skip animation" path: paint every card straight to its final
+     flipped face and populate the stats/your-rank strips immediately -
+     no zoom, no climax countdown, no confetti. */
+  function renderLeaderboardInstant(data) {
+    var entries = data.entries || [];
+    var byRank = {};
+    entries.forEach(function(entry) { byRank[entry.rank] = entry; });
+
+    var labelText = document.getElementById('weekLabelText');
+    if (labelText && data.week_label) labelText.textContent = data.week_label;
+    var weekNumText = document.getElementById('weekNumText');
+    if (weekNumText && data.week_number) weekNumText.textContent = 'Week ' + data.week_number;
+
+    stopCinematicVisuals();
+
+    for (var rank = 1; rank <= 10; rank++) {
+      var entry = byRank[rank];
+      var front = document.getElementById('card-front-' + rank);
+      var card  = document.querySelector('.lb-card[data-rank="' + rank + '"]');
+      if (!entry || !front || !card) continue;
+      front.innerHTML = buildCardFront(entry);
+      if (rank <= 3) front.classList.add('rank-' + rank);
+      card.classList.add('flipped');
+    }
+
+    hide(document.getElementById('skipAnimBtn'));
+    document.body.classList.remove('lb-focus-mode');
+    document.body.classList.add('lb-revealed-glow');
+    finishStatsAndYourRank(data, entries);
+  }
+
+  /* Click handler for #skipAnimBtn. Works whether we're still waiting
+     on the network (LB.data not populated yet - the fetch handler in
+     doReveal() checks LB.aborted once the response lands and renders
+     instantly instead of running the suspense/cinematic path) or we're
+     already mid cinematic sequence (LB.data is populated - paint the
+     final board right now). */
+  function skipAnimation() {
+    if (LB.aborted) return; // already skipped once for this reveal
+    LB.aborted = true;
+    hide(document.getElementById('skipAnimBtn')); // acknowledge the click immediately either way
+
+    clearTimeout(atMsgTimer);
+    clearTimeout(tensionTimer);
+    document.body.classList.remove('lb-tension');
+
+    if (LB.data) {
+      hideAlmostThere();
+      renderLeaderboardInstant(LB.data);
+    }
+    // else: still waiting on the network response itself - can't skip
+    // past a fetch that hasn't returned yet, but the message-cycling/
+    // tension escalation is stopped above so it just waits quietly.
   }
 
   /* 
@@ -1230,12 +1341,14 @@
       */
   function doReveal() {
     if (LB.revealed) return;
+    LB.aborted = false; // fresh reveal - clear any skip from a previous attempt
 
     var revealBtn     = document.getElementById('revealBtn');
     var revealCtaArea = document.getElementById('revealCtaArea');
     var lbError       = document.getElementById('lbError');
     var lbErrorMsg    = document.getElementById('lbErrorMsg');
     var stageSection  = document.getElementById('stageSection');
+    var skipBtn       = document.getElementById('skipAnimBtn');
 
     // Enter cinematic focus mode: dim everything else, center the stage,
     // scroll it into view so the motion is the first thing the user sees.
@@ -1251,6 +1364,7 @@
     hide(revealCtaArea);
     hide(lbError);
     startAlmostThere();
+    show(skipBtn); // stays visible through both the wait and the cinematic sequence
 
     var url = LB.ENDPOINT + (LB.isLastWeek ? '?last_week=true' : '');
 
@@ -1276,6 +1390,7 @@
             finishAlmostThere(false);
             setTimeout(function() {
               hideAlmostThere();
+              hide(skipBtn);
               document.body.classList.remove('lb-focus-mode');
               lbErrorMsg.textContent = res.d.message || 'Could not load leaderboard data. Try again.';
               lbError.classList.add('show');
@@ -1287,6 +1402,15 @@
 
         LB.data = res.d;
         LB.revealed = true;
+
+        // The user hit "Skip animation" while this request was still in
+        // flight - render the final board the moment data lands instead
+        // of running the artificial suspense wait + cinematic sequence.
+        if (LB.aborted) {
+          hideAlmostThere();
+          renderLeaderboardInstant(res.d);
+          return;
+        }
 
         setTimeout(function() {
           finishAlmostThere(true);
@@ -1304,6 +1428,7 @@
           finishAlmostThere(false);
           setTimeout(function() {
             hideAlmostThere();
+            hide(skipBtn);
             document.body.classList.remove('lb-focus-mode');
             lbErrorMsg.textContent = 'Network error. Check your connection and try again.';
             lbError.classList.add('show');
@@ -1316,12 +1441,14 @@
   function initReveal() {
     var revealBtn = document.getElementById('revealBtn');
     var retryBtn  = document.getElementById('lbRetryBtn');
+    var skipBtn   = document.getElementById('skipAnimBtn');
     if (revealBtn) revealBtn.addEventListener('click', doReveal);
     if (retryBtn)  retryBtn.addEventListener('click', function() {
       LB.revealed = false;
       document.getElementById('lbError').classList.remove('show');
       doReveal();
     });
+    if (skipBtn) skipBtn.addEventListener('click', skipAnimation);
   }
 
   /* 
