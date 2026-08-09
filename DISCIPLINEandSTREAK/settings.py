@@ -177,10 +177,6 @@ CACHES = {
 
 SESSION_COOKIE_AGE = 86400 * 2      #Setting max sessio age to two days
 
-# settings.py
-ANYMAIL = {
-  "MAILTRAP_API_TOKEN": "9a502a727a707dfe171e9dffb6727cb5",
-}
 EMAIL_BACKEND = "anymail.backends.mailtrap.EmailBackend"
 DEFAULT_FROM_EMAIL = "hello@demomailtrap.co"
 
@@ -193,3 +189,10 @@ EMAIL_HOST_USER = DEFAULT_FROM_EMAIL
 EMAIL_USE_SSL = True
 EMAIL_HOST_PASSWORD = os.getenv('GMAIL_PASSWORD')
 EMAIL_PORT = 465
+
+
+
+VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY', '')
+VAPID_PRIVATE_KEY = os.getenv('VAPID_PRIVATE_KEY', '')
+VAPID_ADMIN_EMAIL = os.getenv('VAPID_ADMIN_EMAIL', DEFAULT_FROM_EMAIL)
+CRON_SECRET_KEY = os.getenv('CRON_SECRET_KEY', '')

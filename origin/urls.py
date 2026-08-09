@@ -85,6 +85,13 @@ urlpatterns = [
     path('staff/get_token/', views.StaffMakeTokenRequest.as_view(), name ="origin_get_staff_token"),
     path('staff/home/', views.AccountWithStaffStatus.as_view(), name ="origin_staff_home"),
     path('staff/create_blog/', views.CreateBlog.as_view(), name ="origin_staff_publish_news"),
+    
+    
+    # Cron job THAT I RUN MANUALLy WITH HTTP USING CRONJOB.ORG AND UPTIMEROBOT
+    path('push/vapid_public_key/', views.GetVapidPublicKey.as_view(), name = 'origin_push_vapid_public_key'),
+    path('push/subscribe/', views.SavePushSubscription.as_view(), name = 'origin_push_subscribe'),
+    path('push/unsubscribe/', views.RemovePushSubscription.as_view(), name = 'origin_push_unsubscribe'),
+    path('cron/send-checkin-reminders/<str:secret>/', views.CreateHitCheckinReminders.as_view(), name = 'origin_cron_checkin_reminders'),
 
 ]
 

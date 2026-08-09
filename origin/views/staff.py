@@ -11,6 +11,8 @@ from django.db import transaction
 from django.utils import timezone
 from django.contrib.auth.mixins import LoginRequiredMixin
 
+from utility.send_bulk_email import send_news_email
+
 from ..models import StaffTempToken, News
 from utility.config import Static
 from utility.email_sending import send_staff_access_code_email
@@ -195,6 +197,7 @@ class CreateBlog(View):
                     news_ist.banner = output['url']
                     news_ist.full_clean()
                     news_ist.save()
+                    send_news_email(news_instance=news_ist)
                     return JsonResponse({'message': 'Uplaod sucess with banner'}, status = 200)
                 else:
                     news_ist.banner = None

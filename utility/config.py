@@ -129,7 +129,22 @@ class Static:
         if tier == 0: return ['5 active commitment','Daily check-in reminder via email','Weekly report summary', '1 partner']
         elif tier == 1: return ['50 active commitments', 'Daily check-in reminder via whatsapp or email and push', 'Advance weekly report summary','Personalized coach','5 partner', 'upload profile picture']
         elif tier == 2: return ['unlimited commitments', 'Daily check-in reminder via whatsapp or email and push + offline reminders','Custom periodical summary','Personalized coach', '20 partners' , 'Advance analytics includes what you should do istead of just data visualization','create Groups', 'Upload profile picture']
-        
+
+    @classmethod
+    def vapid_public_key(self) -> str:
+        return os.getenv('VAPID_PUBLIC_KEY', '')
+
+    @classmethod
+    def vapid_private_key(self) -> str:
+        return os.getenv('VAPID_PRIVATE_KEY', '')
+
+    @classmethod
+    def vapid_admin_email(self) -> str:
+        return os.getenv('VAPID_ADMIN_EMAIL', self.official_email())
+
+    @classmethod
+    def cron_secret_key(self) -> str:
+        return os.getenv('CRON_SECRET_KEY', '')
     @classmethod
     def emoji_translator(self):
         """Mappping for each feeling that cam possvile in the database"""

@@ -6,5 +6,6 @@ from .normal_view import *          # The regs, return html and UI's
 from .json_only_view import *       # Handles anything tht returns only json
 from .danger import *               #handles dangerous zone
 from .staff import *                # Handles anything staff related except the backdoor
+from .cron_job_View import *        #For the background task i need to handle since i am using render free
 from .normal_view import *
 

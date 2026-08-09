@@ -522,6 +522,10 @@
 
   <script>{% include "reusables/spinner.js" %}</script>
 
+  <!-- Push notification helper (SDPush.enable/disable) - wired below whenever the
+       "push" delivery method card is selected/saved for this commitment. -->
+  <script>{% include "reusables/push_notifications.js" %}</script>
+
 <!--THIS HANDLES END OF LIFE OF PAGE TO AVOID FREEZING ON SLOW INTERNET OR HIGH TRAFFIC, IT CREATE ILLUSION OF A SPINNER LOADING NEXT PAGE-->
 {% include "reusables/navigation_loader.html" %}
 <style rel="stylesheet">
@@ -1087,6 +1091,16 @@
         card.classList.add('on'); curMethod=card.getAttribute('data-method');
         var waWrap=document.getElementById('cdsWaWrap');
         if(waWrap) waWrap.style.display=curMethod==='whatsapp'?'':'none';
+        // Picking "push" is the moment to ask the browser for notification permission
+        // and register the subscription - waiting until Save would mean the request
+        // fires with no visual context for why the browser is asking.
+        if(curMethod==='push' && window.SDPush){
+          SDPush.isEnabled().then(function(on){
+            if(!on) SDPush.enable().catch(function(err){
+              if (typeof showToast === 'function') showToast(err.message||'Could not enable push notifications for this browser.','error');
+            });
+          });
+        }
       }
       card.addEventListener('click',select);
       card.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); select(); } });

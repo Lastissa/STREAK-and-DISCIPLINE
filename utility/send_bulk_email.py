@@ -366,3 +366,9 @@ def send_checkin_reminder_emails(recipient_emails: list = None) -> None:
                          (e.g. only users whose own reminder time just passed).
     """
     _dispatch(_run_checkin_reminder_job, recipient_emails=recipient_emails)
+    
+    
+    
+def send_due_checkin_reminder_batch(items: list) -> None:
+    """Async entry point for the time-aware per-commitment reminder job."""
+    _dispatch(_send_checkin_reminders_batch, items=items)

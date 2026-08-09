@@ -976,6 +976,69 @@ class ReportsData(LoginRequiredMixin, View):
     
 
         
-        return JsonResponse({}, status = 400)
+        
+class GetVapidPublicKey(LoginRequiredMixin, View):
+    """Hands the frontend the PUBLIC half of the VAPID keypair so it can call
+    PushManager.subscribe({applicationServerKey: <this key>}). Safe to expose — the
+    private half never leaves the server (see utility/push_sending.py)."""
+    def get(self, request):
+        key = Static.vapid_public_key()
+        if not key:
+            return JsonResponse({'message': 'Push notifications are not configured on this server yet.'}, status=503)
+        return JsonResponse({'vapid_public_key': key}, status=200)
+
+
+class SavePushSubscription(LoginRequiredMixin, View):
+    """Called right after navigator.serviceWorker + PushManager.subscribe() succeed in
+    the browser. Body shape (this is exactly what PushSubscription.toJSON() gives you):
+        {"endpoint": "...", "keys": {"p256dh": "...", "auth": "..."}}
+    """
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+        except (json.JSONDecodeError, TypeError):
+            return JsonResponse({'message': 'Invalid JSON body.'}, status=400)
+
+        endpoint = (data.get('endpoint') or '').strip()
+        keys = data.get('keys') or {}
+        p256dh = (keys.get('p256dh') or '').strip()
+        auth = (keys.get('auth') or '').strip()
+        user_agent = request.META.get('HTTP_USER_AGENT', '')[:255]
+
+        if not endpoint or not p256dh or not auth:
+            return JsonResponse({'message': 'endpoint, keys.p256dh and keys.auth are all required.'}, status=400)
+
+        from ..models import PushSubscription
+        # update_or_create on endpoint: same browser re-subscribing (e.g. after clearing
+        # cache) just refreshes its keys/owner instead of creating a duplicate row.
+        PushSubscription.objects.update_or_create(
+            endpoint=endpoint,
+            defaults={'user': request.user, 'p256dh': p256dh, 'auth': auth, 'user_agent': user_agent},
+        )
+        return JsonResponse({'message': 'Push subscription saved. You will now get push reminders for commitments set to push.'}, status=200)
+
+
+class RemovePushSubscription(LoginRequiredMixin, View):
+    """Called when the user turns push off from this browser (or the frontend detects
+    the permission was revoked). Deletes only the caller's own subscription row —
+    scoped to request.user so nobody can delete someone else's by guessing an endpoint."""
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+        except (json.JSONDecodeError, TypeError):
+            return JsonResponse({'message': 'Invalid JSON body.'}, status=400)
+
+        endpoint = (data.get('endpoint') or '').strip()
+        if not endpoint:
+            return JsonResponse({'message': 'endpoint is required.'}, status=400)
+
+        from ..models import PushSubscription
+        deleted, _ = PushSubscription.objects.filter(user=request.user, endpoint=endpoint).delete()
+        if deleted == 0:
+            return JsonResponse({'message': 'No matching subscription found for your account.'}, status=404)
+        return JsonResponse({'message': 'Push subscription removed.'}, status=200)
+    
+    
+    
 class DataExport(LoginRequiredMixin, View):
     def get(self, request): return JsonResponse({'message': 'Still in development'})

@@ -625,6 +625,10 @@
         -->
   <script>{% include "reusables/spinner.js" %}</script>
 
+  <!-- Push notification helper (SDPush.enable/disable) - wired below whenever the
+       "push" delivery method card is selected in the new-commitment wizard. -->
+  <script>{% include "reusables/push_notifications.js" %}</script>
+
 <!--THIS HANDLES END OF LIFE OF PAGE TO AVOID FREEZING ON SLOW INTERNET OR HIGH TRAFFIC, IT CREATE ILLUSION OF A SPINNER LOADING NEXT PAGE-->
 {% include "reusables/navigation_loader.html" %}
 <style rel="stylesheet">
@@ -1649,6 +1653,14 @@
         var waField = document.getElementById('ovWaField');
         if (waField) {
           FORM.mode_of_delivery === 'whatsapp' ? show(waField) : hide(waField);
+        }
+        // Picking "push" is the moment to ask the browser for notification permission -
+        // waiting until the wizard is submitted would fire the permission prompt with
+        // no visible context for why the browser is suddenly asking.
+        if (FORM.mode_of_delivery === 'push' && window.SDPush) {
+          SDPush.isEnabled().then(function (on) {
+            if (!on) SDPush.enable().catch(function () { /* user can retry from commitment settings later */ });
+          });
         }
       }
       card.addEventListener('click', select);

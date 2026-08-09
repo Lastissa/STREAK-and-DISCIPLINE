@@ -368,11 +368,15 @@
                   <select class="ob-input" id="obReminderTime" style="margin-bottom:0.5rem"></select>
                 </div>
                 <label class="ob-label">Via</label>
+                <p class="ob-hint" style="font-size:0.72rem;margin-top:0.3rem">
+                  Choosing Push will ask your browser for notification permission — accept it so reminders can reach you.
+                </p>
                 <div class="method-grid" id="methodGrid">
                   <div class="method-card on" data-method="email"><i class="fas fa-envelope"></i><span>Email</span></div>
                   <div class="method-card" data-method="whatsapp"><i class="fab fa-whatsapp"></i><span>WhatsApp</span></div>
                   <div class="method-card" data-method="push"><i class="fas fa-bell"></i><span>Push</span></div>
                 </div>
+                <div class="ob-note" id="pushStatusNote" style="display:none;margin-top:0.4rem"></div>
                 <div id="ob-wa-field">
                   <label class="ob-label" for="obWaNum">WhatsApp number --invalid number can lead to no reminder</label>
                   <input type="tel" class="ob-input" id="obWaNum" placeholder="+2348000000000">
@@ -749,6 +753,9 @@
 </style>
 <script>
   {% include 'reusables/navigation_loader.js' %}
+  {% comment %} This is for if user choose push {% endcomment %}
+  <script>{% include "reusables/push_notifications.js" %}</script>  
+
 </script>
 
   <!-- ==
@@ -1421,16 +1428,36 @@
        METHOD CARDS (reminder channel)
         */
     document.querySelectorAll('[data-method]').forEach(function(mc) {
-      mc.addEventListener('click', function() {
-        document.querySelectorAll('[data-method]').forEach(function(mm){mm.classList.remove('on')});
-        mc.classList.add('on');
-        STATE.reminderMethod = mc.dataset.method;
-        var waField = document.getElementById('ob-wa-field');
-        if (waField) waField.classList.toggle('show', STATE.reminderMethod === 'whatsapp');
-        updateDash();
-        save();
+  mc.addEventListener('click', function() {
+    document.querySelectorAll('[data-method]').forEach(function(mm){mm.classList.remove('on')});
+    mc.classList.add('on');
+    STATE.reminderMethod = mc.dataset.method;
+    var waField = document.getElementById('ob-wa-field');
+    if (waField) waField.classList.toggle('show', STATE.reminderMethod === 'whatsapp');
+
+    var noteEl = document.getElementById('pushStatusNote');
+    if (noteEl) noteEl.style.display = 'none';
+
+    if (STATE.reminderMethod === 'push' && window.SDPush) {
+      SDPush.isEnabled().then(function (already) {
+        if (already) return;
+        SDPush.enable().catch(function (err) {
+          // Fall back to Email so the form never silently points at a method
+          // with nothing actually behind it.
+          document.querySelector('[data-method="email"]').click();
+          if (noteEl) {
+            noteEl.textContent = (err && err.message) ||
+              'Could not enable push in this browser — switched you back to Email for now.';
+            noteEl.style.display = 'block';
+          }
+        });
       });
-    });
+    }
+
+    updateDash();
+    save();
+  });
+});
 
     /* 
        REMINDER TOGGLE
