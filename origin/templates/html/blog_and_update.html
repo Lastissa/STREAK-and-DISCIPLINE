@@ -272,8 +272,8 @@
       </div>
 
       <label for="newsExcerpt">Excerpt
-        <textarea id="newsExcerpt" name="excerpt" rows="2" maxlength="100" required placeholder="A one or two sentence summary shown on the blog card"></textarea>
-        <span class="char-count" id="excerptCount">0 / 100</span>
+        <textarea id="newsExcerpt" name="excerpt" rows="2" maxlength="1000" required placeholder="A one or two sentence summary shown on the blog card"></textarea>
+        <span class="char-count" id="excerptCount">0 / 1000</span>
       </label>
 
       <label for="newsBanner">Banner image
@@ -407,7 +407,7 @@
       if (editBtn) {
         const title = prompt('Edit title:', card.querySelector('h3').textContent.trim());
         if (title === null) return;
-        const excerpt = prompt('Edit excerpt (max 100 chars):', card.querySelector('.post-card-excerpt').textContent.trim());
+        const excerpt = prompt('Edit excerpt (max 1000 chars):', card.querySelector('.post-card-excerpt').textContent.trim());
         if (excerpt === null) return;
         const fd = new FormData();
         fd.append('title', title);

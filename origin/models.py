@@ -202,7 +202,7 @@ class Friendship(models.Model):
 class News(models.Model):
     title = models.CharField(max_length=220, blank=False, null= False, unique=True)          # News title
     tag = models.CharField(max_length=30, blank=False, null= False)            # Category of post based on the custom choiced class
-    excerpt = models.CharField(max_length=160, blank=False, null= False)        # Frist few lines of the full text
+    excerpt = models.CharField(max_length=1000, blank=False, null= False)        # Frist few lines of the full text
     date = models.DateField(auto_now_add= True)                 # Date created
     read_time = models.IntegerField(blank=False, null=False)    # Estimated time user is suppose to read it for
     banner = models.URLField(null=True, blank=True)                        # IF the news have a banner and the image of the banner
@@ -210,7 +210,7 @@ class News(models.Model):
     actual_content = models.TextField(default="", blank=True, null= True)# This hold the actual content that will be displayed on its own page
     
     class Meta:
-        unique_together= ('title', 'tag', 'excerpt', 'read_time', 'banner', 'featured', 'actual_content')
+        unique_together= ('title', 'tag','banner')
         
     def __str__(self):
         return "News"
