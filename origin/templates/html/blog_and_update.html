@@ -250,8 +250,8 @@
       </div>
 
       <label for="newsExcerpt">Excerpt
-        <textarea id="newsExcerpt" name="excerpt" rows="2" maxlength="240" required placeholder="A one or two sentence summary shown on the blog card"></textarea>
-        <span class="char-count" id="excerptCount">0 / 240</span>
+        <textarea id="newsExcerpt" name="excerpt" rows="2" maxlength="1000" required placeholder="A one or two sentence summary shown on the blog card"></textarea>
+        <span class="char-count" id="excerptCount">0 / 1000</span>
       </label>
 
       <label for="newsBanner">Banner image
@@ -552,7 +552,7 @@
 
     if (excerpt && count) {
       excerpt.addEventListener('input', function () {
-        count.textContent = excerpt.value.length + ' / 240';
+        count.textContent = excerpt.value.length + ' / 1000';
       });
     }
 
@@ -628,7 +628,7 @@
           form.reset();
           preview.hidden = true;
           empty.hidden = false;
-          if (count) count.textContent = '0 / 240';
+          if (count) count.textContent = '0 / 1000';
           close();
         })
         .catch(function () {
