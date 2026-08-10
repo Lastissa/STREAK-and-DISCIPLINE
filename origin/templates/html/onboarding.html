@@ -81,13 +81,12 @@
                 Keep the promises<br>you make to <span class="hl">yourself</span>.
               </h1>
               <p class="ob-hint w-hint" style="max-width:400px">
-                A private, no-nonsense journal that holds you accountable — 
-                one honest sentence a day
+                A private, no-nonsense journal that holds you accountable, Honest review everyday <b>slowly but surely</b> building you into your dreamed personality.
               </p>
 
               <div class="pro-banner w-pro" style="max-width:400px">
                 <i class="fas fa-gem"></i> You're starting a <strong>Premium trial</strong> -
-                every feature unlocked
+                valid for the next seven days.
               </div>
 
               <div class="w-cta">
@@ -141,7 +140,7 @@
                 <div class="ft">
                   <i class="fas fa-chart-line"></i>
                   <h4>Weekly Truth Report</h4>
-                  <p>Every Sunday — a private email that tells you exactly how your week looked</p>
+                  <p>Every Sunday, a personal analysis auto generated based on your input that tells you exactly how your week looked</p>
                 </div>
               </div>
 
@@ -281,7 +280,7 @@
             <div class="ob-card">
               <div class="ob-eyebrow">Step 4 of 9</div>
               <h2 class="ob-h2">What's the smallest version of this?</h2>
-              <p class="ob-hint">On your worst day — exhausted, sick, overwhelmed — what still counts as a win? Define the least.</p>
+              <p class="ob-hint">On your worst day, exhausted, sick, overwhelmed— what still counts as a win? Define the least as this will be the auto check in note for that day.</p>
               <label class="ob-label" for="obMin">Your minimum effort</label>
               <input type="text" class="ob-input" id="obMin"
                      placeholder="e.g., Open the book and read even one page." maxlength="120" autocomplete="off">
@@ -290,8 +289,8 @@
               <div class="chip-wrap">
                 <span class="chip" data-fill="obMin">Even 5 minutes counts</span>
                 <span class="chip" data-fill="obMin">Just show up, no excuses</span>
-                <span class="chip" data-fill="obMin">One sentence is enough</span>
-                <span class="chip" data-fill="obMin">One rep / one step</span>
+                <span class="chip" data-fill="obMin">I lost today but i try again tommottow</span>
+                <span class="chip" data-fill="obMin">Struggled but made it through</span>
               </div>
 
               <div class="ob-note">
@@ -385,8 +384,13 @@
               </div>
 
               <div class="pro-banner">
-                <i class="fas fa-gem"></i> <strong>Pro:</strong> All 3 reminder channels + custom schedule.
-                <strong>Free:</strong> 1 channel, default timing.
+                <i class="fas fa-gem"></i> <strong>Gold:</strong> Whatsapp reminder allowed.
+                {% if "trial" in request.GET.keys%}
+                <strong>Current: Premium</strong> push or email allowed 
+                {% else %}<strong>Current:Free</strong>Only email reminder allowed .
+                {% endif %}
+                
+                <strong>Current:</strong> .
               </div>
 
               <div class="btn-row">
@@ -417,7 +421,7 @@
                 <div class="social-card" data-mode="partner">
                   <i class="fas fa-user-group"></i>
                   <h4>With Partner</h4>
-                  <p>Someone sees my consistency score. Not my entries.</p>
+                  <p>Allow sharing of my consistency score to Only people i select.</p>
                 </div>
               </div>
 
@@ -524,7 +528,7 @@
                   <div class="ob-note">New features, tips, discipline content.</div>
                 </div>
                 <label class="ob-switch">
-                  <input type="checkbox" id="obNewsletter">
+                  <input type="checkbox" id="obNewsletter" checked>
                   <span class="ob-sw-track"><span class="ob-sw-thumb"></span></span>
                 </label>
               </div>
@@ -955,11 +959,12 @@
       socialMode: 'solo',
       friendUUID: '',
       friendName: '',
+      partnerStepComplete: false,   // add this to make sure if user is choose partner mode, they have to press skip or send a request to someone, check for partnerStepComplete to remocve all the restriction
       leaderboard: true,
       theme: 'dark',
       aiInsights: true,
       weeklyReport: true,
-      newsletter: false,
+      newsletter: true,
       STORAGE_KEY: 'sd_ob_v2'
     };
 
@@ -989,7 +994,8 @@
           theme: STATE.theme,
           aiInsights: STATE.aiInsights,
           weeklyReport: STATE.weeklyReport,
-          newsletter: STATE.newsletter
+          newsletter: STATE.newsletter,
+          partnerStepComplete: STATE.partnerStepComplete,
         }));
       } catch(e) {}
     }
@@ -1346,6 +1352,19 @@
         }
         if (!validatePhase(currentPhase)) return;
         collectState();
+
+
+    // Enforce partner flow on Phase 9
+    if (
+        currentPhase === 9 &&
+        STATE.socialMode === 'partner' &&
+        !STATE.partnerStepComplete
+    ) {
+        alert('Because you have choose partner mode, you have to Send a friend request or press "Skip for now" before continuing.');
+        return;
+    }
+
+
         burst(btn);
         goTo(to);
       }
@@ -1601,7 +1620,7 @@
         }).then(function(r) {
           return r.json().then(function(d) { return { status: r.status, data: d }; });
         }).then(function(res) {
-          if (res.status === 200) { friendState('frSent'); save(); }
+          if (res.status === 200) { STATE.partnerStepComplete = true; friendState('frSent'); save(); }
           else {
             document.getElementById('frErrMsg').textContent = res.data.message || 'Could not send request.';
             friendState('frError');
@@ -1617,6 +1636,7 @@
     if (skipFriendBtn) {
       skipFriendBtn.addEventListener('click', function() {
         STATE.friendUUID = ''; STATE.friendName = '';
+        STATE.partnerStepComplete = true;
         friendState('frSkipped');
         save();
       });

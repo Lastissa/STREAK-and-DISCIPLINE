@@ -36,19 +36,6 @@ class RedirectHandler(View):
                 user_istance = authenticate(request=request, email = email.upper(), password = request.POST["password"])    #i wou;d have remove this but i need it along the custom user model 
                 
                 if user_istance or user_exist:
-                    #set a key in cache to rate limit after 3 attempt
-                    the_key = f"attempt_login_{email.upper()}"
-                    rate_limit = cache.get(the_key) or ""
-                    if len(rate_limit)  <2:
-                        messages.info( request=request,message= f"Incorrect password or Email.")
-                        cache.set(the_key, rate_limit+"x", timeout=120)
-                    elif len(rate_limit) == 2:
-                        messages.warning( request=request,message= f"Incorrect password or Email., one more fail attempt will lock you out. ")
-                        cache.set(the_key, rate_limit+"x", timeout=120)
-                    else:
-                        messages.error( request=request,message=f"Too many attempts. Please wait 2 minutes before trying again. If you try again before the time is up, the wait period will reset.---{rate_limit}")
-                        cache.set(the_key, "banned", timeout=120)
-                        return redirect('origin_login')
                     
                     #Check the user and the user password, if its valid but the account status is FALSE, redirect them to where they willa ctivate it
                     if user_status is not None and user_status.check_password(request.POST["password"]) and user_status.is_active is False:
@@ -56,6 +43,19 @@ class RedirectHandler(View):
                     
                     #user found but user password is wrong
                     if not user_istance:
+                        #set a key in cache to rate limit after 3 attempt
+                        the_key = f"attempt_login_{email.upper()}"
+                        rate_limit = cache.get(the_key) or ""
+                        if len(rate_limit)  <2:
+                            messages.info( request=request,message= f"Incorrect password or Email.")
+                            cache.set(the_key, rate_limit+"x", timeout=120)
+                        elif len(rate_limit) == 2:
+                            messages.warning( request=request,message= f"Incorrect password or Email., one more fail attempt will lock you out. ")
+                            cache.set(the_key, rate_limit+"x", timeout=120)
+                        else:
+                            messages.error( request=request,message=f"Too many attempts. Please wait 2 minutes before trying again. If you try again before the time is up, the wait period will reset.---{rate_limit}")
+                            cache.set(the_key, "banned", timeout=120)
+                            return redirect('origin_login')            
                         logout(request)
                         return redirect('origin_login')
                          
@@ -63,14 +63,12 @@ class RedirectHandler(View):
                     #user found, create a session and direct onboarding to handle wether it should direct user to dashboard or stay
                     login(request=request, user=user_istance, backend='django.contrib.auth.backends.ModelBackend')  #i currently have three login style set up, hence why i need to specify which i wan to use
                     request.session.save() #i had a race condtioning issue bcos the next page(onboarding uses the seesion as soon as it comes) and the redirect url was not havig enough time to store the db and BOOM , site crash ----This fix cos it mean the request must be saved before user is allowto go
-                    optimization()
                     return redirect('origin_onboarding')
                 else:
-                    logger.warning(msg=f"userexist : {user_exist} is false and also user_istance {user_istance} is false")
                     #no valid credentials, logout any existing session and return back to login
                     logout(request)
                     messages.info(request=request, message= "No account found, Create account to get onboard...")
-                    return redirect('origin_signup')            
+                    return redirect('origin_signup')
             except Exception as e:
                 return JsonResponse(
                     {"message" : "Redirect failed. Refresh the page. If it persists, copy the error_text and send it to any of our customer support .",

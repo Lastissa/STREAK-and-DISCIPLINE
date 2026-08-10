@@ -154,6 +154,7 @@ def send_news_email(news_instance=None, *, title: str = None, excerpt: str = Non
         {read_note}
         <p style="margin:0 0 18px;font-size:14px;color:#334155;line-height:1.6">{excerpt}</p>
         {_button('Read the full story', news_link)}
+        You Don't want this? You can turn it off in youe dashboard -> profile.
     """
 
     recipients = recipient_emails if recipient_emails is not None else _default_recipients()

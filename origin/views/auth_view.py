@@ -70,12 +70,9 @@ class DbSave(LoginRequiredMixin,View):
         elif reminder_method.lower().strip() == "whatsapp"  and str(whatsapp_number[1:]).isdigit() == False:  return JsonResponse({'message' : f'whatsapp number({whatsapp_number}) is not a valid mobile number'}, status = 404)
         
         #third; the Friendship -- i need to verify tbat user exist, that is if they are PARTNER mode
-        if social_mode_settings.strip().lower() == customVal.social_mode[1]:
-            from_user_istance = request.user
-            to_user_istance = Profile.objects.filter(public_searchable_username__iexact = social_friend_user_id).first()
-            if to_user_istance is None: return JsonResponse({'message' : f"user id:'{social_friend_user_id}' does not exist hence your request will be revoked, kindly recheck the userid or switch to solo"}, status = 404)
+        if social_mode_settings.strip().lower() == customVal.social_mode[1]:pass
         #Check if there is a trial key in the query and check if the usr have not used any free trial bnefore
-        
+        #brb
         #if we get here and no issues; all data is valid , create
         with transaction.atomic():
             profile_istance = Profile.objects.create(
@@ -102,9 +99,9 @@ class DbSave(LoginRequiredMixin,View):
                 
             )
             if social_mode_settings.strip().lower() == "partner":
-                helper = helper_with_friendship_request_answer(request=request, to_user_id =social_friend_user_id.strip())
+                helper_with_friendship_request_answer(request=request, to_user_id =social_friend_user_id.strip())
                 #so the issue can be returned succesdully
-                if helper is not None: return helper
+                # if helper is not None: return helper              #its hindering user from creating account and stay in partner mode
                 
         return JsonResponse({'message' : 'success'}, status = 200)
 

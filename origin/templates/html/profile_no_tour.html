@@ -86,9 +86,6 @@
         <span class="hdr-brand">STREAK &amp; DISCIPLINE</span>
       </div>
       <div class="hdr-right">
-        <button class="hdr-btn hdr-tour-btn" id="pfTourBtn" title="Page tour & help" aria-label="Take a guided page tour">
-          <i class="fas fa-circle-question"></i>
-        </button>
         <button class="hdr-btn" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
           <i class="fas fa-moon" id="themeIcon"></i>
         </button>
@@ -308,17 +305,6 @@
             <!-- ████ 3. PRIVACY & VISIBILITY ████ -->
             <section class="pf-section" id="s-privacy" style="--i:.15s">
               <div class="pf-section-head"><i class="fas fa-shield-halved"></i> Privacy &amp; Visibility</div>
-
-              <div class="pf-privacy-note" id="pfPrivacyNote">
-                <i class="fas fa-shield-halved"></i>
-                <span>
-                  Nothing below ever shares your <strong>journal entries or notes</strong> — that content stays 100% private no
-                  matter what you toggle here. These switches only control your <strong>combined streak count</strong> and
-                  <strong>Zeal Score</strong>: whether they're visible on the public leaderboard, and whether people can even
-                  send you a partner request in the first place.
-                </span>
-              </div>
-
               <div class="pf-card">
 
                 <!-- Leaderboard optin -->
@@ -362,7 +348,7 @@
                       <i class="fas fa-handshake" style="color:var(--ink3)"></i>
                       Partner Mode
                     </div>
-                    <p class="pf-hint">Lets people send YOU partner requests — turning this on shares nothing by itself. Only if you go on to accept a specific request does that person see your combined streak count and Zeal Score. Entries always stay private.</p>
+                    <p class="pf-hint">Let potential partners be able to send you partner requests. Entries stay private.</p>
                   </div>
                   <label class="pf-switch" aria-label="Partner mode">
                     <input type="checkbox" id="pfSocialMode"
@@ -631,14 +617,6 @@
                   <a href="{% url "origin_signup" %}?trial=true" style="color:var(--accL)">Upgrade</a>
                 </p>
                 {% else %}
-                <div class="pf-privacy-note" id="pfPartnersPrivacyNote">
-                  <i class="fas fa-shield-halved"></i>
-                  <span>
-                    Sending a request shares nothing yet. Only once they <strong>accept</strong> can they see your combined
-                    streak count and Zeal Score — never your journal entries, which stay private always. It's one-way too:
-                    you won't see anything of theirs unless they send <em>you</em> a request back and you accept it.
-                  </span>
-                </div>
                 <div id="pfPartnerList">
                   <div class="pf-partner-item">
                     <div class="pf-partner-avatar"><i class="fas fa-circle-notch fa-spin"></i></div>
@@ -837,35 +815,6 @@
     <span class="pf-toast-msg" id="pfToastMsg"></span>
     <button class="pf-toast-close" id="pfToastClose" aria-label="Dismiss"><i class="fas fa-xmark"></i></button>
   </div>
-
-  <!-- 
-       GUIDED TOUR OVERLAY — explains what each setting actually
-       shares (or doesn't) before the person toggles it.
-        -->
-  <div class="pf-tour-bd" id="pfTourBd" role="dialog" aria-modal="true" aria-label="Page tour">
-
-    <div class="pf-tour-spot" id="pfTourSpot" aria-hidden="true"></div>
-
-    <div class="pf-tour-card" id="pfTourCard">
-      <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.55rem">
-        <div class="pf-tour-icon" id="pfTourIcon"><i class="fas fa-circle-user" id="pfTourIconI"></i></div>
-        <span class="pf-tour-badge" id="pfTourBadge">Step 1 of 6</span>
-      </div>
-      <div class="pf-tour-h" id="pfTourH">Welcome to Profile &amp; Settings</div>
-      <div class="pf-tour-p" id="pfTourP">Let's take a quick tour of this page.</div>
-      <div class="pf-tour-foot">
-        <button class="pf-tour-skip" id="pfTourSkip">Skip tour</button>
-        <div style="display:flex;align-items:center;gap:0.75rem">
-          <div class="pf-tour-dots" id="pfTourDots"></div>
-          <div class="pf-tour-nav">
-            <button class="pf-tour-prev" id="pfTourPrev" disabled aria-label="Previous step">‹</button>
-            <button class="pf-tour-next" id="pfTourNext" aria-label="Next step">Next →</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /pf-tour-bd -->
 
   {% if request.user.is_authenticated %}
   <form method="POST" action="{% url 'origin_logout' %}" id="logoutForm" style="display:none">
@@ -1315,7 +1264,7 @@
     });
 
     window.removePartner=function(btn){
-      if(!confirm('Remove this partner? This ends the shared visibility both ways and cannot be undone — you would need a fresh request to reconnect.'))return;
+      if(!confirm('Remove this partner?'))return;
       var pid=btn.getAttribute('data-partner-id');
       fetch('{% url "origin_relationship_unpair" %}',{
         method:'POST',credentials:'same-origin',
@@ -1449,204 +1398,6 @@
         });
       });
     })();
-
-    /* 
-       GUIDED PAGE TOUR — walks through what each toggle/button here
-       actually shares (or doesn't), same engine as the commitments
-       and relationship pages.
-        */
-    (function () {
-      var STEPS = [
-        {
-          targetId: null,
-          icon:     'fa-circle-user',
-          title:    'Welcome to Profile & Settings.',
-          text:     'This page controls your identity, privacy, notifications and account. Let\'s walk through exactly what each toggle and button actually shares — and what it never does.'
-        },
-        {
-          targetId: 'pfSnav',
-          icon:     'fa-list-check',
-          title:    'Jump to Any Section',
-          text:     'Tap any item here to jump straight to that part of the page — Identity, Privacy, Notifications, Partners, Danger Zone and more.'
-        },
-        {
-          targetId: 's-privacy',
-          icon:     'fa-shield-halved',
-          title:    'Privacy & Visibility',
-          text:     'These switches only ever control your combined streak count and Zeal Score — whether they show on the public leaderboard, and whether people can send you a partner request at all. Your journal entries and notes are never shared by anything here, no exceptions.'
-        },
-        {
-          targetId: 's-partners',
-          icon:     'fa-handshake',
-          title:    'Accountability Partners',
-          text:     'Sending a request shares nothing until the other person accepts it — then they can see your combined streak and Zeal Score, never your entries. It\'s one-way: you won\'t see anything of theirs unless they later send you a request and you accept it too.'
-        },
-        {
-          targetId: 's-notifications',
-          icon:     'fa-bell',
-          title:    'Notifications & Reports',
-          text:     'Weekly Truth Report and the Newsletter are just email preferences — turning them off only stops emails, it doesn\'t change what anyone else can see about you.'
-        },
-        {
-          targetId: 's-danger',
-          icon:     'fa-triangle-exclamation',
-          title:    'Danger Zone',
-          text:     'These four buttons are not the same severity: Archive All just pauses reminders and can be undone. Clear Entries and Reset Streaks permanently erase specific data. Delete Account erases everything and cannot be undone at all — it asks you to type your email to confirm.'
-        }
-      ];
-
-      var tourStep   = 0;
-      var tourActive = false;
-
-      var bd      = document.getElementById('pfTourBd');
-      var spot    = document.getElementById('pfTourSpot');
-      var card    = document.getElementById('pfTourCard');
-      var badgeEl = document.getElementById('pfTourBadge');
-      var iconEl  = document.getElementById('pfTourIconI');
-      var hEl     = document.getElementById('pfTourH');
-      var pEl     = document.getElementById('pfTourP');
-      var prevBtn = document.getElementById('pfTourPrev');
-      var nextBtn = document.getElementById('pfTourNext');
-      var skipBtn = document.getElementById('pfTourSkip');
-      var dotsEl  = document.getElementById('pfTourDots');
-
-      if (dotsEl) {
-        for (var di = 0; di < STEPS.length; di++) {
-          var dot = document.createElement('div');
-          dot.className = 'pf-tour-dot' + (di === 0 ? ' active' : '');
-          dot.setAttribute('data-dot', di);
-          dotsEl.appendChild(dot);
-        }
-      }
-
-      function updateDots(idx) {
-        if (!dotsEl) return;
-        qsa('.pf-tour-dot', dotsEl).forEach(function (d, i) {
-          d.classList.toggle('active', i === idx);
-        });
-      }
-
-      function getTarget(step) {
-        if (step.targetId)       return document.getElementById(step.targetId);
-        if (step.targetSelector) { try { return document.querySelector(step.targetSelector); } catch (e) { return null; } }
-        return null;
-      }
-
-      function positionSpot(el) {
-        if (!spot) return;
-        if (!el) {
-          spot.style.cssText = 'left:50%;top:50%;width:0;height:0;opacity:0;border-radius:0;';
-          return;
-        }
-        var r = el.getBoundingClientRect();
-        var pad = 8;
-        spot.style.cssText =
-          'left:'   + (r.left - pad) + 'px;' +
-          'top:'    + (r.top  - pad) + 'px;' +
-          'width:'  + (r.width  + pad * 2) + 'px;' +
-          'height:' + (r.height + pad * 2) + 'px;' +
-          'opacity:1;border-radius:12px;';
-      }
-
-      function positionCard(el) {
-        if (!card) return;
-        var vw = window.innerWidth;
-        var vh = window.innerHeight;
-        var cw = Math.min(340, vw - 32);
-        card.style.width = cw + 'px';
-
-        if (!el) {
-          card.style.left = ((vw - cw) / 2) + 'px';
-          card.style.top  = ((vh - 220) / 2) + 'px';
-          card.style.transform = '';
-          return;
-        }
-
-        var r = el.getBoundingClientRect();
-        var cardH = 220;
-        var pad = 14;
-
-        var leftRaw = r.left + r.width / 2 - cw / 2;
-        var left = Math.max(16, Math.min(leftRaw, vw - cw - 16));
-
-        var topBelow = r.bottom + pad;
-        var topAbove = r.top - cardH - pad;
-
-        var top;
-        if (topBelow + cardH + 20 <= vh) top = topBelow;
-        else if (topAbove >= 60) top = topAbove;
-        else top = vh - cardH - 24;
-
-        card.style.left = left + 'px';
-        card.style.top  = top  + 'px';
-        card.style.transform = '';
-      }
-
-      function showStep(idx) {
-        if (idx < 0 || idx >= STEPS.length) { endTour(); return; }
-        tourStep = idx;
-        var step = STEPS[idx];
-
-        if (badgeEl) badgeEl.textContent = 'Step ' + (idx + 1) + ' of ' + STEPS.length;
-        if (iconEl)  iconEl.className    = 'fas ' + (step.icon || 'fa-circle-info');
-        if (hEl)     hEl.textContent     = step.title;
-        if (pEl)     pEl.textContent     = step.text;
-        if (prevBtn) prevBtn.disabled    = idx === 0;
-        if (nextBtn) nextBtn.textContent = idx === STEPS.length - 1 ? '🎉 Done!' : 'Next →';
-        updateDots(idx);
-
-        var target = getTarget(step);
-
-        if (target) {
-          var tr = target.getBoundingClientRect();
-          if (tr.top < 80 || tr.bottom > window.innerHeight - 80) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            setTimeout(function () {
-              positionSpot(target);
-              positionCard(target);
-            }, 420);
-            return;
-          }
-        }
-
-        positionSpot(target);
-        positionCard(target);
-      }
-
-      function startTour() {
-        tourActive = true;
-        if (bd) bd.classList.add('active');
-        showStep(0);
-      }
-
-      function endTour() {
-        tourActive = false;
-        if (bd)   bd.classList.remove('active');
-        if (spot) spot.style.cssText = 'opacity:0;width:0;height:0;';
-      }
-
-      var tourBtn = document.getElementById('pfTourBtn');
-      tourBtn && tourBtn.addEventListener('click', startTour);
-
-      skipBtn && skipBtn.addEventListener('click', endTour);
-      prevBtn && prevBtn.addEventListener('click', function () { showStep(tourStep - 1); });
-      nextBtn && nextBtn.addEventListener('click', function () {
-        if (tourStep >= STEPS.length - 1) endTour();
-        else showStep(tourStep + 1);
-      });
-
-      bd && bd.addEventListener('click', function (e) {
-        if (e.target === bd) endTour();
-      });
-
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && tourActive) endTour();
-      });
-
-      window.addEventListener('resize', function () {
-        if (tourActive) showStep(tourStep);
-      });
-    })(); /* /GUIDED TOUR */
 
   })();
   </script>

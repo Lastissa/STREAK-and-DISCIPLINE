@@ -156,6 +156,9 @@
       <div class="hdr-quote" id="hdrQuote" aria-live="polite"></div>
 
       <div class="hdr-right">
+        <button class="hdr-btn hdr-tour-btn" id="relTourBtn" title="Page tour & help" aria-label="Take a guided page tour">
+          <i class="fas fa-circle-question"></i>
+        </button>
         <button class="hdr-btn" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
           <i class="fas fa-moon" id="themeIcon"></i>
         </button>
@@ -181,8 +184,17 @@
              friend-search flow exactly (same endpoints,
              same POST fields, same states).
               -->
-        <div class="rel-search">
+        <div class="rel-search" id="relSearchSection">
           <div class="db-section-label"><i class="fas fa-user-plus"></i> Find a Partner</div>
+
+          <div class="rel-privacy-note" id="relPrivacyNote">
+            <i class="fas fa-shield-halved"></i>
+            <span>
+              Sending a request shares nothing yet. Only once the other person <strong>accepts</strong> can they see your
+              <strong>combined streak count</strong> and <strong>Zeal Score</strong> — never your journal entries or notes, which stay
+              100% private always. It's one-way too: you won't see anything of theirs unless they send <em>you</em> a request back and you accept it.
+            </span>
+          </div>
 
           <div class="rel-search-row">
             <input type="text" class="rel-input" id="relSearchInput" placeholder="Enter their User ID">
@@ -255,6 +267,35 @@
       </main>
     </div><!-- /db-wrap -->
   </div><!-- /rel-app -->
+
+  <!-- 
+       GUIDED TOUR OVERLAY — explains what each action here actually
+       shares (or doesn't) before the person taps it.
+        -->
+  <div class="rel-tour-bd" id="relTourBd" role="dialog" aria-modal="true" aria-label="Page tour">
+
+    <div class="rel-tour-spot" id="relTourSpot" aria-hidden="true"></div>
+
+    <div class="rel-tour-card" id="relTourCard">
+      <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.55rem">
+        <div class="rel-tour-icon" id="relTourIcon"><i class="fas fa-user-group" id="relTourIconI"></i></div>
+        <span class="rel-tour-badge" id="relTourBadge">Step 1 of 5</span>
+      </div>
+      <div class="rel-tour-h" id="relTourH">Welcome to Relationship</div>
+      <div class="rel-tour-p" id="relTourP">Let's take a quick tour of this page.</div>
+      <div class="rel-tour-foot">
+        <button class="rel-tour-skip" id="relTourSkip">Skip tour</button>
+        <div style="display:flex;align-items:center;gap:0.75rem">
+          <div class="rel-tour-dots" id="relTourDots"></div>
+          <div class="rel-tour-nav">
+            <button class="rel-tour-prev" id="relTourPrev" disabled aria-label="Previous step">‹</button>
+            <button class="rel-tour-next" id="relTourNext" aria-label="Next step">Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /rel-tour-bd -->
 
 
 <!--THIS HANDLES END OF LIFE OF PAGE TO AVOID FREEZING ON SLOW INTERNET OR HIGH TRAFFIC, IT CREATE ILLUSION OF A SPINNER LOADING NEXT PAGE-->
@@ -810,7 +851,7 @@
     //Function in charge of accept or decline
 
     function requestAcceptPartner(item, btn) {
-      if (!confirm('Accept partner request from @' + (item.userid || '') + '? You will be able to see their consistency score')) return;
+      if (!confirm('Accept partner request from @' + (item.userid || '') + '? You will be able to see their combined streak count and Zeal Score — their journal entries stay private, and this never grants them anything of yours in return.')) return;
       btn.disabled = true;
       btn.classList.add('ob-loading');
 
@@ -843,7 +884,7 @@
     }
 
     function requestDeclinePartner(item, btn) {
-      if (!confirm('Decline partner request from @' + (item.userid || '') + '?')) return;
+      if (!confirm('Decline partner request from @' + (item.userid || '') + '? Nothing was ever shared, so declining changes nothing on either side.')) return;
       btn.disabled = true;
       btn.classList.add('ob-loading');
 
@@ -871,6 +912,199 @@
         toast('Network error — please try again.', 'bad');
       });
     }
+
+    /* 
+       GUIDED PAGE TOUR — walks through what sending, accepting, or
+       declining a request actually shares (or doesn't).
+        */
+    (function () {
+      var STEPS = [
+        {
+          targetId: null,
+          icon:     'fa-user-group',
+          title:    'Welcome to Relationship.',
+          text:     'This is where you find an accountability partner and manage every request you\'ve sent or received. Let\'s walk through exactly what each button here shares — and what it never does.'
+        },
+        {
+          targetId: 'relSearchSection',
+          icon:     'fa-magnifying-glass',
+          title:    'Find & Add a Partner',
+          text:     'Search a User ID and tap Add to send a request. Nothing is shared yet. Only once they accept do they get to see your combined streak count and Zeal Score — never your journal entries or notes, which stay 100% private always. It\'s one-way too: you won\'t see anything of theirs unless they later send you a request and you accept it.'
+        },
+        {
+          targetId: 'relTabs',
+          icon:     'fa-list-check',
+          title:    'Track Every Request',
+          text:     'These tabs sort everything: requests you\'ve sent (pending, rejected, accepted) and requests you\'ve received (pending, accepted — that\'s your Partners tab, and rejected).'
+        },
+        {
+          targetSelector: '.rel-tab[data-key="inPending"]',
+          icon:           'fa-inbox',
+          title:          'Accepting a Request',
+          text:           'This tab holds requests sent TO you. Tap Accept and that person will be able to see YOUR combined streak count and Zeal Score from now on. Tap Decline and nothing is ever shared. Either way, your journal entries and notes stay private — that never changes.'
+        },
+        {
+          targetSelector: '.rel-tab[data-key="inAccepted"]',
+          icon:           'fa-user-check',
+          title:          'Your Partners',
+          text:           'Once you\'ve accepted someone, they show up here. Tap Unpartner anytime to end it — this can\'t be undone, and you\'d need a fresh request to reconnect.'
+        }
+      ];
+
+      var tourStep   = 0;
+      var tourActive = false;
+
+      var bd      = document.getElementById('relTourBd');
+      var spot    = document.getElementById('relTourSpot');
+      var card    = document.getElementById('relTourCard');
+      var badgeEl = document.getElementById('relTourBadge');
+      var iconEl  = document.getElementById('relTourIconI');
+      var hEl     = document.getElementById('relTourH');
+      var pEl     = document.getElementById('relTourP');
+      var prevBtn = document.getElementById('relTourPrev');
+      var nextBtn = document.getElementById('relTourNext');
+      var skipBtn = document.getElementById('relTourSkip');
+      var dotsEl  = document.getElementById('relTourDots');
+
+      if (dotsEl) {
+        for (var di = 0; di < STEPS.length; di++) {
+          var dot = document.createElement('div');
+          dot.className = 'rel-tour-dot' + (di === 0 ? ' active' : '');
+          dot.setAttribute('data-dot', di);
+          dotsEl.appendChild(dot);
+        }
+      }
+
+      function updateDots(idx) {
+        if (!dotsEl) return;
+        qsa('.rel-tour-dot', dotsEl).forEach(function (d, i) {
+          d.classList.toggle('active', i === idx);
+        });
+      }
+
+      function getTarget(step) {
+        if (step.targetId)       return document.getElementById(step.targetId);
+        if (step.targetSelector) { try { return document.querySelector(step.targetSelector); } catch (e) { return null; } }
+        if (step.targetClass)    { try { return document.querySelector('.' + step.targetClass); } catch (e) { return null; } }
+        return null;
+      }
+
+      function positionSpot(el) {
+        if (!spot) return;
+        if (!el) {
+          spot.style.cssText = 'left:50%;top:50%;width:0;height:0;opacity:0;border-radius:0;';
+          return;
+        }
+        var r = el.getBoundingClientRect();
+        var pad = 8;
+        spot.style.cssText =
+          'left:'   + (r.left - pad) + 'px;' +
+          'top:'    + (r.top  - pad) + 'px;' +
+          'width:'  + (r.width  + pad * 2) + 'px;' +
+          'height:' + (r.height + pad * 2) + 'px;' +
+          'opacity:1;border-radius:12px;';
+      }
+
+      function positionCard(el) {
+        if (!card) return;
+        var vw = window.innerWidth;
+        var vh = window.innerHeight;
+        var cw = Math.min(340, vw - 32);
+        card.style.width = cw + 'px';
+
+        if (!el) {
+          card.style.left = ((vw - cw) / 2) + 'px';
+          card.style.top  = ((vh - 220) / 2) + 'px';
+          card.style.transform = '';
+          return;
+        }
+
+        var r = el.getBoundingClientRect();
+        var cardH = 220;
+        var pad = 14;
+
+        var leftRaw = r.left + r.width / 2 - cw / 2;
+        var left = Math.max(16, Math.min(leftRaw, vw - cw - 16));
+
+        var topBelow = r.bottom + pad;
+        var topAbove = r.top - cardH - pad;
+
+        var top;
+        if (topBelow + cardH + 20 <= vh) top = topBelow;
+        else if (topAbove >= 60) top = topAbove;
+        else top = vh - cardH - 24;
+
+        card.style.left = left + 'px';
+        card.style.top  = top  + 'px';
+        card.style.transform = '';
+      }
+
+      function showStep(idx) {
+        if (idx < 0 || idx >= STEPS.length) { endTour(); return; }
+        tourStep = idx;
+        var step = STEPS[idx];
+
+        if (badgeEl) badgeEl.textContent = 'Step ' + (idx + 1) + ' of ' + STEPS.length;
+        if (iconEl)  iconEl.className    = 'fas ' + (step.icon || 'fa-circle-info');
+        if (hEl)     hEl.textContent     = step.title;
+        if (pEl)     pEl.textContent     = step.text;
+        if (prevBtn) prevBtn.disabled    = idx === 0;
+        if (nextBtn) nextBtn.textContent = idx === STEPS.length - 1 ? '🎉 Done!' : 'Next →';
+        updateDots(idx);
+
+        var target = getTarget(step);
+
+        if (target) {
+          var tr = target.getBoundingClientRect();
+          if (tr.top < 80 || tr.bottom > window.innerHeight - 80) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(function () {
+              positionSpot(target);
+              positionCard(target);
+            }, 420);
+            return;
+          }
+        }
+
+        positionSpot(target);
+        positionCard(target);
+      }
+
+      function startTour() {
+        tourActive = true;
+        if (bd) bd.classList.add('active');
+        showStep(0);
+      }
+
+      function endTour() {
+        tourActive = false;
+        if (bd)   bd.classList.remove('active');
+        if (spot) spot.style.cssText = 'opacity:0;width:0;height:0;';
+      }
+
+      var tourBtn = document.getElementById('relTourBtn');
+      tourBtn && tourBtn.addEventListener('click', startTour);
+
+      skipBtn && skipBtn.addEventListener('click', endTour);
+      prevBtn && prevBtn.addEventListener('click', function () { showStep(tourStep - 1); });
+      nextBtn && nextBtn.addEventListener('click', function () {
+        if (tourStep >= STEPS.length - 1) endTour();
+        else showStep(tourStep + 1);
+      });
+
+      bd && bd.addEventListener('click', function (e) {
+        if (e.target === bd) endTour();
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && tourActive) endTour();
+      });
+
+      window.addEventListener('resize', function () {
+        if (tourActive) showStep(tourStep);
+      });
+    })(); /* /GUIDED TOUR */
+
     })();
   </script>
 

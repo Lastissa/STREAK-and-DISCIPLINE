@@ -21,6 +21,11 @@ class CreateHitCheckinReminders(View):
         except Exception as e:
             logger.error("Reminder tick crashed: %s", e)
             return JsonResponse({'message': 'Reminder tick failed, see server logs.'}, status=500)
+        
+        
+        
+        #also to constantly update user Sreak and other data
+        
         return JsonResponse(summary, status=200)
 
     def get (self, request, secret): return self._handle(request, secret)

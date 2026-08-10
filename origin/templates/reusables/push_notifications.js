@@ -38,8 +38,9 @@ window.SDPush = (function () {
     // fails instantly and silently. The only undo is the person manually flipping it
     // back on in their browser's own site settings, so the error has to say that.
     var e = new Error(
-      "Notifications are blocked for this site. To turn them on: click the lock/info " +
-      "icon next to your browser's address bar \u2192 Notifications \u2192 Allow, then try again."
+      "Enable browser notifications to receive push reminders.
+      Allow notifications for this site, or enable them later in Dashboard → Profile → Push Notifications (This Device).
+"
     );
     e.code = 'permission-denied';
     return e;
