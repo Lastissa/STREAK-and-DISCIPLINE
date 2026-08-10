@@ -175,7 +175,7 @@ CACHES = {
     }
 }
 
-SESSION_COOKIE_AGE = 86400 * 1      #Setting max session age to 1 day
+SESSION_COOKIE_AGE = 86400 * 1      #Setting max sessio age to 1 day
 
 #smtp usage
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

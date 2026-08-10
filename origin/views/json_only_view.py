@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 class CommitmentData(LoginRequiredMixin, View):
     """RETURNS DATA FOR THE DASHBOARD HOME AND THE DASHBOARD COMMITMENT PAGE USE TO DISPLAY A QUICK VIEW OF USER COMMITMENTS WITH THE LINK THAT REDIRECT USER TO VIEW ACTUAL FULL DATA"""
     def get(self, request):
-        commitment_istance = Commitment.objects.filter(user = request.user).all()
+        commitment_istance = Commitment.objects.filter(user = request.user, is_active=True).all() #is_active=True only - deleted/completed commitments must never surface back to the user, see EachCommitmentArchive
         if not commitment_istance.exists(): 
             data = []
             stats = {'consistency_pct': 0}
@@ -135,30 +135,32 @@ class PartnerWidget(LoginRequiredMixin, View):
         for f in partner_istance:
             partner_users.append(f.from_user_id)
 
-        #Get all active commitments for ALL partners in one query
+        # Get all active commitments for ALL partners in one query
         all_commitments = Commitment.objects.filter(
             user_id__in=partner_users,
             is_active=True
         ).all()
 
-        #Get all entries for ALL partners in one query
+        # Get the most recent entry per partner (one query, ordered newest first)
         all_entries = Entries.objects.filter(
             commitment_key__user_id__in=partner_users
-        ).order_by('commit_at').all()
+        ).select_related('commitment_key').order_by('-commit_at').all()
 
-        #Group commitments by user
+        # Group commitments by user - keep both the raw streak numbers AND the best
+        # (max) streak, since the dashboard card shows a single "X days" number per
+        # partner but we still want the per-commitment detail available if needed later
         commitments_by_user = {}
         for i in all_commitments:
             uid = i.user_id
-            if uid in commitments_by_user:
-                commitments_by_user[uid].append(i.streak_count)
-            else:
-                commitments_by_user[uid] = [i.streak_count]
+            commitments_by_user.setdefault(uid, []).append({'what': i.what, 'streak_count': i.streak_count})
 
-        #Group last active by user
+        # Group last active by user - entries are ordered newest-first above, so the
+        # first entry we see per user IS their most recent check-in (this used to be
+        # ordered oldest-first, which meant "last active" was actually showing the
+        # OLDEST entry - fixed here)
         last_active_by_user = {}
         for e in all_entries:
-            uid = e.commitment.user_id
+            uid = e.commitment_key.user_id  # was e.commitment.user_id (Entries has no "commitment" field, only "commitment_key") - crashed this entire endpoint any time a partner had logged entries
             if uid not in last_active_by_user:
                 last_active_by_user[uid] = e.commit_at
 
@@ -168,11 +170,14 @@ class PartnerWidget(LoginRequiredMixin, View):
             partner_uid = f.from_user_id
             partner_profile = Profile.objects.filter(user_id=partner_uid).first()
             public_id = partner_profile.public_searchable_username if partner_profile else 'unknown'
+            partner_commitments = commitments_by_user.get(partner_uid, [])
+            best_streak = max((c['streak_count'] for c in partner_commitments), default=0)
 
             partners.append({
                 'public_id': public_id,
-                'streak_count': commitments_by_user.get(partner_uid, []),
-                'last_active': str(last_active_by_user.get(partner_uid, '')),
+                'streak_count': best_streak,             # single number - what the dashboard card renders as "X days" (was previously a raw list, e.g. "1,4,7 days")
+                'commitments': partner_commitments,       # full per-commitment breakdown, for anywhere that wants more detail than the headline number
+                'last_active': last_active_by_user.get(partner_uid).isoformat() if partner_uid in last_active_by_user else None,
             })
 
         return JsonResponse({
@@ -784,15 +789,24 @@ class EachCommitmentViewSettings(LoginRequiredMixin, View):
         return JsonResponse({'message': 'update successful.'}, status=200)     
     
 class EachCommitmentArchive(LoginRequiredMixin, View):
-    """ARCHIVE A COMMITMNET BY CHANGING THE IS_ACTIVE TO FALSE"""
-    def post(self, request,id):
-        return JsonResponse({'message': 'coming soon'}, status = 503)
-        #THE LIEN BELOW ARE ACUTALLY THE REAL SOLUTION TO THIS CODE BUT I COMMENT IT COS I WAS NOT ABLE TO MANAGE ARCHIVE IN COMMITMENT YET
-        # istance = Commitment.objects.filter(user= request.user, pk= id).first()
-        # if istance.is_active is False: return JsonResponse({'message': 'Account already inactive'}, status = 400)
-        # istance.is_active = False
-        # istance.save()
-        # return JsonResponse({'message': 'Archive successfull'}, status = 200)
+    """DELETE A COMMITMENT. There is no archive/restore state in this product - pressing
+    delete flips is_active to False right away (so it instantly disappears from the
+    user's own commitment list / dashboard / heat map / everywhere else that already
+    filters on is_active=True) and that's it from the user's side. The actual DB row
+    (and its Entries) get permanently removed the NEXT time the cron job ticks - see
+    utility/maintenance_engine.purge_deleted_commitments(). The url/view name kept the
+    word "archive" only to avoid touching urls.py; nothing about the behavior archives
+    anything."""
+    def post(self, request, id):
+        istance = Commitment.objects.filter(user=request.user, pk=id).first()
+        if istance is None:
+            return JsonResponse({'message': 'No commitment found with this details'}, status=404)
+        if istance.is_active is False:
+            return JsonResponse({'message': 'This commitment has already been deleted'}, status=400)
+        istance.is_active = False
+        istance.pending_notice = ''
+        istance.save(update_fields=['is_active', 'pending_notice'])
+        return JsonResponse({'message': 'Commitment deleted successfully'}, status=200)
     
 class EachCommitementHeatMap(LoginRequiredMixin, View):
     """Return heat map for a simgle commitment most likely in the entry page to show the user how they have been doing in the past 7 entries"""
@@ -868,114 +882,275 @@ class EachCommitementEntries(LoginRequiredMixin, View):
         return JsonResponse({'message': 'Entry saved successfully.', 'entry_id': entry.pk}, status=201)
 
 class ReportsData(LoginRequiredMixin, View):
-    """THIS IS THE JSON DATA THAT WILL BE USED TO RENDER THE REPORTS PAGE, IT WILL BE USED BY THE FRONTEND TO RENDER THE REPORTS PAGE"""
+    """THIS IS THE JSON DATA THAT WILL BE USED TO RENDER THE REPORTS PAGE.
+
+    Was previously 100% hardcoded fixture data (fake numbers regardless of who was
+    logged in) - now computed from the user's real Commitment/Entries rows for the
+    requested week (?week=YYYY-MM-DD, any date inside the target week; defaults to
+    the current week). Every key the frontend (reports.html) reads is still present
+    with the same shape, just populated from the database instead of made up.
+
+    If the user genuinely doesn't have enough history yet (no entries at all, or the
+    account is brand new), `not_enough_data` is set and `generated_note` carries an
+    honest "check back later" message instead of a shaped-but-empty report."""
     login_url = '/v1/login/'
 
     def get(self, request):
-        today = request.GET.get('week') or timezone.datetime.now().date()
-        total_user_commitments = Commitment.objects.filter(user = request.user).order_by('-id').all()
-        data = {
-            # ---- HERO ----
-            "week_range_label":f"{today - timezone.timedelta(days=7)} - {today}",
-            "week_number_label": "Week",
-            "generated_note": "Generated from 6 of 7 check-ins.",
-            "current_week_iso": timezone.datetime.now().date(),
-            "prev_week_iso": "2026-07-06",   # null/omit to disable the "prev" button
-            "next_week_iso": None,           # null/omit to disable the "next" button (e.g. current week)
+        from datetime import timedelta
+        import re
+        from collections import Counter
 
-            # ---- STAT OVERVIEW ----
-            "consistency_pct": 86,
-            "consistency_note": "Up 9 points from last week",
-            "current_streak": 34,
-            "longest_streak": 61,
-            "entries_this_week": 6,
-            "entries_note": "Missed Wednesday",
-            "avg_words": 47,
-            "avg_words_note": "Your longest week yet",
+        week_param = request.GET.get('week')
+        if week_param:
+            try:
+                anchor = timezone.datetime.strptime(week_param, '%Y-%m-%d').date()
+            except ValueError:
+                anchor = timezone.localdate()
+        else:
+            anchor = timezone.localdate()
 
-            # ---- PULSE ----
-            "pulse": {
-                "readout_text": "86% signal strength — steadiest between Thursday and Saturday",
-                "bar_heights": [40, 62, 55, 70, 30, 80, 65, 90, 45, 60, 75, 50, 85, 40, 70, 55, 60, 80, 65, 90]  # % height, 20 bars
-            },
+        week_start = anchor - timedelta(days=anchor.weekday() + 1 if anchor.weekday() != 6 else 0)
+        #Sunday -> Saturday week, matching the "days" contract below (Sun first)
+        week_start = anchor - timedelta(days=(anchor.weekday() + 1) % 7)
+        week_end = week_start + timedelta(days=6)
+        today = timezone.localdate()
 
-            # ---- DAYS (drives constellation + daily breakdown) ----
-            # Always 7 entries, Sunday -> Saturday for the selected week.
-            "days": [
-                {
-                    "day_short": "Sun",
-                    "day_name": "Sunday",
-                    "date_label": "Jul 13",
-                    "missed": False,
-                    "status": "good",              # "good" | "ok" | "missed"
-                    "strength": "strong",          # "strong" | "mid" | "missed" (constellation star size)
-                    "mood_color": "#22c55e",       # constellation star glow color
-                    "mood_emoji": "🙂",
-                    "mood_label": "Calm",
-                    "time_label": "Checked in 9:04 PM",
-                    "word_count": 61,
-                    "note": "Went to bed on time and it felt like a small miracle..."
-                }
-                # ...6 more
-            ],
+        all_commitments = list(Commitment.objects.filter(user=request.user, is_active=True))
+        all_entries_ever = Entries.objects.filter(commitment_key__user=request.user)
+        total_entries_ever = all_entries_ever.count()
 
-            # ---- REFLECTIONS (top 3 pinned quotes) ----
-            "reflections": [
-                {"text": "Discipline is mostly just protecting tomorrow-me from tonight-me.", "day": "Sunday"}
-                # up to 3
-            ],
+        #"not enough data" if the account genuinely has nothing meaningful to report on yet
+        not_enough_data = total_entries_ever < 3 or not all_commitments
 
-            # ---- TREND ----
-            "trend": {
-                "compare": [
-                    {"day_short": "Sun", "last_pct": 64, "now_pct": 100}
-                    # 7 entries, Sun -> Sat. Use now_pct: 6 (or similar near-zero) to represent a missed day.
-                ],
-                "sparkline": [58, 64, 52, 70, 66, 77, 71, 86],  # last 8 weeks, oldest -> newest, 0-100
-                "sparkline_note": "You've climbed 28 points since the week you started."
-            },
+        week_entries = list(
+            all_entries_ever.filter(commit_at__range=(week_start, week_end))
+            .select_related('commitment_key')
+            .order_by('commit_at')
+        )
 
-            # ---- HIGHLIGHTS ----
-            "highlights": {
-                "best": {"day_name": "Saturday", "note": "Longest entry of the week at 73 words..."},
-                "toughest": {"day_name": "Wednesday", "note": "Missed entirely — first gap in 33 days..."}
-            },
+        #---- STAT OVERVIEW ----
+        days_with_entry = {e.commit_at for e in week_entries}
+        entries_this_week = len(days_with_entry)
+        possible_slots = max(len(all_commitments) * 7, 1)
+        entries_logged = len(week_entries)
+        consistency_pct = round((entries_logged / possible_slots) * 100) if all_commitments else 0
+        consistency_pct = min(consistency_pct, 100)
 
-            # ---- COMMITMENTS ----
-            "commitments": [
-                {"what": "Wake up by 6:00 AM", "icon": "sun", "pct": 86, "frac": "6/7"}
-                # icon = any Font Awesome solid icon name (without "fa-")
-            ],
+        current_streak = max((c.streak_count for c in all_commitments), default=0)
+        longest_streak = current_streak  #no historical "peak streak" field exists on the model - this is the best honest proxy we have right now
 
-            # ---- MOOD DISTRIBUTION ----
-            "moods": [
-                {"emoji": "😄", "label": "Proud", "pct": 14, "count": 1}
-            ],
+        avg_words = round(sum(e.word_count for e in week_entries) / len(week_entries)) if week_entries else 0
 
-            # ---- INSIGHTS ----
-            "insights": [
-                {"icon": "sun", "title": "Mornings win", "text": "Entries logged before 9 AM average 52 words..."}
-            ],
+        prev_week_start = week_start - timedelta(days=7)
+        prev_week_end = week_start - timedelta(days=1)
+        prev_week_entries_count = all_entries_ever.filter(commit_at__range=(prev_week_start, prev_week_end)).count()
+        prev_consistency_pct = round((prev_week_entries_count / possible_slots) * 100) if all_commitments else 0
+        diff = consistency_pct - prev_consistency_pct
+        if prev_week_entries_count == 0 and entries_this_week == 0:
+            consistency_note = "No check-ins logged yet this week."
+        elif diff > 0:
+            consistency_note = f"Up {diff} point{'s' if abs(diff) != 1 else ''} from last week"
+        elif diff < 0:
+            consistency_note = f"Down {abs(diff)} point{'s' if abs(diff) != 1 else ''} from last week"
+        else:
+            consistency_note = "Same as last week"
 
-            # ---- WORD CLOUD ----
-            "word_cloud": [
-                {"word": "showed up", "weight": 9}   # weight ~1-10, drives chip font-size
-            ],
+        missed_this_week = 7 - entries_this_week if entries_this_week < 7 else 0
+        entries_note = f"Missed {missed_this_week} day{'s' if missed_this_week != 1 else ''}" if missed_this_week else "Perfect week"
+        avg_words_note = "Keep writing a little more each time" if avg_words < 20 else "Solid, detailed check-ins"
 
-            # ---- GROUP COMPARE (only rendered if the section exists,
-            #      i.e. Django's social_mode context var is 'partner' or 'group') ----
-            "group_name": "Morning People",
-            "group_compare": [
-                {"name": "You", "initials": "AO", "pct": 86, "is_you": True}
-                # ranked, is_you row gets the highlighted style
-            ]
+        #---- DAYS (Sun -> Sat) ----
+        emoji_map = Static.emoji_translator()
+        entries_by_date = {}
+        for e in week_entries:
+            entries_by_date.setdefault(e.commit_at, []).append(e)
+
+        day_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        days = []
+        for i in range(7):
+            d = week_start + timedelta(days=i)
+            todays_entries = entries_by_date.get(d, [])
+            missed = len(todays_entries) == 0 and d <= today
+            total_words = sum(e.word_count for e in todays_entries)
+            top_entry = max(todays_entries, key=lambda e: e.word_count, default=None)
+            mood = top_entry.mood if top_entry else None
+            strength = 'strong' if len(todays_entries) >= max(1, len(all_commitments)) else ('mid' if todays_entries else 'missed')
+            days.append({
+                "day_short": day_names[i][:3],
+                "day_name": day_names[i],
+                "date_label": d.strftime('%b %d'),
+                "missed": missed and d <= today,
+                "status": "good" if todays_entries else ("missed" if d <= today else "ok"),
+                "strength": strength,
+                "mood_color": "#22c55e" if todays_entries else "#334155",
+                "mood_emoji": emoji_map.get(mood, '—') if mood else '—',
+                "mood_label": mood.replace('_', ' ').title() if mood else "No entry",
+                "time_label": (f"Checked in" if todays_entries else ("Day hasn't happened yet" if d > today else "No check-in")),
+                "word_count": total_words,
+                "note": (top_entry.content[:180] if top_entry and top_entry.content else ("Nothing logged for this day." if d <= today else "")),
+            })
+
+        #---- REFLECTIONS: top 3 longest entries this week, own words only ----
+        reflections = [
+            {"text": e.content[:220], "day": day_names[(e.commit_at - week_start).days % 7]}
+            for e in sorted(week_entries, key=lambda e: e.word_count, reverse=True)[:3]
+            if e.content
+        ]
+
+        #---- TREND: this week vs last week, per day + last 8 weeks sparkline ----
+        prev_week_entries = list(all_entries_ever.filter(commit_at__range=(prev_week_start, prev_week_end)))
+        prev_entries_by_date = {}
+        for e in prev_week_entries:
+            prev_entries_by_date.setdefault(e.commit_at, 0)
+            prev_entries_by_date[e.commit_at] += 1
+        compare = []
+        for i in range(7):
+            d = week_start + timedelta(days=i)
+            pd = prev_week_start + timedelta(days=i)
+            now_pct = round((len(entries_by_date.get(d, [])) / max(len(all_commitments), 1)) * 100)
+            last_pct = round((prev_entries_by_date.get(pd, 0) / max(len(all_commitments), 1)) * 100)
+            compare.append({"day_short": day_names[i][:3], "last_pct": min(last_pct, 100), "now_pct": min(now_pct, 100)})
+
+        sparkline = []
+        for w in range(7, -1, -1):
+            ws = week_start - timedelta(days=7 * w)
+            we = ws + timedelta(days=6)
+            cnt = all_entries_ever.filter(commit_at__range=(ws, we)).count()
+            pct = round((cnt / possible_slots) * 100) if all_commitments else 0
+            sparkline.append(min(pct, 100))
+        sparkline_note = "Keep logging to build up your trend line." if total_entries_ever < 14 else (
+            f"You've moved {sparkline[-1] - sparkline[0]:+d} points over the last 8 weeks." if len(sparkline) >= 2 else ""
+        )
+
+        #---- HIGHLIGHTS ----
+        best_day = max(days, key=lambda d: d['word_count'], default=None)
+        worst_candidates = [d for d in days if d['missed']]
+        highlights = {
+            "best": {"day_name": best_day['day_name'], "note": f"{best_day['word_count']} words logged."} if best_day and best_day['word_count'] > 0 else {"day_name": "—", "note": "No standout day yet this week."},
+            "toughest": {"day_name": worst_candidates[0]['day_name'], "note": "No entry logged this day."} if worst_candidates else {"day_name": "—", "note": "No missed days this week - well done."},
         }
 
-        return JsonResponse(data, status=200)
-    
+        #---- COMMITMENTS ----
+        commitments_out = []
+        for c in all_commitments:
+            c_entries_this_week = [e for e in week_entries if e.commitment_key_id == c.id]
+            frac_n = len(c_entries_this_week)
+            pct = round((frac_n / 7) * 100)
+            commitments_out.append({"what": c.what, "icon": "circle-check", "pct": pct, "frac": f"{frac_n}/7"})
 
-        
-        
+        #---- MOOD DISTRIBUTION ----
+        mood_counter = Counter(e.mood for e in week_entries if e.mood)
+        moods_out = []
+        for mood, count in mood_counter.most_common(8):
+            moods_out.append({
+                "emoji": emoji_map.get(mood, '🙂'),
+                "label": mood.replace('_', ' ').title(),
+                "pct": round((count / len(week_entries)) * 100) if week_entries else 0,
+                "count": count,
+            })
+
+        #---- INSIGHTS: a couple of genuinely-derived observations, not filler ----
+        insights = []
+        if commitments_out:
+            top_commitment = max(commitments_out, key=lambda c: c['pct'])
+            if top_commitment['pct'] > 0:
+                insights.append({"icon": "star", "title": "Strongest commitment", "text": f"\"{top_commitment['what']}\" had your best consistency this week at {top_commitment['pct']}%."})
+        if mood_counter:
+            top_mood = mood_counter.most_common(1)[0][0]
+            insights.append({"icon": "face-smile", "title": "Most common mood", "text": f"You logged \"{top_mood.replace('_', ' ')}\" more than any other mood this week."})
+        if not insights:
+            insights.append({"icon": "lightbulb", "title": "Not enough data yet", "text": "Keep checking in - insights show up once we have a few days of entries to compare."})
+
+        #---- WORD CLOUD: real word frequency from this week's own entries ----
+        STOPWORDS = {'the','a','an','and','or','but','to','of','in','on','for','is','it','my','i','was','with','at','this','that','so','be','me','im','not','just','as','are','have','had','has'}
+        word_counts = Counter()
+        for e in week_entries:
+            for w in re.findall(r"[a-zA-Z']+", (e.content or '').lower()):
+                if len(w) > 2 and w not in STOPWORDS:
+                    word_counts[w] += 1
+        max_count = max(word_counts.values(), default=1)
+        word_cloud = [
+            {"word": w, "weight": max(1, round((c / max_count) * 10))}
+            for w, c in word_counts.most_common(15)
+        ]
+
+        #---- PULSE: last 20 days of activity, normalized 0-100 ----
+        bar_heights = []
+        for i in range(19, -1, -1):
+            d = today - timedelta(days=i)
+            cnt = all_entries_ever.filter(commit_at=d).count()
+            pct = round((cnt / max(len(all_commitments), 1)) * 100)
+            bar_heights.append(min(max(pct, 0), 100))
+        active_days_recent = len([h for h in bar_heights if h > 0])
+        readout_text = f"{round((active_days_recent/20)*100)}% signal strength over the last 20 days" if not not_enough_data else "Not enough history yet to read your pulse."
+
+        #---- GROUP COMPARE: only meaningful for partner-mode users ----
+        profile = Profile.objects.filter(user=request.user).first()
+        group_compare = []
+        group_name = None
+        if profile and profile.social_mode == 'partner':
+            group_name = "Your Partners"
+            you_pct = consistency_pct
+            group_compare.append({"name": "You", "initials": (request.user.username[:2] or 'YO').upper(), "pct": you_pct, "is_you": True})
+            partner_links = Friendship.objects.filter(to_user=request.user, status='accepted').select_related('from_user')
+            for f in partner_links:
+                p_profile = Profile.objects.filter(user=f.from_user).first()
+                if not p_profile:
+                    continue
+                p_commitments = Commitment.objects.filter(user=f.from_user, is_active=True)
+                p_possible = max(p_commitments.count() * 7, 1)
+                p_entries = Entries.objects.filter(commitment_key__user=f.from_user, commit_at__range=(week_start, week_end)).count()
+                p_pct = min(round((p_entries / p_possible) * 100), 100) if p_commitments.exists() else 0
+                group_compare.append({
+                    "name": p_profile.public_searchable_username or f.from_user.username,
+                    "initials": (f.from_user.username[:2] or 'PA').upper(),
+                    "pct": p_pct,
+                    "is_you": False,
+                })
+            group_compare.sort(key=lambda r: r['pct'], reverse=True)
+
+        if not_enough_data:
+            generated_note = "Not enough data yet — check back after a few more check-ins."
+        else:
+            generated_note = f"Generated from {entries_this_week} of 7 check-ins."
+
+        data = {
+            "not_enough_data": not_enough_data,
+            #---- HERO ----
+            "week_range_label": f"{week_start.strftime('%b %d')} - {week_end.strftime('%b %d, %Y')}",
+            "week_number_label": f"Week {week_start.isocalendar()[1]}",
+            "generated_note": generated_note,
+            "current_week_iso": week_start.isoformat(),
+            "prev_week_iso": prev_week_start.isoformat(),
+            "next_week_iso": (week_start + timedelta(days=7)).isoformat() if week_end < today else None,
+
+            #---- STAT OVERVIEW ----
+            "consistency_pct": consistency_pct,
+            "consistency_note": consistency_note,
+            "current_streak": current_streak,
+            "longest_streak": longest_streak,
+            "entries_this_week": entries_this_week,
+            "entries_note": entries_note,
+            "avg_words": avg_words,
+            "avg_words_note": avg_words_note,
+
+            "pulse": {"readout_text": readout_text, "bar_heights": bar_heights},
+            "days": days,
+            "reflections": reflections,
+            "trend": {"compare": compare, "sparkline": sparkline, "sparkline_note": sparkline_note},
+            "highlights": highlights,
+            "commitments": commitments_out,
+            "moods": moods_out,
+            "insights": insights,
+            "word_cloud": word_cloud,
+        }
+        if group_name:
+            data["group_name"] = group_name
+            data["group_compare"] = group_compare
+
+        return JsonResponse(data, status=200)
+
+
 class GetVapidPublicKey(LoginRequiredMixin, View):
     """Hands the frontend the PUBLIC half of the VAPID keypair so it can call
     PushManager.subscribe({applicationServerKey: <this key>}). Safe to expose — the
@@ -1047,4 +1222,90 @@ class RemovePushSubscription(LoginRequiredMixin, View):
     
     
 class DataExport(LoginRequiredMixin, View):
-    def get(self, request): return JsonResponse({'message': 'Still in development'})
+    """Exports everything the user has ever written into this app - every commitment
+    they've created (active or not) and every entry logged against it - either as CSV
+    or JSON, picked via ?format=csv|json (defaults to csv)."""
+    def get(self, request):
+        import csv
+        from django.http import HttpResponse
+
+        fmt = request.GET.get('format', 'csv').strip().lower()
+        if fmt not in ('csv', 'json'):
+            return JsonResponse({'message': 'That export format is not available yet.'}, status=400)
+        commitments = Commitment.objects.filter(user=request.user).order_by('id')
+        if not commitments.exists():
+            return JsonResponse({'message': 'You have no commitments yet, nothing to export.'}, status=400)
+
+        rows = []
+        for c in commitments:
+            entries = Entries.objects.filter(commitment_key=c).order_by('commit_at')
+            if not entries.exists():
+                rows.append({
+                    'commitment_id': c.pk, 'commitment_what': c.what, 'category': c.category,
+                    'is_active': c.is_active, 'goal_days': c.goal_days, 'streak_count': c.streak_count,
+                    'created_at': c.created_at.isoformat(), 'entry_date': None, 'mood': None,
+                    'word_count': None, 'entry_content': None,
+                })
+                continue
+            for e in entries:
+                rows.append({
+                    'commitment_id': c.pk, 'commitment_what': c.what, 'category': c.category,
+                    'is_active': c.is_active, 'goal_days': c.goal_days, 'streak_count': c.streak_count,
+                    'created_at': c.created_at.isoformat(), 'entry_date': e.commit_at.isoformat(),
+                    'mood': e.mood, 'word_count': e.word_count, 'entry_content': e.content,
+                })
+
+        filename_base = f"streak_and_discipline_export_{request.user.username}_{timezone.now().date().isoformat()}"
+
+        if fmt == 'json':
+            from django.http import HttpResponse as HResp
+            response = HResp(json.dumps({'exported_at': timezone.now().isoformat(), 'rows': rows}, indent=2), content_type='application/json')
+            response['Content-Disposition'] = f'attachment; filename="{filename_base}.json"'
+            return response
+
+        #csv (also the fallback for any unrecognized ?format= value, e.g. the still-locked pdf/ai options)
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{filename_base}.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['commitment_id', 'commitment_what', 'category', 'is_active', 'goal_days', 'streak_count', 'created_at', 'entry_date', 'mood', 'word_count', 'entry_content'])
+        for r in rows:
+            writer.writerow([r['commitment_id'], r['commitment_what'], r['category'], r['is_active'], r['goal_days'], r['streak_count'], r['created_at'], r['entry_date'] or '', r['mood'] or '', r['word_count'] if r['word_count'] is not None else '', r['entry_content'] or ''])
+        return response
+
+
+class BulkDeleteCommitments(LoginRequiredMixin, View):
+    """Danger-zone 'delete all' - same rule as a single delete (EachCommitmentArchive):
+    is_active=False right away, hidden immediately, hard-removed by the next cron tick.
+    No archive/restore anywhere in this product."""
+    def post(self, request):
+        qs = Commitment.objects.filter(user=request.user, is_active=True)
+        count = qs.count()
+        if count == 0:
+            return JsonResponse({'message': 'You have no active commitments to delete.'}, status=400)
+        qs.update(is_active=False, pending_notice='')
+        return JsonResponse({'message': f'{count} commitment(s) deleted.'}, status=200)
+
+
+class ClearAllEntries(LoginRequiredMixin, View):
+    """Permanently wipes every journal entry the user has written, across every
+    commitment (active or not) - the commitments themselves stay, only the daily
+    written entries are removed."""
+    def post(self, request):
+        qs = Entries.objects.filter(commitment_key__user=request.user)
+        count = qs.count()
+        if count == 0:
+            return JsonResponse({'message': 'You have no entries to clear.'}, status=400)
+        qs.delete()
+        return JsonResponse({'message': f'{count} entrie(s) cleared.'}, status=200)
+
+
+class ResetAllStreaks(LoginRequiredMixin, View):
+    """Manually zero every active commitment's streak_count, on request - separate from
+    (but reuses the same field as) the automatic 24h-inactivity reset the cron job does."""
+    def post(self, request):
+        qs = Commitment.objects.filter(user=request.user, is_active=True)
+        count = qs.count()
+        if count == 0:
+            return JsonResponse({'message': 'You have no active commitments.'}, status=400)
+        qs.update(streak_count=0, pending_notice='')
+        return JsonResponse({'message': f'{count} streak(s) reset to zero.'}, status=200)

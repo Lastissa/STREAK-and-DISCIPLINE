@@ -1,0 +1,270 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include "reusables/web_icon.html" %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Staff user management for STREAK & DISCIPLINE.">
+  <title>User Management — Staff — STREAK &amp; DISCIPLINE</title>
+
+  <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
+  <link rel="stylesheet" href="{% static 'css/staff_hub.css' %}">
+
+  <style>
+    {% include "reusables/spinner.css" %}
+
+    .su-tabs { display: flex; gap: 0.4rem; margin-bottom: 1.25rem; }
+    .su-tab { padding: 0.5rem 1rem; border-radius: 50px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    .su-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .su-panel { display: none; }
+    .su-panel.active { display: block; }
+
+    .su-searchbar { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; }
+    .su-searchbar input { flex: 1; padding: 0.65rem 0.9rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.9rem; }
+    .su-searchbar button { padding: 0.65rem 1.2rem; border-radius: 10px; border: none; background: var(--accent); color: #fff; font-weight: 600; cursor: pointer; }
+
+    .su-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
+    table.su-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 640px; }
+    table.su-table th, table.su-table td { padding: 0.7rem 0.9rem; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    table.su-table th { color: var(--text-secondary); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .su-status-pill { padding: 0.15rem 0.55rem; border-radius: 50px; font-size: 0.7rem; font-weight: 700; }
+    .su-status-active { background: rgba(34,197,94,0.12); color: #22c55e; }
+    .su-status-inactive { background: rgba(239,68,68,0.12); color: #ef4444; }
+    .su-tier-select { padding: 0.3rem 0.5rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.8rem; }
+    .su-row-actions { display: flex; gap: 0.4rem; }
+    .su-btn { padding: 0.35rem 0.7rem; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.75rem; cursor: pointer; }
+    .su-btn.danger { color: #ef4444; border-color: #ef4444; }
+    .su-btn.ok { color: #22c55e; border-color: #22c55e; }
+    .su-empty { padding: 2rem; text-align: center; color: var(--text-secondary); font-size: 0.85rem; }
+    .su-stat-row { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .su-stat { flex: 1; min-width: 140px; padding: 0.9rem 1.1rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+    .su-stat .n { font-size: 1.4rem; font-weight: 800; }
+    .su-stat .l { font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+  </style>
+</head>
+<body class="{% if page_theme != 'dark' %}sd-light{% endif %}">
+
+  {% include "reusables/spinner.html" %}
+
+  <div class="js-loading-indicator" id="jsLoadingIndicator">
+    <span class="js-loading-dot"></span>
+    <span>Loading interface…</span>
+  </div>
+
+  <div class="staff-app" id="staffApp">
+    <a href="#main" class="skip-link">Skip to content</a>
+
+    <header class="staff-topbar">
+      <div class="topbar-inner">
+        <button class="icon-btn" id="backBtn" aria-label="Go back"><i class="fas fa-arrow-left"></i></button>
+        <a href="{% url 'origin_staff_home' %}" class="brand">
+          <img src="{{ logo_url }}" alt="" class="brand-logo">
+          <span class="brand-name">STREAK<em>&amp;</em>DISCIPLINE</span>
+        </a>
+        <nav class="topbar-nav" aria-label="Primary">
+          <a href="{% url 'origin_dashboard' %}" class="topbar-nav-link">Dashboard</a>
+          <a href="{% url 'origin_staff_home' %}" class="topbar-nav-link">Staff Hub</a>
+          <a href="{% url 'origin_staff_users' %}" class="topbar-nav-link active">Users</a>
+        </nav>
+        <div class="topbar-actions">
+          <button class="icon-btn" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
+        </div>
+      </div>
+    </header>
+
+    <main class="staff-main" id="main">
+      <section class="staff-hero">
+        <span class="staff-badge"><i class="fas fa-shield-halved"></i> Staff Only</span>
+        <h2>User Management</h2>
+        <p>Search for an account, deactivate/reactivate it, adjust its tier, or see who's online right now.</p>
+      </section>
+
+      <div class="su-tabs">
+        <button type="button" class="su-tab active" data-tab="users">Users</button>
+        <button type="button" class="su-tab" data-tab="sessions">Active Sessions</button>
+      </div>
+
+      <!-- ============ USERS PANEL ============ -->
+      <div class="su-panel active" id="panelUsers">
+        <div class="su-searchbar">
+          <input type="text" id="userSearchInput" placeholder="Search by username or email…">
+          <button type="button" id="userSearchBtn"><i class="fas fa-search"></i> Search</button>
+        </div>
+        <div class="su-table-wrap">
+          <table class="su-table">
+            <thead>
+              <tr><th>User</th><th>Email</th><th>Status</th><th>Tier</th><th>Joined</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="userResultsBody">
+              <tr><td colspan="6" class="su-empty">Search for a user above.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ============ SESSIONS PANEL ============ -->
+      <div class="su-panel" id="panelSessions">
+        <div class="su-stat-row" id="sessionStats"></div>
+        <div class="su-table-wrap">
+          <table class="su-table">
+            <thead>
+              <tr><th>User</th><th>Email</th><th>Staff</th><th>Session</th><th>Expires</th></tr>
+            </thead>
+            <tbody id="sessionResultsBody">
+              <tr><td colspan="5" class="su-empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>{% include "reusables/spinner.js" %}</script>
+
+  <script>
+  (function() {
+    'use strict';
+    const app = document.getElementById('staffApp');
+    function boot() {
+      if (!app.classList.contains('loaded')) {
+        app.classList.add('loaded');
+        const indicator = document.getElementById('jsLoadingIndicator');
+        if (indicator) { indicator.classList.add('hidden'); setTimeout(function() { if (indicator.parentNode) indicator.remove(); }, 500); }
+        init();
+      }
+    }
+    setTimeout(boot, 300);
+
+    const $ = function(s, c) { return (c || document).querySelector(s); };
+    function getCookie(n) { var v = document.cookie.match('(?:^|;) ?' + n + '=([^;]*)'); return v ? decodeURIComponent(v[1]) : ''; }
+    function setCookie(n, v, d) { var t = new Date(); t.setDate(t.getDate() + (d || 1)); document.cookie = n + '=' + encodeURIComponent(v) + ';path=/;expires=' + t.toUTCString(); }
+    function csrf() { return getCookie('csrftoken'); }
+    function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+
+    function init() {
+      initTheme();
+      initBackButton();
+      initTabs();
+      initUserSearch();
+      initSessions();
+    }
+
+    function initTheme() {
+      var btn = $('#themeToggle'), icon = btn.querySelector('i');
+      function set(dark) { document.body.classList.toggle('sd-light', !dark); icon.className = dark ? 'fas fa-moon' : 'fas fa-sun'; setCookie('sd-theme', dark ? 'dark' : 'light', 365); }
+      btn.addEventListener('click', function() { set(document.body.classList.contains('sd-light')); });
+      if (getCookie('sd-theme') === 'dark') { document.body.classList.remove('sd-light'); icon.className = 'fas fa-moon'; }
+    }
+
+    function initBackButton() {
+      var btn = $('#backBtn'), fallback = "{% url 'origin_staff_home' %}";
+      btn.addEventListener('click', function() {
+        var cameFromSameSite = document.referrer && document.referrer.indexOf(window.location.origin) === 0;
+        if (cameFromSameSite && window.history.length > 1) window.history.back();
+        else window.location.href = fallback;
+      });
+    }
+
+    function initTabs() {
+      var tabs = document.querySelectorAll('.su-tab');
+      tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+          tabs.forEach(function(t) { t.classList.remove('active'); });
+          document.querySelectorAll('.su-panel').forEach(function(p) { p.classList.remove('active'); });
+          tab.classList.add('active');
+          $('#panel' + tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1)).classList.add('active');
+          if (tab.dataset.tab === 'sessions') loadSessions();
+        });
+      });
+    }
+
+    function userRow(u) {
+      const tierOptions = {{ tier_choices|safe|default:"['free','premium','gold']" }}.map(function(t) {
+        return '<option value="' + t + '"' + (t === u.tier ? ' selected' : '') + '>' + t + '</option>';
+      }).join('');
+      return '<tr data-user-id="' + u.id + '">' +
+        '<td>' + esc(u.username) + (u.is_staff ? ' <i class="fas fa-shield-halved" title="Staff" style="color:var(--accent-light)"></i>' : '') + '</td>' +
+        '<td>' + esc(u.email) + '</td>' +
+        '<td><span class="su-status-pill ' + (u.is_active ? 'su-status-active">Active' : 'su-status-inactive">Inactive') + '</span></td>' +
+        '<td><select class="su-tier-select js-tier-select">' + tierOptions + '</select></td>' +
+        '<td>' + esc(u.date_joined) + '</td>' +
+        '<td class="su-row-actions">' +
+          (u.is_active
+            ? '<button type="button" class="su-btn danger js-deactivate">Deactivate</button>'
+            : '<button type="button" class="su-btn ok js-reactivate">Reactivate</button>') +
+        '</td></tr>';
+    }
+
+    function initUserSearch() {
+      var input = $('#userSearchInput'), btn = $('#userSearchBtn'), body = $('#userResultsBody');
+
+      function search() {
+        var q = input.value.trim();
+        if (!q) { body.innerHTML = '<tr><td colspan="6" class="su-empty">Search for a user above.</td></tr>'; return; }
+        body.innerHTML = '<tr><td colspan="6" class="su-empty">Searching…</td></tr>';
+        fetch('{% url "origin_staff_users_search" %}?q=' + encodeURIComponent(q), { credentials: 'same-origin' })
+          .then(function(r) { return r.json(); })
+          .then(function(d) {
+            if (!d.results || !d.results.length) { body.innerHTML = '<tr><td colspan="6" class="su-empty">No users found.</td></tr>'; return; }
+            body.innerHTML = d.results.map(userRow).join('');
+          })
+          .catch(function() { body.innerHTML = '<tr><td colspan="6" class="su-empty">Network error while searching.</td></tr>'; });
+      }
+      btn.addEventListener('click', search);
+      input.addEventListener('keydown', function(e) { if (e.key === 'Enter') search(); });
+
+      body.addEventListener('click', function(e) {
+        var row = e.target.closest('tr'); if (!row) return;
+        var userId = row.getAttribute('data-user-id');
+
+        if (e.target.classList.contains('js-deactivate')) {
+          if (!confirm('Deactivate this user? They will be signed out and unable to log in until reactivated.')) return;
+          manage(userId, 'deactivate', {}, row);
+        } else if (e.target.classList.contains('js-reactivate')) {
+          manage(userId, 'reactivate', {}, row);
+        }
+      });
+
+      body.addEventListener('change', function(e) {
+        if (!e.target.classList.contains('js-tier-select')) return;
+        var row = e.target.closest('tr'), userId = row.getAttribute('data-user-id');
+        manage(userId, 'set_tier', { tier: e.target.value }, row);
+      });
+
+      function manage(userId, action, extra, row) {
+        var fd = new FormData();
+        fd.append('action', action);
+        Object.keys(extra).forEach(function(k) { fd.append(k, extra[k]); });
+        fetch('/v1/staff/users/' + userId + '/manage/', { method: 'POST', headers: { 'X-CSRFToken': csrf() }, body: fd })
+          .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+          .then(function(res) {
+            alert((res.data && res.data.message) || (res.ok ? 'Done.' : 'Something went wrong.'));
+            if (res.ok) search();
+          })
+          .catch(function() { alert('Network error.'); });
+      }
+    }
+
+    function loadSessions() {
+      var body = $('#sessionResultsBody'), stats = $('#sessionStats');
+      body.innerHTML = '<tr><td colspan="5" class="su-empty">Loading…</td></tr>';
+      fetch('{% url "origin_staff_sessions" %}', { credentials: 'same-origin' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          stats.innerHTML =
+            '<div class="su-stat"><div class="n">' + (d.unique_users_online || 0) + '</div><div class="l">Unique users online</div></div>' +
+            '<div class="su-stat"><div class="n">' + (d.total_active_sessions || 0) + '</div><div class="l">Active sessions</div></div>';
+          if (!d.sessions || !d.sessions.length) { body.innerHTML = '<tr><td colspan="5" class="su-empty">Nobody is currently logged in.</td></tr>'; return; }
+          body.innerHTML = d.sessions.map(function(s) {
+            return '<tr><td>' + esc(s.username) + '</td><td>' + esc(s.email) + '</td><td>' + (s.is_staff ? 'Yes' : 'No') + '</td><td>' + esc(s.session_key) + '</td><td>' + esc(s.expires_at) + '</td></tr>';
+          }).join('');
+        })
+        .catch(function() { body.innerHTML = '<tr><td colspan="5" class="su-empty">Network error loading sessions.</td></tr>'; });
+    }
+
+    function initSessions() { /* loaded lazily when the tab is opened, see initTabs() */ }
+  })();
+  </script>
+</body>
+</html>

@@ -760,15 +760,15 @@
               <div class="pf-section-head danger"><i class="fas fa-triangle-exclamation"></i> Danger Zone</div>
               <div class="pf-danger-card">
 
-                <!-- Archive all commitments -->
+                <!-- Delete all commitments -->
                 <div class="pf-danger-item">
                   <div>
-                    <div class="pf-danger-label">Archive All Commitments</div>
-                    <div class="pf-danger-desc">Mute All Notifivation. Streaks still reset if you miss a period. Reactivate anytime.</div>
+                    <div class="pf-danger-label">Delete All Commitments</div>
+                    <div class="pf-danger-desc">Permanently removes every active commitment and its history. <strong>Cannot be undone.</strong></div>
                   </div>
                   <button class="btn btn-outline btn-sm" id="pfArchiveAllBtn"
                           style="border-color:var(--warn);color:var(--warn);flex-shrink:0">
-                    <span class="btn-txt"><i class="fas fa-box-archive"></i> Archive All</span>
+                    <span class="btn-txt"><i class="fas fa-trash"></i> Delete All</span>
                     <span class="btn-spin"></span>
                   </button>
                 </div>
@@ -1331,7 +1331,7 @@
     /* ── Data export ───────────────────────────────────────────── */
     function doExport(fmt){
       showToast('Preparing your '+fmt.toUpperCase()+' export…','load',0);
-      fetch('/v1/export_data/?format='+fmt,{credentials:'same-origin'})
+      fetch('/v1/profile_export_data/?format='+fmt,{credentials:'same-origin'})
       .then(function(r){
         if(!r.ok)throw new Error('Export failed');
         return r.blob();
@@ -1355,17 +1355,17 @@
 
     /* ── Danger zone ───────────────────────────────────────────── */
     qs('#pfArchiveAllBtn')&&qs('#pfArchiveAllBtn').addEventListener('click',function(){
-      if(!confirm('Archive ALL active commitments? You can reactivate them from My Commitments.'))return;
+      if(!confirm('Delete ALL active commitments? This cannot be undone.'))return;
       var btn=this;btn.classList.add('pf-loading');
-      fetch('/v1/archive_all_commitments/',{
+      fetch('/v1/delete_all_commitments/',{
         method:'POST',credentials:'same-origin',
         headers:{'X-CSRFToken':getCookie('csrftoken')}
       })
       .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
       .then(function(res){
         btn.classList.remove('pf-loading');
-        if(!res.ok){showToast(res.data.message||'Could not archive.','error');return}
-        showToast('All commitments archived.','info');
+        if(!res.ok){showToast(res.data.message||'Could not delete.','error');return}
+        showToast('All commitments deleted.','info');
       })
       .catch(function(){btn.classList.remove('pf-loading');showToast('Network error.','error')});
     });

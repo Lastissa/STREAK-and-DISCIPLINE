@@ -43,8 +43,13 @@ class ChoicesValidatorInModels:
             'update',               #   SOMETHING WORTH KNOWING LIKE "PRESS THIS BTN TO DO THIS"
             'feature',              #   AN ADDITIOANL UPDATE HAVE BEEN MADE TO THE SITE
             'story',                #   A WILLING USER SHARED THEIR STORY WITH US
-            'quotes'                #   REGULAR WORD OF MOTIVATION.
-            , ]
+            'quotes',               #   REGULAR WORD OF MOTIVATION.
+            'announcement',         #   BIGGER NEWS - LAUNCHES, MILESTONES, POLICY CHANGES
+            'tips',                 #   SHORT PRACTICAL ADVICE FOR STAYING DISCIPLINED
+            'guide',                #   LONGER HOW-TO / WALKTHROUGH CONTENT
+            'milestone',            #   COMMUNITY OR PRODUCT MILESTONE (E.G "10,000 USERS")
+            'community',            #   SPOTLIGHT ON THE COMMUNITY / LEADERBOARD / PARTNERS
+            ]
     
 
 custom_val = ChoicesValidatorInModels()
@@ -142,9 +147,11 @@ class Commitment(models.Model):
     reminder_active = models.BooleanField(default=True)#wether to on reminder or not
     user_selected_reminder_time = models.TimeField(null=True, blank=False, default=None)#the time to which email will be sent to user
     #send via email a at the user specified reminder time, and a general mail should be send few minutes before the day ends to all user who have not been active, thats if user reminder time is at least 5 minutes < than this shcedules time 
-    mode_of_delivery = models.CharField(max_length=10, default= custom_val.report_delivery_mode[0])
+    mode_of_delivery = models.CharField(max_length=10, default= custom_val.report_delivery_mode[2]) #defaults to push now since email delivery is currently unreliable in production
     whatsapp_number = models.CharField(max_length=20, blank=True) #if the user chooses whtsap so i can save their phone number using +xxxxxxxxxxxxxxx
     last_reminder_sent_at = models.DateTimeField(null=True, blank=True, default=None)   #to keep track for reminders for commitment
+    pending_notice = models.CharField(max_length=255, blank=True, default='') #set by the cron job (e.g "streak reset - you missed your 24hr check-in window") and flushed out to the user as a django message next time they load a page that touches this commitment
+    completed_at = models.DateTimeField(null=True, blank=True, default=None) #set when goal_days is reached (end of life) and the commitment is auto marked inactive by the cron job
     def __str__(self):
         return f"{self.user.email} Commitments -- what_name: {self.what}; status -> {self.is_active}"
     
@@ -193,9 +200,9 @@ class Friendship(models.Model):
         
         
 class News(models.Model):
-    title = models.CharField(blank=False, null= False, unique=True)          # News title
-    tag = models.CharField(blank=False, null= False)            # Category of post based on the custom choiced class
-    excerpt = models.CharField(blank=False, null= False)        # Frist few lines of the full text
+    title = models.CharField(max_length=220, blank=False, null= False, unique=True)          # News title
+    tag = models.CharField(max_length=30, blank=False, null= False)            # Category of post based on the custom choiced class
+    excerpt = models.CharField(max_length=160, blank=False, null= False)        # Frist few lines of the full text
     date = models.DateField(auto_now_add= True)                 # Date created
     read_time = models.IntegerField(blank=False, null=False)    # Estimated time user is suppose to read it for
     banner = models.URLField(null=True, blank=True)                        # IF the news have a banner and the image of the banner
@@ -203,7 +210,7 @@ class News(models.Model):
     actual_content = models.TextField(default="", blank=True, null= True)# This hold the actual content that will be displayed on its own page
     
     class Meta:
-        unique_together= ('title', 'tag', 'excerpt')
+        unique_together= ('title', 'tag', 'excerpt', 'read_time', 'banner', 'featured', 'actual_content')
         
     def __str__(self):
         return "News"
@@ -223,6 +230,18 @@ class PushSubscription(models.Model):
     def __str__(self):
         return f"PushSubscription for {self.user.email}"
     
+#every new signup starts on premium automatically for 7 days, then the cron job downgrades them back to free once expires_at has passed (unless they genuinely paid, which is out of scope of this model - this only tracks the FREE TRIAL)
+class PremiumTrial(models.Model):
+    user = models.OneToOneField(CustomeUser, on_delete=models.CASCADE, related_name='premium_trial')
+    started_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField() #started_at + 7 days, set on creation
+    downgraded = models.BooleanField(default=False) #flips true the moment the cron job knocks the profile tier back down to free, so we never try to downgrade the same user twice
+    downgraded_at = models.DateTimeField(null=True, blank=True, default=None)
+
+    def __str__(self):
+        return f"Premium trial for {self.user.email} (expires {self.expires_at:%Y-%m-%d})"
+
+
 class StaffTempToken(models.Model):
     email = models.EmailField()
     token = models.CharField(max_length=10)

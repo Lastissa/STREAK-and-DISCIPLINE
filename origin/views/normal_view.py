@@ -92,7 +92,12 @@ class TestSearch(View):
     def get(self, request):return render(request, 'html/test_friend_search.html')
     
 class InProgress(View):
-    def get(self, request):return render(request, 'reusables/still_in_progress.html')
+    """Shown for any page that isn't built yet. Always sends the "Back" button to
+    wherever the user actually came from (an explicit ?next=, else HTTP_REFERER),
+    never a hardcoded redirect to the landing page."""
+    def get(self, request):
+        back_url = request.GET.get('next') or request.META.get('HTTP_REFERER') or '/'
+        return render(request, 'reusables/still_in_progress.html', {'back_url': back_url})
 
 
 
@@ -115,74 +120,12 @@ class Leaderboard(View):
     })
 
 #PURE JSON
-
-
-class PartnerWidget(LoginRequiredMixin, View):
-    """#this handles a situation where a user wan to call up his friends and view them  --ONLY WORK IF USER social_mode IS PARTNER NOT SOLO       
-"""
-    def get(self, request):
-        # Check social mode
-        profile_istance = Profile.objects.filter(user=request.user).first()
-        if profile_istance.social_mode == ChoicesValidatorInModels().social_mode[0]:
-            return JsonResponse({
-                'message': 'You are currently in solo mode. Only partner mode users can access this.',
-            }, status=403)
-
-        # Get accepted partnerships where user is the receiver
-        partner_istance = Friendship.objects.filter(
-            to_user=request.user,
-            status='accepted'
-        ).select_related('from_user').all()
-
-        #Collect all partner user IDs
-        partner_users = []
-        for f in partner_istance:
-            partner_users.append(f.from_user_id)
-
-        #Get all active commitments for ALL partners in one query
-        all_commitments = Commitment.objects.filter(
-            user_id__in=partner_users,
-            is_active=True
-        ).all()
-
-        #Get all entries for ALL partners in one query
-        all_entries = Entries.objects.filter(
-            commitment_key__user_id__in=partner_users
-        ).order_by('commit_at').all()
-
-        #Group commitments by user
-        commitments_by_user = {}
-        for c in all_commitments:
-            uid = c.user_id
-            if uid in commitments_by_user:
-                commitments_by_user[uid].append(c.streak_count)
-            else:
-                commitments_by_user[uid] = [c.streak_count]
-
-        #Group last active by user
-        last_active_by_user = {}
-        for e in all_entries:
-            uid = e.commitment.user_id
-            if uid not in last_active_by_user:
-                last_active_by_user[uid] = e.commit_at
-
-        #Build the partner list
-        partners = []
-        for f in partner_istance:
-            partner_uid = f.from_user_id
-            partner_profile = Profile.objects.filter(user_id=partner_uid).first()
-            public_id = partner_profile.public_searchable_username if partner_profile else 'unknown'
-
-            partners.append({
-                'public_id': public_id,
-                'streak_count': commitments_by_user.get(partner_uid, []),
-                'last_active': str(last_active_by_user.get(partner_uid, '')),
-            })
-
-        return JsonResponse({
-            'message': 'success',
-            'partners': partners,
-        })
+#NOTE: PartnerWidget used to be duplicated here AND in json_only_view.py. Because
+#origin/views/__init__.py does "from .normal_view import *" AFTER "from .json_only_view
+#import *", THIS copy was silently winning and shadowing every fix made to the one in
+#json_only_view.py - that's the actual root cause of the partner dashboard card being
+#broken (crashing on e.commitment.user_id, and showing a raw list instead of a number
+#for streak_count). There is now exactly one PartnerWidget, in json_only_view.py.
         
 
 class BlogView(View):
@@ -266,22 +209,24 @@ class BlogView(View):
         #             'featured': True,
         #         },
         #     ]
+        news_choices = ChoicesValidatorInModels().news_category
         context = {
             'tier': 'gold',
             'posts': post,
-            'categories': ['Update', 'TIP', 'Guide', 'Story'],  # unique tags
-            'news_tags': ['Update', 'TIP', 'Guide', 'Story'],   #for the is_staff own
+            'categories': list(news_choices),   # unique tags, sourced from the same list staff picks from - was previously a stale hardcoded ['Update','TIP','Guide','Story'] that didn't match what staff could actually publish
+            'news_tags': list(news_choices),     #for the is_staff form
         }
         
         if data.count() < 1 : return render(request, 'html/blog_and_update.html', {"page_mode": request.COOKIES.get('sd-theme', ''),**context})
         post = [
             {
+                'id': i.pk,
                 'tag' : i.tag,
                 'title': i.title,
                 'excerpt': i.excerpt,
                 'date': i.date,
                 'read_time'  :i.read_time,
-                'url': reverse('origin_blog') + f"/{i.pk}",
+                'url': reverse('origin_blog_detail', kwargs={'pk': i.pk}),
                 'image_url': i.banner,
                 'featured': i.featured
             }
@@ -292,9 +237,21 @@ class BlogView(View):
         return render(request, 'html/blog_and_update.html', {"page_mode": request.COOKIES.get('sd-theme', ''),**context})
     
 class BlogViewExpanded(View):
-    def get(self, request):
-        """When usr click on that blog and they want to see the content, colect the blog id from user as extra sub endpoint"""
-    
+    """The full article page a user lands on after clicking a post from the Blog &
+    Updates list. 404s (via Http404, which our custom handler404 now renders as the
+    friendly "Still in Progress" screen rather than a dead end) if the news id doesn't
+    exist - covers both a bad/old link and a post a staff member has since removed."""
+    def get(self, request, pk):
+        post = News.objects.filter(pk=pk).first()
+        if post is None:
+            raise Http404
+        #a few more recent posts to keep people reading, excluding the one they're already on
+        more_posts = News.objects.exclude(pk=pk).order_by('-date')[:3]
+        return render(request, 'html/news_detail.html', {
+            'page_mode': request.COOKIES.get('sd-theme', ''),
+            'post': post,
+            'more_posts': more_posts,
+        })
 
 #Json ONly response
 class GetLeaderBoardData(View):

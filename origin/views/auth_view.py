@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from django.urls import reverse
 from django.views import View
 from django.db import transaction
-from ..models import Profile, Commitment, ChoicesValidatorInModels, PasswordResetToken
+from ..models import Profile, Commitment, ChoicesValidatorInModels, PasswordResetToken, PremiumTrial
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError as V_Error
 
@@ -82,7 +82,15 @@ class DbSave(LoginRequiredMixin,View):
                 ai_insight_active = allow_preferences_allow_ai_insight,
                 receive_newsletter = allow_preferences_occasional_email,
                 theme = preferences_theme,
-                social_mode = social_mode_settings
+                social_mode = social_mode_settings,
+                tier = customVal.tier[1],  #every new signup starts on PREMIUM automatically - see PremiumTrial below, the cron job downgrades it back to 'free' after 7 days
+            )
+            #7-day free premium trial, created once per user at onboarding time. downgrade_expired_trials() in
+            #utility/maintenance_engine.py (run off the same cron tick as everything else) flips profile.tier
+            #back to 'free' once expires_at passes - see that file for the full explanation.
+            PremiumTrial.objects.create(
+                user = request.user,
+                expires_at = timezone.now() + timezone.timedelta(days=7),
             )
             
             commitment_istance = Commitment.objects.create(

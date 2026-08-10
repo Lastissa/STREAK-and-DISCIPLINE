@@ -7,5 +7,9 @@ from .json_only_view import *       # Handles anything tht returns only json
 from .danger import *               #handles dangerous zone
 from .staff import *                # Handles anything staff related except the backdoor
 from .cron_job_View import *        #For the background task i need to handle since i am using render free
-from .normal_view import *
+#NOTE: "from .normal_view import *" used to be duplicated here (imported a second time,
+#after json_only_view). Wildcard imports resolve last-import-wins on name collisions, so
+#that duplicate line was silently letting normal_view.py's stale/broken PartnerWidget
+#override the fixed one in json_only_view.py. Removed - keep each view class defined in
+#exactly one file to avoid this happening again.
 

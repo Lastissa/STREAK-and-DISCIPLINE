@@ -88,14 +88,31 @@ h1, h2, h3, h4 { line-height: 1.25; font-weight: 700; letter-spacing: -0.01em; }
 /* ============================================================
    TOP BAR (replaces the old aside entirely)
    ============================================================ */
+/* ============================================================
+   TOP BAR — restyled to match the floating pill header used on every
+   other page (landing_page.html, privacy_etc.html, leaderboard.html,
+   still_in_progress.html: .site-header / .header-inner / .nav-links).
+   Structure/IDs below are unchanged (JS hooks stay intact), only the
+   outer bar now floats/rounds/blurs the same way instead of being a
+   plain full-width sticky strip - this is the "nav doesn't rhyme with
+   the rest of the site" fix.
+   ============================================================ */
 .blog-topbar {
-  position: sticky; top: 0; z-index: 220;
-  padding-top: var(--safe-top);
-  background: rgba(10, 14, 23, 0.85);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--border);
+  position: fixed; top: calc(12px + var(--safe-top)); left: 50%; transform: translateX(-50%);
+  width: calc(100% - 24px); max-width: 1176px; /* 1100px content + 76px breathing room, matches --max-width elsewhere */
+  z-index: 220;
+  border-radius: 16px;
+  background: rgba(10, 14, 23, 0.78);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
-body.sd-light .blog-topbar { background: rgba(255, 255, 255, 0.88); }
+body.sd-light .blog-topbar { background: rgba(248, 250, 252, 0.85); border-color: rgba(0, 0, 0, 0.06); }
+
+/* the bar is now fixed/floating instead of sticky-in-flow, so push the
+   content below it down by the bar height + the gap above it */
+.blog-app { padding-top: calc(var(--topbar-h) + 24px + var(--safe-top)); }
+.blog-topbar { padding-top: 0; }
 
 .topbar-inner {
   width: 100%;
@@ -192,18 +209,27 @@ body.sd-light .blog-topbar { background: rgba(255, 255, 255, 0.88); }
 .nav-overlay.show { opacity: 1; visibility: visible; }
 
 .mobile-nav {
-  position: fixed; top: 0; right: 0; z-index: 240;
-  width: min(340px, 88vw); height: 100vh; height: 100dvh;
-  background: var(--surface);
-  border-left: 1px solid var(--border);
-  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.5);
-  transform: translateX(100%);
+  position: fixed; top: 0; left: 0; z-index: 240;
+  width: min(300px, 82vw); height: 100vh; height: 100dvh;
+  background: rgba(10, 14, 23, 0.92);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid var(--border);
+  box-shadow: 4px 0 32px rgba(0, 0, 0, 0.35);
+  transform: translateX(-100%);
   transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
   display: flex; flex-direction: column;
   padding-top: var(--safe-top);
   padding-bottom: var(--safe-bottom);
 }
+body.sd-light .mobile-nav { background: rgba(255, 255, 255, 0.94); }
 .mobile-nav.open { transform: translateX(0); }
+
+.mobile-nav-top {
+  display: flex; align-items: center; gap: 0.6rem; padding: 1.1rem 1.1rem 0.9rem; border-bottom: 1px solid var(--border);
+}
+.mobile-nav-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--accent); flex-shrink: 0; }
+.mobile-nav-uname { font-weight: 700; font-size: 0.88rem; line-height: 1.2; }
+.mobile-nav-uemail { font-size: 0.7rem; color: var(--text-secondary); }
 
 .mobile-nav-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -217,6 +243,7 @@ body.sd-light .blog-topbar { background: rgba(255, 255, 255, 0.88); }
 }
 .mobile-nav-link i { width: 18px; text-align: center; }
 .mobile-nav-link:hover, .mobile-nav-link.active { background: rgba(59, 130, 246, 0.08); color: var(--accent-light); }
+.mobile-nav-sep { border: none; border-top: 1px solid var(--border); margin: 0.6rem 0.7rem; }
 
 /* ============================================================
    MAIN CONTENT
@@ -279,6 +306,17 @@ body.sd-light .blog-topbar { background: rgba(255, 255, 255, 0.88); }
 .post-card-excerpt { color: var(--text-secondary); font-size: 0.85rem; line-height: 1.55; flex: 1; }
 .post-card-meta { display: flex; gap: 1rem; font-size: 0.72rem; color: var(--text-secondary); flex-wrap: wrap; }
 .post-card-link { font-weight: 700; font-size: 0.82rem; color: var(--accent-light); display: flex; align-items: center; gap: 0.35rem; margin-top: auto; }
+
+/* staff-only per-post controls (edit / change banner / delete) */
+.post-card-staff-tools { display: flex; gap: 0.4rem; margin: -0.2rem 0 0.1rem; }
+.staff-tool-btn {
+  display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
+  border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary);
+  font-size: 0.72rem; cursor: pointer; transition: color .15s, border-color .15s;
+}
+.staff-tool-btn:hover { color: var(--accent-light); border-color: var(--accent); }
+.js-delete-post:hover { color: #ef4444; border-color: #ef4444; }
+.js-change-banner-label { position: relative; }
 
 .blog-empty { grid-column: 1 / -1; text-align: center; padding: 3.5rem 1rem; color: var(--text-secondary); }
 .blog-empty i { font-size: 2.6rem; margin-bottom: 1rem; display: block; color: var(--accent-light); }

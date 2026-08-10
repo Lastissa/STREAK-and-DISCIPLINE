@@ -87,14 +87,26 @@
     <!-- ============ MOBILE / SLIDE NAV ============ -->
     <div class="nav-overlay" id="navOverlay"></div>
     <nav class="mobile-nav" id="mobileNav" aria-label="Menu">
+      {% if request.user.is_authenticated %}
+      <div class="mobile-nav-top">
+        <img src="{{ request.user.profile.profile_img_url|default:logo_url }}" alt="" class="mobile-nav-avatar">
+        <div>
+          <div class="mobile-nav-uname">{{ request.user.username }}</div>
+          <div class="mobile-nav-uemail">{{ request.user.email }}</div>
+        </div>
+        <button class="icon-btn" id="navCloseBtn" aria-label="Close menu" style="margin-left:auto"><i class="fas fa-times"></i></button>
+      </div>
+      {% else %}
       <div class="mobile-nav-head">
         <span><i class="fas fa-bars"></i> Menu</span>
         <button class="icon-btn" id="navCloseBtn" aria-label="Close menu"><i class="fas fa-times"></i></button>
       </div>
+      {% endif %}
       <div class="mobile-nav-links">
         {% if request.user.is_staff or request.user.is_superuser %}
         <div class="mobile-nav-lbl">Staff</div>
         <button type="button" class="mobile-nav-link" id="addNewsBtnMobile"><i class="fas fa-plus"></i> Add News</button>
+        <hr class="mobile-nav-sep">
         {% endif %}
 
         <div class="mobile-nav-lbl">Navigation</div>
@@ -145,7 +157,7 @@
 
       <div class="blog-grid" id="blogGrid">
         {% for post in posts %}
-        <article class="post-card {% if post.featured %}post-card-featured{% endif %}" data-tag="{{ post.tag|lower }}">
+        <article class="post-card {% if post.featured %}post-card-featured{% endif %}" data-tag="{{ post.tag|lower }}" data-post-id="{{ post.id }}">
           {% if post.image_url %}
           <div class="post-card-image">
             <img src="{{ post.image_url }}" alt="{{ post.title }}" loading="lazy">
@@ -153,6 +165,16 @@
           {% endif %}
           <div class="post-card-body">
             <div class="post-card-tag">{{ post.tag }}</div>
+            {% if request.user.is_staff or request.user.is_superuser %}
+            <div class="post-card-staff-tools">
+              <button type="button" class="staff-tool-btn js-edit-post" title="Edit post"><i class="fas fa-pen"></i></button>
+              <label class="staff-tool-btn js-change-banner-label" title="Change picture">
+                <i class="fas fa-image"></i>
+                <input type="file" class="js-change-banner-input" accept="image/png,image/jpeg,image/webp" hidden>
+              </label>
+              <button type="button" class="staff-tool-btn js-delete-post" title="Delete post"><i class="fas fa-trash"></i></button>
+            </div>
+            {% endif %}
             <h3>{{ post.title }}</h3>
             <p class="post-card-excerpt">{{ post.excerpt }}</p>
             <div class="post-card-meta">
@@ -250,8 +272,8 @@
       </div>
 
       <label for="newsExcerpt">Excerpt
-        <textarea id="newsExcerpt" name="excerpt" rows="2" maxlength="1000" required placeholder="A one or two sentence summary shown on the blog card"></textarea>
-        <span class="char-count" id="excerptCount">0 / 1000</span>
+        <textarea id="newsExcerpt" name="excerpt" rows="2" maxlength="100" required placeholder="A one or two sentence summary shown on the blog card"></textarea>
+        <span class="char-count" id="excerptCount">0 / 100</span>
       </label>
 
       <label for="newsBanner">Banner image
@@ -351,6 +373,76 @@
     initLogout();
     initCategoryFilter();
     initAddNewsModal();
+    initStaffPostTools();
+  }
+
+  function initStaffPostTools() {
+    const grid = $('#blogGrid');
+    if (!grid) return;
+
+    function csrf() { return getCookie('csrftoken'); }
+
+    grid.addEventListener('click', function (e) {
+      const editBtn = e.target.closest('.js-edit-post');
+      const delBtn = e.target.closest('.js-delete-post');
+      if (!editBtn && !delBtn) return;
+
+      const card = e.target.closest('.post-card');
+      const id = card && card.getAttribute('data-post-id');
+      if (!id) return;
+
+      if (delBtn) {
+        if (!confirm('Permanently delete this post? This cannot be undone.')) return;
+        fetch('/v1/staff/news/' + id + '/delete/', { method: 'POST', headers: { 'X-CSRFToken': csrf() } })
+          .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+          .then(function (res) {
+            if (!res.ok) { showToast((res.data && res.data.message) || 'Could not delete post.', 'error'); return; }
+            showToast(res.data.message || 'Post deleted.', 'success');
+            card.remove();
+          })
+          .catch(function () { showToast('Network error while deleting.', 'error'); });
+        return;
+      }
+
+      if (editBtn) {
+        const title = prompt('Edit title:', card.querySelector('h3').textContent.trim());
+        if (title === null) return;
+        const excerpt = prompt('Edit excerpt (max 100 chars):', card.querySelector('.post-card-excerpt').textContent.trim());
+        if (excerpt === null) return;
+        const fd = new FormData();
+        fd.append('title', title);
+        fd.append('excerpt', excerpt);
+        fetch('/v1/staff/news/' + id + '/edit/', { method: 'POST', headers: { 'X-CSRFToken': csrf() }, body: fd })
+          .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+          .then(function (res) {
+            if (!res.ok) { showToast((res.data && res.data.message) || 'Could not update post.', 'error'); return; }
+            showToast(res.data.message || 'Post updated.', 'success');
+            card.querySelector('h3').textContent = title;
+            card.querySelector('.post-card-excerpt').textContent = excerpt;
+          })
+          .catch(function () { showToast('Network error while updating.', 'error'); });
+      }
+    });
+
+    grid.addEventListener('change', function (e) {
+      const input = e.target.closest('.js-change-banner-input');
+      if (!input || !input.files || !input.files[0]) return;
+      const card = e.target.closest('.post-card');
+      const id = card && card.getAttribute('data-post-id');
+      if (!id) return;
+
+      const fd = new FormData();
+      fd.append('banner', input.files[0]);
+      fetch('/v1/staff/news/' + id + '/banner/', { method: 'POST', headers: { 'X-CSRFToken': csrf() }, body: fd })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+        .then(function (res) {
+          if (!res.ok) { showToast((res.data && res.data.message) || 'Could not update image.', 'error'); return; }
+          showToast(res.data.message || 'Banner updated.', 'success');
+          const img = card.querySelector('.post-card-image img');
+          if (img && res.data.banner_url) img.src = res.data.banner_url;
+        })
+        .catch(function () { showToast('Network error while uploading image.', 'error'); });
+    });
   }
 
   function initTheme() {
@@ -552,7 +644,7 @@
 
     if (excerpt && count) {
       excerpt.addEventListener('input', function () {
-        count.textContent = excerpt.value.length + ' / 1000';
+        count.textContent = excerpt.value.length + ' / 100';
       });
     }
 
@@ -619,26 +711,32 @@
         body: fd
       })
         .then(function (res) {
-          if (!res.ok) throw new Error('Request failed');
-          return res.json().catch(function () { return {}; });
+          return res.json().catch(function () { return {}; }).then(function (data) {
+            return { ok: res.ok, status: res.status, data: data };
+          });
         })
-        .then(function () {
+        .then(function (result) {
           setSubmitting(false);
-          showToast('Post published.', 'success');
+          if (!result.ok) {
+            var msg = (result.data && result.data.message) || ('Request failed with status ' + result.status + '.');
+            if (errorBox) { errorBox.textContent = msg; errorBox.hidden = false; }
+            showToast(msg, 'error');
+            return;
+          }
+          showToast((result.data && result.data.message) || 'Post published.', 'success');
           form.reset();
           preview.hidden = true;
           empty.hidden = false;
-          if (count) count.textContent = '0 / 1000';
+          if (count) count.textContent = '0 / 100';
           close();
+          if (typeof window.reloadBlogFeed === 'function') window.reloadBlogFeed();
+          else setTimeout(function(){ window.location.reload(); }, 900);
         })
-        .catch(function () {
+        .catch(function (err) {
           setSubmitting(false);
-          if (errorBox) {
-            errorBox.textContent =
-              'Something went wrong publishing this post. Please try again.';
-            errorBox.hidden = false;
-          }
-          showToast('Failed to publish post.', 'error');
+          var msg = 'Network error while publishing — check your connection and try again.';
+          if (errorBox) { errorBox.textContent = msg; errorBox.hidden = false; }
+          showToast(msg, 'error');
         });
     });
   }

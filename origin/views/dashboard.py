@@ -60,6 +60,13 @@ class Dashboard(LoginRequiredMixin, View):
             messages.warning(request, message="Please Finish your onboarding before accessing this page, head to login and sigin in with you creedentials and you will be taken to onboarding")
             return render(request, 'html/full_screen_message.html')
         commitment_istance = Commitment.objects.filter(user=request.user, is_active=True).all()
+
+        #flush pending notices (e.g streak resets from the cron job) to django messages, then clear so they don't repeat
+        noticed_qs = commitment_istance.exclude(pending_notice='')
+        for c in noticed_qs:
+            messages.warning(request, message=c.pending_notice)
+        noticed_qs.update(pending_notice='')
+
         consistency = [0 for i in commitment_istance if i.streak_count > 0]    #Find the amount of streak score > 0 / total commitment (i use the tenchique of all ocnsistncy must have a streak score but are they all greater than zero?) ; that give the consistency_cpt
         avg_streak_Counter = [ i.streak_count for i in commitment_istance]
         try:    avg_streak = sum(avg_streak_Counter) / len(avg_streak_Counter) #i added one to curb the issue of division by zero   sum them all and divide by all to to get roughly avg 
@@ -98,8 +105,17 @@ class EachCommitmentView(LoginRequiredMixin, View):
         #get the instance i will need
         profile_istance = Profile.objects.filter(user = request.user).first()
         if profile_istance is None: return JsonResponse({'message': 'no profile attached to this account, please contact customer support ASAP'}, statu = 400)
-        commitment_istance = Commitment.objects.filter(user = request.user, pk = commitment_key).first()
-        
+        commitment_istance = Commitment.objects.filter(user = request.user, pk = commitment_key, is_active=True).first() #is_active=True so a deleted commitment can never be viewed again, even via a saved/old link
+        if commitment_istance is None:
+            messages.warning(request, message="This commitment doesn't exist or was deleted.")
+            return redirect('origin_commitments')
+
+        #flush any pending_notice (e.g a streak reset from the cron job) to the user as an honest django message, then clear it so it doesn't repeat on the next visit
+        if commitment_istance.pending_notice:
+            messages.warning(request, message=commitment_istance.pending_notice)
+            commitment_istance.pending_notice = ''
+            commitment_istance.save(update_fields=['pending_notice'])
+
         today_entry_istance = Entries.objects.filter(commitment_key__user = request.user, commitment_key__pk = commitment_key, commit_at = timezone.datetime.now().date()).select_related('commitment_key').first()
         
         return render(request, 'html/commitment_detail-entries.html',{
@@ -206,6 +222,12 @@ class DashboardCommitmentView(LoginRequiredMixin, View):
             messages.warning(request, message="Please Finish your onboarding before accessing this page, head to login and sigin in with you creedentials and you will be taken to onboarding")
             return render(request, 'html/full_screen_message.html')
         
+        #flush pending notices (e.g streak resets from the cron job) to django messages, then clear so they don't repeat
+        noticed = Commitment.objects.filter(user=request.user, is_active=True).exclude(pending_notice='')
+        for c in noticed:
+            messages.warning(request, message=c.pending_notice)
+        noticed.update(pending_notice='')
+
         open_add_commitment = request.GET.get('add', False)
         return render(request, 'html/commitments.html', {
             'tier' : istance.tier,

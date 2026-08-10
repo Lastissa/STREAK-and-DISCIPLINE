@@ -42,6 +42,7 @@ urlpatterns = [
     
     #public accesible
     path('blog/', views.BlogView.as_view(), name= "origin_blog"),
+    path('blog/<int:pk>/', views.BlogViewExpanded.as_view(), name= "origin_blog_detail"),
     path('extra/', views.Extras.as_view(),name='origin_extra'),
     path('navigation/', views.Extras.as_view(),name='origin_navigation'),
     path('weekly-analysis/', views.Reports.as_view(),name='origin_weekly_analysis'),
@@ -77,6 +78,9 @@ urlpatterns = [
     path('profile_data/update_profile/', views.ProfileUpdateToggles.as_view(), name = 'origin_profile_update_second_part'),     #return the needed json file to the profile page dashboardpage leaderboard optn in, show zeal score etc
     path('profile_data/update_theme/', views.ProfileUpdateTheme.as_view(), name = 'origin_profile_update_theme'),     #return the needed json file to the profile page dashboardpage uspdate username, userid 
     path('profile_export_data/', views.DataExport.as_view(), name = 'origin_export_data'),
+    path('delete_all_commitments/', views.BulkDeleteCommitments.as_view(), name = 'origin_delete_all_commitments'),
+    path('clear_entries/', views.ClearAllEntries.as_view(), name = 'origin_clear_entries'),
+    path('reset_streaks/', views.ResetAllStreaks.as_view(), name = 'origin_reset_streaks'),
     path('reports_data/', views.ReportsData.as_view(), name = 'origin_reports_data'),     #return the needed json for the user reports page, this is the one that will be used to load the report data in the reports page
 
     path('staff/signup/', views.StaffSignup.as_view(), name ="origin_staff_signup"),
@@ -85,6 +89,13 @@ urlpatterns = [
     path('staff/get_token/', views.StaffMakeTokenRequest.as_view(), name ="origin_get_staff_token"),
     path('staff/home/', views.AccountWithStaffStatus.as_view(), name ="origin_staff_home"),
     path('staff/create_blog/', views.CreateBlog.as_view(), name ="origin_staff_publish_news"),
+    path('staff/news/<int:pk>/edit/', views.EditBlog.as_view(), name ="origin_staff_edit_news"),
+    path('staff/news/<int:pk>/banner/', views.ChangeBlogBanner.as_view(), name ="origin_staff_change_news_banner"),
+    path('staff/news/<int:pk>/delete/', views.DeleteBlog.as_view(), name ="origin_staff_delete_news"),
+    path('staff/users/', views.StaffUsersPage.as_view(), name ="origin_staff_users"),
+    path('staff/users/search/', views.StaffUserSearch.as_view(), name ="origin_staff_users_search"),
+    path('staff/users/<int:user_id>/manage/', views.StaffUserManage.as_view(), name ="origin_staff_users_manage"),
+    path('staff/sessions/', views.StaffActiveSessions.as_view(), name ="origin_staff_sessions"),
     
     
     # Cron job THAT I RUN MANUALLy WITH HTTP USING CRONJOB.ORG AND UPTIMEROBOT
@@ -148,22 +159,22 @@ def handler500(request, *args, **kwargs):
 
 
 def handler404(request, *args, **kwargs):
-    """Custom 404 error page."""
+    """Custom 404 page. Rather than a dead-end "error/404.html", every not-yet-built
+    page on this site (or a genuinely mistyped url) now lands on the same
+    "Still in Progress" screen used by the explicit /in-progress/ route, with a
+    "Back" button that returns the person to wherever they actually came from
+    (HTTP_REFERER) instead of always dumping them on the landing page."""
     context = _error_context(request, 404, *args, **kwargs)
 
-    messages.info(
-        request,
-        message="It seems the page you are trying to access does not exist.",
-    )
-
     logger.warning(
-        "Page not found: %s %s",
+        "Page not found (showing in-progress screen): %s %s",
         context["method"],
         context["path"],
         extra=context,
     )
 
-    return render(request, "error/404.html", status=404)
+    back_url = request.META.get("HTTP_REFERER") or "/"
+    return render(request, "reusables/still_in_progress.html", {"back_url": back_url}, status=404)
 
 
 def handler400(request, *args, **kwargs):
