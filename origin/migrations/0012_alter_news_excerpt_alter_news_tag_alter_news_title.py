@@ -12,11 +12,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterField(
             model_name='news',
-            name='excerpt',
-            field=models.CharField(max_length=160),
-        ),
-        migrations.AlterField(
-            model_name='news',
             name='tag',
             field=models.CharField(max_length=30),
         ),

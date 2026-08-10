@@ -19,8 +19,5 @@ class Migration(migrations.Migration):
             name='excerpt',
             field=models.CharField(max_length=1000),
         ),
-        migrations.AlterUniqueTogether(
-            name='news',
-            unique_together={('title', 'tag', 'excerpt', 'read_time', 'banner', 'featured', 'actual_content')},
-        ),
+    
     ]
