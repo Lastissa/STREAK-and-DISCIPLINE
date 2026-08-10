@@ -203,7 +203,7 @@ class News(models.Model):
     actual_content = models.TextField(default="", blank=True, null= True)# This hold the actual content that will be displayed on its own page
     
     class Meta:
-        unique_together= ('title', 'tag', 'excerpt', 'read_time', 'banner', 'featured', 'actual_content')
+        unique_together= ('title', 'tag', 'excerpt')
         
     def __str__(self):
         return "News"
