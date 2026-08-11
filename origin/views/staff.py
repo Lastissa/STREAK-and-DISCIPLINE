@@ -256,7 +256,7 @@ class EditBlog(View):
             return JsonResponse({'message': f'No news post found with id {pk}.'}, status=404)
 
         data = request.POST
-        MAX_LENGTHS = {'title': 220, 'tag': 30, 'excerpt': 160}
+        MAX_LENGTHS = {'title': 220, 'tag': 30, 'excerpt': 1000}
         for field, limit in MAX_LENGTHS.items():
             if field in data and len(str(data[field])) > limit:
                 return JsonResponse({'message': f"'{field}' is {len(str(data[field]))} characters, but the database column only allows {limit}. Trim it and try again."}, status=400)

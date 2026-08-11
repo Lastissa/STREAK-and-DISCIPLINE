@@ -17,7 +17,7 @@
     .article-wrap{max-width:760px;margin:0 auto;padding:0.5rem 0 3rem}
     .article-tag{display:inline-block;background:rgba(59,130,246,0.12);color:var(--accent-light);font-size:0.72rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;padding:0.3rem 0.7rem;border-radius:50px;margin-bottom:1rem}
     .article-title{font-size:1.85rem;line-height:1.25;font-weight:800;margin-bottom:0.9rem}
-    .article-meta{display:flex;gap:1rem;color:var(--text-secondary);font-size:0.85rem;margin-bottom:1.5rem}
+    .article-meta{display:flex;gap:1rem;color:var(--text-secondary);font-size:0.85rem;margin-bottom:1.25rem;flex-wrap:wrap}
     .article-meta span{display:inline-flex;align-items:center;gap:0.35rem}
     .article-banner{width:100%;border-radius:14px;margin-bottom:1.75rem;max-height:420px;object-fit:cover}
     .article-body{font-size:1rem;line-height:1.85;color:var(--text)}
@@ -31,8 +31,41 @@
     .more-post-card:hover{border-color:var(--accent)}
     .more-post-card .tag{font-size:0.68rem;color:var(--accent-light);text-transform:uppercase;font-weight:700}
     .more-post-card h5{font-size:0.88rem;margin:0.4rem 0 0}
-  </style>
 
+    /* ===== Reading-mode toggle ===== */
+    .article-mode-toggle{display:inline-flex;gap:0.3rem;background:var(--surface);border:1px solid var(--border);border-radius:50px;padding:0.25rem;margin-bottom:1.25rem}
+    .article-mode-btn{border:none;background:transparent;color:var(--text-secondary);font-size:0.76rem;font-weight:600;padding:0.4rem 0.85rem;border-radius:50px;cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem}
+    .article-mode-btn.active{background:var(--accent);color:#fff}
+
+    /* ===== FOCUS SCROLL MODE: one paragraph per screen, snap-scrolling —
+       a second way to read the same article besides the normal long
+       continuous view below. Toggled by JS adding/removing this class on
+       <body>; the choice is remembered in a cookie per post. ===== */
+    body.focus-scroll-mode{scroll-snap-type:y mandatory}
+    body.focus-scroll-mode .article-back,
+    body.focus-scroll-mode .article-mode-toggle,
+    body.focus-scroll-mode .more-posts,
+    body.focus-scroll-mode .blog-footer{scroll-snap-align:start}
+    body.focus-scroll-mode .article-body{display:block}
+    body.focus-scroll-mode .article-body p{
+      min-height:calc(100vh - 4rem); min-height:calc(100dvh - 4rem);
+      display:flex; align-items:center; justify-content:center; text-align:center;
+      font-size:1.35rem; line-height:1.7; max-width:640px; margin:0 auto;
+      scroll-snap-align:start; scroll-snap-stop:always;
+      padding:2rem 0.5rem;
+    }
+    body.focus-scroll-mode .article-tag,
+    body.focus-scroll-mode .article-title,
+    body.focus-scroll-mode .article-meta,
+    body.focus-scroll-mode .article-banner{scroll-snap-align:start; min-height:auto}
+    .focus-scroll-hint{
+      position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%);
+      background:var(--surface);border:1px solid var(--border);border-radius:50px;
+      padding:0.45rem 0.9rem;font-size:0.72rem;color:var(--text-secondary);
+      display:none;align-items:center;gap:0.4rem;z-index:50;
+    }
+    body.focus-scroll-mode .focus-scroll-hint{display:inline-flex}
+  </style>
 </head>
 <body class="{% if page_mode != 'dark' %}sd-light{% endif %}">
 
@@ -94,6 +127,14 @@
     <main class="blog-main" id="main">
       <div class="article-wrap">
         <a href="{% url 'origin_blog' %}" class="article-back"><i class="fas fa-arrow-left"></i> Back to Blog</a>
+
+        {% if post.actual_content %}
+        <div class="article-mode-toggle" role="group" aria-label="Reading mode">
+          <button type="button" class="article-mode-btn active" id="modeLongBtn"><i class="fas fa-align-left"></i> Long Read</button>
+          <button type="button" class="article-mode-btn" id="modeScrollBtn"><i class="fas fa-arrows-up-down"></i> Focus Scroll</button>
+        </div>
+        {% endif %}
+
         <div class="article-tag">{{ post.tag }}</div>
         <h1 class="article-title">{{ post.title }}</h1>
         <div class="article-meta">
@@ -103,7 +144,7 @@
         {% if post.banner %}
         <img src="{{ post.banner }}" alt="{{ post.title }}" class="article-banner">
         {% endif %}
-        <div class="article-body">
+        <div class="article-body" id="articleBody">
           {% if post.actual_content %}
             {{ post.actual_content|linebreaks }}
           {% else %}
@@ -132,26 +173,59 @@
         <p>&copy; {{ footer_copyright_note }}</p>
       </div>
     </footer>
+
+    <div class="focus-scroll-hint"><i class="fas fa-arrow-down"></i> Scroll to keep reading</div>
   </div>
 
   <script>{% include "reusables/spinner.js" %}</script>
   <script>
     (function(){
       function getCookie(n){var v='; '+document.cookie;var p=v.split('; '+n+'=');if(p.length===2)return p.pop().split(';').shift();return null}
+      function setCookie(n,v,days){document.cookie=n+'='+v+';path=/;max-age='+(days*86400)+';SameSite=Lax'}
+
       var saved=getCookie('sd-theme'),body=document.body,btn=document.getElementById('themeToggle');
       if(saved==='light'){body.classList.remove('sd-light');body.classList.add('sd-light');btn.innerHTML='<i class="fas fa-sun"></i>'}
       btn && btn.addEventListener('click',function(){
-        if(body.classList.contains('sd-light')){body.classList.remove('sd-light');document.cookie='sd-theme=dark;path=/;max-age='+(365*86400)+';SameSite=Lax';btn.innerHTML='<i class="fas fa-moon"></i>'}
-        else{body.classList.add('sd-light');document.cookie='sd-theme=light;path=/;max-age='+(365*86400)+';SameSite=Lax';btn.innerHTML='<i class="fas fa-sun"></i>'}
+        if(body.classList.contains('sd-light')){body.classList.remove('sd-light');setCookie('sd-theme','dark',365);btn.innerHTML='<i class="fas fa-moon"></i>'}
+        else{body.classList.add('sd-light');setCookie('sd-theme','light',365);btn.innerHTML='<i class="fas fa-sun"></i>'}
       });
+
       var backBtn=document.getElementById('backBtn');
       backBtn && backBtn.addEventListener('click',function(){ if(document.referrer){history.back()} else {window.location='{% url "origin_blog" %}'} });
+
       var menuToggle=document.getElementById('menuToggle'),mobileNav=document.getElementById('mobileNav'),navOverlay=document.getElementById('navOverlay'),navCloseBtn=document.getElementById('navCloseBtn');
       function openNav(){mobileNav.classList.add('open');navOverlay.classList.add('open');menuToggle.setAttribute('aria-expanded','true')}
       function closeNav(){mobileNav.classList.remove('open');navOverlay.classList.remove('open');menuToggle.setAttribute('aria-expanded','false')}
       menuToggle && menuToggle.addEventListener('click',openNav);
       navCloseBtn && navCloseBtn.addEventListener('click',closeNav);
       navOverlay && navOverlay.addEventListener('click',closeNav);
+
+      /* ── Reading mode: Long Read (default, normal continuous scroll) vs
+         Focus Scroll (one paragraph per screen, snap-scrolling). Remembered
+         per post via a cookie so a returning reader keeps their preference. */
+      var longBtn = document.getElementById('modeLongBtn');
+      var scrollBtn = document.getElementById('modeScrollBtn');
+      var cookieKey = 'sd-read-mode-{{ post.pk }}';
+
+      function setMode(mode) {
+        if (mode === 'scroll') {
+          body.classList.add('focus-scroll-mode');
+          scrollBtn.classList.add('active');
+          longBtn.classList.remove('active');
+        } else {
+          body.classList.remove('focus-scroll-mode');
+          longBtn.classList.add('active');
+          scrollBtn.classList.remove('active');
+        }
+        setCookie(cookieKey, mode, 30);
+      }
+
+      if (longBtn && scrollBtn) {
+        longBtn.addEventListener('click', function () { setMode('long'); });
+        scrollBtn.addEventListener('click', function () { setMode('scroll'); });
+        var savedMode = getCookie(cookieKey);
+        if (savedMode === 'scroll') setMode('scroll');
+      }
     })();
   </script>
 </body>

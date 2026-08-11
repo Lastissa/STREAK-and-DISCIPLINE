@@ -508,8 +508,9 @@ body.sd-light .db-header { background:#f0f4fa }
   background:rgba(0,0,0,0.7);
   align-items:center; justify-content:center;
   padding:1rem;
+  pointer-events: none; /* defensive: guarantees this can never intercept clicks/scroll while closed, even mid-animation */
 }
-.ov-backdrop.ov-open { display:flex }
+.ov-backdrop.ov-open { display:flex; pointer-events: auto; }
 
 .ov-panel {
   background:var(--surf); border:1px solid var(--edge);

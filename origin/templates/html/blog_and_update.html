@@ -382,6 +382,26 @@
 
     function csrf() { return getCookie('csrftoken'); }
 
+    // Swaps a toolbar button into a disabled spinner while an action is in flight,
+    // and restores its original icon afterwards - this is the missing "in progress"
+    // feedback: without it a slow request (especially the image upload) just looked
+    // like nothing was happening.
+    function setBtnBusy(btn, busy) {
+      if (!btn) return;
+      if (busy) {
+        btn.dataset.origHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+        btn.style.pointerEvents = 'none';
+        btn.style.opacity = '0.6';
+      } else {
+        if (btn.dataset.origHtml) btn.innerHTML = btn.dataset.origHtml;
+        btn.disabled = false;
+        btn.style.pointerEvents = '';
+        btn.style.opacity = '';
+      }
+    }
+
     grid.addEventListener('click', function (e) {
       const editBtn = e.target.closest('.js-edit-post');
       const delBtn = e.target.closest('.js-delete-post');
@@ -393,14 +413,22 @@
 
       if (delBtn) {
         if (!confirm('Permanently delete this post? This cannot be undone.')) return;
+        setBtnBusy(delBtn, true);
+        const loadingToast = showToast('Deleting post…', 'loading', true);
         fetch('/v1/staff/news/' + id + '/delete/', { method: 'POST', headers: { 'X-CSRFToken': csrf() } })
           .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
           .then(function (res) {
+            if (loadingToast) loadingToast.remove();
+            setBtnBusy(delBtn, false);
             if (!res.ok) { showToast((res.data && res.data.message) || 'Could not delete post.', 'error'); return; }
             showToast(res.data.message || 'Post deleted.', 'success');
             card.remove();
           })
-          .catch(function () { showToast('Network error while deleting.', 'error'); });
+          .catch(function () {
+            if (loadingToast) loadingToast.remove();
+            setBtnBusy(delBtn, false);
+            showToast('Network error while deleting.', 'error');
+          });
         return;
       }
 
@@ -409,18 +437,26 @@
         if (title === null) return;
         const excerpt = prompt('Edit excerpt (max 1000 chars):', card.querySelector('.post-card-excerpt').textContent.trim());
         if (excerpt === null) return;
+        setBtnBusy(editBtn, true);
+        const loadingToast = showToast('Saving changes…', 'loading', true);
         const fd = new FormData();
         fd.append('title', title);
         fd.append('excerpt', excerpt);
         fetch('/v1/staff/news/' + id + '/edit/', { method: 'POST', headers: { 'X-CSRFToken': csrf() }, body: fd })
           .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
           .then(function (res) {
+            if (loadingToast) loadingToast.remove();
+            setBtnBusy(editBtn, false);
             if (!res.ok) { showToast((res.data && res.data.message) || 'Could not update post.', 'error'); return; }
             showToast(res.data.message || 'Post updated.', 'success');
             card.querySelector('h3').textContent = title;
             card.querySelector('.post-card-excerpt').textContent = excerpt;
           })
-          .catch(function () { showToast('Network error while updating.', 'error'); });
+          .catch(function () {
+            if (loadingToast) loadingToast.remove();
+            setBtnBusy(editBtn, false);
+            showToast('Network error while updating.', 'error');
+          });
       }
     });
 
@@ -429,19 +465,29 @@
       if (!input || !input.files || !input.files[0]) return;
       const card = e.target.closest('.post-card');
       const id = card && card.getAttribute('data-post-id');
+      const label = e.target.closest('.js-change-banner-label');
       if (!id) return;
+
+      if (label) { label.dataset.origHtml = label.innerHTML.replace(input.outerHTML, ''); label.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; label.style.pointerEvents = 'none'; label.style.opacity = '0.6'; }
+      const loadingToast = showToast('Uploading image…', 'loading', true);
 
       const fd = new FormData();
       fd.append('banner', input.files[0]);
       fetch('/v1/staff/news/' + id + '/banner/', { method: 'POST', headers: { 'X-CSRFToken': csrf() }, body: fd })
         .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
         .then(function (res) {
+          if (loadingToast) loadingToast.remove();
+          if (label) { label.innerHTML = '<i class="fas fa-image"></i><input type="file" class="js-change-banner-input" accept="image/png,image/jpeg,image/webp" hidden>'; label.style.pointerEvents = ''; label.style.opacity = ''; }
           if (!res.ok) { showToast((res.data && res.data.message) || 'Could not update image.', 'error'); return; }
           showToast(res.data.message || 'Banner updated.', 'success');
           const img = card.querySelector('.post-card-image img');
           if (img && res.data.banner_url) img.src = res.data.banner_url;
         })
-        .catch(function () { showToast('Network error while uploading image.', 'error'); });
+        .catch(function () {
+          if (loadingToast) loadingToast.remove();
+          if (label) { label.innerHTML = '<i class="fas fa-image"></i><input type="file" class="js-change-banner-input" accept="image/png,image/jpeg,image/webp" hidden>'; label.style.pointerEvents = ''; label.style.opacity = ''; }
+          showToast('Network error while uploading image.', 'error');
+        });
     });
   }
 
@@ -569,24 +615,21 @@
     {% endif %}
   }
 
-  function showToast(message, type) {
+  function showToast(message, type, persist) {
     const stack = $('#toastStack');
-    if (!stack) return;
+    if (!stack) return null;
 
     const toast = document.createElement('div');
     toast.className = 'toast toast-' + (type || 'success');
-    toast.innerHTML =
-      '<i class="fas ' +
-      (type === 'error' ? 'fa-times-circle' : 'fa-check-circle') +
-      '"></i><span>' +
-      message +
-      '</span>';
+    const iconClass = type === 'error' ? 'fa-times-circle' : (type === 'loading' ? 'fa-spinner fa-spin' : 'fa-check-circle');
+    toast.innerHTML = '<i class="fas ' + iconClass + '"></i><span>' + message + '</span>';
 
     stack.appendChild(toast);
 
-    setTimeout(function () {
-      toast.remove();
-    }, 4000);
+    if (!persist) {
+      setTimeout(function () { toast.remove(); }, 4000);
+    }
+    return toast; // callers doing a multi-step async action (e.g. an upload) can call .remove() on this themselves once done, then show a follow-up toast
   }
 
   function initAddNewsModal() {
@@ -644,7 +687,7 @@
 
     if (excerpt && count) {
       excerpt.addEventListener('input', function () {
-        count.textContent = excerpt.value.length + ' / 100';
+        count.textContent = excerpt.value.length + ' / 1000';
       });
     }
 
@@ -727,7 +770,7 @@
           form.reset();
           preview.hidden = true;
           empty.hidden = false;
-          if (count) count.textContent = '0 / 100';
+          if (count) count.textContent = '0 / 1000';
           close();
           if (typeof window.reloadBlogFeed === 'function') window.reloadBlogFeed();
           else setTimeout(function(){ window.location.reload(); }, 900);

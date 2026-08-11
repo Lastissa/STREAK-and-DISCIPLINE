@@ -376,18 +376,24 @@ body.sd-light .mobile-nav { background: rgba(255, 255, 255, 0.94); }
   border: 1px solid var(--border); border-bottom: none;
   display: flex; flex-direction: column;
   transform: translateY(100%);
-  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  visibility: hidden; pointer-events: none;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.35s;
   padding-bottom: var(--safe-bottom);
 }
-.news-modal.open { transform: translateY(0); }
+.news-modal.open { transform: translateY(0); visibility: visible; pointer-events: auto; }
 
 @media (min-width: 720px) {
   .news-modal {
     left: 50%; right: auto; bottom: auto; top: 50%;
     width: min(640px, 92vw); max-height: 88vh;
     border-radius: var(--radius-lg); border-bottom: 1px solid var(--border);
+    /* was "opacity: 0" only — on desktop this modal sat centered on the page at all
+       times (just invisible), swallowing clicks/scroll wheel input over the whole
+       card region even while "closed". visibility:hidden + pointer-events:none above
+       is what actually removes it from hit-testing; this rule now only handles the
+       transform/opacity animation. */
     transform: translate(-50%, -46%) scale(0.97); opacity: 0;
-    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s;
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s, visibility 0.3s;
   }
   .news-modal.open { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
@@ -473,6 +479,7 @@ body.sd-light .mobile-nav { background: rgba(255, 255, 255, 0.94); }
 @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .toast-success { background: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.4); color: #86efac; }
 .toast-error { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; }
+.toast-loading { background: rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.4); color: var(--accent-light); }
 
 /* ===== Skeleton shimmer (kept for parity) ===== */
 .sk { background: var(--border); border-radius: 6px; position: relative; overflow: hidden; }
