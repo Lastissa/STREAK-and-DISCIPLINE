@@ -417,6 +417,41 @@ def send_partner_request_notification_previously_rejected(to_email: str, from_us
 #    on a background thread like the others.
 # ---------------------------------------------------------------------------
 
+def send_checkup_email(to_email: str, username: str) -> None:
+    """The 4-day "we miss you" re-engagement email - see
+    utility/maintenance_engine.send_inactivity_checkups() for who gets this and when.
+    Sent synchronously (no _dispatch/thread) since the cron job that calls this already
+    loops over a whole batch of inactive users in one request; one slow/failed send here
+    is caught by the caller and never stops the rest of the batch."""
+    link = Static.custom_base_url() + "/v1/dashboard/"
+
+    body = f"""
+        <h1 style="margin:0 0 14px;font-size:19px;color:#0f172a;font-weight:700">Haven't seen you in a few days</h1>
+        <p style="margin:0 0 18px;font-size:14px;color:#334155;line-height:1.6">
+            Hi {username}, it's been 4 days since you last checked in on STREAK &amp; DISCIPLINE.
+            Your commitments and streaks are still sitting there waiting for you - a quick
+            check-in today keeps things moving.
+        </p>
+        {_button('Go to my dashboard', link)}
+        <p style="margin:18px 0 0;font-size:12px;color:#94a3b8;line-height:1.6">
+            You'll only get this if you've been away for a while - we send it again every
+            4 days you're inactive, not more often than that.
+        </p>
+    """
+    send_mail(
+        subject="We miss you at STREAK & DISCIPLINE",
+        message=f"Hi {username}, it's been 4 days since your last check-in. Come back: {link}",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[to_email],
+        html_message=_shell(
+            preheader="Your streaks are waiting for you.",
+            eyebrow="Just Checking In",
+            body_html=body,
+            footer_note="Manage your reminder preferences anytime from Profile settings.",
+        ),
+    )
+
+
 def send_staff_access_code_email(*, to_email: str = Static.official_email(), token: str, requester_email: str = "") -> None:
     """Email the staff/admin access `token` to `to_email` (defaults to the official
     STREAK & DISCIPLINE inbox). Nothing is ever sent straight to the person requesting

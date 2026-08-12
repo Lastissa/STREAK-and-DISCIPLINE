@@ -13,6 +13,7 @@ from django.utils import timezone
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from utility.send_bulk_email import send_news_email
+from utility.push_sending import send_news_push
 
 from ..models import StaffTempToken, News, Profile, ChoicesValidatorInModels
 from utility.config import Static
@@ -219,6 +220,17 @@ class CreateBlog(View):
 
                 news_ist.full_clean()
                 news_ist.save()
+
+            #push goes out regardless of whether a banner was attached (unlike the email
+            #notification below, which is banner-gated) - send_news_push only reaches
+            #users who currently have push enabled (have a PushSubscription row) and
+            #silently does nothing for anyone who doesn't; it also runs on its own
+            #background thread (see utility/push_sending.py) so a slow/unreachable push
+            #service can never delay or break this response.
+            try:
+                send_news_push(news_instance=news_ist)
+            except Exception as push_err:
+                logger.error("News published (id=%s) but queuing the push notification failed: %s", news_ist.id, push_err)
 
             if banner:
                 try:

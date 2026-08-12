@@ -19,7 +19,7 @@
     .article-title{font-size:1.85rem;line-height:1.25;font-weight:800;margin-bottom:0.9rem}
     .article-meta{display:flex;gap:1rem;color:var(--text-secondary);font-size:0.85rem;margin-bottom:1.25rem;flex-wrap:wrap}
     .article-meta span{display:inline-flex;align-items:center;gap:0.35rem}
-    .article-banner{width:100%;border-radius:14px;margin-bottom:1.75rem;max-height:420px;object-fit:cover}
+    .article-banner{width:100%;border-radius:14px;margin-bottom:1.75rem;max-height:420px;object-fit:cover;display:block}
     .article-body{font-size:1rem;line-height:1.85;color:var(--text)}
     .article-body p{margin-bottom:1.1rem;white-space:pre-line}
     .article-back{display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-secondary);text-decoration:none;font-weight:600;font-size:0.85rem;margin-bottom:1.5rem}
@@ -37,34 +37,76 @@
     .article-mode-btn{border:none;background:transparent;color:var(--text-secondary);font-size:0.76rem;font-weight:600;padding:0.4rem 0.85rem;border-radius:50px;cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem}
     .article-mode-btn.active{background:var(--accent);color:#fff}
 
-    /* ===== FOCUS SCROLL MODE: one paragraph per screen, snap-scrolling —
-       a second way to read the same article besides the normal long
-       continuous view below. Toggled by JS adding/removing this class on
-       <body>; the choice is remembered in a cookie per post. ===== */
-    body.focus-scroll-mode{scroll-snap-type:y mandatory}
-    body.focus-scroll-mode .article-back,
-    body.focus-scroll-mode .article-mode-toggle,
-    body.focus-scroll-mode .more-posts,
-    body.focus-scroll-mode .blog-footer{scroll-snap-align:start}
-    body.focus-scroll-mode .article-body{display:block}
-    body.focus-scroll-mode .article-body p{
-      min-height:calc(100vh - 4rem); min-height:calc(100dvh - 4rem);
-      display:flex; align-items:center; justify-content:center; text-align:center;
-      font-size:1.35rem; line-height:1.7; max-width:640px; margin:0 auto;
-      scroll-snap-align:start; scroll-snap-stop:always;
-      padding:2rem 0.5rem;
+    /* ===== SWIPE READ MODE: horizontal, one paragraph per card, swipe
+       left/right (or drag on desktop) to move through the article. The
+       banner image stays pinned (sticky) above the swiper the whole time
+       instead of scrolling away. The normal long vertical read below is
+       untouched — this only changes layout while body.swipe-read-mode is
+       set, which JS toggles and remembers per-post via a cookie. ===== */
+    body.swipe-read-mode .article-banner{
+      position: sticky;
+      top: calc(var(--safe-top, 0px) + 70px);
+      z-index: 5;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.28);
     }
-    body.focus-scroll-mode .article-tag,
-    body.focus-scroll-mode .article-title,
-    body.focus-scroll-mode .article-meta,
-    body.focus-scroll-mode .article-banner{scroll-snap-align:start; min-height:auto}
-    .focus-scroll-hint{
-      position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%);
-      background:var(--surface);border:1px solid var(--border);border-radius:50px;
-      padding:0.45rem 0.9rem;font-size:0.72rem;color:var(--text-secondary);
-      display:none;align-items:center;gap:0.4rem;z-index:50;
+    .swipe-wrap{ position: relative; }
+    body.swipe-read-mode .swipe-wrap{
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
     }
-    body.focus-scroll-mode .focus-scroll-hint{display:inline-flex}
+    body.swipe-read-mode .article-body{
+      display: flex;
+      flex-direction: row;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    body.swipe-read-mode .article-body::-webkit-scrollbar{ display: none; }
+    body.swipe-read-mode .article-body p{
+      flex: 0 0 100%;
+      box-sizing: border-box;
+      scroll-snap-align: center;
+      scroll-snap-stop: always;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 1.18rem;
+      line-height: 1.75;
+      min-height: min(56vh, 460px);
+      padding: 2.25rem 2rem;
+      margin-bottom: 0;
+    }
+
+    .swipe-arrow{
+      display: none;
+      position: absolute; top: 50%; transform: translateY(-50%);
+      width: 38px; height: 38px; border-radius: 50%;
+      background: rgba(10,14,23,0.65); color: #fff; border: 1px solid rgba(255,255,255,0.15);
+      align-items: center; justify-content: center; cursor: pointer; z-index: 6;
+      backdrop-filter: blur(4px);
+    }
+    body.sd-light .swipe-arrow{ background: rgba(255,255,255,0.8); color: #0f172a; border-color: rgba(0,0,0,0.1); }
+    .swipe-arrow:hover{ background: var(--accent); color: #fff; }
+    .swipe-arrow-prev{ left: 0.6rem; }
+    .swipe-arrow-next{ right: 0.6rem; }
+    body.swipe-read-mode .swipe-arrow{ display: flex; }
+
+    .swipe-dots{ display: none; justify-content: center; gap: 0.4rem; padding: 0.9rem 0; }
+    body.swipe-read-mode .swipe-dots{ display: flex; }
+    .swipe-dot{ width: 7px; height: 7px; border-radius: 50%; background: var(--border); border: none; padding: 0; cursor: pointer; }
+    .swipe-dot.active{ background: var(--accent); width: 20px; border-radius: 4px; }
+
+    .swipe-hint{
+      display: none; align-items: center; justify-content: center; gap: 0.4rem;
+      color: var(--text-secondary); font-size: 0.72rem; margin: -0.35rem 0 1.5rem;
+    }
+    body.swipe-read-mode .swipe-hint{ display: flex; }
   </style>
 </head>
 <body class="{% if page_mode != 'dark' %}sd-light{% endif %}">
@@ -131,7 +173,7 @@
         {% if post.actual_content %}
         <div class="article-mode-toggle" role="group" aria-label="Reading mode">
           <button type="button" class="article-mode-btn active" id="modeLongBtn"><i class="fas fa-align-left"></i> Long Read</button>
-          <button type="button" class="article-mode-btn" id="modeScrollBtn"><i class="fas fa-arrows-up-down"></i> Focus Scroll</button>
+          <button type="button" class="article-mode-btn" id="modeSwipeBtn"><i class="fas fa-arrows-left-right"></i> Swipe Read</button>
         </div>
         {% endif %}
 
@@ -142,15 +184,22 @@
           <span><i class="fas fa-clock"></i> {{ post.read_time }} min read</span>
         </div>
         {% if post.banner %}
-        <img src="{{ post.banner }}" alt="{{ post.title }}" class="article-banner">
+        <img src="{{ post.banner }}" alt="{{ post.title }}" class="article-banner" id="articleBanner">
         {% endif %}
-        <div class="article-body" id="articleBody">
-          {% if post.actual_content %}
-            {{ post.actual_content|linebreaks }}
-          {% else %}
-            <p>{{ post.excerpt }}</p>
-          {% endif %}
+
+        <div class="swipe-wrap" id="swipeWrap">
+          <button type="button" class="swipe-arrow swipe-arrow-prev" id="swipePrevBtn" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
+          <div class="article-body" id="articleBody">
+            {% if post.actual_content %}
+              {{ post.actual_content|linebreaks }}
+            {% else %}
+              <p>{{ post.excerpt }}</p>
+            {% endif %}
+          </div>
+          <button type="button" class="swipe-arrow swipe-arrow-next" id="swipeNextBtn" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
         </div>
+        <div class="swipe-dots" id="swipeDots"></div>
+        <div class="swipe-hint"><i class="fas fa-hand-pointer"></i> Swipe left or right to keep reading</div>
       </div>
 
       {% if more_posts %}
@@ -173,8 +222,6 @@
         <p>&copy; {{ footer_copyright_note }}</p>
       </div>
     </footer>
-
-    <div class="focus-scroll-hint"><i class="fas fa-arrow-down"></i> Scroll to keep reading</div>
   </div>
 
   <script>{% include "reusables/spinner.js" %}</script>
@@ -200,31 +247,94 @@
       navCloseBtn && navCloseBtn.addEventListener('click',closeNav);
       navOverlay && navOverlay.addEventListener('click',closeNav);
 
-      /* ── Reading mode: Long Read (default, normal continuous scroll) vs
-         Focus Scroll (one paragraph per screen, snap-scrolling). Remembered
-         per post via a cookie so a returning reader keeps their preference. */
+      /* ── Reading mode: Long Read (default, normal continuous vertical scroll,
+         untouched) vs Swipe Read (horizontal, one paragraph per card, swipe
+         left/right; banner image stays sticky above it). Remembered per post
+         via a cookie so a returning reader keeps their preference. */
       var longBtn = document.getElementById('modeLongBtn');
-      var scrollBtn = document.getElementById('modeScrollBtn');
+      var swipeBtn = document.getElementById('modeSwipeBtn');
+      var articleBody = document.getElementById('articleBody');
+      var dotsWrap = document.getElementById('swipeDots');
+      var prevBtn = document.getElementById('swipePrevBtn');
+      var nextBtn = document.getElementById('swipeNextBtn');
       var cookieKey = 'sd-read-mode-{{ post.pk }}';
+      var slides = [];
+      var swipeInited = false;
+
+      function buildDots() {
+        if (!articleBody || !dotsWrap) return;
+        slides = Array.prototype.slice.call(articleBody.children);
+        dotsWrap.innerHTML = '';
+        slides.forEach(function (el, i) {
+          var dot = document.createElement('button');
+          dot.type = 'button';
+          dot.className = 'swipe-dot' + (i === 0 ? ' active' : '');
+          dot.setAttribute('aria-label', 'Go to part ' + (i + 1));
+          dot.addEventListener('click', function () { goToSlide(i); });
+          dotsWrap.appendChild(dot);
+        });
+      }
+
+      function goToSlide(i) {
+        if (!slides[i] || !articleBody) return;
+        articleBody.scrollTo({ left: slides[i].offsetLeft, behavior: 'smooth' });
+      }
+
+      function currentIndex() {
+        if (!articleBody || !slides.length) return 0;
+        var width = articleBody.clientWidth || 1;
+        return Math.round(articleBody.scrollLeft / width);
+      }
+
+      function updateActiveDot() {
+        if (!dotsWrap) return;
+        var idx = Math.min(Math.max(currentIndex(), 0), slides.length - 1);
+        var dots = dotsWrap.children;
+        for (var i = 0; i < dots.length; i++) dots[i].classList.toggle('active', i === idx);
+      }
+
+      function onKeydown(e) {
+        if (!body.classList.contains('swipe-read-mode')) return;
+        if (e.key === 'ArrowRight') goToSlide(Math.min(currentIndex() + 1, slides.length - 1));
+        else if (e.key === 'ArrowLeft') goToSlide(Math.max(currentIndex() - 1, 0));
+      }
+
+      function initSwipeControls() {
+        if (swipeInited || !articleBody) return;
+        swipeInited = true;
+        buildDots();
+        var scrollTimer = null;
+        articleBody.addEventListener('scroll', function () {
+          clearTimeout(scrollTimer);
+          scrollTimer = setTimeout(updateActiveDot, 80);
+        });
+        prevBtn && prevBtn.addEventListener('click', function () { goToSlide(Math.max(currentIndex() - 1, 0)); });
+        nextBtn && nextBtn.addEventListener('click', function () { goToSlide(Math.min(currentIndex() + 1, slides.length - 1)); });
+        document.addEventListener('keydown', onKeydown);
+        window.addEventListener('resize', function () { updateActiveDot(); });
+      }
 
       function setMode(mode) {
-        if (mode === 'scroll') {
-          body.classList.add('focus-scroll-mode');
-          scrollBtn.classList.add('active');
+        if (mode === 'swipe') {
+          initSwipeControls();
+          body.classList.add('swipe-read-mode');
+          swipeBtn.classList.add('active');
           longBtn.classList.remove('active');
+          if (articleBody) articleBody.scrollLeft = 0;
+          updateActiveDot();
         } else {
-          body.classList.remove('focus-scroll-mode');
+          body.classList.remove('swipe-read-mode');
           longBtn.classList.add('active');
-          scrollBtn.classList.remove('active');
+          swipeBtn.classList.remove('active');
         }
         setCookie(cookieKey, mode, 30);
       }
 
-      if (longBtn && scrollBtn) {
+      if (longBtn && swipeBtn) {
         longBtn.addEventListener('click', function () { setMode('long'); });
-        scrollBtn.addEventListener('click', function () { setMode('scroll'); });
+        swipeBtn.addEventListener('click', function () { setMode('swipe'); });
         var savedMode = getCookie(cookieKey);
-        if (savedMode === 'scroll') setMode('scroll');
+        if (savedMode === 'swipe') setMode('swipe');
       }
     })();
   </script>

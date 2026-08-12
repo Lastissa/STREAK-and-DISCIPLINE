@@ -137,7 +137,41 @@ def send_push_to_user(user_id: int, title: str, body: str, url: str = None) -> N
     _dispatch(_send_push_to_user, user_id=user_id, payload=payload)
 
 
-def _send_confirmation_push(endpoint: str) -> None:
+def _send_bulk_push(payload: dict) -> None:
+    """Send the same payload to every device belonging to every user who currently has
+    at least one PushSubscription row - i.e. everyone who has push turned on. Anyone
+    without a subscription is never queried against individually; there's nothing to
+    silently fail on, they're just not in the list to begin with."""
+    from origin.models import PushSubscription
+
+    subs = list(PushSubscription.objects.filter(user__is_active=True).select_related('user'))
+    if not subs:
+        logger.info("Bulk push skipped: nobody currently has push notifications enabled.")
+        return
+
+    sent, failed = 0, 0
+    for sub in subs:
+        if _send_one_push(sub, payload):
+            sent += 1
+        else:
+            failed += 1
+    logger.info("Bulk push finished: %s sent, %s failed, across %s subscription(s).", sent, failed, len(subs))
+
+
+def send_news_push(news_instance) -> None:
+    """Fires whenever staff publish a new blog/news post (see staff.CreateBlog). Only
+    reaches users who have push notifications on - anyone who hasn't enabled push has
+    no PushSubscription row at all, so they're simply not in the recipient list; nothing
+    errors or logs a failure on their behalf, this just silently does nothing for them,
+    exactly like send_news_email silently skips anyone who opted out of the newsletter.
+    """
+    payload = {
+        "title": "New on the blog: " + news_instance.title,
+        "body": news_instance.excerpt,
+        "url": Static.custom_base_url() + "/v1/blog/" + str(news_instance.pk) + "/",
+        "icon": news_instance.banner or Static.logo_url(),
+    }
+    _dispatch(_send_bulk_push, payload=payload)
     """Look the subscription back up by endpoint (rather than trusting a passed-in
     object) right before sending, so this still works correctly even if the row was
     deleted/changed in the few milliseconds between the request finishing and this

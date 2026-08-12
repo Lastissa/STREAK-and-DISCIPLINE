@@ -35,6 +35,15 @@ Four jobs live here, in the order they should run:
    (see origin/views/auth_view.py -> Signup.post). This is the other half of that: once
    PremiumTrial.expires_at has passed, flip the profile back down to free, exactly
    once, and record it as downgraded so we never touch that user's tier again here.
+
+5. `send_inactivity_checkups`     - the "we miss you" nudge. Any active user whose
+   last_login is 4+ days old gets both an email AND a push notification (push only
+   actually reaches them if they have push enabled - see utility/push_sending.py,
+   which silently no-ops for everyone else). To stop this firing on every single cron
+   tick for the same user, last_checkup_notice_sent_at is stamped the moment it sends
+   and only re-fires once another 4 days have passed with no login - so someone who
+   stays away keeps getting nudged every 4 days, and it stops the moment they log back
+   in (last_login updates, resetting the 4-day countdown).
 """
 
 import logging
@@ -137,6 +146,58 @@ def downgrade_expired_trials() -> int:
     return downgraded_count
 
 
+def send_inactivity_checkups() -> int:
+    """The 4-day "we miss you" nudge - both email and push, to every active user whose
+    last_login is 4+ days old and who hasn't already been nudged within the last 4 days.
+    Push silently reaches nobody who has it off (see utility/push_sending.py); email
+    always attempts to send, on the same "known production email issue" basis as
+    everything else in this app - a failed email here never blocks the push half, and
+    a failure for one user never stops the rest of the batch."""
+    from origin.models import CustomeUser
+    from utility.email_sending import send_checkup_email
+    from utility.push_sending import send_push_to_user
+
+    now = timezone.now()
+    cutoff = now - timezone.timedelta(days=4)
+
+    candidates = CustomeUser.objects.filter(is_active=True, last_login__lte=cutoff).exclude(last_login__isnull=True)
+    #only re-nudge once another 4 days have passed since the last nudge - otherwise every
+    #tick between day 4 and whenever they eventually return would re-send this
+    due = [
+        u for u in candidates
+        if u.last_checkup_notice_sent_at is None or u.last_checkup_notice_sent_at <= cutoff
+    ]
+
+    sent_count = 0
+    for u in due:
+        email_ok = True
+        try:
+            send_checkup_email(to_email=u.email, username=u.username)
+        except Exception as e:
+            email_ok = False
+            logger.error("Inactivity check-up email failed for user_id=%s: %s", u.id, e)
+
+        try:
+            send_push_to_user(
+                user_id=u.id,
+                title="We miss you!",
+                body="It's been 4 days - your streaks are waiting. Come check in.",
+                url="/v1/dashboard/",
+            )
+        except Exception as e:
+            logger.error("Inactivity check-up push failed for user_id=%s: %s", u.id, e)
+
+        u.last_checkup_notice_sent_at = now
+        u.save(update_fields=['last_checkup_notice_sent_at'])
+        sent_count += 1
+        if not email_ok:
+            logger.info("user_id=%s: push attempted, email failed - still counted as nudged so we don't spam-retry every tick.", u.id)
+
+    if sent_count:
+        logger.info("Sent %s inactivity check-up notice(s) (email + push).", sent_count)
+    return sent_count
+
+
 def run_maintenance_tick() -> dict:
     """Entry point called by the cron endpoint alongside run_due_reminders()."""
     now_local = timezone.localtime()
@@ -144,6 +205,7 @@ def run_maintenance_tick() -> dict:
     purged = purge_deleted_commitments()
     streaks_reset = reset_stale_streaks()
     trials_downgraded = downgrade_expired_trials()
+    checkups_sent = send_inactivity_checkups()
 
     summary = {
         'checked_at': now_local.isoformat(),
@@ -151,9 +213,10 @@ def run_maintenance_tick() -> dict:
         'commitments_purged': purged,
         'streaks_reset': streaks_reset,
         'trials_downgraded': trials_downgraded,
+        'inactivity_checkups_sent': checkups_sent,
     }
     logger.info(
-        "Maintenance tick %s: %s completed, %s purged, %s streaks reset, %s trials downgraded.",
-        now_local.strftime('%Y-%m-%d %H:%M'), completed, purged, streaks_reset, trials_downgraded,
+        "Maintenance tick %s: %s completed, %s purged, %s streaks reset, %s trials downgraded, %s check-ups sent.",
+        now_local.strftime('%Y-%m-%d %H:%M'), completed, purged, streaks_reset, trials_downgraded, checkups_sent,
     )
     return summary
