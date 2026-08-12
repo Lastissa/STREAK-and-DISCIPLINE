@@ -619,9 +619,36 @@ body{
     padding:.15rem .55rem;border-radius:50px;font-size:.68rem;font-weight:700;
 }
 
+.report-filters-row{
+    display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;margin-top:1.6rem;
+}
+.report-filters-row .week-switcher{margin-top:0}
+.commitment-switcher{
+    display:flex;align-items:center;gap:.5rem;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;
+    padding:.5rem .9rem;width:fit-content;max-width:100%;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+}
+.commitment-switcher i{color:var(--accent-light);flex-shrink:0}
+.commitment-switcher select{
+    appearance:none;-webkit-appearance:none;border:none;background:transparent;
+    color:var(--text-primary);font-family:inherit;font-size:.85rem;font-weight:600;
+    padding-right:1.2rem;cursor:pointer;max-width:220px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right center;
+}
+.commitment-switcher select:focus{outline:none}
+.commitment-switcher select option{background:var(--bg);color:var(--text-primary)}
+
 @media(min-width:768px){
     .report-hero-top{flex-direction:row;align-items:center}
     .week-switcher{margin-left:0}
+    .report-filters-row{flex-wrap:nowrap}
+}
+
+@media(max-width:767px){
+    .report-filters-row{flex-direction:column;align-items:stretch}
+    .commitment-switcher,.report-filters-row .week-switcher{justify-content:center}
 }
 
 /* ===== STAT CARDS: 3D + painted meters ===== */

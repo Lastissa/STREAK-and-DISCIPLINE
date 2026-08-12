@@ -892,7 +892,12 @@ class ReportsData(LoginRequiredMixin, View):
 
     If the user genuinely doesn't have enough history yet (no entries at all, or the
     account is brand new), `not_enough_data` is set and `generated_note` carries an
-    honest "check back later" message instead of a shaped-but-empty report."""
+    honest "check back later" message instead of a shaped-but-empty report.
+
+    `?commitment=<id>` (optional) scopes every number in the report to that one
+    commitment; omitted, empty, or invalid/foreign values default to (and safely
+    fall back to) ALL of the user's active commitments combined, which is the
+    correct default behaviour."""
     login_url = '/v1/login/'
 
     def get(self, request):
@@ -915,11 +920,40 @@ class ReportsData(LoginRequiredMixin, View):
         week_end = week_start + timedelta(days=6)
         today = timezone.localdate()
 
-        all_commitments = list(Commitment.objects.filter(user=request.user, is_active=True))
-        all_entries_ever = Entries.objects.filter(commitment_key__user=request.user)
+        #---- COMMITMENT FILTER ----
+        # `?commitment=<id>` scopes the ENTIRE report to a single commitment; anything
+        # missing/invalid/not-owned-by-this-user/inactive silently falls back to "all"
+        # so a stale link or tampered param can never leak another user's data or 500.
+        # Defaulting to "all" is the point of this fix: every active commitment feeds
+        # the report unless the person explicitly narrows it down.
+        user_commitments = list(Commitment.objects.filter(user=request.user, is_active=True).order_by('what'))
+
+        commitment_param = request.GET.get('commitment', 'all')
+        selected_commitment_id = None
+        if commitment_param and commitment_param != 'all':
+            try:
+                candidate_id = int(commitment_param)
+            except (TypeError, ValueError):
+                candidate_id = None
+            if candidate_id is not None and any(c.id == candidate_id for c in user_commitments):
+                selected_commitment_id = candidate_id
+            #else: invalid/foreign/inactive id -> stays None -> falls back to "all" below
+
+        all_commitments = (
+            [c for c in user_commitments if c.id == selected_commitment_id]
+            if selected_commitment_id is not None else user_commitments
+        )
+
+        base_entries = Entries.objects.filter(commitment_key__user=request.user)
+        all_entries_ever = (
+            base_entries.filter(commitment_key_id=selected_commitment_id)
+            if selected_commitment_id is not None else base_entries
+        )
         total_entries_ever = all_entries_ever.count()
 
         #"not enough data" if the account genuinely has nothing meaningful to report on yet
+        #(scoped to the filter above, so picking a brand-new commitment correctly says so
+        # even if the account overall has plenty of history on OTHER commitments)
         not_enough_data = total_entries_ever < 3 or not all_commitments
 
         week_entries = list(
@@ -1116,7 +1150,12 @@ class ReportsData(LoginRequiredMixin, View):
 
         data = {
             "not_enough_data": not_enough_data,
-            #---- HERO ----
+            #---- COMMITMENT FILTER (drives the picker in the UI) ----
+            "selected_commitment": selected_commitment_id if selected_commitment_id is not None else "all",
+            "available_commitments": (
+                [{"id": "all", "what": "All Commitments"}] +
+                [{"id": c.id, "what": c.what} for c in user_commitments]
+            ),
             "week_range_label": f"{week_start.strftime('%b %d')} - {week_end.strftime('%b %d, %Y')}",
             "week_number_label": f"Week {week_start.isocalendar()[1]}",
             "generated_note": generated_note,

@@ -217,14 +217,23 @@
               </div>
             </div>
 
-            <div class="week-switcher" role="group" aria-label="Choose report week">
-              <button class="week-nav-btn" id="prevWeekBtn" aria-label="Previous week"><i class="fas fa-chevron-left"></i></button>
-              <div class="week-switcher-label">
-                <i class="fas fa-calendar-week"></i>
-                <span id="weekRangeLabel">{{ week_range_label|default:"This week" }}</span>
-                <span class="week-badge" id="weekNumberBadge">{{ week_number_label|default:"" }}</span>
+            <div class="report-filters-row">
+              <div class="week-switcher" role="group" aria-label="Choose report week">
+                <button class="week-nav-btn" id="prevWeekBtn" aria-label="Previous week"><i class="fas fa-chevron-left"></i></button>
+                <div class="week-switcher-label">
+                  <i class="fas fa-calendar-week"></i>
+                  <span id="weekRangeLabel">{{ week_range_label|default:"This week" }}</span>
+                  <span class="week-badge" id="weekNumberBadge">{{ week_number_label|default:"" }}</span>
+                </div>
+                <button class="week-nav-btn" id="nextWeekBtn" aria-label="Next week"><i class="fas fa-chevron-right"></i></button>
               </div>
-              <button class="week-nav-btn" id="nextWeekBtn" aria-label="Next week"><i class="fas fa-chevron-right"></i></button>
+
+              <div class="commitment-switcher" role="group" aria-label="Choose commitment to analyze">
+                <i class="fas fa-list-check"></i>
+                <select id="commitmentFilterSelect" aria-label="Filter report by commitment">
+                  <option value="all">All Commitments</option>
+                </select>
+              </div>
             </div>
           </section>
 
@@ -602,6 +611,7 @@
     var REPORT_DATA_URL = "{% url 'origin_reports_data' %}";
     var currentWeekIso = "{{ current_week_iso|default:'' }}";
     var reportData = null;
+    var selectedCommitment = 'all'; // default: analyze ALL of the user's commitments together
 
     /* ============================================================
        THEME TOGGLE — reuses dashboard's cookie-based toggle
@@ -813,6 +823,35 @@
        ============================================================ */
     document.getElementById('prevWeekBtn').addEventListener('click', function(){ loadReport(reportData && reportData.prev_week_iso); });
     document.getElementById('nextWeekBtn').addEventListener('click', function(){ loadReport(reportData && reportData.next_week_iso); });
+
+    document.getElementById('commitmentFilterSelect').addEventListener('change', function(e){
+      selectedCommitment = e.target.value || 'all';
+      // stay on whatever week is currently showing, just re-scope the numbers
+      loadReport(reportData && reportData.current_week_iso);
+    });
+
+    /* Populate the commitment picker from the payload, preserving the user's
+       current selection (falls back to "all" if that commitment disappears,
+       e.g. it was archived). Only rebuilds options when the list actually changed,
+       so re-selecting doesn't reset the dropdown mid-interaction. */
+    function renderCommitmentFilter(d){
+      var select = document.getElementById('commitmentFilterSelect');
+      var list = d.available_commitments || [{id:'all', what:'All Commitments'}];
+      var signature = list.map(function(c){ return c.id; }).join(',');
+      if(select.getAttribute('data-signature') !== signature){
+        select.innerHTML = '';
+        list.forEach(function(c){
+          var opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = c.what;
+          select.appendChild(opt);
+        });
+        select.setAttribute('data-signature', signature);
+      }
+      var serverSelected = (d.selected_commitment == null ? 'all' : String(d.selected_commitment));
+      select.value = serverSelected;
+      selectedCommitment = serverSelected;
+    }
 
     /* ============================================================
        RENDER HELPERS — turn one JSON payload into every section.
@@ -1033,6 +1072,7 @@
 
     function renderAll(d){
       reportData = d;
+      renderCommitmentFilter(d);
       renderHero(d);
       renderStatOverview(d);
       renderPulse(d);
@@ -1054,7 +1094,10 @@
        FETCH — GET the report JSON for a given week (see contract).
        ============================================================ */
     function loadReport(weekIso){
-      var url = REPORT_DATA_URL + (weekIso ? ('?week=' + encodeURIComponent(weekIso)) : '');
+      var params = [];
+      if(weekIso) params.push('week=' + encodeURIComponent(weekIso));
+      if(selectedCommitment && selectedCommitment !== 'all') params.push('commitment=' + encodeURIComponent(selectedCommitment));
+      var url = REPORT_DATA_URL + (params.length ? ('?' + params.join('&')) : '');
       fetch(url, {credentials:'same-origin', headers:{'X-Requested-With':'XMLHttpRequest'}})
         .then(function(res){ if(!res.ok) throw new Error('report fetch failed: ' + res.status); return res.json(); })
         .then(function(d){ renderAll(d); })
