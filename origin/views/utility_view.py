@@ -30,6 +30,7 @@ class RedirectHandler(View):
         if request.GET.get('login_account'):
             """Proceed to login user and create session"""
             try:
+                print(request.META['REMOTE_ADDR'])
                 email = request.POST["email"]
                 user_status = get_user_model().objects.filter(email__iexact = email).first()
                 user_exist = user_status is not None
@@ -44,7 +45,7 @@ class RedirectHandler(View):
                     #user found but user password is wrong
                     if not user_istance:
                         #set a key in cache to rate limit after 3 attempt
-                        the_key = f"attempt_login_{email.upper()}"
+                        the_key = f"attempt_login_{request.META['REMOTE_ADDR']}"
                         rate_limit = cache.get(the_key) or ""
                         if len(rate_limit)  <2:
                             messages.info( request=request,message= f"Incorrect password or Email.")

