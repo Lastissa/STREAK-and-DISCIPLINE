@@ -11,8 +11,7 @@
     <meta property="og:title" content="Weekly Truth Report — STREAK & DISCIPLINE">
     <meta property="og:description" content="A private, honest breakdown of one week of daily discipline check-ins.">
     <meta name="twitter:card" content="summary">
-    <meta name="robots" content="noindex, nofollow">
-    <title>Weekly Truth Report — STREAK &amp; DISCIPLINE</title>
+  {% include "reusables/metadata.html" %}
 
     <!-- Font Awesome (icons) -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
@@ -772,7 +771,7 @@
             </div>
             <div class="footer-links">
                 <h4>Support</h4>
-                <a href="mailto:{{oficial_email}}"><i class="fas fa-envelope"></i> support@streakanddiscipline.com</a>
+                <a href="mailto:{{oficial_email}}"><i class="fas fa-envelope"></i> {{ oficial_email }}</a>
                 <a href="{% url "origin_extra" %}#help"><i class="fas fa-question-circle"></i> Help Center</a>
             </div>
             <div class="footer-links">

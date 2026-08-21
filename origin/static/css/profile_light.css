@@ -463,6 +463,19 @@ body.sd-light .db-header{background:#f0f4fa}
 .pf-security-val{font-size:.72rem;color:var(--ink3)}
 
 /* ================================================================
+   RECENTLY DELETED (24h recovery window)
+   ================================================================ */
+.pf-snav-badge{background:var(--acc);color:#fff;font-size:.62rem;font-weight:700;
+  padding:.1rem .4rem;border-radius:999px;margin-left:.3rem}
+.pf-recovery-list{display:flex;flex-direction:column;gap:.6rem}
+.pf-recovery-item{display:flex;align-items:center;justify-content:space-between;gap:.75rem;
+  flex-wrap:wrap;padding:.75rem .9rem;border:1px solid var(--edgeL);border-radius:var(--r);
+  background:var(--bg);transition:opacity .25s ease}
+.pf-recovery-info{display:flex;flex-direction:column;gap:.2rem;min-width:0}
+.pf-recovery-title{font-size:.84rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pf-recovery-sub{font-size:.7rem;color:var(--ink3)}
+
+/* ================================================================
    DANGER ZONE
    ================================================================ */
 .pf-danger-card{

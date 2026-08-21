@@ -35,6 +35,11 @@
         .btn-primary{background:var(--accent);color:#fff}
         .btn-outline{border:1px solid var(--border);color:var(--text)}
         @media(max-width:639px){.logo-text{display:none}.nav-links a:not(.nav-help){display:none}}
+        .meanwhile{margin-top:2rem;padding-top:1.4rem;border-top:1px solid var(--border)}
+        .meanwhile-lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-secondary);margin-bottom:.7rem}
+        .meanwhile-links{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap}
+        .meanwhile-links a{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .8rem;border-radius:var(--radius);border:1px solid var(--border);color:var(--text-secondary);text-decoration:none;font-size:.78rem;font-weight:500;transition:all .15s ease}
+        .meanwhile-links a:hover{border-color:var(--accent);color:var(--accent-light)}
     </style>
 </head>
 <body>
@@ -62,6 +67,14 @@
             <div class="card-actions">
                 <a href="{{ back_url|default:'/' }}" class="btn btn-primary"><i class="fas fa-arrow-left"></i> Take me back</a>
                 <a href="/" class="btn btn-outline"><i class="fas fa-house"></i> Home</a>
+            </div>
+            <div class="meanwhile">
+                <p class="meanwhile-lbl">While you wait, you might like:</p>
+                <div class="meanwhile-links">
+                    <a href="{% url 'origin_blog' %}"><i class="fas fa-newspaper"></i> Blog &amp; updates</a>
+                    <a href="{% url 'origin_navigation' %}"><i class="fas fa-map"></i> Site guide</a>
+                    <a href="{% url 'origin_extra' %}#terms"><i class="fas fa-file-contract"></i> Terms &amp; privacy</a>
+                </div>
             </div>
         </div>
     </main>

@@ -1,0 +1,121 @@
+/* ================================================================
+   NAVIGATION GUIDE ("3D living manual") — BASE STYLESHEET
+   Loaded on every visit. Uses real CSS 3D (perspective + rotateX/Y
+   transforms) on hover/focus, so the 3D effect works everywhere with
+   zero JS and no WebGL/canvas dependency. The heavier "advanced" look
+   (ambient auto-rotation, deeper shadow stack, floating particles) is
+   a SEPARATE, opt-in file: navigation_advanced.css.
+   ================================================================ */
+
+:root{
+  --bg:#0a0e17; --surface:#111827; --surface2:#161f30;
+  --text:#e2e8f0; --text-secondary:#94a3b8;
+  --accent:#3b82f6; --accent-light:#60a5fa;
+  --border:#1e293b; --border-light:#334155;
+  --radius:14px; --radius-lg:20px;
+  --font-sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --max-width:1160px;
+}
+body.light-mode{
+  --bg:#f8fafc; --surface:#ffffff; --surface2:#f1f5f9;
+  --text:#0f172a; --text-secondary:#475569;
+  --border:#e2e8f0; --border-light:#cbd5e1;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font-sans);background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+.container{max-width:var(--max-width);margin:0 auto;padding:0 1.25rem}
+a{color:inherit}
+
+/* ---- header (shared pattern with privacy_etc.html / landing_page.html) ---- */
+.site-header{position:fixed;top:12px;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:calc(var(--max-width) - 24px);z-index:100;border-radius:var(--radius-lg);background:rgba(10,14,23,0.78);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.06);box-shadow:0 8px 32px rgba(0,0,0,0.3)}
+body.light-mode .site-header{background:rgba(248,250,252,0.85);border-color:rgba(0,0,0,0.06)}
+.header-inner{display:flex;align-items:center;justify-content:space-between;padding:0.6rem 1.1rem;gap:1rem}
+.logo-link{display:flex;align-items:center;gap:0.5rem;text-decoration:none;color:var(--text)}
+.logo-img{width:34px;height:34px;border-radius:8px}
+.logo-text{font-size:0.92rem;font-weight:700;color:var(--accent-light)}
+.nav-links{display:flex;gap:0.2rem}
+.nav-links a{padding:0.45rem 0.75rem;border-radius:8px;text-decoration:none;font-size:0.82rem;font-weight:500;color:var(--text-secondary)}
+.nav-links a:hover{color:#fff;background:rgba(255,255,255,0.06)}
+body.light-mode .nav-links a:hover{color:var(--text);background:rgba(0,0,0,0.05)}
+.theme-toggle{background:none;border:none;font-size:1.05rem;cursor:pointer;color:var(--text-secondary);padding:0.45rem;border-radius:50%}
+.theme-toggle:hover{color:var(--accent-light)}
+@media(max-width:639px){.nav-links{display:none}}
+
+/* ---- buttons ---- */
+.btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.2rem;border-radius:var(--radius);font-weight:600;font-size:0.85rem;text-decoration:none;cursor:pointer;border:2px solid transparent;font-family:var(--font-sans);transition:all .2s ease}
+.btn-outline{border-color:var(--border-light);color:var(--text);background:transparent}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent-light)}
+
+/* ---- hero ---- */
+.nav-hero{padding:8rem 0 2.5rem;text-align:center}
+.nav-eyebrow{display:inline-flex;align-items:center;gap:.4rem;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-light);background:rgba(59,130,246,0.1);padding:.35rem .8rem;border-radius:999px;margin-bottom:1rem}
+.nav-hero h1{font-size:clamp(1.7rem,4vw,2.4rem);margin-bottom:.7rem}
+.nav-hero p{color:var(--text-secondary);max-width:620px;margin:0 auto 1.6rem;font-size:.95rem}
+
+/* ---- search ---- */
+.nav-search-row{display:flex;justify-content:center;margin-bottom:2rem}
+.nav-search{position:relative;width:100%;max-width:480px}
+.nav-search i{position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:var(--text-secondary)}
+.nav-search input{width:100%;padding:.8rem 1rem .8rem 2.6rem;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:.88rem;font-family:var(--font-sans)}
+.nav-search input:focus{outline:none;border-color:var(--accent)}
+
+/* ================================================================
+   3D SECTION GRID — the "living manual" cards
+   perspective on the grid container + rotateX/Y on each card's inner
+   element on hover/focus. This is real CSS 3D, not a static image.
+   ================================================================ */
+.nav-grid-wrap{padding-bottom:5rem}
+.nav-3d-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:1.4rem;perspective:1400px;margin-bottom:3rem;
+}
+.nav-3d-card{
+  border-radius:var(--radius-lg);cursor:pointer;outline:none;
+  transform-style:preserve-3d;
+}
+.nav-3d-card-inner{
+  background:linear-gradient(160deg,var(--surface),var(--surface2));
+  border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:1.6rem 1.4rem;height:100%;
+  transform-style:preserve-3d;
+  transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s ease,border-color .35s ease;
+  box-shadow:0 10px 30px rgba(0,0,0,0.18);
+}
+.nav-3d-card:hover .nav-3d-card-inner,
+.nav-3d-card:focus-visible .nav-3d-card-inner{
+  transform:rotateX(6deg) rotateY(-8deg) translateY(-6px) translateZ(10px);
+  border-color:var(--accent);
+  box-shadow:0 24px 48px rgba(59,130,246,0.22);
+}
+.nav-3d-icon{
+  width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  background:rgba(59,130,246,0.12);color:var(--accent-light);font-size:1.2rem;margin-bottom:1rem;
+  transform:translateZ(24px);
+}
+.nav-3d-card-inner h2{font-size:1.02rem;margin-bottom:.4rem;transform:translateZ(16px)}
+.nav-3d-card-inner p{font-size:.78rem;color:var(--text-secondary);line-height:1.5;margin-bottom:.9rem;transform:translateZ(12px)}
+.nav-3d-count{display:inline-block;font-size:.68rem;font-weight:700;color:var(--accent-light);background:rgba(59,130,246,0.1);padding:.25rem .6rem;border-radius:999px;transform:translateZ(20px)}
+.nav-3d-card.is-highlighted .nav-3d-card-inner{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,0.25)}
+
+@media(prefers-reduced-motion:reduce){
+  .nav-3d-card-inner{transition:none}
+  .nav-3d-card:hover .nav-3d-card-inner,.nav-3d-card:focus-visible .nav-3d-card-inner{transform:none}
+}
+
+/* ---- flat detail list (accessible / no-JS / crawler-readable fallback) ---- */
+.nav-detail-list{display:flex;flex-direction:column;gap:2rem}
+.nav-detail-section{scroll-margin-top:6.5rem;padding:1.5rem;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);transition:border-color .3s ease,box-shadow .3s ease}
+.nav-detail-section.is-highlighted{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,0.2)}
+.nav-detail-section h3{display:flex;align-items:center;gap:.5rem;font-size:1rem;margin-bottom:.4rem}
+.nav-detail-desc{font-size:.8rem;color:var(--text-secondary);margin-bottom:1rem}
+.nav-route-list{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.5rem}
+.nav-route-item{display:flex;flex-direction:column;gap:.15rem;padding:.55rem .7rem;border-radius:10px;background:var(--surface2);border:1px solid transparent}
+.nav-route-item code{font-size:.72rem;color:var(--accent-light);word-break:break-all}
+.nav-route-name{font-size:.68rem;color:var(--text-secondary)}
+.nav-route-item.is-search-match{border-color:var(--accent)}
+.nav-route-item.is-search-hidden{display:none}
+.nav-route-empty{color:var(--text-secondary);font-style:italic}
+
+/* ---- footer ---- */
+.site-footer{padding:2rem 0;text-align:center;border-top:1px solid var(--border);color:var(--text-secondary);font-size:.8rem}
+.site-footer a{text-decoration:none;color:var(--accent-light)}

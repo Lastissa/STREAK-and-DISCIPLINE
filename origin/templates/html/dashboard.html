@@ -5,8 +5,7 @@
   {% include "reusables/web_icon.html" %}
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, nofollow">
-  <title>Dashboard - STREAK &amp; DISCIPLINE</title>
+  {% include "reusables/metadata.html" %}
 
   <!-- Font Awesome (local) -->
   <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
@@ -1446,6 +1445,24 @@
 
   <!-- Spinner JS (handles its own hide on window.load + 8s fallback) -->
   <script>{% include "reusables/spinner.js" %}</script>
+
+  <!-- Milestone celebrations (50%/100%) - one-time per commitment, see Dashboard view
+       (origin/views/dashboard.py) for how `celebrations_json` is built. -->
+  {% include "reusables/celebration.html" %}
+  <script>
+    (function(){
+      var celebrations = JSON.parse('{{ celebrations_json|default:"[]"|escapejs }}');
+      if (!celebrations.length) return;
+      var i = 0;
+      function playNext(){
+        if (i >= celebrations.length) return;
+        var c = celebrations[i]; i++;
+        SDCelebrate.fire(c.level, c.what);
+        setTimeout(playNext, c.level >= 100 ? 4600 : 3400);
+      }
+      setTimeout(playNext, 900); // let the page settle first
+    })();
+  </script>
 
 </body>
 </html>

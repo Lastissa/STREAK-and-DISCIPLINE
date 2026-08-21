@@ -6,8 +6,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Your private weekly discipline report — consistency score, daily reflections, and honest trend analysis.">
-  <meta name="robots" content="noindex, nofollow">
-  <title>Weekly Report — STREAK &amp; DISCIPLINE</title>
+  {% include "reusables/metadata.html" %}
 
   <!-- Font Awesome (local, same source as dashboard) -->
   <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
@@ -130,7 +129,7 @@
              rel="noopener" class="aside-link">
             <i class="fab fa-whatsapp"></i> WhatsApp Support
           </a>
-          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link">
+          <a href="mailto:{{ oficial_email }}" class="aside-link">
             <i class="fas fa-envelope"></i> Email Support
           </a>
           <a href="tel:{{ customer_care_phone_number }}" class="aside-link">

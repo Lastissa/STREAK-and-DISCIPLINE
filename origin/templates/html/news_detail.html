@@ -7,9 +7,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="{{ post.excerpt }}">
   <title>{{ post.title }} — STREAK &amp; DISCIPLINE</title>
+  {% include "reusables/metadata.html" %}
 
   <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
   <link rel="stylesheet" href="{% static 'css/blog_and_update.css' %}">
+  {% if request.user.is_authenticated %}
+  <!-- reused purely for .db-aside/.db-wrap/.db-main/.aside-* - see blog_and_update.html
+       for why (same fix, same reasoning, applied here for consistency). -->
+  <link rel="stylesheet" href="{% static 'css/dashboard_light.css' %}">
+  {% endif %}
   <link rel="stylesheet" href="{% static 'cdn/advance_blog_and_update.css' %}">
 
   <style>
@@ -166,7 +172,71 @@
       </div>
     </nav>
 
-    <main class="blog-main" id="main">
+    {% if request.user.is_authenticated %}
+    <!-- see blog_and_update.html for the full explanation of this aside - identical
+         markup/CSS classes so the two pages match. -->
+    <div class="db-wrap">
+      <aside class="db-aside no-print" id="dbAside">
+        <div class="aside-scroll">
+          <div class="aside-top">
+            <div class="aside-avatar-wrap" id="asideAvatarWrap">
+              <div class="sk sk-circle" style="width:52px;height:52px" id="asideAvatarSk"></div>
+            </div>
+            <div class="aside-username">{{ request.user.username }}</div>
+            <div class="aside-email">{{ request.user.email }}</div>
+            <span class="tier-badge tier-{{ tier|default:'free' }}">
+              {% if tier == 'gold' %}<i class="fas fa-crown"></i> Gold
+              {% elif tier == 'premium' %}<i class="fas fa-gem"></i> Premium
+              {% else %}<i class="fas fa-user"></i> Free{% endif %}
+            </span>
+          </div>
+
+          <nav class="aside-nav" aria-label="Dashboard navigation">
+            <div class="aside-section-lbl">Navigation</div>
+            <a href="{% url "origin_dashboard" %}" class="aside-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
+            <a href="{% url "origin_relationship" %}" class="aside-link"><i class="fas fa-gauge-high"></i> Relationship</a>
+            <a href="{% url "origin_profile" %}" class="aside-link"><i class="fas fa-circle-user"></i> Profile</a>
+            <a href="{% url "origin_commitments" %}" class="aside-link"><i class="fas fa-fire-flame-curved"></i> My Commitments</a>
+
+            <div class="aside-section-lbl" style="margin-top:0.5rem">Community</div>
+            <a href="/v1/groups/" class="aside-link"><i class="fas fa-users"></i> Groups</a>
+            <a href="{% url "origin_leaderboard" %}" class="aside-link"><i class="fas fa-ranking-star"></i> Leaderboard</a>
+            <a href="{% url "origin_blog" %}" class="aside-link active"><i class="fas fa-newspaper"></i> Blog &amp; Updates</a>
+
+            <div class="aside-section-lbl" style="margin-top:0.5rem">Insights</div>
+            <a href="{% url "origin_reports" %}" class="aside-link"><i class="fas fa-chart-line"></i> Analytics &amp; Reports</a>
+            {% if ai_insight_active %}
+            <a href="/v1/insights/" class="aside-link"><i class="fas fa-microchip"></i> AI Insights</a>
+            {% endif %}
+
+            <div class="aside-section-lbl" style="margin-top:0.5rem">Others</div>
+            <a href="{% url "origin_extra" %}#help" class="aside-link"><i class="fas fa-circle-question"></i> Help</a>
+            <a href="{% url "origin_extra" %}#policy" class="aside-link"><i class="fas fa-shield-halved"></i> Privacy Policy</a>
+            <a href="{% url "origin_extra" %}#terms" class="aside-link"><i class="fas fa-file-contract"></i> Terms of use</a>
+
+            <hr class="aside-sep">
+
+            <div class="aside-support-lbl">Support</div>
+            <a href="https://wa.me/{{ customer_care_whatsapp_number|cut:'+' }}" target="_blank" rel="noopener" class="aside-link"><i class="fab fa-whatsapp"></i> WhatsApp Support</a>
+            <a href="mailto:{{ oficial_email }}" class="aside-link"><i class="fas fa-envelope"></i> Email Support</a>
+            <a href="tel:{{ customer_care_phone_number }}" class="aside-link"><i class="fas fa-phone"></i> {{ customer_care_phone_number }}</a>
+          </nav>
+
+          {% if tier == 'free' or not tier %}
+          <div class="aside-upgrade">
+            <h4><i class="fas fa-gem"></i> Upgrade to Pro</h4>
+            <p>Unlock AI insights, 50 commitments, custom reports and more.</p>
+            <a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm btn-full">Start 7-Day Trial</a>
+          </div>
+          {% endif %}
+        </div>
+        <div class="aside-logout">
+          <button class="aside-logout-btn" id="asideLogoutBtn" type="button"><i class="fas fa-right-from-bracket"></i> Log Out</button>
+        </div>
+      </aside>
+    {% endif %}
+
+    <main class="blog-main db-main" id="main">
       <div class="article-wrap">
         <a href="{% url 'origin_blog' %}" class="article-back"><i class="fas fa-arrow-left"></i> Back to Blog</a>
 
@@ -216,12 +286,19 @@
       </div>
       {% endif %}
     </main>
+    {% if request.user.is_authenticated %}
+    </div><!-- /db-wrap -->
+    {% endif %}
 
     <footer class="blog-footer">
       <div class="footer-bottom">
         <p>&copy; {{ footer_copyright_note }}</p>
       </div>
     </footer>
+
+    {% if request.user.is_authenticated %}
+    <form method="POST" action="{% url 'origin_logout' %}" id="logoutForm" style="display:none">{% csrf_token %}</form>
+    {% endif %}
   </div>
 
   <script>{% include "reusables/spinner.js" %}</script>
@@ -246,6 +323,37 @@
       menuToggle && menuToggle.addEventListener('click',openNav);
       navCloseBtn && navCloseBtn.addEventListener('click',closeNav);
       navOverlay && navOverlay.addEventListener('click',closeNav);
+
+      {% if request.user.is_authenticated %}
+      /* Aside sidebar - avatar load + logout (same behaviour as blog_and_update.html's,
+         see that file for the full explanation of why the aside exists here now). */
+      (function(){
+        var wrap = document.getElementById('asideAvatarWrap');
+        if (wrap) {
+          var sk = document.getElementById('asideAvatarSk');
+          var DEFAULT_AVATAR = 'https://api.dicebear.com/7.x/initials/svg?seed=' +
+                                encodeURIComponent('{{ request.user.username }}') +
+                                '&backgroundColor=1e293b&textColor=60a5fa&size=64';
+          function apply(url){
+            var img = document.createElement('img');
+            img.alt = '{{ request.user.username }}';
+            img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
+            img.onerror = function(){ img.src = DEFAULT_AVATAR; };
+            img.onload = function(){ if (sk && sk.parentNode) sk.remove(); wrap.appendChild(img); };
+            img.src = url;
+          }
+          fetch('{% url "origin_user_picture" %}', {credentials:'include'})
+            .then(function(r){ return r.json(); })
+            .then(function(d){ apply(d.url || DEFAULT_AVATAR); })
+            .catch(function(){ apply(DEFAULT_AVATAR); });
+        }
+        var logoutBtn = document.getElementById('asideLogoutBtn');
+        var logoutForm = document.getElementById('logoutForm');
+        logoutBtn && logoutBtn.addEventListener('click', function(){
+          if (confirm('Log out?')) { logoutForm ? logoutForm.submit() : (window.location.href = '{% url "origin_logout" %}'); }
+        });
+      })();
+      {% endif %}
 
       /* ── Reading mode: Long Read (default, normal continuous vertical scroll,
          untouched) vs Swipe Read (horizontal, one paragraph per card, swipe

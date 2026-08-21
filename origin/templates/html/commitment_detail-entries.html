@@ -5,8 +5,8 @@
   {% include "reusables/web_icon.html" %}
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, nofollow">
   <title>{{ commitment.what|truncatechars:45 }} - STREAK &amp; DISCIPLINE</title>
+  {% include "reusables/metadata.html" %}
 
   <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
 
@@ -419,6 +419,15 @@
                   </div>
                 </div>
 
+                <!-- Streak reset rule - see utility/maintenance_engine.py::reset_stale_streaks
+                     for the exact logic this describes. -->
+                <div class="cd-detail-row" style="align-items:flex-start">
+                  <div class="cd-detail-lbl"><i class="fas fa-circle-info" style="color:var(--ink3)"></i> How resets work</div>
+                  <div class="cd-detail-val" style="font-size:.72rem;color:var(--ink3);line-height:1.5;max-width:280px">
+                    Your streak only resets once BOTH are true: today's check-in time ({{ commitment.checkin_time|time:"g:i A" }}) has passed, AND it's been more than 24 hours since your last check-in. Checking in any time before that keeps it safe.
+                  </div>
+                </div>
+
               </div>
             </section>
 
@@ -495,8 +504,8 @@
                     <span class="btn-txt"><i class="fas fa-floppy-disk"></i> Save Changes</span>
                     <span class="btn-spin"></span>
                   </button>
-                  <button class="btn btn-bad btn-sm" id="cdsArchiveBtn" type="button">
-                    <i class="fas fa-box-archive"></i> Archive
+                  <button class="btn btn-bad btn-sm" id="cdsArchiveBtn" type="button" title="Recoverable from your Profile page for 24 hours">
+                    <i class="fas fa-trash-can"></i> Delete
                   </button>
                 </div>
 
@@ -1153,17 +1162,18 @@
       });
     });
 
-    /* Archive commitment */
+    /* Delete commitment (soft-delete, 24h recovery from the profile page - see
+       EachCommitmentArchive/ReactivateCommitment in json_only_view.py) */
     document.getElementById('cdsArchiveBtn')&&document.getElementById('cdsArchiveBtn').addEventListener('click',function(){
-      if(!confirm('Archive "{{ commitment.what|truncatechars:60|escapejs }}"?\nYou can restore it from your commitment page later.')) return;
-      fetch('/v1/dashboard/commitment/'+CID+'/archive/',{
+      if(!confirm('Delete "{{ commitment.what|truncatechars:60|escapejs }}"?\nYou can recover it from your Profile page within the next 24 hours - after that it\'s permanently gone.')) return;
+      fetch('{% url "origin_commitment_archive" id=commitment.pk %}',{
         method:'POST', credentials:'same-origin',
         headers:{'X-CSRFToken':getCookie('csrftoken'),'Content-Type':'application/json'}
       })
       .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
       .then(function(res){
-        if(res.ok){ showToast('Commitment archived.','info',2500); setTimeout(function(){ window.location.href='{% url "origin_commitments" %}'; },2700); }
-        else showToast((res.data&&res.data.message)||'Could not archive. Try again.','error');
+        if(res.ok){ showToast(res.data.message||'Commitment deleted. Recoverable from your profile for 24 hours.','info',3000); setTimeout(function(){ window.location.href='{% url "origin_commitments" %}'; },3200); }
+        else showToast((res.data&&res.data.message)||'Could not delete. Try again.','error');
       })
       .catch(function(){ showToast('Network error.','error'); });
     });
@@ -1211,6 +1221,15 @@
 
   })();
   </script>
+
+  {% if replay_celebration %}
+  <!-- 100% standing ovation - replays on every visit to this commitment's own page
+       once it's hit goal_days (completed_at set). See EachCommitmentView (dashboard.py). -->
+  {% include "reusables/celebration.html" %}
+  <script>
+    setTimeout(function(){ SDCelebrate.fire(100, "{{ commitment.what|escapejs }}"); }, 900);
+  </script>
+  {% endif %}
 
 </body>
 </html>

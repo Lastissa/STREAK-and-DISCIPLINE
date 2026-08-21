@@ -5,7 +5,7 @@
     {% include "reusables/web_icon.html" %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+    <meta name="google-site-verification" content="KmAXTelHkJ-BSEDNc8ClZfpDmP0bzmEJHepTvx_FhQI" />
     <!--Og for socials inclduing twitter and ALSO TITLE IS INCLUDED-->
 {% include "reusables/metadata.html" with og_title="STREAK & DISCIPLINE. Keep the promises you make to yourself." og_description="A private journal that stand by you and aid with the right amount of liniency and discipline you need to create consistent act that turn into habbit or eliminate consistent habbit that you do not like. " %}
 
@@ -459,7 +459,7 @@
                         <div class="support-icon"><i class="fab fa-whatsapp"></i></div>
                         <h4>WhatsApp Support</h4>
                         <p>Prefer messaging? Reach us on WhatsApp. Send a voice note, a screenshot, or just say hi.</p>
-                        <a href="https://wa.me/+2347013687825" rel="noopener" class="btn btn-primary btn-sm">
+                        <a href="https://wa.me/{{ customer_care_whatsapp_number|cut:'+' }}" rel="noopener" class="btn btn-primary btn-sm">
                             <i class="fab fa-whatsapp"></i> Message Us
                         </a>
                         <p class="support-availability"><i class="fas fa-circle online-dot"></i> Available Always</p>
@@ -629,7 +629,7 @@
                     <div class="social-links">
                         <a href="https://x.com/lastissa" target="_blank" rel="noopener" aria-label="X (Twitter)"><i class="fab fa-x-twitter"></i></a>
                         <a href="https://github.com/lastissa" target="_blank" rel="noopener" aria-label="GitHub"><i class="fab fa-github"></i></a>
-                        <a href="https://wa.me/+2348113577875" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                        <a href="https://wa.me/{{ password_reset_whatsapp_number|cut:'+' }}" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                         <a href="mailto:lastissa11@gmail.com" aria-label="Email Developer"><i class="fas fa-envelope"></i></a>
                     </div>
                 </div>

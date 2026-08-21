@@ -162,6 +162,20 @@ body.light-mode .site-header{background:rgba(248,250,252,0.85);border-color:rgba
 .form-footer{text-align:center;margin-top:1.5rem;font-size:0.85rem;color:var(--text-secondary)}
 .form-footer a{color:var(--accent-light);text-decoration:none;font-weight:600}
 
+/* ============================================================
+   WHATSAPP PASSWORD-RESET FALLBACK
+   Always-visible manual backup path for when outgoing email is
+   blocked - see password_reset.html for the JS that builds the
+   wa.me link and utility/config.py Static.password_reset_whatsapp_number()
+   for the centralized phone number.
+   ============================================================ */
+.wa-fallback{margin-top:1.5rem;padding:1rem 1.1rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg)}
+.wa-fallback-head{display:flex;align-items:center;gap:.5rem;font-weight:700;font-size:.9rem;color:#25D366;margin-bottom:.4rem}
+.wa-fallback-head i{font-size:1.1rem}
+.wa-fallback-copy{font-size:.78rem;color:var(--text-secondary);margin-bottom:.8rem;line-height:1.5}
+.wa-fallback .btn-outline{border-color:#25D366;color:#25D366}
+.wa-fallback .btn-outline:hover{background:rgba(37,211,102,0.1);border-color:#25D366;color:#25D366}
+
 /* ===== RESPONSIVE ===== */
 @media(max-width:639px){
     .nav-links{display:none}

@@ -1,0 +1,67 @@
+/* ================================================================
+   NAVIGATION GUIDE — ADVANCED 3D LAYER (opt-in, loaded on demand)
+   Only ever included when the user clicks "Load advanced 3D view"
+   (static/js/navigation.js sets a cookie + refreshes; the view reads
+   the cookie and adds this <link> server-side - see NavigationGuide
+   in origin/views/normal_view.py). Everything here is pure CSS -
+   no canvas/WebGL - so it's still cheap relative to a real 3D engine,
+   just more visually elaborate than the base stylesheet.
+   ================================================================ */
+
+/* deeper page-level perspective so the whole grid feels like it sits
+   inside a 3D space rather than individual cards tilting in isolation */
+.nav-3d-grid{ perspective:1800px; }
+
+/* ambient, always-on gentle rotation so cards feel "alive" even before
+   the user hovers anything - paused automatically on hover so reading
+   isn't fighting a moving card, and respects prefers-reduced-motion */
+body.advanced-3d .nav-3d-card-inner{
+  animation:sd-nav-ambient 7s ease-in-out infinite;
+  animation-delay:calc(var(--nav-card-i, 0) * 0.35s);
+}
+body.advanced-3d .nav-3d-card:hover .nav-3d-card-inner,
+body.advanced-3d .nav-3d-card:focus-visible .nav-3d-card-inner{
+  animation-play-state:paused;
+}
+@keyframes sd-nav-ambient{
+  0%,100%{ transform:rotateX(0deg) rotateY(0deg) translateZ(0); }
+  50%{ transform:rotateX(3deg) rotateY(-4deg) translateZ(6px); }
+}
+
+/* richer shadow stack + soft accent glow ring on the cards */
+body.advanced-3d .nav-3d-card-inner{
+  box-shadow:
+    0 2px 4px rgba(0,0,0,.15),
+    0 12px 24px rgba(0,0,0,.20),
+    0 32px 64px rgba(59,130,246,.10);
+}
+body.advanced-3d .nav-3d-card:hover .nav-3d-card-inner,
+body.advanced-3d .nav-3d-card:focus-visible .nav-3d-card-inner{
+  box-shadow:
+    0 2px 4px rgba(0,0,0,.2),
+    0 18px 36px rgba(0,0,0,.28),
+    0 40px 80px rgba(59,130,246,.32);
+}
+
+/* floating ambient "particles" backdrop behind the hero/grid - a handful
+   of soft blurred radial-gradient blobs drifting slowly. Pure CSS,
+   fixed position, decorative only (aria-hidden set in the JS that
+   creates the element) */
+.sd-nav-particles{
+  position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;
+}
+.sd-nav-particles span{
+  position:absolute;border-radius:50%;filter:blur(40px);opacity:.35;
+  background:radial-gradient(circle,var(--accent) 0%,transparent 70%);
+  animation:sd-nav-drift linear infinite;
+}
+@keyframes sd-nav-drift{
+  0%{ transform:translate(0,0) scale(1); }
+  50%{ transform:translate(40px,-60px) scale(1.15); }
+  100%{ transform:translate(0,0) scale(1); }
+}
+
+@media(prefers-reduced-motion:reduce){
+  body.advanced-3d .nav-3d-card-inner{ animation:none; }
+  .sd-nav-particles span{ animation:none; }
+}

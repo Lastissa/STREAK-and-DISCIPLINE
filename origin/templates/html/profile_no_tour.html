@@ -5,8 +5,7 @@
   {% include "reusables/web_icon.html" %}
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, nofollow">
-  <title>Profile &amp; Settings — STREAK &amp; DISCIPLINE</title>
+  {% include "reusables/metadata.html" %}
   <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
   <style>
     {% include "reusables/spinner.css" %}
@@ -61,7 +60,7 @@
           <a href="#"  class="aside-link">-------</a>
           <div class="aside-support-lbl">Support</div>
           <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_blank" rel="noopener" class="aside-link"><i class="fab fa-whatsapp"></i> WhatsApp Support</a>
-          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link"><i class="fas fa-envelope"></i> Email Support</a>
+          <a href="mailto:{{ oficial_email }}" class="aside-link"><i class="fas fa-envelope"></i> Email Support</a>
           <a href="tel:{{ customer_care_phone_number }}" class="aside-link"><i class="fas fa-phone"></i> {{ customer_care_phone_number }}</a>
         </nav>
         {% if not tier or tier == 'free' %}
@@ -236,7 +235,7 @@
                 <div class="pf-card-row">
                   <span class="pf-label">Email Address</span>
                   <div class="pf-readonly">{{ request.user.email }}</div>
-                  <p class="pf-hint">Used for login &amp; notifications. <a href="mailto:issaabdulsalamope11@gmail.com" style="color:var(--accL)">Contact support</a> to change it.</p>
+                  <p class="pf-hint">Used for login &amp; notifications. <a href="mailto:{{ oficial_email }}" style="color:var(--accL)">Contact support</a> to change it.</p>
                 </div>
 
                 <div class="pf-card-sep"></div>
@@ -704,7 +703,7 @@
                     <div class="pf-security-label">Login Email</div>
                     <div class="pf-security-val">{{ request.user.email }}</div>
                   </div>
-                  <a href="mailto:issaabdulsalamope11@gmail.com?subject=Change%20Login%20Email"
+                  <a href="mailto:{{ oficial_email }}?subject=Change%20Login%20Email"
                      class="btn btn-ghost btn-sm" target="_blank" rel="noopener">
                     <i class="fas fa-envelope"></i> Request Change
                   </a>
@@ -800,7 +799,7 @@
           <p>
             <a href="{% url 'origin_extra' %}#policy">Privacy</a>
             · <a href="{% url 'origin_extra' %}#terms">Terms</a>
-            · <a href="mailto:issaabdulsalamope11@gmail.com">Contact</a>
+            · <a href="mailto:{{ oficial_email }}">Contact</a>
           </p>
         </footer>
 

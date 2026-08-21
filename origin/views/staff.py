@@ -18,6 +18,16 @@ from utility.push_sending import send_news_push
 from ..models import StaffTempToken, News, Profile, ChoicesValidatorInModels
 from utility.config import Static
 from utility.email_sending import send_staff_access_code_email
+
+
+def _support_reference(prefix: str) -> str:
+    """A short, greppable reference code (e.g. "ERR-NEWS-20260820143012") shown to
+    staff instead of a raw exception/DB-driver dump. The FULL technical detail still
+    goes to the logger right next to it (see call sites below) - so support/dev can
+    `grep` the reference straight to the real error, while whoever hit the error in
+    the UI gets something they can actually read and hand to support, instead of a
+    wall of driver-level bytes/SQL that means nothing to them."""
+    return f"ERR-{prefix}-{timezone.now().strftime('%Y%m%d%H%M%S')}"
 from utility.file_upload import upload_news_banner
 
 import json, random, logging
@@ -239,22 +249,30 @@ class CreateBlog(View):
                     #the post itself succeeded - a failed notification email should never look like a failed post
                     logger.error("News published (id=%s) but the notification email failed: %s", news_ist.id, mail_err)
                     return JsonResponse({'message': 'Post published, but the notification email failed to send (this is likely the known production email issue, not a post failure).'}, status=200)
-            return JsonResponse({'message': 'Post published successfully' + (' with banner.' if banner else ' without a banner.')}, status = 200)
+            return JsonResponse({
+                'message': 'Post published successfully' + (' with banner.' if banner else ' without a banner.'),
+                'id': news_ist.id,
+                'url': reverse('origin_blog_detail', kwargs={'pk': news_ist.id}), #handed back so the frontend can build the "copy as email" text (see js-copy-email in blog_and_update.html) right after publishing, without a second request
+            }, status = 200)
 
         except IntegrityError as e:
             #most commonly: title isn't unique (News.title has unique=True)
-            logger.error("News publish IntegrityError: %s", e)
+            ref = _support_reference('NEWS')
+            logger.error("[%s] News publish IntegrityError: %s", ref, e)
             if 'title' in str(e).lower() or 'unique' in str(e).lower():
                 return JsonResponse({'message': f"A post with the title \"{data['title']}\" already exists. Titles must be unique."}, status=400)
-            return JsonResponse({'message': f"Database rejected this post: {e}"}, status=400)
+            return JsonResponse({'message': f"The database rejected this post. Reference {ref} - share that with support if it keeps happening."}, status=400)
         except DjangoValidationError as e:
             logger.error("News publish ValidationError: %s", e)
             return JsonResponse({'message': f"Validation failed: {'; '.join(e.messages) if hasattr(e, 'messages') else str(e)}"}, status=400)
         except Exception as e:
-            #still logged with full context server-side, but staff (the only people who can
-            #hit this endpoint) also get the real reason back instead of a dead-end message
-            logger.error("Staff news upload failed unexpectedly: %s", e, exc_info=True)
-            return JsonResponse({'message': f"Unexpected server error: {e}"}, status = 500)
+            #still logged with full context server-side (with a reference code staff can
+            #quote), but the UI itself only ever shows a clean, human sentence now - not
+            #the raw exception (which for some drivers can include unreadable low-level
+            #byte data that meant nothing to whoever was staring at the error toast).
+            ref = _support_reference('NEWS')
+            logger.error("[%s] Staff news upload failed unexpectedly: %s", ref, e, exc_info=True)
+            return JsonResponse({'message': f"Something went wrong publishing this post. Reference {ref} - share that with support so we can look it up fast."}, status = 500)
 
 
 class EditBlog(View):
@@ -290,16 +308,18 @@ class EditBlog(View):
                 post.full_clean()
                 post.save()
         except IntegrityError as e:
-            logger.error("News edit IntegrityError (id=%s): %s", pk, e)
+            ref = _support_reference('NEWS')
+            logger.error("[%s] News edit IntegrityError (id=%s): %s", ref, pk, e)
             if 'title' in str(e).lower() or 'unique' in str(e).lower():
                 return JsonResponse({'message': f"A post with the title \"{data.get('title')}\" already exists. Titles must be unique."}, status=400)
-            return JsonResponse({'message': f"Database rejected this edit: {e}"}, status=400)
+            return JsonResponse({'message': f"The database rejected this edit. Reference {ref} - share that with support if it keeps happening."}, status=400)
         except DjangoValidationError as e:
             logger.error("News edit ValidationError (id=%s): %s", pk, e)
             return JsonResponse({'message': f"Validation failed: {'; '.join(e.messages) if hasattr(e, 'messages') else str(e)}"}, status=400)
         except Exception as e:
-            logger.error("Staff news edit failed unexpectedly (id=%s): %s", pk, e, exc_info=True)
-            return JsonResponse({'message': f"Unexpected server error: {e}"}, status=500)
+            ref = _support_reference('NEWS')
+            logger.error("[%s] Staff news edit failed unexpectedly (id=%s): %s", ref, pk, e, exc_info=True)
+            return JsonResponse({'message': f"Something went wrong saving this edit. Reference {ref} - share that with support so we can look it up fast."}, status=500)
 
         return JsonResponse({'message': 'Post updated successfully.'}, status=200)
 
@@ -325,8 +345,9 @@ class ChangeBlogBanner(View):
             post.full_clean()
             post.save()
         except Exception as e:
-            logger.error("News banner change failed (id=%s): %s", pk, e, exc_info=True)
-            return JsonResponse({'message': f"Image upload failed: {e}"}, status=500)
+            ref = _support_reference('BANNER')
+            logger.error("[%s] News banner change failed (id=%s): %s", ref, pk, e, exc_info=True)
+            return JsonResponse({'message': f"Image upload failed. Reference {ref} - share that with support if it keeps happening."}, status=500)
 
         return JsonResponse({'message': 'Banner updated successfully.', 'banner_url': post.banner}, status=200)
 

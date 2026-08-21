@@ -1,4 +1,5 @@
 """THE DASHBOARD IS DIVERSE AND TO ALLOW IT SCALE, IT NEED TO HAVE IT OWN VIEW"""
+import json
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, redirect
@@ -34,6 +35,25 @@ class ProfileSettings(LoginRequiredMixin, View):
             messages.warning(request, message="Please Finish your onboarding before accessing this page, head to login and sigin in with you creedentials and you will be taken to onboarding")
             return render(request, 'html/full_screen_message.html')
         
+        #recently-deleted (is_active=False) commitments still inside their 24h recovery window -
+        #see EachCommitmentArchive/ReactivateCommitment (json_only_view.py) + purge_deleted_commitments
+        #(utility/maintenance_engine.py) for the full lifecycle this list represents.
+        recovery_cutoff = timezone.now() - timezone.timedelta(hours=24)
+        recoverable_commitments = Commitment.objects.filter(
+            user=request.user,
+            is_active=False,
+            deactivated_at__isnull=False,
+            deactivated_at__gt=recovery_cutoff,
+        ).order_by('-deactivated_at')
+        #hand the template a plain "hours left" number per row instead of making it do date math
+        recoverable_commitments_with_countdown = [
+            {
+                'commitment': c,
+                'hours_left': max(0, round(24 - (timezone.now() - c.deactivated_at).total_seconds() / 3600)),
+            }
+            for c in recoverable_commitments
+        ]
+
         #user exist with tier configured
         return render(request, 'html/profile.html', {
             'tier': user_profile.tier,
@@ -46,7 +66,8 @@ class ProfileSettings(LoginRequiredMixin, View):
             'custom_reports': user_profile.custom_report_email_active,
             'newsletter': user_profile.receive_newsletter,
             'zeal_score': user_profile.zeal_score,
-            'social_mode': user_profile.social_mode
+            'social_mode': user_profile.social_mode,
+            'recoverable_commitments': recoverable_commitments_with_countdown,
         })    
   
 class Dashboard(LoginRequiredMixin, View):
@@ -66,6 +87,25 @@ class Dashboard(LoginRequiredMixin, View):
         for c in noticed_qs:
             messages.warning(request, message=c.pending_notice)
         noticed_qs.update(pending_notice='')
+
+        #---- milestone celebrations (50% / 100% of goal_days) ----
+        #One-time only (per commitment) on the dashboard - see Commitment.milestone_50_notified /
+        #milestone_100_notified in models.py for why. dashboard.html reads `celebrations` and fires
+        #the matching 3D effect (confetti "hooray" for 50%, full standing-ovation for 100%) once on
+        #load, then the effect never repeats here again even if the user keeps visiting the
+        #dashboard - hitting 100% specifically ALSO stays replayable forever, but only on the
+        #commitment's OWN page (see EachCommitmentView), never here again.
+        celebrations = []
+        for c in commitment_istance:
+            pct = c.progress_percent()
+            if pct >= 100 and not c.milestone_100_notified:
+                celebrations.append({'id': c.pk, 'what': c.what, 'level': 100})
+                c.milestone_100_notified = True
+                c.save(update_fields=['milestone_100_notified'])
+            elif pct >= 50 and not c.milestone_50_notified:
+                celebrations.append({'id': c.pk, 'what': c.what, 'level': 50})
+                c.milestone_50_notified = True
+                c.save(update_fields=['milestone_50_notified'])
 
         consistency = [0 for i in commitment_istance if i.streak_count > 0]    #Find the amount of streak score > 0 / total commitment (i use the tenchique of all ocnsistncy must have a streak score but are they all greater than zero?) ; that give the consistency_cpt
         avg_streak_Counter = [ i.streak_count for i in commitment_istance]
@@ -87,6 +127,7 @@ class Dashboard(LoginRequiredMixin, View):
              'theme_mode': request.COOKIES.get("sd-theme", 'dark'),
             
             'public_searchable_username ' : user_profile.public_searchable_username,
+            'celebrations_json': json.dumps(celebrations),
             
         }
         
@@ -127,6 +168,11 @@ class EachCommitmentView(LoginRequiredMixin, View):
             'has_entry_today': today_entry_istance is not None,
             'today_entry':     today_entry_istance,
             'motion_list': ChoicesValidatorInModels().mood,         # list of strings, same as commitment page
+            #standing-ovation replay: unlike the dashboard's one-time 50%/100% toast (see Dashboard
+            #view above + Commitment.milestone_100_notified), the commitment's OWN page replays the
+            #full celebration EVERY visit once it's hit 100% - simply because completed_at is set,
+            #no "already shown" flag involved here on purpose.
+            'replay_celebration': commitment_istance.completed_at is not None,
             
         })
    

@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser,BaseUserManager, PermissionsMixin
 from django.db import models
+from django.utils import timezone
 
 
 #to replace the choice since django does not validate them - i will use custom validator istead
@@ -152,7 +153,33 @@ class Commitment(models.Model):
     whatsapp_number = models.CharField(max_length=20, blank=True) #if the user chooses whtsap so i can save their phone number using +xxxxxxxxxxxxxxx
     last_reminder_sent_at = models.DateTimeField(null=True, blank=True, default=None)   #to keep track for reminders for commitment
     pending_notice = models.CharField(max_length=255, blank=True, default='') #set by the cron job (e.g "streak reset - you missed your 24hr check-in window") and flushed out to the user as a django message next time they load a page that touches this commitment
-    completed_at = models.DateTimeField(null=True, blank=True, default=None) #set when goal_days is reached (end of life) and the commitment is auto marked inactive by the cron job
+    completed_at = models.DateTimeField(null=True, blank=True, default=None) #set when goal_days is reached (100%) - NOTE: this NO LONGER deactivates the commitment (see complete_expired_commitments in utility/maintenance_engine.py), its only job now is to flag the commitment as "done" so the dashboard/commitment page can replay the standing-ovation celebration. The commitment stays is_active=True and keeps living its life (user can keep journaling on it if they want).
+
+    #---- soft-delete / "recoverable delete" support ----
+    #the button that used to be labelled "Archive" is now labelled "Delete" everywhere in the UI, but under
+    #the hood it still just flips is_active to False (soft delete) - nothing about the DB behaviour changed,
+    #only the wording shown to the user + this new timestamp so we know WHEN it happened.
+    deactivated_at = models.DateTimeField(null=True, blank=True, default=None) #stamped the moment the user hits "Delete" (EachCommitmentArchive). Used two ways: (1) the profile page reads it to show a "recover within 24 hours" countdown, (2) the maintenance cron (purge_deleted_commitments) only hard-deletes a commitment once THIS is more than 24h in the past - never based on is_active alone anymore, so nothing gets permanently wiped before the 24h recovery window has genuinely passed.
+
+    #---- milestone celebrations (50% / 100% of goal_days) ----
+    #Percentage itself is NOT stored (it's computed on the fly from created_at/goal_days -
+    #see Commitment.progress_percent below) - these two booleans exist purely so the
+    #DASHBOARD's one-time "hooray"/"standing ovation" toast only ever fires ONCE per
+    #commitment instead of on every single dashboard visit. The commitment's OWN detail
+    #page is different on purpose: it replays the 100% celebration on every visit once
+    #completed_at is set (see EachCommitmentView), no flag needed there.
+    milestone_50_notified = models.BooleanField(default=False) #flips True the first time the dashboard has shown the 50% celebration for this commitment
+    milestone_100_notified = models.BooleanField(default=False) #flips True the first time the dashboard has shown the 100% celebration for this commitment (separate from completed_at, which is what the commitment detail page checks to decide whether to replay ITS celebration)
+
+    def progress_percent(self) -> int:
+        """0-100 progress toward goal_days, based on how many days old the commitment is
+        (same "age in days" math complete_expired_commitments in utility/maintenance_engine.py
+        uses for 100%). goal_days=0 means "forever" - no percentage makes sense, so this
+        always returns 0 for those and they never trigger a milestone celebration."""
+        if not self.goal_days:
+            return 0
+        age_days = (timezone.now().date() - self.created_at.date()).days
+        return max(0, min(100, round((age_days / self.goal_days) * 100)))
     def __str__(self):
         return f"{self.user.email} Commitments -- what_name: {self.what}; status -> {self.is_active}"
     
@@ -209,12 +236,25 @@ class News(models.Model):
     banner = models.URLField(null=True, blank=True)                        # IF the news have a banner and the image of the banner
     featured = models.BooleanField(default=True)               # for full width set to true
     actual_content = models.TextField(default="", blank=True, null= True)# This hold the actual content that will be displayed on its own page
-    
+
+    #---- user-submitted stories (tag == 'story') ----
+    #Staff-authored posts (created from staff/create_blog) leave this NULL - that's how the blog
+    #template tells a staff post apart from a community one and shows the right badge ("Staff" vs
+    #"Community Story" / "user typed"). Ordinary users can only ever create tag='story' posts via the
+    #public "share your story" form on the blog page.
+    submitted_by = models.ForeignKey(CustomeUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='submitted_stories') #who actually wrote this (null for staff-authored posts). Kept even when is_anonymous=True, purely for internal moderation - the byline shown publicly still respects is_anonymous.
+    is_anonymous = models.BooleanField(default=False) #user's own choice at submission time - when True the byline shown on the blog reads "Anonymous" instead of their username
+
     class Meta:
         unique_together= ('title', 'tag',)
-        
+
     def __str__(self):
         return "News"
+
+    def is_staff_authored(self) -> bool:
+        """True for posts written by staff through the staff hub (submitted_by is empty).
+        Used purely for the small badge shown on the blog card ('Staff' vs 'User typed')."""
+        return self.submitted_by_id is None
     
     
     

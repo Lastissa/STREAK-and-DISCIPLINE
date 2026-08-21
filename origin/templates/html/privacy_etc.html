@@ -5,7 +5,7 @@
     {% include "reusables/web_icon.html" %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy, Terms & Help — STREAK & DISCIPLINE</title>
+  {% include "reusables/metadata.html" %}
     <style>{% include "reusables/spinner.css" %}</style>
     <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
     <link rel="stylesheet" href="{% static 'css/privacy_etc.css' %}">
@@ -98,8 +98,8 @@
                 <p>You can request data deletion via:</p>
                 <ul>
                     <li><strong>Self-service:</strong> Account Settings → Pofile → Delete Account</li>
-                    <li><strong>Email:</strong> issaabdulsalamope11@gmail.com</li>
-                    <li><strong>WhatsApp:</strong> +234 701 368 7825</li>
+                    <li><strong>Email:</strong> {{ oficial_email }}</li>
+                    <li><strong>WhatsApp:</strong> {{ customer_care_whatsapp_number }}</li>
                 </ul>
                 <p>Self-service deletions are processed within 48 hours. Manual requests are processed within 7 business days. Backup copies are purged within 30 days. You have a 7‑day grace period to reactivate your account after deletion.</p>
 
@@ -287,7 +287,7 @@
                                 <li><i class="fas fa-check"></i> {{i}}</li>
                             {% endfor %}
                         </ul>
-                        <a href="mailto:issaabdulsalamope11@gmail.com?subject=Team%20Plan%20Enquiry" class="pricing-btn-outline">Contact Sales</a>
+                        <a href="mailto:{{ oficial_email }}?subject=Team%20Plan%20Enquiry" class="pricing-btn-outline">Contact Sales</a>
                     </div>
                 </div>
             </div>
@@ -299,10 +299,10 @@
                 <h2><i class="fas fa-headset"></i> Contact Us</h2>
                 <p>We respond within an hour during business hours (8am–10pm GMT+1).</p>
                 <div class="contact-links">
-                    <a href="mailto:issaabdulsalamope11@gmail.com"><i class="fas fa-envelope"></i> issaabdulsalamope11@gmail.com</a>
-                    <a href="https://wa.me/2347013687825" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> WhatsApp: +234 701 368 7825</a>
+                    <a href="mailto:{{ oficial_email }}"><i class="fas fa-envelope"></i> {{ oficial_email }}</a>
+                    <a href="https://wa.me/{{ customer_care_whatsapp_number|cut:'+' }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> WhatsApp: {{ customer_care_whatsapp_number }}</a>
                     <a href="https://x.com/lastissa" target="_blank" rel="noopener"><i class="fab fa-x-twitter"></i> X (Twitter): @lastissa</a>
-                    <a href="tel:+2347013687825"><i class="fas fa-phone"></i> {{ customer_care_phone_number }}</a>
+                    <a href="tel:{{ customer_care_phone_number }}"><i class="fas fa-phone"></i> {{ customer_care_phone_number }}</a>
                 </div>
             </div>
         </section>

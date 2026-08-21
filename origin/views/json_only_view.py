@@ -789,13 +789,17 @@ class EachCommitmentViewSettings(LoginRequiredMixin, View):
         return JsonResponse({'message': 'update successful.'}, status=200)     
     
 class EachCommitmentArchive(LoginRequiredMixin, View):
-    """DELETE A COMMITMENT. There is no archive/restore state in this product - pressing
-    delete flips is_active to False right away (so it instantly disappears from the
-    user's own commitment list / dashboard / heat map / everywhere else that already
-    filters on is_active=True) and that's it from the user's side. The actual DB row
-    (and its Entries) get permanently removed the NEXT time the cron job ticks - see
-    utility/maintenance_engine.purge_deleted_commitments(). The url/view name kept the
-    word "archive" only to avoid touching urls.py; nothing about the behavior archives
+    """DELETE A COMMITMENT (the button in the UI is now labelled "Delete", not
+    "Archive" - "archive" was a misleading word since nothing was ever browsable
+    again from an archive view). Pressing delete flips is_active to False right away
+    (so it instantly disappears from the user's own commitment list / dashboard /
+    heat map / everywhere else that already filters on is_active=True) and stamps
+    deactivated_at with "now". For the next 24 hours it is RECOVERABLE - it shows up
+    on the profile page's "recently deleted" list with a countdown, and
+    ReactivateCommitment (below) can bring it back with everything intact. Only once
+    that 24h window passes does utility/maintenance_engine.purge_deleted_commitments()
+    permanently remove the DB row (and its Entries). The url/view name kept the word
+    "archive" only to avoid touching urls.py; nothing about the behavior archives
     anything."""
     def post(self, request, id):
         istance = Commitment.objects.filter(user=request.user, pk=id).first()
@@ -804,9 +808,33 @@ class EachCommitmentArchive(LoginRequiredMixin, View):
         if istance.is_active is False:
             return JsonResponse({'message': 'This commitment has already been deleted'}, status=400)
         istance.is_active = False
+        istance.deactivated_at = timezone.now()
         istance.pending_notice = ''
-        istance.save(update_fields=['is_active', 'pending_notice'])
-        return JsonResponse({'message': 'Commitment deleted successfully'}, status=200)
+        istance.save(update_fields=['is_active', 'deactivated_at', 'pending_notice'])
+        return JsonResponse({'message': 'Commitment deleted. You can recover it from your profile page within the next 24 hours.'}, status=200)
+
+
+class ReactivateCommitment(LoginRequiredMixin, View):
+    """Undo a Delete (EachCommitmentArchive above) while it's still inside its 24h
+    recovery window. Lives on the profile page's "recently deleted" list. Once
+    deactivated_at is more than 24h old, purge_deleted_commitments() may have already
+    hard-deleted the row entirely - in that case it simply won't be found any more
+    (404), which is the correct/expected outcome, not a bug."""
+    def post(self, request, id):
+        istance = Commitment.objects.filter(user=request.user, pk=id, is_active=False).first()
+        if istance is None:
+            return JsonResponse({'message': 'This commitment is no longer available to recover - it may have already been permanently removed after its 24 hour window passed.'}, status=404)
+
+        recovery_cutoff = timezone.now() - timezone.timedelta(hours=24)
+        if istance.deactivated_at is None or istance.deactivated_at <= recovery_cutoff:
+            return JsonResponse({'message': 'The 24 hour recovery window for this commitment has passed - it can no longer be restored.'}, status=400)
+
+        istance.is_active = True
+        istance.deactivated_at = None
+        istance.pending_notice = 'Welcome back! This commitment was just restored from your recently-deleted list.'
+        istance.save(update_fields=['is_active', 'deactivated_at', 'pending_notice'])
+        return JsonResponse({'message': 'Commitment restored successfully.'}, status=200)
+
     
 class EachCommitementHeatMap(LoginRequiredMixin, View):
     """Return heat map for a simgle commitment most likely in the entry page to show the user how they have been doing in the past 7 entries"""
@@ -854,6 +882,8 @@ class EachCommitementEntries(LoginRequiredMixin, View):
         if not commitment_instance: return JsonResponse({'message': 'Commitment not found.'}, status=404)
         
         #check if user have already checked in today, if yes, return error
+        #NB: this is also the value we use below to decide the new streak - it MUST be read
+        #before we create today's entry (see bug note in the `with transaction.atomic()` block).
         last_entry = Entries.objects.filter(commitment_key=commitment_key).order_by('-commit_at').first()
         if last_entry and last_entry.commit_at.isoformat() == timezone.now().date().isoformat(): #yyyy-mm-dd
             return JsonResponse({'message': 'You have already checked in today.'}, status=400)
@@ -868,11 +898,16 @@ class EachCommitementEntries(LoginRequiredMixin, View):
                 )
             
             # Update streak count and last check-in
-            last_entry = Entries.objects.filter(commitment_key=commitment_key).order_by('-commit_at').first()   #The - tells it to sort by newest first
+            #BUGFIX: this used to re-query "last_entry" AFTER creating today's `entry` above, which
+            #meant it always fetched the row we just created (today's own entry) instead of
+            #YESTERDAY's - so (today - today).days was always 0, the `== 1` branch below could
+            #never match, and the streak got silently reset to 1 on every single check-in. We now
+            #reuse the `last_entry` fetched further up (before the new entry existed), which is the
+            #user's genuinely most-recent PREVIOUS entry.
             if last_entry and (timezone.now().date() - last_entry.commit_at).days == 1:
                 commitment_instance.streak_count += 1   #Streak count increase by 1 if last entry was yesterday
             else:
-                commitment_instance.streak_count = 1 # Reset streak count to 1 if last entry was not yesterday
+                commitment_instance.streak_count = 1 # Reset streak count to 1 if last entry was not yesterday (or this is the very first entry, last_entry is None)
             
             commitment_instance.last_check_in = timezone.now()
             commitment_instance.save()

@@ -5,8 +5,7 @@
   {% include "reusables/web_icon.html" %}
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, nofollow">
-  <title>Profile &amp; Settings — STREAK &amp; DISCIPLINE</title>
+  {% include "reusables/metadata.html" %}
   <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
   <style>
     {% include "reusables/spinner.css" %}
@@ -61,7 +60,7 @@
           <a href="#"  class="aside-link">-------</a>
           <div class="aside-support-lbl">Support</div>
           <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_blank" rel="noopener" class="aside-link"><i class="fab fa-whatsapp"></i> WhatsApp Support</a>
-          <a href="mailto:issaabdulsalamope11@gmail.com" class="aside-link"><i class="fas fa-envelope"></i> Email Support</a>
+          <a href="mailto:{{ oficial_email }}" class="aside-link"><i class="fas fa-envelope"></i> Email Support</a>
           <a href="tel:{{ customer_care_phone_number }}" class="aside-link"><i class="fas fa-phone"></i> {{ customer_care_phone_number }}</a>
         </nav>
         {% if not tier or tier == 'free' %}
@@ -187,6 +186,7 @@
             <a class="pf-snav-link"        href="#s-partners"     data-section="s-partners"><i class="fas fa-handshake"></i> Partners</a>
             <a class="pf-snav-link"        href="#s-data"         data-section="s-data"><i class="fas fa-database"></i> Data &amp; Export</a>
             <a class="pf-snav-link"        href="#s-security"     data-section="s-security"><i class="fas fa-lock"></i> Security</a>
+            <a class="pf-snav-link"        href="#s-recovery"     data-section="s-recovery"><i class="fas fa-clock-rotate-left"></i> Recently Deleted{% if recoverable_commitments %} <span class="pf-snav-badge">{{ recoverable_commitments|length }}</span>{% endif %}</a>
             <div class="pf-snav-sep"></div>
             <a class="pf-snav-link pf-snav-danger" href="#s-danger" data-section="s-danger"><i class="fas fa-triangle-exclamation"></i> Danger</a>
           </nav>
@@ -239,7 +239,7 @@
                 <div class="pf-card-row">
                   <span class="pf-label">Email Address</span>
                   <div class="pf-readonly">{{ request.user.email }}</div>
-                  <p class="pf-hint">Used for login &amp; notifications. <a href="mailto:issaabdulsalamope11@gmail.com" style="color:var(--accL)">Contact support</a> to change it.</p>
+                  <p class="pf-hint">Used for login &amp; notifications. <a href="mailto:{{ oficial_email }}" style="color:var(--accL)">Contact support</a> to change it.</p>
                 </div>
 
                 <div class="pf-card-sep"></div>
@@ -726,7 +726,7 @@
                     <div class="pf-security-label">Login Email</div>
                     <div class="pf-security-val">{{ request.user.email }}</div>
                   </div>
-                  <a href="mailto:issaabdulsalamope11@gmail.com?subject=Change%20Login%20Email"
+                  <a href="mailto:{{ oficial_email }}?subject=Change%20Login%20Email"
                      class="btn btn-ghost btn-sm" target="_blank" rel="noopener">
                     <i class="fas fa-envelope"></i> Request Change
                   </a>
@@ -752,6 +752,47 @@
                   <span class="pf-hint" style="margin:0">In good standing</span>
                 </div>
 
+              </div>
+            </section>
+
+            <!-- ████ RECENTLY DELETED (recoverable within 24h) ████ -->
+            <!-- Commitments the user pressed "Delete" on. Nothing is ever wiped straight away - see
+                 EachCommitmentArchive/ReactivateCommitment (json_only_view.py) and
+                 purge_deleted_commitments (utility/maintenance_engine.py, run by the cron job) for the
+                 full lifecycle: hidden immediately -> recoverable here for 24h -> permanently removed. -->
+            <section class="pf-section" id="s-recovery" style="--i:.52s">
+              <div class="pf-section-head"><i class="fas fa-clock-rotate-left"></i> Recently Deleted</div>
+              <div class="pf-card">
+                <p class="pf-hint" style="margin-bottom:1rem">
+                  Deleted commitments stay recoverable for 24 hours before they're permanently removed. After that, they're gone for good.
+                </p>
+                {% if recoverable_commitments %}
+                  <div class="pf-recovery-list">
+                    {% for row in recoverable_commitments %}
+                    <div class="pf-recovery-item" data-commitment-id="{{ row.commitment.pk }}">
+                      <div class="pf-recovery-info">
+                        <span class="pf-recovery-title">{{ row.commitment.what }}</span>
+                        <span class="pf-recovery-sub">
+                          {% if row.hours_left > 0 %}
+                            <i class="fas fa-hourglass-half"></i> {{ row.hours_left }} hour{{ row.hours_left|pluralize }} left to recover
+                          {% else %}
+                            <i class="fas fa-hourglass-end"></i> Recovery window closing very soon
+                          {% endif %}
+                        </span>
+                      </div>
+                      <button class="btn btn-primary btn-sm pf-recover-btn" data-id="{{ row.commitment.pk }}">
+                        <span class="btn-txt"><i class="fas fa-rotate-left"></i> Recover</span>
+                        <span class="btn-spin"></span>
+                      </button>
+                    </div>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  <div class="pf-readonly" style="text-align:center;padding:1.5rem 1rem">
+                    <i class="fas fa-check-circle" style="color:var(--accL);margin-right:.4rem"></i>
+                    Nothing recently deleted.
+                  </div>
+                {% endif %}
               </div>
             </section>
 
@@ -822,7 +863,7 @@
           <p>
             <a href="{% url 'origin_extra' %}#policy">Privacy</a>
             · <a href="{% url 'origin_extra' %}#terms">Terms</a>
-            · <a href="mailto:issaabdulsalamope11@gmail.com">Contact</a>
+            · <a href="mailto:{{ oficial_email }}">Contact</a>
           </p>
         </footer>
 
@@ -1351,6 +1392,26 @@
     qs('#pfExportPdf')&&qs('#pfExportPdf').addEventListener('click',function(){
       if(document.querySelector('.locked-card#pfExportPdf'))return;
       doExport('pdf');
+    });
+
+    /* ── Recently Deleted (recover within 24h) ───────────────────── */
+    document.querySelectorAll('.pf-recover-btn').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        var id=this.dataset.id, self=this, row=self.closest('.pf-recovery-item');
+        self.classList.add('pf-loading'); self.disabled=true;
+        fetch('/v1/dashboard/commitment/'+id+'/reactivate/',{
+          method:'POST',credentials:'same-origin',
+          headers:{'X-CSRFToken':getCookie('csrftoken')}
+        })
+        .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
+        .then(function(res){
+          self.classList.remove('pf-loading'); self.disabled=false;
+          if(!res.ok){showToast(res.data.message||'Could not recover this commitment.','error');return}
+          showToast(res.data.message||'Commitment restored.','info');
+          if(row){row.style.opacity='0';setTimeout(function(){row.remove()},250)}
+        })
+        .catch(function(){self.classList.remove('pf-loading');self.disabled=false;showToast('Network error - please try again.','error')});
+      });
     });
 
     /* ── Danger zone ───────────────────────────────────────────── */

@@ -303,6 +303,16 @@ body.sd-light .mobile-nav { background: rgba(255, 255, 255, 0.94); }
 }
 .post-card h3 { font-size: 1.02rem; line-height: 1.35; }
 .post-card-featured h3 { font-size: 1.25rem; }
+
+/* author badge: "Staff" (staff/superuser-authored) vs "Community"/"<name>"/"Anonymous"
+   (submitted via the public share-your-story form - see CreateUserStory in
+   origin/views/normal_view.py and News.is_staff_authored() in models.py) */
+.post-card-author-badge {
+  display: inline-flex; align-items: center; gap: 0.3rem; width: fit-content;
+  padding: 0.18rem 0.6rem; border-radius: 50px; font-size: 0.64rem; font-weight: 700;
+}
+.post-card-author-badge.is-staff { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
+.post-card-author-badge.is-user { background: rgba(16, 185, 129, 0.12); color: #10b981; }
 .post-card-excerpt { color: var(--text-secondary); font-size: 0.85rem; line-height: 1.55; flex: 1; }
 .post-card-meta { display: flex; gap: 1rem; font-size: 0.72rem; color: var(--text-secondary); flex-wrap: wrap; }
 .post-card-link { font-weight: 700; font-size: 0.82rem; color: var(--accent-light); display: flex; align-items: center; gap: 0.35rem; margin-top: auto; }

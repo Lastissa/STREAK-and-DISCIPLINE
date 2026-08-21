@@ -9,15 +9,42 @@ from django.shortcuts import render, reverse
 from django.http import JsonResponse
 from django.db import IntegrityError
 
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.utils import timezone
-from utility.config import custom_date_formatter
+from utility.config import custom_date_formatter, Static, SeoGeo
 from utility.email_sending import *
 
 from ..models import ChoicesValidatorInModels, Profile, Friendship
 
 import logging
 logger = logging.getLogger(__name__)
+
+
+class LlmsTxt(View):
+    """GEO (Generative Engine Optimization) helper endpoint - serves /llms.txt, a plain-text,
+    low-noise summary of the product for AI crawlers (ChatGPT/Perplexity/Gemini etc.) to read
+    directly instead of having to parse rendered HTML. This is the emerging "robots.txt for AI"
+    convention. Content is pulled straight from SeoGeo (utility/config.py) so it stays in sync
+    with the on-page GEO summaries with zero duplication - edit the copy there, not here."""
+    def get(self, request):
+        home = SeoGeo.for_page('origin_home')
+        lines = [
+            "# STREAK & DISCIPLINE",
+            f"> {home['geo_summary']}",
+            "",
+            "## What this product does",
+            f"- {home['description']}",
+            "",
+            "## Key pages",
+            f"- Homepage: {Static.custom_base_url()}/",
+            f"- Blog & updates: {Static.custom_base_url()}/v1/blog/",
+            f"- Sign up: {Static.custom_base_url()}/v1/signup/",
+            "",
+            "## Contact",
+            f"- Support email: {Static.official_email()}",
+        ]
+        return HttpResponse("\n".join(lines), content_type="text/plain; charset=utf-8")
+
 
 class RedirectHandler(View):
     """handling redirect from one page to another"""

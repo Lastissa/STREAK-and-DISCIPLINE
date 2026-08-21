@@ -6,7 +6,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="Articles, product updates and tips from STREAK & DISCIPLINE.">
-  <title>Blog & Updates — STREAK &amp; DISCIPLINE</title>
+  {% include "reusables/metadata.html" %}
 
   <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
 
@@ -33,6 +33,12 @@
   </style>
 
   <link rel="stylesheet" href="{% static 'css/blog_and_update.css' %}">
+  {% if request.user.is_authenticated %}
+  <!-- reused purely for the .db-aside/.db-wrap/.db-main/.aside-* rules so this page's
+       sidebar looks and behaves exactly like dashboard.html's - see the aside markup
+       further down in <body> for context. -->
+  <link rel="stylesheet" href="{% static 'css/dashboard_light.css' %}">
+  {% endif %}
   <link rel="preload" href="{% static 'cdn/advance_blog_and_update.css' %}" as="style"
         onload="this.onload=null;this.rel='stylesheet';document.documentElement.classList.add('engine-ready')"
         id="heavy-css">
@@ -77,6 +83,10 @@
           <button class="btn btn-primary btn-sm btn-add-news" id="addNewsBtn">
             <i class="fas fa-plus"></i><span>Add News</span>
           </button>
+          {% elif request.user.is_authenticated %}
+          <button class="btn btn-outline btn-sm btn-add-news" id="shareStoryBtn">
+            <i class="fas fa-feather"></i><span>Share Your Story</span>
+          </button>
           {% endif %}
           <button class="icon-btn" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
           <button class="icon-btn menu-toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
@@ -106,6 +116,9 @@
         {% if request.user.is_staff or request.user.is_superuser %}
         <div class="mobile-nav-lbl">Staff</div>
         <button type="button" class="mobile-nav-link" id="addNewsBtnMobile"><i class="fas fa-plus"></i> Add News</button>
+        <hr class="mobile-nav-sep">
+        {% elif request.user.is_authenticated %}
+        <button type="button" class="mobile-nav-link" id="shareStoryBtnMobile"><i class="fas fa-feather"></i> Share Your Story</button>
         <hr class="mobile-nav-sep">
         {% endif %}
 
@@ -138,7 +151,79 @@
       </div>
     </nav>
 
-    <main class="blog-main" id="main">
+    {% if request.user.is_authenticated %}
+    <!-- ============================================================
+         ASIDE (left sidebar) - same component/markup/CSS classes as
+         dashboard.html's db-aside, reusing css/dashboard_light.css so the
+         two pages actually look and behave consistently (previously this
+         page used a topbar-only layout - see the removed "replaces the
+         aside entirely" comment that used to sit above the topbar).
+         Desktop-only by design here: below 900px db-aside stays hidden
+         (dashboard_light.css handles that) and this page's own existing
+         mobile slide-nav (below) keeps handling small screens untouched.
+         ============================================================ -->
+    <div class="db-wrap">
+      <aside class="db-aside no-print" id="dbAside">
+        <div class="aside-scroll">
+          <div class="aside-top">
+            <div class="aside-avatar-wrap" id="asideAvatarWrap">
+              <div class="sk sk-circle" style="width:52px;height:52px" id="asideAvatarSk"></div>
+            </div>
+            <div class="aside-username">{{ request.user.username }}</div>
+            <div class="aside-email">{{ request.user.email }}</div>
+            <span class="tier-badge tier-{{ tier|default:'free' }}">
+              {% if tier == 'gold' %}<i class="fas fa-crown"></i> Gold
+              {% elif tier == 'premium' %}<i class="fas fa-gem"></i> Premium
+              {% else %}<i class="fas fa-user"></i> Free{% endif %}
+            </span>
+          </div>
+
+          <nav class="aside-nav" aria-label="Dashboard navigation">
+            <div class="aside-section-lbl">Navigation</div>
+            <a href="{% url "origin_dashboard" %}" class="aside-link"><i class="fas fa-gauge-high"></i> Dashboard</a>
+            <a href="{% url "origin_relationship" %}" class="aside-link"><i class="fas fa-gauge-high"></i> Relationship</a>
+            <a href="{% url "origin_profile" %}" class="aside-link"><i class="fas fa-circle-user"></i> Profile</a>
+            <a href="{% url "origin_commitments" %}" class="aside-link"><i class="fas fa-fire-flame-curved"></i> My Commitments</a>
+
+            <div class="aside-section-lbl" style="margin-top:0.5rem">Community</div>
+            <a href="/v1/groups/" class="aside-link"><i class="fas fa-users"></i> Groups</a>
+            <a href="{% url "origin_leaderboard" %}" class="aside-link"><i class="fas fa-ranking-star"></i> Leaderboard</a>
+            <a href="{% url "origin_blog" %}" class="aside-link active"><i class="fas fa-newspaper"></i> Blog &amp; Updates</a>
+
+            <div class="aside-section-lbl" style="margin-top:0.5rem">Insights</div>
+            <a href="{% url "origin_reports" %}" class="aside-link"><i class="fas fa-chart-line"></i> Analytics &amp; Reports</a>
+            {% if ai_insight_active %}
+            <a href="/v1/insights/" class="aside-link"><i class="fas fa-microchip"></i> AI Insights</a>
+            {% endif %}
+
+            <div class="aside-section-lbl" style="margin-top:0.5rem">Others</div>
+            <a href="{% url "origin_extra" %}#help" class="aside-link"><i class="fas fa-circle-question"></i> Help</a>
+            <a href="{% url "origin_extra" %}#policy" class="aside-link"><i class="fas fa-shield-halved"></i> Privacy Policy</a>
+            <a href="{% url "origin_extra" %}#terms" class="aside-link"><i class="fas fa-file-contract"></i> Terms of use</a>
+
+            <hr class="aside-sep">
+
+            <div class="aside-support-lbl">Support</div>
+            <a href="https://wa.me/{{ customer_care_whatsapp_number|cut:'+' }}" target="_blank" rel="noopener" class="aside-link"><i class="fab fa-whatsapp"></i> WhatsApp Support</a>
+            <a href="mailto:{{ oficial_email }}" class="aside-link"><i class="fas fa-envelope"></i> Email Support</a>
+            <a href="tel:{{ customer_care_phone_number }}" class="aside-link"><i class="fas fa-phone"></i> {{ customer_care_phone_number }}</a>
+          </nav>
+
+          {% if tier == 'free' or not tier %}
+          <div class="aside-upgrade">
+            <h4><i class="fas fa-gem"></i> Upgrade to Pro</h4>
+            <p>Unlock AI insights, 50 commitments, custom reports and more.</p>
+            <a href="/v1/signup/?trial=true" class="btn btn-primary btn-sm btn-full">Start 7-Day Trial</a>
+          </div>
+          {% endif %}
+        </div>
+        <div class="aside-logout">
+          <button class="aside-logout-btn" id="asideLogoutBtn" type="button"><i class="fas fa-right-from-bracket"></i> Log Out</button>
+        </div>
+      </aside>
+    {% endif %}
+
+    <main class="blog-main db-main" id="main">
       <section class="blog-hero">
         <h2>Discipline, Unpacked</h2>
         <p>Articles, tips, and product updates to help you keep your word — every single day.</p>
@@ -165,6 +250,9 @@
           {% endif %}
           <div class="post-card-body">
             <div class="post-card-tag">{{ post.tag }}</div>
+            <span class="post-card-author-badge {% if post.is_staff_authored %}is-staff{% else %}is-user{% endif %}">
+              {% if post.is_staff_authored %}<i class="fas fa-shield-halved"></i> Staff{% else %}<i class="fas fa-pen-nib"></i> {{ post.author_label|default:"Community" }}{% endif %}
+            </span>
             {% if request.user.is_staff or request.user.is_superuser %}
             <div class="post-card-staff-tools">
               <button type="button" class="staff-tool-btn js-edit-post" title="Edit post"><i class="fas fa-pen"></i></button>
@@ -172,6 +260,7 @@
                 <i class="fas fa-image"></i>
                 <input type="file" class="js-change-banner-input" accept="image/png,image/jpeg,image/webp" hidden>
               </label>
+              <button type="button" class="staff-tool-btn js-copy-email" title="Copy as email (for manual send if email/push failed)"><i class="fas fa-envelope-circle-check"></i></button>
               <button type="button" class="staff-tool-btn js-delete-post" title="Delete post"><i class="fas fa-trash"></i></button>
             </div>
             {% endif %}
@@ -201,6 +290,9 @@
         <p>Check back later for more updates</p>
       </div>
     </main>
+    {% if request.user.is_authenticated %}
+    </div><!-- /db-wrap -->
+    {% endif %}
 
     <footer class="blog-footer">
       <div class="footer-grid">
@@ -210,7 +302,7 @@
           <div class="footer-socials">
             <a href="https://x.com/lastissa" target="_blank" rel="noopener" aria-label="X"><i class="fab fa-x-twitter"></i></a>
             <a href="https://github.com/lastissa" target="_blank" rel="noopener" aria-label="GitHub"><i class="fab fa-github"></i></a>
-            <a href="https://wa.me/2347013687825" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+            <a href="https://wa.me/{{ customer_care_whatsapp_number|cut:'+' }}" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
           </div>
         </div>
         <div class="footer-links">
@@ -224,7 +316,7 @@
           <h4>Support</h4>
           <a href="mailto:{{oficial_email}}"><i class="fas fa-envelope"></i> Email Support</a>
           <a href="https://wa.me/2347013687825"><i class="fab fa-whatsapp"></i> WhatsApp</a>
-          <a href="tel:+2347013687825"><i class="fas fa-phone"></i> +234 701 368 7825</a>
+          <a href="tel:{{ customer_care_phone_number }}"><i class="fas fa-phone"></i> {{ customer_care_phone_number }}</a>
         </div>
         <div class="footer-links">
           <h4>Legal</h4>
@@ -310,6 +402,72 @@
       </div>
     </form>
   </div>
+
+  {% elif request.user.is_authenticated %}
+  <!-- ============ SHARE YOUR STORY MODAL (any logged-in user) ============
+       Posts to CreateUserStory (origin/views/normal_view.py) - always tag='story',
+       always credited to the current user (with an anonymous option). Banner upload
+       only shown to gold-tier users - the backend independently re-checks this too,
+       see the view's docstring. -->
+  <div class="modal-overlay" id="shareStoryOverlay"></div>
+  <div class="news-modal" id="shareStoryModal" role="dialog" aria-modal="true" aria-labelledby="shareStoryTitle" aria-hidden="true">
+    <div class="news-modal-head">
+      <h2 id="shareStoryTitle"><i class="fas fa-feather"></i> Share Your Story</h2>
+      <button class="icon-btn" id="closeStoryModal" aria-label="Close"><i class="fas fa-times"></i></button>
+    </div>
+
+    <form class="news-form" id="shareStoryForm" novalidate>
+      {% csrf_token %}
+
+      <label for="storyTitle">Title
+        <input type="text" id="storyTitle" name="title" maxlength="200" required placeholder="e.g. How I finally kept a 90-day streak">
+      </label>
+
+      <label for="storyExcerpt">Short summary
+        <textarea id="storyExcerpt" name="excerpt" rows="2" maxlength="1000" required placeholder="A sentence or two shown on the blog card"></textarea>
+        <span class="char-count" id="storyExcerptCount">0 / 1000</span>
+      </label>
+
+      {% if tier == 'gold' %}
+      <label for="storyBanner">Banner image <small style="font-weight:400;color:var(--text-secondary)">(Gold perk)</small>
+        <div class="file-drop" id="storyFileDrop">
+          <input type="file" id="storyBanner" name="banner" accept="image/png,image/jpeg,image/webp">
+          <div class="file-drop-empty" id="storyFileDropEmpty">
+            <i class="fas fa-image"></i>
+            <span>Tap to choose an image</span>
+            <small>PNG, JPG or WEBP</small>
+          </div>
+          <img class="file-drop-preview" id="storyFilePreview" alt="" hidden>
+        </div>
+      </label>
+      {% else %}
+      <div class="form-hint" style="font-size:.78rem;color:var(--text-secondary);display:flex;align-items:center;gap:.4rem">
+        <i class="fas fa-crown" style="color:#f59e0b"></i> Banner images for stories are a Gold-tier perk. <a href="/v1/profile/" style="color:var(--accent-light)">Upgrade to add one</a>.
+      </div>
+      {% endif %}
+
+      <label class="toggle-row" for="storyAnonymous">
+        <span>Post anonymously<small>Your username won't be shown - the post will read "Anonymous"</small></span>
+        <span class="switch">
+          <input type="checkbox" id="storyAnonymous" name="is_anonymous">
+          <span class="switch-track"></span>
+        </span>
+      </label>
+
+      <label for="storyContent">Your story
+        <textarea id="storyContent" name="actual_content" rows="8" required placeholder="Tell it however feels honest - what you were trying to build, what got in the way, what finally worked..."></textarea>
+      </label>
+
+      <p class="form-error" id="storyFormError" hidden></p>
+
+      <div class="news-form-actions">
+        <button type="button" class="btn btn-ghost" id="cancelStoryBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="submitStoryBtn">
+          <span class="btn-label">Publish Story</span>
+        </button>
+      </div>
+    </form>
+  </div>
   {% endif %}
 
   <div class="toast-stack" id="toastStack"></div>
@@ -373,7 +531,32 @@
     initLogout();
     initCategoryFilter();
     initAddNewsModal();
+    initShareStoryModal();
     initStaffPostTools();
+    initAsideAvatar();
+  }
+
+  /* Loads the aside sidebar's avatar the same way dashboard.html does - falls back
+     to a generated initials avatar (dicebear) on any error, exactly like dashboard. */
+  function initAsideAvatar() {
+    const wrap = $('#asideAvatarWrap');
+    if (!wrap) return; // aside only renders for authenticated users
+    const sk = $('#asideAvatarSk');
+    const DEFAULT_AVATAR = 'https://api.dicebear.com/7.x/initials/svg?seed=' +
+                            encodeURIComponent('{{ request.user.username }}') +
+                            '&backgroundColor=1e293b&textColor=60a5fa&size=64';
+    function apply(url) {
+      const img = document.createElement('img');
+      img.alt = '{{ request.user.username }}';
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
+      img.onerror = function () { img.src = DEFAULT_AVATAR; };
+      img.onload = function () { if (sk && sk.parentNode) sk.remove(); wrap.appendChild(img); };
+      img.src = url;
+    }
+    fetch('{% url "origin_user_picture" %}', { credentials: 'include' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { apply(d.url || DEFAULT_AVATAR); })
+      .catch(function () { apply(DEFAULT_AVATAR); });
   }
 
   function initStaffPostTools() {
@@ -405,11 +588,38 @@
     grid.addEventListener('click', function (e) {
       const editBtn = e.target.closest('.js-edit-post');
       const delBtn = e.target.closest('.js-delete-post');
-      if (!editBtn && !delBtn) return;
+      const copyBtn = e.target.closest('.js-copy-email');
+      if (!editBtn && !delBtn && !copyBtn) return;
 
       const card = e.target.closest('.post-card');
       const id = card && card.getAttribute('data-post-id');
       if (!id) return;
+
+      if (copyBtn) {
+        // Ready-to-paste email body for manually notifying users when both email AND
+        // push notifications fail (known hosting-related issue - see the WhatsApp
+        // password-reset fallback for the same underlying reason). Pulls straight
+        // from the rendered card so it's always exactly what's live on the blog.
+        const title = card.querySelector('h3').textContent.trim();
+        const excerpt = card.querySelector('.post-card-excerpt').textContent.trim();
+        const linkEl = card.querySelector('.post-card-link');
+        const url = linkEl ? linkEl.href : window.location.origin + '{% url "origin_blog" %}';
+        const emailText =
+          'Subject: New on STREAK & DISCIPLINE - ' + title + '\n\n' +
+          'Hi,\n\n' +
+          title + '\n\n' +
+          excerpt + '\n\n' +
+          'Read the full post here: ' + url + '\n\n' +
+          '- The STREAK & DISCIPLINE team';
+        (navigator.clipboard ? navigator.clipboard.writeText(emailText) : Promise.reject())
+          .then(function () { showToast('Email text copied - paste it wherever you need to send it.', 'success'); })
+          .catch(function () {
+            // clipboard API unavailable/blocked (e.g. insecure context) - fall back to a
+            // selectable prompt so staff can still copy it manually
+            window.prompt('Copy this email text:', emailText);
+          });
+        return;
+      }
 
       if (delBtn) {
         if (!confirm('Permanently delete this post? This cannot be undone.')) return;
@@ -576,6 +786,14 @@
         if (window.__openNewsModal) window.__openNewsModal();
       });
     }
+
+    const mobileStory = $('#shareStoryBtnMobile');
+    if (mobileStory) {
+      mobileStory.addEventListener('click', function () {
+        close();
+        if (window.__openStoryModal) window.__openStoryModal();
+      });
+    }
   }
 
   function initCategoryFilter() {
@@ -601,17 +819,17 @@
 
   function initLogout() {
     {% if request.user.is_authenticated %}
-    const btn = $('#logoutBtn');
     const form = $('#logoutForm');
 
-    if (btn) {
+    [$('#logoutBtn'), $('#asideLogoutBtn')].forEach(function (btn) {
+      if (!btn) return;
       btn.addEventListener('click', function () {
         if (confirm('Log out?')) {
           if (form) form.submit();
           else window.location.href = "{% url 'origin_logout' %}";
         }
       });
-    }
+    });
     {% endif %}
   }
 
@@ -766,7 +984,21 @@
             showToast(msg, 'error');
             return;
           }
-          showToast((result.data && result.data.message) || 'Post published.', 'success');
+          showToast((result.data && result.data.message ? result.data.message + ' Email text copied for manual sending.' : 'Post published.'), 'success');
+
+          // Auto-copy a ready-to-paste "notify manually" email as soon as the post is
+          // live - see js-copy-email (initStaffPostTools) for the same text built from
+          // an existing card; this is the same idea right at publish time so staff don't
+          // have to hunt for the new card afterwards if email/push notifications fail.
+          if (result.data && result.data.url) {
+            var emailText =
+              'Subject: New on STREAK & DISCIPLINE - ' + title + '\n\n' +
+              'Hi,\n\n' + title + '\n\n' + excerpt.value.trim() + '\n\n' +
+              'Read the full post here: ' + window.location.origin + result.data.url + '\n\n' +
+              '- The STREAK & DISCIPLINE team';
+            if (navigator.clipboard) navigator.clipboard.writeText(emailText).catch(function(){});
+          }
+
           form.reset();
           preview.hidden = true;
           empty.hidden = false;
@@ -778,6 +1010,132 @@
         .catch(function (err) {
           setSubmitting(false);
           var msg = 'Network error while publishing — check your connection and try again.';
+          if (errorBox) { errorBox.textContent = msg; errorBox.hidden = false; }
+          showToast(msg, 'error');
+        });
+    });
+  }
+
+  /* "Share Your Story" - deliberately mirrors initAddNewsModal's shape/patterns above
+     (same open/close/toast/file-preview conventions) so the two are easy to compare
+     and keep in sync if one changes later. Posts to CreateUserStory
+     (origin/views/normal_view.py), which always forces tag='story' and stamps
+     submitted_by/is_anonymous server-side - this form never sends a 'tag' field. */
+  function initShareStoryModal() {
+    const modal = $('#shareStoryModal');
+    if (!modal) return;
+
+    const overlay = $('#shareStoryOverlay');
+    const openBtn = $('#shareStoryBtn');
+    const closeBtn = $('#closeStoryModal');
+    const cancelBtn = $('#cancelStoryBtn');
+    const form = $('#shareStoryForm');
+    const errorBox = $('#storyFormError');
+    const submitBtn = $('#submitStoryBtn');
+    const excerpt = $('#storyExcerpt');
+    const count = $('#storyExcerptCount');
+    const banner = $('#storyBanner');           // only present for gold-tier users
+    const preview = $('#storyFilePreview');
+    const empty = $('#storyFileDropEmpty');
+
+    const ENDPOINT = '{% url "origin_create_user_story" %}';
+
+    let lastFocused = null;
+
+    function open() {
+      lastFocused = document.activeElement;
+      overlay.classList.add('show');
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      setTimeout(function () { const t = $('#storyTitle'); if (t) t.focus(); }, 200);
+    }
+    function close() {
+      overlay.classList.remove('show');
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+      if (lastFocused) lastFocused.focus();
+    }
+    window.__openStoryModal = open;
+
+    if (openBtn) openBtn.addEventListener('click', open);
+    if (overlay) overlay.addEventListener('click', close);
+    if (closeBtn) closeBtn.addEventListener('click', close);
+    if (cancelBtn) cancelBtn.addEventListener('click', close);
+
+    if (excerpt && count) {
+      excerpt.addEventListener('input', function () {
+        count.textContent = excerpt.value.length + ' / 1000';
+      });
+    }
+
+    if (banner && preview && empty) {
+      banner.addEventListener('change', function () {
+        const file = banner.files && banner.files[0];
+        if (!file) { preview.hidden = true; empty.hidden = false; return; }
+        const reader = new FileReader();
+        reader.onload = function (e) { preview.src = e.target.result; preview.hidden = false; empty.hidden = true; };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function setSubmitting(state) {
+      if (!submitBtn) return;
+      submitBtn.disabled = state;
+      const label = submitBtn.querySelector('.btn-label');
+      if (label) label.textContent = state ? 'Publishing…' : 'Publish Story';
+    }
+
+    if (!form) return;
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (errorBox) errorBox.hidden = true;
+
+      const title = $('#storyTitle').value.trim();
+      const content = $('#storyContent').value.trim();
+      const isAnonymous = $('#storyAnonymous').checked;
+      const bannerFile = banner && banner.files && banner.files[0];
+
+      if (!title || !excerpt.value.trim() || !content) {
+        if (errorBox) { errorBox.textContent = 'Please fill in the title, summary, and your story before publishing.'; errorBox.hidden = false; }
+        return;
+      }
+
+      const fd = new FormData();
+      fd.append('title', title);
+      fd.append('excerpt', excerpt.value.trim());
+      fd.append('actual_content', content);
+      fd.append('is_anonymous', isAnonymous ? 'true' : 'false');
+      if (bannerFile) fd.append('banner', bannerFile); // dropped server-side too if the account isn't gold - see CreateUserStory
+
+      setSubmitting(true);
+
+      fetch(ENDPOINT, { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrftoken') }, body: fd })
+        .then(function (res) {
+          return res.json().catch(function () { return {}; }).then(function (data) {
+            return { ok: res.ok, status: res.status, data: data };
+          });
+        })
+        .then(function (result) {
+          setSubmitting(false);
+          if (!result.ok) {
+            const msg = (result.data && result.data.message) || ('Request failed with status ' + result.status + '.');
+            if (errorBox) { errorBox.textContent = msg; errorBox.hidden = false; }
+            showToast(msg, 'error');
+            return;
+          }
+          showToast(result.data.message || 'Your story is live!', 'success');
+          form.reset();
+          if (preview) preview.hidden = true;
+          if (empty) empty.hidden = false;
+          if (count) count.textContent = '0 / 1000';
+          close();
+          if (typeof window.reloadBlogFeed === 'function') window.reloadBlogFeed();
+          else setTimeout(function () { window.location.reload(); }, 900);
+        })
+        .catch(function () {
+          setSubmitting(false);
+          const msg = 'Network error while publishing — check your connection and try again.';
           if (errorBox) { errorBox.textContent = msg; errorBox.hidden = false; }
           showToast(msg, 'error');
         });

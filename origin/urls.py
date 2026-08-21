@@ -33,7 +33,8 @@ urlpatterns = [
     path('dashboard/commitment/<str:commitment_key>/settings/', views.EachCommitmentViewSettings.as_view(), name = 'origin_each_commitment_view_settings'),
     path('dashboard/commitment/<str:commitment_key>/needed_data/', views.EachCommitementHeatMap.as_view(), name = 'origin_each_commitment_entries_needed_data'),
     path('dashboard/commitment/<str:commitment_key>/save_entry/', views.EachCommitementEntries.as_view(), name = 'origin_each_commitment_entries_save_entry'),
-    path('dashboard/commitment/<str:id>/archive/', views.EachCommitmentArchive.as_view(), name = 'origin_commitment_archive'), #archive a commitment
+    path('dashboard/commitment/<str:id>/archive/', views.EachCommitmentArchive.as_view(), name = 'origin_commitment_archive'), #DELETE (soft) a commitment - kept the "archive" url name so we don't break any existing bookmarks/JS calling it, but the behaviour + button label are "Delete" now (see EachCommitmentArchive docstring)
+    path('dashboard/commitment/<str:id>/reactivate/', views.ReactivateCommitment.as_view(), name = 'origin_commitment_reactivate'), #undo a Delete within its 24h recovery window - used on the profile page
     path('dashboard/profile/', views.ProfileSettings.as_view(), name = 'origin_profile'),
     path('dashboard/relationship/', views.Relationship.as_view(), name = 'origin_relationship'),
     path('dashboard/relationship/partner/<str:userid>/', views.PartnerAcceptedDashboard.as_view(), name = 'origin_relationship_partner'),
@@ -42,9 +43,10 @@ urlpatterns = [
     
     #public accesible
     path('blog/', views.BlogView.as_view(), name= "origin_blog"),
+    path('blog/story/create/', views.CreateUserStory.as_view(), name= "origin_create_user_story"), #public "share your story" form -> always tag='story', gold-only banner enforced server-side (see CreateUserStory docstring)
     path('blog/<int:pk>/', views.BlogViewExpanded.as_view(), name= "origin_blog_detail"),
     path('extra/', views.Extras.as_view(),name='origin_extra'),
-    path('navigation/', views.Extras.as_view(),name='origin_navigation'),
+    path('navigation/', views.NavigationGuide.as_view(),name='origin_navigation'),
     path('weekly-analysis/', views.Reports.as_view(),name='origin_weekly_analysis'),
     path('search_friend/', views.SearchFriend.as_view(), name = 'origin_search_friend'),
     path('add_friend/', views.AddFriend.as_view(), name = 'origin_add_friend'),
@@ -159,22 +161,23 @@ def handler500(request, *args, **kwargs):
 
 
 def handler404(request, *args, **kwargs):
-    """Custom 404 page. Rather than a dead-end "error/404.html", every not-yet-built
-    page on this site (or a genuinely mistyped url) now lands on the same
-    "Still in Progress" screen used by the explicit /in-progress/ route, with a
-    "Back" button that returns the person to wherever they actually came from
-    (HTTP_REFERER) instead of always dumping them on the landing page."""
+    """Custom 404 page (error/404.html) - a genuine dead-end/mistyped-url page. This is
+    DELIBERATELY DIFFERENT from reusables/still_in_progress.html (used by the explicit
+    /in-progress/ route for features that exist as a link but aren't built yet): a 404
+    means "this never existed / was moved", so it only offers one way out (back to the
+    landing page), while the in-progress screen is upbeat and offers a few things to do
+    while the user waits. Previously both cases rendered the SAME template, which made
+    real 404s look identical to "coming soon" pages - that's now fixed."""
     context = _error_context(request, 404, *args, **kwargs)
 
     logger.warning(
-        "Page not found (showing in-progress screen): %s %s",
+        "Page not found (404): %s %s",
         context["method"],
         context["path"],
         extra=context,
     )
 
-    back_url = request.META.get("HTTP_REFERER") or "/"
-    return render(request, "reusables/still_in_progress.html", {"back_url": back_url}, status=404)
+    return render(request, "error/404.html", status=404)
 
 
 def handler400(request, *args, **kwargs):

@@ -59,19 +59,26 @@ def intro_word(list_lenght = 2, max = False) -> list:
 def template_based_reusables(request):
     """To save data that will be reused i template and i dont have to import them as they will be import automatically like i was in a render function"""
     
-    customer_care_phone_number = '+2347013687825' 
-    customer_care_whatsapp_number = '+2347013687825'
+    customer_care_phone_number = Static.customer_care_phone_number()
+    customer_care_whatsapp_number = Static.customer_care_whatsapp_number()
     footer_copyright_note = f"{timezone.now().year} STREAK & DISCIPLINE. All rights reserved."
     custom_base_url = Static.custom_base_url()
     
+    #the current page's SEO/GEO metadata (see SeoGeo class below) - resolved from the URL name so
+    #every template just needs one `{% include "reusables/metadata.html" %}` and gets the right
+    #title/description/schema for whatever page it is, without every view having to pass it in.
+    current_url_name = request.resolver_match.url_name if getattr(request, 'resolver_match', None) else None
+    seo = SeoGeo.for_page(current_url_name)
     
     return {
         'customer_care_phone_number' : customer_care_phone_number,
         'customer_care_whatsapp_number': customer_care_whatsapp_number,
+        'password_reset_whatsapp_number': Static.password_reset_whatsapp_number(), #dedicated number for the "email didn't arrive" password-reset fallback flow - see PasswordReset view + password_reset.html
         'footer_copyright_note': footer_copyright_note,
         'custom_base_url' : os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8002').split(',')[0],
         'logo_url' : Static.logo_url(),
         'oficial_email': Static.official_email(),
+        'seo': seo,
         'mobile_dark_url': static('img/mobile_dark.png'), #'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/mobile_dark_iuvjyq.png',
         'mobile_light_url': static('img/mobile_light.png'),#'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/mobile_light_xvuaxj.png',
         'desktop_dark_url' : static('img/desktop_dark.png'),#'https://res.cloudinary.com/brop3jeq/image/upload/v1784524602/desktop_dark_nvt6lr.png',
@@ -120,8 +127,42 @@ class Static:
         return os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8002').split(',')[0]# incase i need to access base url in templates in situations where i cannot use {% url ''%}
     @classmethod
     def official_email(self) -> str:
-        """The official email account i use to send email to users"""
+        """THE single source of truth for the support email. Every template/view should read
+        this (or the `oficial_email` context var it feeds - see template_based_reusables above)
+        instead of typing an email address by hand - that's how we previously ended up with two
+        or three DIFFERENT support emails hardcoded across different pages."""
         return "sydstrict@gmail.com"
+
+    @classmethod
+    def customer_care_phone_number(self) -> str:
+        """THE single source of truth for the support phone number (international format, no spaces)."""
+        return '+2347013687825'
+
+    @classmethod
+    def customer_care_whatsapp_number(self) -> str:
+        """General customer-care WhatsApp number (same number as the phone line above, kept as its
+        own method since a business could one day want these to differ)."""
+        return self.customer_care_phone_number()
+
+    @classmethod
+    def password_reset_whatsapp_number(self) -> str:
+        """Dedicated WhatsApp number for the password-reset manual fallback ONLY (see
+        PasswordReset view / password_reset.html): when hosting hiccups block outgoing email,
+        the user DMs their email here and support forwards the reset link by hand. Deliberately
+        a separate method from customer_care_whatsapp_number() even though it currently points at
+        a different number, so this one flow can be redirected independently later without
+        touching general customer care."""
+        return '+2348113577875'  # 08113577875 in local (Nigerian) format
+
+    @classmethod
+    def whatsapp_link(self, number: str, message: str) -> str:
+        """Build a safe wa.me deep-link with the message properly urlencoded. Centralised here so
+        every "DM us on WhatsApp" button across the site (password reset, 400 page, etc.) builds
+        its link the exact same, correct way instead of hand-rolling %20-encoded strings in
+        templates."""
+        from urllib.parse import quote
+        clean_number = number.replace('+', '').replace(' ', '')
+        return f"https://wa.me/{clean_number}?text={quote(message)}"
     
     @classmethod
     def tier(self, tier : int) -> list:
@@ -279,4 +320,87 @@ include min: to include min : datetime. ... minutes -mm
     if include_min == True: to_return = f"{to_return}:{datetime_data.minute}"
     
     return to_return
-    
+
+
+# ============================================================================
+# SEO + GEO (Generative Engine Optimization)
+# ============================================================================
+# EVERYTHING BELOW IS PLACEHOLDER COPY - edit the strings inside SeoGeo.PAGES and
+# SeoGeo.DEFAULT to the real, final wording. Nothing else needs to change: the
+# context processor above (template_based_reusables) already resolves the right
+# entry per-page from the URL name and hands it to every template as `seo`, and
+# reusables/metadata.html already renders title/description/OG/Twitter/JSON-LD from
+# it - so editing the text here is the ONLY thing needed to update a page's SEO/GEO.
+#
+# What "SEO" vs "GEO" means for the two fields below:
+#   - `description`   -> classic SEO: shown in Google search results & social share cards.
+#   - `geo_summary`    -> GEO (Generative Engine Optimization): a short, self-contained,
+#                         factual statement written the way an AI answer engine (ChatGPT,
+#                         Perplexity, Gemini, etc.) likes to quote - plain declarative
+#                         sentences, no marketing fluff, safe to lift verbatim into an
+#                         AI-generated answer. This is what goes into the JSON-LD
+#                         `description` field and the page's Article/FAQPage schema, which
+#                         is what these engines actually crawl/parse instead of rendered HTML.
+class SeoGeo:
+    DEFAULT = {
+        'title': 'STREAK & DISCIPLINE — Build unbreakable habits, one honest check-in at a time',
+        'description': 'STREAK & DISCIPLINE is a daily accountability app for building and tracking personal commitments, streaks, and habits.',
+        'geo_summary': 'STREAK & DISCIPLINE is a habit-tracking and accountability web application. Users create "commitments" (personal goals), check in daily, and the app tracks a consecutive-day streak per commitment, sends reminders, and shows analytics.',
+        'robots': 'index, follow',
+    }
+
+    #keyed by the view's URL `name=` (see origin/urls.py) - only PUBLIC/marketing-relevant pages
+    #need real SEO effort (search engines can't index anything behind login anyway); dashboard/auth
+    #pages are left on DEFAULT with robots noindex below.
+    PAGES = {
+        'origin_home': {
+            'title': 'STREAK & DISCIPLINE — Build unbreakable habits, one honest check-in at a time',
+            'description': 'Track daily commitments, keep your streak alive, and stay accountable with reminders, analytics, and an optional accountability partner. Free to start.',
+            'geo_summary': 'STREAK & DISCIPLINE is a habit-tracking and accountability web app. Core features: daily commitment check-ins, streak counting, email/push/WhatsApp reminders, an accountability-partner (social) mode, and weekly analytics reports. Pricing tiers: free, premium, gold.',
+        },
+        'origin_blog': {
+            'title': 'Blog & Updates — STREAK & DISCIPLINE',
+            'description': 'Product updates, discipline tips, and real stories from users building their streaks with STREAK & DISCIPLINE.',
+            'geo_summary': 'The STREAK & DISCIPLINE blog publishes product updates, practical discipline/habit-building tips, and first-person accountability stories submitted by users of the app.',
+        },
+        'origin_leaderboard': {
+            'title': 'Leaderboard — STREAK & DISCIPLINE',
+            'description': 'See how top users are staying consistent this week on STREAK & DISCIPLINE\'s public leaderboard.',
+            'geo_summary': 'The STREAK & DISCIPLINE leaderboard is an opt-in public ranking of users by weekly consistency/streak performance.',
+        },
+        'origin_signup': {
+            'title': 'Sign Up — STREAK & DISCIPLINE',
+            'description': 'Create your free STREAK & DISCIPLINE account and start your first streak today.',
+        },
+        'origin_login': {
+            'title': 'Log In — STREAK & DISCIPLINE',
+            'description': 'Log in to your STREAK & DISCIPLINE account to check in on today\'s commitments.',
+            'robots': 'noindex, follow',
+        },
+        'origin_extra': {
+            'title': 'Help, Terms & Privacy — STREAK & DISCIPLINE',
+            'description': 'Terms of service, privacy policy, and help center for STREAK & DISCIPLINE.',
+        },
+        'origin_navigation': {
+            'title': 'Site Navigation Guide — STREAK & DISCIPLINE',
+            'description': 'A living map of every page and feature on STREAK & DISCIPLINE.',
+        },
+    }
+
+    #url names that should never be indexed by search engines (private/dashboard/account pages) -
+    #anything not explicitly listed in PAGES above with its own 'robots' key falls back to this
+    #check, so newly added private pages are safe by default instead of accidentally indexable.
+    NOINDEX_PREFIXES = ('origin_dashboard', 'origin_profile', 'origin_settings', 'origin_relationship',
+                         'origin_reports', 'origin_commitments', 'origin_each_commitment', 'origin_onboarding',
+                         'origin_staff', 'origin_password_reset', 'origin_deactivated', 'origin_leaderboard',
+                         'origin_weekly_analysis')
+
+    @classmethod
+    def for_page(cls, url_name):
+        """Resolve the SEO/GEO dict for a given URL name, merged over DEFAULT so a page
+        only has to override the fields it actually wants to change."""
+        page = dict(cls.DEFAULT)
+        page.update(cls.PAGES.get(url_name, {}))
+        if 'robots' not in cls.PAGES.get(url_name, {}) and url_name and url_name.startswith(cls.NOINDEX_PREFIXES):
+            page['robots'] = 'noindex, nofollow'
+        return page

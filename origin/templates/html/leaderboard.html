@@ -6,8 +6,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Weekly leaderboard - top 10 most disciplined members on STREAK & DISCIPLINE.">
-  <meta name="robots" content="noindex, nofollow">
-  <title>Leaderboard - STREAK &amp; DISCIPLINE</title>
+  {% include "reusables/metadata.html" %}
 
   <!-- Font Awesome (local) -->
   <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
@@ -490,7 +489,7 @@
               <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_blank" rel="noopener" aria-label="WhatsApp">
                 <i class="fab fa-whatsapp"></i>
               </a>
-              <a href="mailto:issaabdulsalamope11@gmail.com" aria-label="Email">
+              <a href="mailto:{{ oficial_email }}" aria-label="Email">
                 <i class="fas fa-envelope"></i>
               </a>
             </div>
@@ -516,7 +515,7 @@
             <a href="https://wa.me/{{ customer_care_whatsapp_number }}" target="_blank" rel="noopener">
               <i class="fab fa-whatsapp"></i> WhatsApp
             </a>
-            <a href="mailto:issaabdulsalamope11@gmail.com">
+            <a href="mailto:{{ oficial_email }}">
               <i class="fas fa-envelope"></i> Email Us
             </a>
             <a href="/v1/extra/#privacy">

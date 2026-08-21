@@ -5,8 +5,7 @@
   {% include "reusables/web_icon.html" %}
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, nofollow">
-  <title>My Commitments — STREAK &amp; DISCIPLINE</title>
+  {% include "reusables/metadata.html" %}
 
   <link rel="preload" href="{{ font_awesome_all_min_css }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="{{ font_awesome_all_min_css }}"></noscript>
@@ -160,6 +159,9 @@
               My Commitments
             </h1>
             <p class="cm-page-sub">Every promise you keep to yourself builds the person you're becoming.</p>
+            <p class="cm-page-sub" style="font-size:.72rem;opacity:.75;margin-top:.35rem">
+              <i class="fas fa-circle-info"></i> Streaks only reset once your daily check-in time has passed <em>and</em> it's been 24+ hours since your last check-in - check in any time before that and you're safe.
+            </p>
           </div>
           <button class="btn btn-primary" id="addCommitBtn" aria-label="Add new commitment">
             <i class="fas fa-plus"></i>
@@ -659,7 +661,7 @@
       list:    '{% url "origin_commitment_data" %}',
       create:  '{% url "origin_commitment_create_json" %}',
       checkin: function (id) { return '{% url "quick_commitment_check_in" commitment_key="__id__" %}'.replace("__id__", id); },
-      archive: function (id) { return '/api/v1/commitments/' + id + '/archive/'; }
+      archive: function (id) { return '{% url "origin_commitment_archive" id="__id__" %}'.replace('__id__', id); } //url NAME kept 'archive' for backward compat - behaviour/label are Delete now (soft-delete, 24h recovery, see profile page)
     };
 
     var CAT_ICON = {
@@ -1135,12 +1137,12 @@
               /* ── Archive button with wrap + tooltip ── */
               '<div class="cm-action-btn-wrap">',
                 '<button class="cm-action-btn cm-action-archive" data-id="' + c.id + '" data-action="archive"',
-                  ' aria-label="Archive this commitment">',
-                  '<i class="fas fa-box-archive" aria-hidden="true"></i>',
-                  '<span class="cm-action-lbl">Archive</span>',
+                  ' aria-label="Delete this commitment">',
+                  '<i class="fas fa-trash-can" aria-hidden="true"></i>',
+                  '<span class="cm-action-lbl">Delete</span>',
                 '</button>',
                 '<div class="cm-btn-tip">',
-                  'Move to archive. Your streak reset if you miss a day. Restore anytime from Profile -> My Archive.',
+                  'Deletes this commitment. You can recover it from your Profile page within 24 hours - after that it\'s gone for good.',
                 '</div>',
               '</div>',
 
@@ -1218,7 +1220,7 @@
        ARCHIVE
         */
     function handleArchive(id, btn) {
-      if (!confirm('Archive this commitment? You can restore it from your profile.')) return;
+      if (!confirm('Delete this commitment? You can recover it from your Profile page within the next 24 hours - after that it\'s permanently gone.')) return;
       btn.disabled = true;
       var ico = btn.querySelector('i');
       if (ico) ico.className = 'fas fa-circle-notch fa-spin';
@@ -1231,18 +1233,18 @@
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
       .then(function (res) {
         if (res.ok || res.data.success || res.data.ok) {
-          showToast('Commitment archived.', 'info');
+          showToast(res.data.message || 'Commitment deleted. Recoverable from your profile for 24 hours.', 'info');
           loadCommitments();
         } else {
-          showToast(res.data.message || 'Could not archive. Try again.', 'error');
+          showToast(res.data.message || 'Could not delete. Try again.', 'error');
           btn.disabled = false;
-          if (ico) ico.className = 'fas fa-box-archive';
+          if (ico) ico.className = 'fas fa-trash-can';
         }
       })
       .catch(function () {
         showToast('Network error — please retry.', 'error');
         btn.disabled = false;
-        if (ico) ico.className = 'fas fa-box-archive';
+        if (ico) ico.className = 'fas fa-trash-can';
       });
     }
 
@@ -1875,9 +1877,9 @@
         },
         {
           targetClass: 'cm-action-archive',
-          icon:        'fa-box-archive',
-          title:       'Archive a Commitment.',
-          text:        'Not ready for this commitment anymore? Tap Archive to move it to your archive. Your streak and history are will be reset if you dont restore it within a day. Restore it anytimefrpm ...',
+          icon:        'fa-trash-can',
+          title:       'Delete a Commitment.',
+          text:        'Not doing this commitment anymore? Tap Delete. It disappears from your list immediately but is fully recoverable from your Profile page for 24 hours - after that it\'s permanently removed.',
           useFirst:    true
         },
         {

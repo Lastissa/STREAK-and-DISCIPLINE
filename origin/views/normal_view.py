@@ -43,7 +43,78 @@ def try_send_user_to_dashboard(request: object):
 class Extras(View):
     """for privacy policy, term of use etc"""
     def get(self, request): return render(request, 'html/privacy_etc.html')
-    
+
+
+class NavigationGuide(View):
+    """The "3D living manual" for the whole project (navigation.html) - a page that maps
+    every named route in the app.
+
+    It's a MIX of auto-generation and hand-authored content, exactly as requested:
+      - AUTO: this view walks origin.urls.urlpatterns itself at request time (see
+        _discover_routes below) and pulls out every route's url `name=` and raw path
+        pattern - so a newly added `path(..., name='...')` shows up here automatically,
+        nothing to remember to update.
+      - HAND-AUTHORED: utility/navigation_manual.py -> SECTIONS groups those raw routes
+        into human-friendly sections with a title/icon/description written by a person.
+        Editing that file is how you (re)organise or redescribe things; you never have
+        to touch this view or duplicate the URL list anywhere.
+
+    The template renders this as a 3D card layout (CSS perspective/transform, no
+    WebGL dependency) with a toggle to load a heavier "advanced" stylesheet on
+    demand - see navigation.html for that toggle and static/css/navigation_advanced.css.
+    """
+
+    def _discover_routes(self):
+        """Walk origin.urls.urlpatterns and return {url_name: raw_pattern_string} for
+        every named route. Read-only introspection - never touches the DB, never
+        instantiates a view, so it's cheap and safe to run on every request."""
+        from origin import urls as origin_urls
+
+        discovered = {}
+        for entry in origin_urls.urlpatterns:
+            name = getattr(entry, 'name', None)
+            pattern = getattr(entry, 'pattern', None)
+            if not name or pattern is None:
+                continue
+            discovered[name] = '/v1/' + str(pattern)
+        return discovered
+
+    def get(self, request):
+        from utility.navigation_manual import SECTIONS as NAVIGATION_SECTIONS, CATCH_ALL_SECTION as NAVIGATION_CATCH_ALL
+
+        routes = self._discover_routes()
+        assigned_names = set()
+
+        sections = []
+        for section in NAVIGATION_SECTIONS:
+            matched = []
+            for name, path in routes.items():
+                if name in assigned_names:
+                    continue
+                if name.startswith(section['url_name_prefixes']):
+                    matched.append({'name': name, 'path': path})
+                    assigned_names.add(name)
+            matched.sort(key=lambda r: r['name'])
+            sections.append({**section, 'routes': matched, 'route_count': len(matched)})
+
+        leftover = [{'name': n, 'path': p} for n, p in routes.items() if n not in assigned_names]
+        leftover.sort(key=lambda r: r['name'])
+        if leftover:
+            sections.append({**NAVIGATION_CATCH_ALL, 'routes': leftover, 'route_count': len(leftover)})
+
+        #the "advanced 3D view" toggle (heavier CSS: ambient rotation, deeper shadows,
+        #floating-particle backdrop) is opt-in and remembered via a plain cookie set by
+        #static/js/navigation.js when the button is clicked. Reading it here (rather than
+        #only in JS) means the extra <link> tag is only ever emitted server-side when the
+        #user actually asked for it - no flash of unstyled/understyled content on refresh.
+        advanced_requested = request.COOKIES.get('sd-nav-advanced') == '1'
+
+        return render(request, 'html/navigation.html', {
+            'nav_sections': sections,
+            'total_routes': len(routes),
+            'advanced_requested': advanced_requested,
+        })
+
 class Signup(View):
     """signup page"""
     def get(self, request): 
@@ -210,8 +281,13 @@ class BlogView(View):
         #         },
         #     ]
         news_choices = ChoicesValidatorInModels().news_category
+        #this used to be a hardcoded 'tier': 'gold' placeholder regardless of who was
+        #looking at the page - meant EVERY visitor's "share your story" form thought
+        #they had gold-tier banner access. Now it reflects the real signed-in user
+        #(and 'free' for a logged-out visitor, who can't submit a story at all).
+        viewer_profile = Profile.objects.filter(user=request.user).first() if request.user.is_authenticated else None
         context = {
-            'tier': 'gold',
+            'tier': viewer_profile.tier if viewer_profile else 'free',
             'posts': post,
             'categories': list(news_choices),   # unique tags, sourced from the same list staff picks from - was previously a stale hardcoded ['Update','TIP','Guide','Story'] that didn't match what staff could actually publish
             'news_tags': list(news_choices),     #for the is_staff form
@@ -228,7 +304,12 @@ class BlogView(View):
                 'read_time'  :i.read_time,
                 'url': reverse('origin_blog_detail', kwargs={'pk': i.pk}),
                 'image_url': i.banner,
-                'featured': i.featured
+                'featured': i.featured,
+                #author badge shown on the card - staff-authored posts read "Staff", user
+                #submissions read "Community" (or "Anonymous" if the submitter chose that) -
+                #see News.is_staff_authored() in models.py
+                'is_staff_authored': i.is_staff_authored(),
+                'author_label': 'Anonymous' if i.is_anonymous else (i.submitted_by.username if i.submitted_by_id else None),
             }
             for i in data
         ]
@@ -252,6 +333,76 @@ class BlogViewExpanded(View):
             'post': post,
             'more_posts': more_posts,
         })
+
+
+class CreateUserStory(LoginRequiredMixin, View):
+    """Lets an ordinary (non-staff) user publish their own accountability story to the
+    blog - the public "share your story" form on blog_and_update.html posts here.
+    Always forced into tag='story' (users can't publish under 'update'/'tip'/etc,
+    that's staff-only via CreateBlog in staff.py) and always stamps submitted_by so
+    News.is_staff_authored() correctly shows a "Community"/"user typed" badge instead
+    of the "Staff" one.
+
+    GOLD-ONLY BANNER, ENFORCED HERE (not just hidden in the UI): the frontend already
+    hides the banner upload field unless tier=='gold' (see blog_and_update.html), but
+    that's just UX - a non-gold user could still POST a banner file directly to this
+    endpoint, so we re-check request.user's actual Profile.tier server-side and
+    silently drop any banner file that arrives from a non-gold account rather than
+    trusting whatever the browser sent.
+    """
+    login_url = '/v1/login/'
+
+    def post(self, request):
+        data = request.POST
+        banner = request.FILES.get('banner')
+
+        required_fields = ['title', 'excerpt', 'actual_content']
+        missing = [f for f in required_fields if f not in data or str(data.get(f)).strip() == '']
+        if missing:
+            return JsonResponse({'message': f"Please fill in: {', '.join(missing)}."}, status=400)
+
+        MAX_LENGTHS = {'title': 220, 'excerpt': 1000}
+        for field, limit in MAX_LENGTHS.items():
+            if len(str(data[field])) > limit:
+                return JsonResponse({'message': f"'{field}' is {len(str(data[field]))} characters, but only {limit} are allowed. Trim it and try again."}, status=400)
+
+        try:
+            read_time = max(1, round(len(str(data['actual_content']).split()) / 200)) #~200 wpm estimate, same idea as staff's manual read_time field but users aren't asked to guess their own
+        except Exception:
+            read_time = 3
+
+        profile = Profile.objects.filter(user=request.user).first()
+        is_gold = bool(profile and profile.tier == ChoicesValidatorInModels().tier[2]) #tier[2] == 'gold' - see models.py ChoicesValidatorInModels
+
+        if banner and not is_gold:
+            #backend re-check, independent of whatever the frontend allowed through - see docstring
+            banner = None
+
+        try:
+            with transaction.atomic():
+                story = News.objects.create(
+                    title=data['title'],
+                    tag='story',
+                    excerpt=data['excerpt'],
+                    read_time=read_time,
+                    featured=False,
+                    actual_content=data['actual_content'],
+                    submitted_by=request.user,
+                    is_anonymous=str(data.get('is_anonymous', 'false')).strip().lower() in ('true', '1', 'on'),
+                )
+                if banner:
+                    from utility.file_upload import upload_news_banner
+                    output = upload_news_banner(uploaded_file=banner, id=story.id)
+                    story.banner = output['url']
+                story.full_clean()
+                story.save()
+        except models.IntegrityError:
+            return JsonResponse({'message': f"A post with the title \"{data['title']}\" already exists. Please choose a different title."}, status=400)
+        except Exception as e:
+            logger.error("User story submission failed for user %s: %s", request.user.pk, e, exc_info=True)
+            return JsonResponse({'message': "Something went wrong publishing your story. Please try again in a moment."}, status=500)
+
+        return JsonResponse({'message': 'Your story is live on the blog - thank you for sharing!', 'url': reverse('origin_blog_detail', kwargs={'pk': story.pk})}, status=200)
 
 #Json ONly response
 class GetLeaderBoardData(View):

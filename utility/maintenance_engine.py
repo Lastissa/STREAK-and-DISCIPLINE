@@ -7,19 +7,17 @@ task the app needs lives on that single tick, not four different endpoints.
 Four jobs live here, in the order they should run:
 
 1. `complete_expired_commitments`  - a commitment whose goal_days is not 0 (0 = forever)
-   and whose age has reached goal_days is "end of life". There is intentionally NO
-   archive state in this product - end of life behaves exactly like the user pressing
-   Delete: is_active flips to False immediately (so it vanishes from the user's own
-   commitment list the moment this tick runs) and it is queued up for real removal by
-   job #2 on the NEXT tick.
+   and whose age has reached goal_days has hit 100%. Unlike a user Delete, this does
+   NOT touch is_active - the commitment stays fully alive and visible. All this job
+   does is stamp `completed_at` once, which the frontend uses to trigger the one-time
+   "standing ovation" celebration on the dashboard/commitment page.
 
 2. `purge_deleted_commitments`     - hard-deletes (DB row gone, Entries cascade with it)
-   every commitment that is currently is_active=False, regardless of whether it got
-   there via the user's own Delete button (see EachCommitmentArchive) or via job #1
-   above. Deliberately one tick behind completion/deletion (never in the same pass) so
-   a freshly-deleted commitment is never mid-air between "hidden" and "gone" during the
-   same request - it is simply hidden the moment it happens, and permanently gone the
-   next time this job runs.
+   every commitment that the user themselves soft-deleted (is_active=False via the
+   Delete button on the commitment page - see EachCommitmentArchive) MORE THAN 24
+   HOURS AGO (deactivated_at). Inside that 24h window the commitment is only hidden
+   from the active list and shows up as "recoverable" on the profile page - nothing
+   is ever purged before the 24h recovery window has genuinely elapsed.
 
 3. `reset_stale_streaks`          - the piece that was missing entirely: nothing used
    to proactively reset streak_count if a user just stopped checking in. Quick-checkin
@@ -47,6 +45,7 @@ Four jobs live here, in the order they should run:
 """
 
 import logging
+from datetime import datetime
 
 from django.db import transaction
 from django.utils import timezone
@@ -55,14 +54,18 @@ logger = logging.getLogger(__name__)
 
 
 def complete_expired_commitments() -> int:
-    """Auto end-of-life: goal_days != 0 (0 means forever/never auto-ends) and the
-    commitment has been running >= goal_days. Marked exactly like a user delete -
-    is_active=False, hidden immediately - and left for purge_deleted_commitments to
-    actually remove next tick."""
+    """Reaching 100% (goal_days != 0, i.e. not a "forever" commitment, and age >=
+    goal_days) no longer deactivates or queues the commitment for deletion - product
+    decision: a completed commitment stays fully alive (is_active stays True) so the
+    user can keep visiting it, they just get the one-time "standing ovation" trigger.
+    All this job does now is stamp `completed_at` exactly once (the
+    `completed_at__isnull=True` filter is what stops it re-stamping/re-notifying on
+    every subsequent tick) - the dashboard/commitment page reads `completed_at` to
+    decide whether to replay the celebration."""
     from origin.models import Commitment
 
     today = timezone.now().date()
-    candidates = Commitment.objects.filter(is_active=True).exclude(goal_days=0)
+    candidates = Commitment.objects.filter(is_active=True, completed_at__isnull=True).exclude(goal_days=0)
 
     completed_ids = []
     for c in candidates:
@@ -75,50 +78,87 @@ def complete_expired_commitments() -> int:
 
     now = timezone.now()
     Commitment.objects.filter(id__in=completed_ids).update(
-        is_active=False,
         completed_at=now,
-        pending_notice="You hit your goal on this commitment and it's been marked complete - nice work. It's now been removed from your active list.",
+        pending_notice="You hit 100% on this commitment - amazing work! It's staying right where it is; open it any time to relive the celebration.",
     )
-    logger.info("Completed %s commitment(s) that reached their goal_days.", len(completed_ids))
+    logger.info("Marked %s commitment(s) as completed (100%% of goal_days) - left active.", len(completed_ids))
     return len(completed_ids)
 
 
 def purge_deleted_commitments() -> int:
-    """Hard-delete every commitment currently sitting at is_active=False (whether from
-    a user Delete or from complete_expired_commitments above). Entries cascade-delete
-    with it. This is the "next cron job" the delete button queues work up for."""
+    """Hard-delete a commitment ONLY once it has been soft-deleted (is_active=False,
+    via the user's own Delete button - see EachCommitmentArchive) for more than 24
+    hours (deactivated_at). This is the 24-hour recovery window promised to the user
+    on the profile page's "recently deleted" list - before that window closes, the
+    row is only HIDDEN (is_active=False), never gone. Entries cascade-delete with it.
+
+    Rows with is_active=False but deactivated_at=None are deliberately left alone -
+    that combination should not exist going forward (every path that sets
+    is_active=False also stamps deactivated_at now) but if old data has it, purging
+    it without ever having shown the user a 24h countdown would be unfair, so it
+    just sits there until someone deliberately backfills/reviews it."""
     from origin.models import Commitment
 
-    qs = Commitment.objects.filter(is_active=False)
+    purge_cutoff = timezone.now() - timezone.timedelta(hours=24)
+    qs = Commitment.objects.filter(
+        is_active=False,
+        deactivated_at__isnull=False,
+        deactivated_at__lte=purge_cutoff,
+    )
     count = qs.count()
     if count:
         with transaction.atomic():
             qs.delete()
-        logger.info("Purged %s soft-deleted commitment(s) (and their entries).", count)
+        logger.info("Purged %s soft-deleted commitment(s) whose 24h recovery window has passed (and their entries).", count)
     return count
 
 
 def reset_stale_streaks() -> int:
-    """Zero out streak_count for any still-active commitment where more than 24 hours
-    have passed since last_check_in, and leave an honest pending_notice for the user."""
+    """Zero out streak_count, but ONLY once BOTH of these are true for a commitment:
+      1. today's expected check-in time (Commitment.checkin_time) has already passed, and
+      2. it has genuinely been more than 24 hours since last_check_in.
+    Checking (1) as well as (2) matters because checkin_time is user-configurable per
+    commitment (e.g. some people's "day" ends at 23:00, others at 06:00) - resetting
+    purely on a rolling 24h timer without ever looking at checkin_time could zero a
+    streak in the middle of a user's still-valid check-in window on an unlucky cron
+    tick. Leaves an honest pending_notice for the user either way."""
     from origin.models import Commitment
 
-    cutoff = timezone.now() - timezone.timedelta(hours=24)
-    stale = Commitment.objects.filter(
+    now = timezone.now()
+    local_now = timezone.localtime(now)
+    today = local_now.date()
+    current_tz = timezone.get_current_timezone()
+
+    #candidates: still active, have checked in at least once, and currently show a non-zero
+    #streak (nothing to reset otherwise) - the checkin_time/24h math happens per-row below
+    #since checkin_time differs commitment to commitment.
+    candidates = Commitment.objects.filter(
         is_active=True,
         last_check_in__isnull=False,
-        last_check_in__lt=cutoff,
     ).exclude(streak_count=0)
 
     reset_count = 0
-    for c in stale:
+    for c in candidates:
+        expected_checkin_today = timezone.make_aware(datetime.combine(today, c.checkin_time), current_tz)
+        if local_now < expected_checkin_today:
+            #today's check-in window hasn't arrived yet for THIS commitment - never reset early
+            continue
+
+        if (now - c.last_check_in) <= timezone.timedelta(hours=24):
+            #still inside the 24h grace period since their last check-in - leave it alone
+            continue
+
         c.streak_count = 0
-        c.pending_notice = f"Your streak on \"{c.what}\" was reset - it had been more than 24 hours since your last check-in."
+        c.pending_notice = (
+            f"Your streak on \"{c.what}\" was reset - your check-in time "
+            f"({c.checkin_time.strftime('%I:%M %p')}) has passed and it had been more than "
+            f"24 hours since your last check-in."
+        )
         c.save(update_fields=['streak_count', 'pending_notice'])
         reset_count += 1
 
     if reset_count:
-        logger.info("Reset %s stale streak(s) (no check-in for 24h+).", reset_count)
+        logger.info("Reset %s stale streak(s) (past today's check-in time AND 24h+ since last check-in).", reset_count)
     return reset_count
 
 
