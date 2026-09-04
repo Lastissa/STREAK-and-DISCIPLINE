@@ -1,109 +1,117 @@
 """
-NAVIGATION MANUAL - the "hand-authored" half of navigation.html's "3D living manual".
+SITE GUIDE - the content behind the in-app "Site Guide" page (navigation.html).
 
-This file ONLY contains human-written descriptions and groupings - it does NOT list
-every individual URL by hand. The view that renders navigation.html
-(origin/views/normal_view.py::NavigationGuide) walks origin.urls.urlpatterns itself
-(auto-generation) and buckets every named route into whichever section below claims
-it (by url_name prefix match). Anything that doesn't match a section falls into the
-catch-all "Other / internal" bucket automatically - so this file can never silently
-go stale and hide a page; worst case a new route just shows up undescribed under
-"Other" until someone adds a proper section/prefix for it here.
+This is a hand-curated list written for END USERS, not a developer-facing map of
+every route in the app. Each entry below becomes one card with a short, plain-
+language description and one or more real buttons the person can click to go
+there. There is deliberately NO auto-discovery of origin.urls.urlpatterns here
+(there used to be) - that approach meant every route in the entire app, including
+staff tools, cron endpoints, debug routes, and the "delete my account" danger-zone
+endpoint, got listed with its literal URL on a page any visitor could open. This
+file is the opposite: only pages a regular user should be pointed toward, described
+by what they do, with a real link - never a raw path string.
 
-TO ADD A NEW SECTION: just append a dict to SECTIONS below. `url_name_prefixes` is
-checked with str.startswith() against each route's `name=`, first match wins, so put
-more specific prefixes before broader ones if you ever need to.
+TO ADD A CARD: append a dict to GUIDE below.
+  - 'key'         : short unique id (used for anchors/highlighting)
+  - 'title'       : plain-language name shown as the card heading
+  - 'icon'        : Font Awesome class (no "fas", just the icon name, e.g. 'fa-house')
+  - 'description' : one or two plain sentences - what this is for, not how it's built
+  - 'links'       : list of {'label': <button text>, 'url_name': <name= from urls.py>}
+                     Every url_name MUST resolve with no required arguments (this
+                     page never shows routes that need a dynamic id/key, since there's
+                     nothing sensible to link a generic guide button to).
+
+Staff-only cards additionally set 'staff_only': True and are simply left out of the
+context entirely for non-staff visitors (see NavigationGuide in
+origin/views/normal_view.py) - so even the description/title of a staff card is
+never sent to a regular user's browser, not just hidden with CSS.
 """
 
-SECTIONS = [
+GUIDE = [
     {
-        'key': 'public',
-        'title': 'Public & Marketing',
-        'icon': 'fa-house',
-        'description': 'The pages anyone can see before signing in - homepage, blog, leaderboard, legal.',
-        'url_name_prefixes': ('origin_home', 'origin_blog', 'origin_leaderboard', 'origin_extra', 'origin_navigation', 'true_base_dir', 'llms_txt'),
+        'key': 'get-started',
+        'title': 'Getting Started',
+        'icon': 'fa-door-open',
+        'description': 'New here? Create a free account or sign back in to pick up where you left off.',
+        'links': [
+            {'label': 'Sign Up', 'url_name': 'origin_signup'},
+            {'label': 'Log In', 'url_name': 'origin_login'},
+            {'label': 'Forgot Password', 'url_name': 'origin_password_reset'},
+        ],
     },
     {
-        'key': 'auth',
-        'title': 'Sign Up, Log In & Account Recovery',
-        'icon': 'fa-key',
-        'description': 'Everything about getting into (or back into) an account - signup, login, password reset, reactivation.',
-        'url_name_prefixes': ('origin_signup', 'origin_login', 'origin_logout', 'origin_password_reset',
-                               'origin_deactivated', 'origin_reactivate_account', 'origin_delete_account',
-                               'origin_redirect_handler'),
-    },
-    {
-        'key': 'onboarding',
-        'title': 'Onboarding',
-        'icon': 'fa-flag-checkered',
-        'description': 'The first-run flow a brand new user goes through right after signup.',
-        'url_name_prefixes': ('origin_onboarding',),
+        'key': 'dashboard',
+        'title': 'Your Dashboard',
+        'icon': 'fa-gauge-high',
+        'description': "Your home base after logging in - today's check-ins and streaks at a glance.",
+        'links': [
+            {'label': 'Go to Dashboard', 'url_name': 'origin_dashboard'},
+        ],
     },
     {
         'key': 'commitments',
         'title': 'Commitments & Check-ins',
         'icon': 'fa-fire-flame-curved',
-        'description': 'The core loop of the whole product: create a commitment, check in daily, watch your streak grow.',
-        'url_name_prefixes': ('origin_commitments', 'origin_each_commitment', 'origin_commitment_archive',
-                               'origin_commitment_reactivate', 'origin_commitment_create_json',
-                               'origin_commitment_data', 'quick_commitment_check_in', 'origin_user_HeatMap',
-                               'origin_delete_all_commitments', 'origin_clear_entries', 'origin_reset_streaks'),
-    },
-    {
-        'key': 'dashboard',
-        'title': 'Dashboard',
-        'icon': 'fa-gauge-high',
-        'description': "The user's home base after logging in - today's check-ins, streaks at a glance, quick stats.",
-        'url_name_prefixes': ('origin_dashboard',),
-    },
-    {
-        'key': 'social',
-        'title': 'Accountability Partners',
-        'icon': 'fa-people-arrows',
-        'description': 'Pairing up with another user for mutual accountability - find, invite, accept/decline, unpair.',
-        'url_name_prefixes': ('origin_relationship', 'origin_search_friend', 'origin_add_friend', 'origin_parner_widget'),
+        'description': 'Create a commitment, check in daily, and watch your streak grow. This is the core of the app.',
+        'links': [
+            {'label': 'View My Commitments', 'url_name': 'origin_commitments'},
+        ],
     },
     {
         'key': 'reports',
-        'title': 'Reports & Analytics',
+        'title': 'Reports & Weekly Analysis',
         'icon': 'fa-chart-line',
-        'description': 'Weekly truth reports and deeper analytics on consistency over time.',
-        'url_name_prefixes': ('origin_reports', 'origin_weekly_analysis', 'origin_export_data'),
+        'description': 'An honest weekly breakdown of your consistency, plus deeper analytics over time.',
+        'links': [
+            {'label': 'My Reports', 'url_name': 'origin_reports'},
+            {'label': 'Weekly Analysis', 'url_name': 'origin_weekly_analysis'},
+        ],
+    },
+    {
+        'key': 'social',
+        'title': 'Partners & Leaderboard',
+        'icon': 'fa-people-arrows',
+        'description': 'Pair up with an accountability partner, or opt into the public leaderboard for a bit of friendly competition.',
+        'links': [
+            {'label': 'Accountability Partners', 'url_name': 'origin_relationship'},
+            {'label': 'Leaderboard', 'url_name': 'origin_leaderboard'},
+        ],
     },
     {
         'key': 'profile',
         'title': 'Profile & Settings',
         'icon': 'fa-user-gear',
-        'description': "Account settings, tier/subscription info, theme, notification preferences, and the recently-deleted commitments recovery list.",
-        'url_name_prefixes': ('origin_profile', 'origin_settings', 'origin_user_picture', 'origin_delete_user_picture'),
+        'description': 'Manage your username, picture, theme, notification preferences, and account.',
+        'links': [
+            {'label': 'Profile & Settings', 'url_name': 'origin_profile'},
+        ],
     },
     {
-        'key': 'notifications',
-        'title': 'Push Notifications',
-        'icon': 'fa-bell',
-        'description': 'Web push subscription endpoints used by the browser, not meant to be visited directly.',
-        'url_name_prefixes': ('origin_push',),
+        'key': 'blog',
+        'title': 'Blog & Updates',
+        'icon': 'fa-newspaper',
+        'description': 'Product updates, discipline tips, and stories from other users building their streak.',
+        'links': [
+            {'label': 'Read the Blog', 'url_name': 'origin_blog'},
+        ],
+    },
+    {
+        'key': 'help',
+        'title': 'Help, Privacy & Terms',
+        'icon': 'fa-circle-question',
+        'description': 'Support, frequently asked questions, and our privacy policy & terms of service.',
+        'links': [
+            {'label': 'Help & Legal', 'url_name': 'origin_extra'},
+        ],
     },
     {
         'key': 'staff',
         'title': 'Staff Hub',
         'icon': 'fa-user-shield',
-        'description': 'Internal tools for staff: publishing news/blog posts, managing users, session review. Not accessible to regular users.',
-        'url_name_prefixes': ('origin_staff',),
-    },
-    {
-        'key': 'system',
-        'title': 'System & Cron',
-        'icon': 'fa-gears',
-        'description': 'Background maintenance jobs (streak resets, check-in reminders) and internal/testing endpoints - never meant to be visited by a person.',
-        'url_name_prefixes': ('origin_cron', 'origin_database', 'test_search', 'in_progess'),
+        'description': 'Internal tools for managing users and publishing site content.',
+        'links': [
+            {'label': 'Open Staff Hub', 'url_name': 'origin_staff_home'},
+        ],
+        'staff_only': True,
     },
 ]
-
-CATCH_ALL_SECTION = {
-    'key': 'other',
-    'title': 'Other / Internal',
-    'icon': 'fa-ellipsis',
-    'description': "Routes that exist but haven't been sorted into a section yet - if something you expect is here, it just needs a home in utility/navigation_manual.py.",
-    'url_name_prefixes': (),
-}

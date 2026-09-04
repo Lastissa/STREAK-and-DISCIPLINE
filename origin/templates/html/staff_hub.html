@@ -169,11 +169,10 @@
       initLogout();
     }
 
-    // Cookie name kept as "sd_theme" (underscore) to match the server-side
-    // check in this template's <body class> above. NOTE: most other pages in
-    // this project still use "sd-theme" (hyphen) — see blog_and_update.html's
-    // note on the same mismatch. Don't "fix" this one in isolation; it needs
-    // to be reconciled project-wide in one pass.
+    // Cookie name is "sd-theme" (hyphen), matching the server-side check in
+    // this template's <body class> above and the request.COOKIES lookup in
+    // staff.py, and consistent with every other page in the project. Keep it
+    // hyphenated everywhere - don't introduce an "sd_theme" underscore variant.
     function initTheme() {
       var btn = $('#themeToggle'), icon = btn.querySelector('i');
       function set(dark) {

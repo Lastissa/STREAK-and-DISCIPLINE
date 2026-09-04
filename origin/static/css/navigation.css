@@ -1,10 +1,9 @@
 /* ================================================================
-   NAVIGATION GUIDE ("3D living manual") — BASE STYLESHEET
-   Loaded on every visit. Uses real CSS 3D (perspective + rotateX/Y
-   transforms) on hover/focus, so the 3D effect works everywhere with
-   zero JS and no WebGL/canvas dependency. The heavier "advanced" look
-   (ambient auto-rotation, deeper shadow stack, floating particles) is
-   a SEPARATE, opt-in file: navigation_advanced.css.
+   SITE GUIDE — a plain, honest card grid of real, described pages
+   with real buttons. (Previously an over-promised "3D living
+   manual" with a heavier opt-in stylesheet that didn't actually
+   read as 3D to anyone using it - dropped in favour of a clean,
+   fast, genuinely functional page.)
    ================================================================ */
 
 :root{
@@ -45,6 +44,7 @@ body.light-mode .nav-links a:hover{color:var(--text);background:rgba(0,0,0,0.05)
 .btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.2rem;border-radius:var(--radius);font-weight:600;font-size:0.85rem;text-decoration:none;cursor:pointer;border:2px solid transparent;font-family:var(--font-sans);transition:all .2s ease}
 .btn-outline{border-color:var(--border-light);color:var(--text);background:transparent}
 .btn-outline:hover{border-color:var(--accent);color:var(--accent-light)}
+.btn-sm{padding:0.45rem 0.85rem;font-size:0.78rem}
 
 /* ---- hero ---- */
 .nav-hero{padding:8rem 0 2.5rem;text-align:center}
@@ -53,68 +53,49 @@ body.light-mode .nav-links a:hover{color:var(--text);background:rgba(0,0,0,0.05)
 .nav-hero p{color:var(--text-secondary);max-width:620px;margin:0 auto 1.6rem;font-size:.95rem}
 
 /* ---- search ---- */
-.nav-search-row{display:flex;justify-content:center;margin-bottom:2rem}
+.nav-search-row{display:flex;justify-content:center;margin-top:.5rem}
 .nav-search{position:relative;width:100%;max-width:480px}
 .nav-search i{position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:var(--text-secondary)}
 .nav-search input{width:100%;padding:.8rem 1rem .8rem 2.6rem;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:.88rem;font-family:var(--font-sans)}
 .nav-search input:focus{outline:none;border-color:var(--accent)}
 
 /* ================================================================
-   3D SECTION GRID — the "living manual" cards
-   perspective on the grid container + rotateX/Y on each card's inner
-   element on hover/focus. This is real CSS 3D, not a static image.
+   CARD GRID — one card per real, navigable feature, each with a
+   plain-language description and one or more actual link buttons.
+   A simple, honest hover lift - no perspective/rotate claims.
    ================================================================ */
-.nav-grid-wrap{padding-bottom:5rem}
-.nav-3d-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
-  gap:1.4rem;perspective:1400px;margin-bottom:3rem;
+.nav-grid-wrap{padding:1rem 0 5rem}
+.nav-card-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:1.4rem;margin-bottom:1rem;
 }
-.nav-3d-card{
-  border-radius:var(--radius-lg);cursor:pointer;outline:none;
-  transform-style:preserve-3d;
-}
-.nav-3d-card-inner{
+.nav-card{
   background:linear-gradient(160deg,var(--surface),var(--surface2));
   border:1px solid var(--border);border-radius:var(--radius-lg);
-  padding:1.6rem 1.4rem;height:100%;
-  transform-style:preserve-3d;
-  transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s ease,border-color .35s ease;
-  box-shadow:0 10px 30px rgba(0,0,0,0.18);
+  padding:1.6rem 1.4rem;display:flex;flex-direction:column;
+  box-shadow:0 6px 18px rgba(0,0,0,0.14);
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
 }
-.nav-3d-card:hover .nav-3d-card-inner,
-.nav-3d-card:focus-visible .nav-3d-card-inner{
-  transform:rotateX(6deg) rotateY(-8deg) translateY(-6px) translateZ(10px);
+.nav-card:hover,.nav-card:focus-within{
+  transform:translateY(-4px);
   border-color:var(--accent);
-  box-shadow:0 24px 48px rgba(59,130,246,0.22);
+  box-shadow:0 14px 28px rgba(59,130,246,0.16);
 }
-.nav-3d-icon{
+.nav-card-icon{
   width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;
   background:rgba(59,130,246,0.12);color:var(--accent-light);font-size:1.2rem;margin-bottom:1rem;
-  transform:translateZ(24px);
 }
-.nav-3d-card-inner h2{font-size:1.02rem;margin-bottom:.4rem;transform:translateZ(16px)}
-.nav-3d-card-inner p{font-size:.78rem;color:var(--text-secondary);line-height:1.5;margin-bottom:.9rem;transform:translateZ(12px)}
-.nav-3d-count{display:inline-block;font-size:.68rem;font-weight:700;color:var(--accent-light);background:rgba(59,130,246,0.1);padding:.25rem .6rem;border-radius:999px;transform:translateZ(20px)}
-.nav-3d-card.is-highlighted .nav-3d-card-inner{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,0.25)}
+.nav-card h2{font-size:1.02rem;margin-bottom:.4rem}
+.nav-card p{font-size:.82rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.1rem;flex-grow:1}
+.nav-card-actions{display:flex;flex-wrap:wrap;gap:.5rem}
+.nav-card.is-search-hidden{display:none}
+
+.nav-empty,.nav-no-match{color:var(--text-secondary);text-align:center;padding:2rem 0}
 
 @media(prefers-reduced-motion:reduce){
-  .nav-3d-card-inner{transition:none}
-  .nav-3d-card:hover .nav-3d-card-inner,.nav-3d-card:focus-visible .nav-3d-card-inner{transform:none}
+  .nav-card{transition:none}
+  .nav-card:hover,.nav-card:focus-within{transform:none}
 }
-
-/* ---- flat detail list (accessible / no-JS / crawler-readable fallback) ---- */
-.nav-detail-list{display:flex;flex-direction:column;gap:2rem}
-.nav-detail-section{scroll-margin-top:6.5rem;padding:1.5rem;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);transition:border-color .3s ease,box-shadow .3s ease}
-.nav-detail-section.is-highlighted{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,0.2)}
-.nav-detail-section h3{display:flex;align-items:center;gap:.5rem;font-size:1rem;margin-bottom:.4rem}
-.nav-detail-desc{font-size:.8rem;color:var(--text-secondary);margin-bottom:1rem}
-.nav-route-list{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.5rem}
-.nav-route-item{display:flex;flex-direction:column;gap:.15rem;padding:.55rem .7rem;border-radius:10px;background:var(--surface2);border:1px solid transparent}
-.nav-route-item code{font-size:.72rem;color:var(--accent-light);word-break:break-all}
-.nav-route-name{font-size:.68rem;color:var(--text-secondary)}
-.nav-route-item.is-search-match{border-color:var(--accent)}
-.nav-route-item.is-search-hidden{display:none}
-.nav-route-empty{color:var(--text-secondary);font-style:italic}
 
 /* ---- footer ---- */
 .site-footer{padding:2rem 0;text-align:center;border-top:1px solid var(--border);color:var(--text-secondary);font-size:.8rem}

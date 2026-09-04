@@ -46,74 +46,38 @@ class Extras(View):
 
 
 class NavigationGuide(View):
-    """The "3D living manual" for the whole project (navigation.html) - a page that maps
-    every named route in the app.
 
-    It's a MIX of auto-generation and hand-authored content, exactly as requested:
-      - AUTO: this view walks origin.urls.urlpatterns itself at request time (see
-        _discover_routes below) and pulls out every route's url `name=` and raw path
-        pattern - so a newly added `path(..., name='...')` shows up here automatically,
-        nothing to remember to update.
-      - HAND-AUTHORED: utility/navigation_manual.py -> SECTIONS groups those raw routes
-        into human-friendly sections with a title/icon/description written by a person.
-        Editing that file is how you (re)organise or redescribe things; you never have
-        to touch this view or duplicate the URL list anywhere.
-
-    The template renders this as a 3D card layout (CSS perspective/transform, no
-    WebGL dependency) with a toggle to load a heavier "advanced" stylesheet on
-    demand - see navigation.html for that toggle and static/css/navigation_advanced.css.
-    """
-
-    def _discover_routes(self):
-        """Walk origin.urls.urlpatterns and return {url_name: raw_pattern_string} for
-        every named route. Read-only introspection - never touches the DB, never
-        instantiates a view, so it's cheap and safe to run on every request."""
-        from origin import urls as origin_urls
-
-        discovered = {}
-        for entry in origin_urls.urlpatterns:
-            name = getattr(entry, 'name', None)
-            pattern = getattr(entry, 'pattern', None)
-            if not name or pattern is None:
-                continue
-            discovered[name] = '/v1/' + str(pattern)
-        return discovered
 
     def get(self, request):
-        from utility.navigation_manual import SECTIONS as NAVIGATION_SECTIONS, CATCH_ALL_SECTION as NAVIGATION_CATCH_ALL
+        from django.urls import reverse, NoReverseMatch
+        from utility.navigation_manual import GUIDE
 
-        routes = self._discover_routes()
-        assigned_names = set()
+        is_staff = request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser)
 
-        sections = []
-        for section in NAVIGATION_SECTIONS:
-            matched = []
-            for name, path in routes.items():
-                if name in assigned_names:
-                    continue
-                if name.startswith(section['url_name_prefixes']):
-                    matched.append({'name': name, 'path': path})
-                    assigned_names.add(name)
-            matched.sort(key=lambda r: r['name'])
-            sections.append({**section, 'routes': matched, 'route_count': len(matched)})
+        cards = []
+        for entry in GUIDE:
+            if entry.get('staff_only') and not is_staff:
+                continue  # staff-only cards are left out of the context entirely, not just hidden
 
-        leftover = [{'name': n, 'path': p} for n, p in routes.items() if n not in assigned_names]
-        leftover.sort(key=lambda r: r['name'])
-        if leftover:
-            sections.append({**NAVIGATION_CATCH_ALL, 'routes': leftover, 'route_count': len(leftover)})
+            links = []
+            for link in entry['links']:
+                try:
+                    links.append({'label': link['label'], 'url': reverse(link['url_name'])})
+                except NoReverseMatch:
+                    continue  # a renamed/removed url_name should never break this page, just quietly drop that button
+            if not links:
+                continue
 
-        #the "advanced 3D view" toggle (heavier CSS: ambient rotation, deeper shadows,
-        #floating-particle backdrop) is opt-in and remembered via a plain cookie set by
-        #static/js/navigation.js when the button is clicked. Reading it here (rather than
-        #only in JS) means the extra <link> tag is only ever emitted server-side when the
-        #user actually asked for it - no flash of unstyled/understyled content on refresh.
-        advanced_requested = request.COOKIES.get('sd-nav-advanced') == '1'
+            cards.append({
+                'key': entry['key'],
+                'title': entry['title'],
+                'icon': entry['icon'],
+                'description': entry['description'],
+                'links': links,
+            })
 
-        return render(request, 'html/navigation.html', {
-            'nav_sections': sections,
-            'total_routes': len(routes),
-            'advanced_requested': advanced_requested,
-        })
+        return render(request, 'html/navigation.html', {'nav_cards': cards})
+
 
 class Signup(View):
     """signup page"""
@@ -145,9 +109,10 @@ class Signup(View):
     
 class Login(View):
     """login dashbaord"""
-    def get(self, request): 
+    def get(self, request):
         if (send_user_to_dashboard := try_send_user_to_dashboard(request)) is not None: return send_user_to_dashboard
         #user is not signed in , redirect them to the login page
+        messages.info(request, "For enhanced security, Login is slightly slower as user protection matters and we have to avoid leaving traces for hackers.".upper())
         return render(request, 'html/login.html', {'url_for_form': reverse('origin_redirect_handler', kwargs={'raw_url': 'origin_login'})})
     
     def post(self,request): return JsonResponse({'user_email' : str(request.user)}, safe=False)

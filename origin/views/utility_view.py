@@ -56,19 +56,19 @@ class RedirectHandler(View):
     def post(self, request, raw_url):
         if request.GET.get('login_account'):
             """Proceed to login user and create session"""
+
             try:
-                print(request.META['REMOTE_ADDR'])
                 email = request.POST["email"]
                 user_status = get_user_model().objects.filter(email__iexact = email).first()
                 user_exist = user_status is not None
                 user_istance = authenticate(request=request, email = email.upper(), password = request.POST["password"])    #i wou;d have remove this but i need it along the custom user model 
                 
                 if user_istance or user_exist:
-                    
                     #Check the user and the user password, if its valid but the account status is FALSE, redirect them to where they willa ctivate it
-                    if user_status is not None and user_status.check_password(request.POST["password"]) and user_status.is_active is False:
+                    if user_status is not None and user_istance and user_status.is_active is False:
+                        optimization()
                         return redirect(reverse('origin_deactivated', kwargs={'email' : user_status.email, 'days_left': (timezone.now().date() - user_status.last_is_active_false_date).days}))
-                    
+
                     #user found but user password is wrong
                     if not user_istance:
                         #set a key in cache to rate limit after 3 attempt
@@ -86,6 +86,7 @@ class RedirectHandler(View):
                             return redirect('origin_login')            
                         logout(request)
                         return redirect('origin_login')
+                        
                          
                         
                     #user found, create a session and direct onboarding to handle wether it should direct user to dashboard or stay

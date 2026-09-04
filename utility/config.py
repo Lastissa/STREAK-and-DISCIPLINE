@@ -91,7 +91,6 @@ def template_based_reusables(request):
         'user_3': static('img/user_support/user_3.png'),
         'user_4': static('img/user_support/user_4.png'),
         'user_5': static('img/user_support/user_5.png'),
-        'user_6': static(''),
         'customer_support_1': static('img/user_support/customer_support_1.jpg'),
         'customer_support_2': static('img/user_support/customer_support_2.jpg'),
         'customer_support_3': static('img/user_support/customer_support_3.jpg'),
@@ -322,25 +321,6 @@ include min: to include min : datetime. ... minutes -mm
     return to_return
 
 
-# ============================================================================
-# SEO + GEO (Generative Engine Optimization)
-# ============================================================================
-# EVERYTHING BELOW IS PLACEHOLDER COPY - edit the strings inside SeoGeo.PAGES and
-# SeoGeo.DEFAULT to the real, final wording. Nothing else needs to change: the
-# context processor above (template_based_reusables) already resolves the right
-# entry per-page from the URL name and hands it to every template as `seo`, and
-# reusables/metadata.html already renders title/description/OG/Twitter/JSON-LD from
-# it - so editing the text here is the ONLY thing needed to update a page's SEO/GEO.
-#
-# What "SEO" vs "GEO" means for the two fields below:
-#   - `description`   -> classic SEO: shown in Google search results & social share cards.
-#   - `geo_summary`    -> GEO (Generative Engine Optimization): a short, self-contained,
-#                         factual statement written the way an AI answer engine (ChatGPT,
-#                         Perplexity, Gemini, etc.) likes to quote - plain declarative
-#                         sentences, no marketing fluff, safe to lift verbatim into an
-#                         AI-generated answer. This is what goes into the JSON-LD
-#                         `description` field and the page's Article/FAQPage schema, which
-#                         is what these engines actually crawl/parse instead of rendered HTML.
 class SeoGeo:
     DEFAULT = {
         'title': 'STREAK & DISCIPLINE — Build unbreakable habits, one honest check-in at a time',

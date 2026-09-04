@@ -8,12 +8,8 @@
     {% include "reusables/metadata.html" %}
     <link rel="stylesheet" href="{{ font_awesome_all_min_css }}">
     <link rel="stylesheet" href="{% static 'css/navigation.css' %}">
-
-    {% if advanced_requested %}
-    <link rel="stylesheet" href="{% static 'css/navigation_advanced.css' %}">
-    {% endif %}
 </head>
-<body{% if advanced_requested %} class="advanced-3d"{% endif %}>
+<body>
     <!-- Header (same pattern as privacy_etc.html / landing_page.html) -->
     <header class="site-header">
         <div class="container header-inner">
@@ -38,67 +34,40 @@
         <!-- HERO -->
         <section class="nav-hero">
             <div class="container">
-                <span class="nav-eyebrow"><i class="fas fa-cube"></i> Living Manual</span>
-                <h1>Site Navigation Guide</h1>
-                <p>A map of every page and feature on STREAK &amp; DISCIPLINE — {{ total_routes }} routes across {{ nav_sections|length }} sections, generated straight from the codebase so it can never drift out of date.</p>
-                <button class="btn btn-outline" id="advanced3dBtn" type="button">
-                    <i class="fas fa-wand-magic-sparkles"></i>
-                    <span id="advanced3dBtnLabel">{% if advanced_requested %}Advanced 3D view is on — turn off &amp; refresh{% else %}Load advanced 3D view (heavier, refreshes page){% endif %}</span>
-                </button>
-            </div>
-        </section>
-
-        <!-- 3D SECTION ORBIT -->
-        <!-- Real CSS 3D (perspective + rotateX/Y transforms on hover/focus), not an image
-             or a WebGL scene, so it stays fast and works even before any JS runs. The
-             "advanced" stylesheet (loaded on demand, see button above) adds continuous
-             ambient rotation, deeper shadows and a floating-particle backdrop for anyone
-             willing to pay the extra render cost. -->
-        <section class="nav-grid-wrap">
-            <div class="container">
+                <span class="nav-eyebrow"><i class="fas fa-map-location-dot"></i> Site Guide</span>
+                <h1>Find your way around</h1>
+                <p>A quick guide to everything you can do on STREAK &amp; DISCIPLINE. Tap a button to go straight there.</p>
                 <div class="nav-search-row">
                     <div class="nav-search">
                         <i class="fas fa-magnifying-glass"></i>
-                        <input type="text" id="navSearch" placeholder="Search pages, features, or url names…" autocomplete="off">
+                        <input type="text" id="navSearch" placeholder="Search for a page or feature…" autocomplete="off">
                     </div>
                 </div>
+            </div>
+        </section>
 
-                <div class="nav-3d-grid" id="navGrid">
-                    {% for section in nav_sections %}
-                    <article class="nav-3d-card" data-section="{{ section.key }}" tabindex="0">
-                        <div class="nav-3d-card-inner">
-                            <div class="nav-3d-icon"><i class="fas {{ section.icon }}"></i></div>
-                            <h2>{{ section.title }}</h2>
-                            <p>{{ section.description }}</p>
-                            <span class="nav-3d-count">{{ section.route_count }} page{{ section.route_count|pluralize }}</span>
+        <!-- CARD GRID - every card is a real, described destination with real buttons.
+             No raw URLs/paths are ever shown here; only page titles + plain-language
+             descriptions + buttons that link straight to the page. -->
+        <section class="nav-grid-wrap">
+            <div class="container">
+                <div class="nav-card-grid" id="navGrid">
+                    {% for card in nav_cards %}
+                    <article class="nav-card" data-search="{{ card.title }} {{ card.description }}">
+                        <div class="nav-card-icon"><i class="fas {{ card.icon }}"></i></div>
+                        <h2>{{ card.title }}</h2>
+                        <p>{{ card.description }}</p>
+                        <div class="nav-card-actions">
+                            {% for link in card.links %}
+                            <a href="{{ link.url }}" class="btn btn-outline btn-sm">{{ link.label }}</a>
+                            {% endfor %}
                         </div>
                     </article>
+                    {% empty %}
+                    <p class="nav-empty">Nothing to show right now - check back soon.</p>
                     {% endfor %}
                 </div>
-
-                <!-- Flat, always-present, JS-independent details list underneath the 3D
-                     grid - both for accessibility/no-JS visitors and so search engines /
-                     GEO crawlers can read every route without executing anything. Clicking
-                     a card above just smooth-scrolls + highlights the matching section
-                     here instead of hiding this content behind a modal. -->
-                <div class="nav-detail-list" id="navDetailList">
-                    {% for section in nav_sections %}
-                    <div class="nav-detail-section" id="section-{{ section.key }}" data-section="{{ section.key }}">
-                        <h3><i class="fas {{ section.icon }}"></i> {{ section.title }}</h3>
-                        <p class="nav-detail-desc">{{ section.description }}</p>
-                        <ul class="nav-route-list">
-                            {% for route in section.routes %}
-                            <li class="nav-route-item" data-search="{{ route.name }} {{ route.path }}">
-                                <code>{{ route.path }}</code>
-                                <span class="nav-route-name">{{ route.name }}</span>
-                            </li>
-                            {% empty %}
-                            <li class="nav-route-item nav-route-empty">Nothing here yet.</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% endfor %}
-                </div>
+                <p class="nav-no-match" id="navNoMatch" hidden>No pages matched your search.</p>
             </div>
         </section>
     </main>

@@ -83,7 +83,7 @@ class CustomeUser(AbstractBaseUser, PermissionsMixin):
     last_is_active_false_date = models.DateField(auto_now=True)#to know when user deactivated their account and how many days left
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
-    last_checkup_notice_sent_at = models.DateTimeField(null=True, blank=True, default=None) #set by the cron job's send_inactivity_checkups() every time a "we miss you" email+push goes out, so the same user isn't re-notified every single tick - only once per 4 days of continued inactivity
+    last_checkup_notice_sent_at = models.DateTimeField(null=True, blank=True, default=None)#set by the cron job's send_inactivity_checkups() every time a "we miss you" email+push goes out, so the same user isn't re-notified every single tick - only once per 4 days of continued inactivity
     
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', ]

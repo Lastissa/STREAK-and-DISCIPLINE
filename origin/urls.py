@@ -88,7 +88,6 @@ urlpatterns = [
     path('staff/signup/', views.StaffSignup.as_view(), name ="origin_staff_signup"),
     path('staff/get_token/', views.StaffMakeTokenRequest.as_view(), name ="origin_get_staff_token"),
     path('staff/verify_token/', views.VerifyStaffTokenAndCreateAccount.as_view(), name ="origin_verify_staff_token"),
-    path('staff/get_token/', views.StaffMakeTokenRequest.as_view(), name ="origin_get_staff_token"),
     path('staff/home/', views.AccountWithStaffStatus.as_view(), name ="origin_staff_home"),
     path('staff/create_blog/', views.CreateBlog.as_view(), name ="origin_staff_publish_news"),
     path('staff/news/<int:pk>/edit/', views.EditBlog.as_view(), name ="origin_staff_edit_news"),

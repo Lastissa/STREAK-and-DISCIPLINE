@@ -182,10 +182,9 @@ class AccountWithStaffStatus(View):
             entry['url'] = reverse(tool['url_name']) if entry.get('status') == 'live' and tool.get('url_name') else None
             tools.append(entry)
         
-        print(request.COOKIES.get('sd-theme', ''))
         if request.user.is_staff: return render(request, 'html/staff_hub.html', {'staff_tools': tools, 'page_theme': request.COOKIES.get('sd-theme', '')})
         messages.error(request, message="YOU ARE NEVER SUPPOSE TO  SEE THIS BUT IF SEEN , AN ALSO BIG MAX REDIRECT ERROR WAS ABOUT TO HAPPE BUT I CAUGJHT IT HERE")
-        return render(request, 'html/full_error_message.html')
+        return render(request, 'html/full_screen_message.html')
 
 
 class CreateBlog(View):

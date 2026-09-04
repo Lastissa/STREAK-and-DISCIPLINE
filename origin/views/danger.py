@@ -12,7 +12,6 @@ class DeleteUserEntireAccount(LoginRequiredMixin, View):
     def post(self, request):
         data = json.loads(request.body)
         is_it_really_user = request.user.username == data.get('username', 'empty')
-        print(is_it_really_user)
         if is_it_really_user is False:
             return JsonResponse({'message': 'user identity invalid'}, status = 403)
         

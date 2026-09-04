@@ -9,12 +9,8 @@ A Django-based habit and commitment tracker. Users create "commitments" (habits/
 - [Overview](#overview)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
-- [Site Map](#site-map)
-  - [Public Pages](#public-pages)
-  - [Authentication](#authentication)
-  - [Dashboard (Authenticated)](#dashboard-authenticated)
-  - [Community & Partnering](#community--partnering)
-  - [Staff Panel](#staff-panel)
+- [How the App Fits Together](#how-the-app-fits-together)
+- [User Journey](#user-journey)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
@@ -62,64 +58,39 @@ Discipline & Streak helps users stay consistent with their goals. Each user can 
 
 ---
 
-## Site Map
+## How the App Fits Together
 
-Below is the app's user-facing navigation. This lists the pages people actually move through in the product — internal API/JSON endpoints and implementation details are intentionally left out.
+A high-level view of how a request flows through the system — intentionally at the component level, not a literal route map (see [Project Structure](#project-structure) for where things live in the codebase, and the in-app **Site Guide** for a navigable map of the product itself).
 
-### Public Pages
+```mermaid
+flowchart LR
+    User(["User's browser"]) --> Django["Django app\n(origin)"]
+    Django --> DB[(PostgreSQL)]
+    Django --> Cache[(Redis)]
+    Django --> Media["Cloudinary\n(images)"]
+    Django --> Mail["Email / Web Push"]
+    Scheduler(["External cron"]) -->|authenticated HTTP call| Django
+    Django --> User
+```
 
-| Page | Path |
-|---|---|
-| Landing / Home | `/` |
-| Blog & Updates | `/v1/blog/` |
-| Blog Post Detail | `/v1/blog/<id>/` |
-| Privacy & Policies | linked from footer |
-| "Still in Progress" placeholder | `/v1/in-progress/` |
+## User Journey
 
-### Authentication
+The core loop the product is built around:
 
-| Page | Path |
-|---|---|
-| Log In | `/v1/login/` |
-| Sign Up | `/v1/signup/` |
-| Onboarding | `/v1/onboarding/` |
-| Forgot Password | `/v1/password-reset/` |
-| Reactivate Account | try to log in and you will be shown the process |
+```mermaid
+flowchart TD
+    A[Sign up / Log in] --> B[Onboarding]
+    B --> C[Create a commitment]
+    C --> D[Daily check-in]
+    D --> E{Streak continues?}
+    E -->|Yes| D
+    E -->|Missed| F[Reminder nudges next check-in]
+    F --> D
+    D --> G[Weekly analysis & heat map]
+    C -.optional.-> H[Add a partner or join the leaderboard]
+```
 
-### Dashboard (Authenticated)
-
-| Page | Path |
-|---|---|
-| Dashboard (home) | `/v1/dashboard/` |
-| Account Settings | `/v1/dashboard/settings/` |
-| Commitments (all) | `/v1/dashboard/commitment/` |
-| Commitment Detail | `/v1/dashboard/commitment/<key>/` |
-| Commitment Settings | `/v1/dashboard/commitment/<key>/settings/` |
-| Profile | `/v1/dashboard/profile/` |
-| Reports & Analytics | `/v1/dashboard/reports/` |
-| Weekly Analysis | `/v1/weekly-analysis/` |
-| Leaderboard | `/v1/leaderboard/` |
-
-### Community & Partnering
-
-| Page | Path |
-|---|---|
-| Relationships (friends & partner) | `/v1/dashboard/relationship/` |
-| Partner Dashboard | `/v1/dashboard/relationship/partner/<user_id>/` |
-| Find a Friend | search from Relationships page |
-
-### Staff Panel
-
-Internal, staff-only tools for managing users and content.
-
-| Page | Path |
-|---|---|
-| Staff Home | `/v1/staff/home/` |
-| Staff Sign Up | `/v1/staff/signup/` |
-| Manage Users | `/v1/staff/users/` |
-| Publish News/Blog Post | `/v1/staff/create_blog/` |
-| Edit News Post | `/v1/staff/news/<id>/edit/` |
-| Active Sessions | `/v1/staff/sessions/` |
+Staff have a separate, access-code-gated flow for publishing blog posts and managing users/content — deliberately not detailed here since it isn't part of the regular user journey.
 
 ---
 
@@ -129,6 +100,7 @@ Internal, staff-only tools for managing users and content.
 
 - Python 3.x
 - get in touch with me for others @ lastissa11@gmail.com
+
 ### Installation
 
 ```bash
@@ -177,7 +149,7 @@ DISCIPLINEandSTREAK/
 
 ## Background Jobs
 
-Reminder and maintenance jobs (e.g. check-in reminders) are triggered via authenticated HTTP calls from an external scheduler (cron), rather than an in-process worker- Reason because i cannot have a render background taska and i found a workaround
+Reminder and maintenance jobs (e.g. check-in reminders) are triggered via authenticated HTTP calls from an external scheduler (cron), rather than an in-process worker - Reason because i cannot have a render background taska and i found a workaround
 
 ## License
 MIT
