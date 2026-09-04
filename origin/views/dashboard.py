@@ -114,7 +114,8 @@ class Dashboard(LoginRequiredMixin, View):
         
         user_profile.zeal_score = round(avg_streak*commitment_istance.count())
         user_profile.save()
-        
+        try: cpct = (len(consistency)/commitment_istance.count())*100
+        except:cpct=0
         data = {
             'tier' : user_profile.tier,
             'zeal_score' : user_profile.zeal_score,
@@ -122,7 +123,7 @@ class Dashboard(LoginRequiredMixin, View):
             'ai_insight_active' : user_profile.ai_insight_active,
             'social_mode' : user_profile.social_mode,
             'total_active_commitments': commitment_istance.count(),
-            'consistency_pct': (len(consistency)/commitment_istance.count())*100,  
+            'consistency_pct': cpct,  
              'total_entries': Entries.objects.filter(commitment_key__user = request.user).count(),       #Hold usr current tier
              'theme_mode': request.COOKIES.get("sd-theme", 'dark'),
             
